@@ -11,264 +11,67 @@ knitr::opts_chunk$set(
   fig.path = "man/figures/README-",
   out.width = "100%"
 )
-knitr::opts_knit$set(root.dir = tempdir())  # Only affects code execution, not output
+knitr::opts_knit$set(root.dir = tempdir())
 ```
 
-# ducklake <a href="https://github.com/tgerke/ducklake-r"><img src="man/figures/ducklake-hex.jpg" align="right" height="138" /></a>
+# ducklake <a href="https://tgerke.github.io/ducklake-r/"><img src="man/figures/logo.png" align="right" height="123" alt="ducklake website" /></a>
 
-ducklake is an R package which complements the existing toolkits in the [duckdb](https://r.duckdb.org/index.html) and [duckplyr](https://duckplyr.tidyverse.org/index.html) packages, in order to support the new [DuckLake](https://ducklake.select/docs/stable/duckdb/introduction.html) ecosystem.
+<!-- badges: start -->
+<!-- badges: end -->
+
+ducklake is an R package that complements the existing toolkits in the [duckdb](https://r.duckdb.org/index.html) and [duckplyr](https://duckplyr.tidyverse.org/index.html) packages, supporting the new [DuckLake](https://ducklake.select/docs/stable/duckdb/introduction.html) ecosystem.
 
 ## Installation
 
-Install the development version of ducklake with
+Install the development version of ducklake with:
 
 ``` r
 pak::pak("tgerke/ducklake-r")
 ```
 
-## Create a local duckdb lakehouse
+## Quick example
 
-```{r create, message=FALSE}
+```{r example, message=FALSE}
 library(ducklake)
 library(dplyr)
 
-# install the ducklake extension to duckdb 
-# requires that you already have DuckDB v1.3.0 or higher
+# Install the ducklake extension (requires DuckDB v1.3.0 or higher)
 install_ducklake()
 
-# create the ducklake
+# Create a lakehouse
 attach_ducklake("my_ducklake")
-# show that we have ducklake files
-list.files()
 
-# create a table using the Netherlands train traffic dataset 
+# Create a table
 create_table("nl_train_stations", "https://blobs.duckdb.org/nl_stations.csv")
-# show that we now have a .files directory
-list.files()
-# main/ is where the parquet files go
-list.files("my_ducklake.ducklake.files/main/nl_train_stations")
 
-# create a table from an R data.frame
-create_table("mtcars_table", mtcars)
-list.files("my_ducklake.ducklake.files/main/mtcars_table")
-```
-
-## Two approaches for table modifications
-
-ducklake provides two complementary approaches for modifying tables, both following tidyverse conventions:
-
-### 1. data.frame approach (`rows_*` functions)
-
-Best when you have **data in R** (data.frames/tibbles) that you want to apply to a table:
-
-```r
-# Prepare your data in R
-updates <- data.frame(id = c(1, 2), value = c("new1", "new2"))
-
-# Apply to table
-rows_update(get_ducklake_table("my_table"), updates, by = "id")  # Update existing rows
-rows_insert(get_ducklake_table("my_table"), new_data, by = "id")  # Insert new rows
-rows_upsert(get_ducklake_table("my_table"), updates, by = "id")  # Update existing or insert new
-rows_delete(get_ducklake_table("my_table"), to_delete, by = "id")  # Delete rows by key
-```
-
-**Pros:** Explicit, familiar dplyr syntax, `in_place = TRUE` by default for DuckLake  
-**Use when:** You have data.frames/tibbles ready to apply
-
-### 2. Pipeline approach (`*_table` functions)
-
-Best when you're **transforming data with dplyr** and want to apply results to a table:
-
-```r
-# Build transformation pipeline, then execute
-get_ducklake_table("my_table") |>
-  filter(status == "active") |>
-  mutate(processed = TRUE) |>
-  ducklake_exec()  # for updates
-
-source_table |>
-  select(id, value) |>
-  mutate(value = toupper(value)) |>
-  upsert_table("target_table", by = "id")  # for merge/upsert
-```
-
-**Pros:** Chainable, works in pipelines, table name inference  
-**Use when:** Transforming data with `filter()`, `mutate()`, `summarize()`, etc.
-
-
-
-```{r update}
-# update the first row with ducklake::rows_update()
-# copy = TRUE and in_place = TRUE are the defaults for DuckLake operations
-rows_update(
-  get_ducklake_table("nl_train_stations"),
-  data.frame(
-    uic = 8400319,
-    name_short = "NEW"
-  ),
-  by = "uic",
-  copy = TRUE,
-  unmatched = "ignore"
-)
-
-# update with mutate and ducklake::ducklake_exec
-# table name is automatically inferred from the pipeline
+# View the data
 get_ducklake_table("nl_train_stations") |>
-  mutate(
-    name_long = dplyr::case_when(
-      code == "ASB" ~ "Johan Cruijff ArenA",
-      .default = name_long
-    )
-  ) |>
+  select(code, name_short, name_long) |>
+  head(5)
+
+# Update with dplyr syntax
+get_ducklake_table("nl_train_stations") |>
+  mutate(name_short = toupper(name_short)) |>
   ducklake_exec()
 
-# if we want, we can always view the sql that will be submitted in advance
-get_ducklake_table("nl_train_stations") |>
-  mutate(
-    name_long = dplyr::case_when(
-      code == "ASB" ~ "Johan Cruijff ArenA",
-      .default = name_long
-    )
-  ) |>
-  show_ducklake_query()
-
-# filter using ducklake::ducklake_exec
-# with .quiet=FALSE we can see sql on execution, including the original dplyr
-get_ducklake_table("nl_train_stations") |>
-  filter(uic == 8400319 | code == "ASB") |>
-  ducklake_exec(.quiet = FALSE)
-
-# show our current table
-get_ducklake_table("nl_train_stations")
-```
-
-## Upsert (merge) data
-
-```{r upsert}
-# Upsert: update existing rows or insert new ones based on a key
-# First, create some data to upsert
-upsert_data <- data.frame(
-  uic = c(8400319, 9999999),  # 8400319 exists, 9999999 is new
-  name_short = c("UPDATED", "NEW"),
-  name_long = c("Updated Station", "New Station"),
-  code = c("UPD", "NEW"),
-  stringsAsFactors = FALSE
-)
-
-# Use rows_upsert for data.frames (copy = TRUE and in_place = TRUE by default)
-rows_upsert(
-  get_ducklake_table("nl_train_stations"),
-  upsert_data,
-  by = "uic",
-  copy = TRUE
-)
-
-get_ducklake_table("nl_train_stations") |>
-  select(uic, name_short, name_long, code)
-```
-
-## View metadata and snapshots
-
-```{r metadata}
-# List all tables in the lake
-get_ducklake_table("duckdb_tables") |> 
-  select(database_name, schema_name, table_name) |> 
-  print(n = Inf)
-
-# View snapshot history
-get_metadata_table("ducklake_snapshot_changes", ducklake_name = "my_ducklake")
-get_metadata_table("ducklake_snapshot", ducklake_name = "my_ducklake")
-```
-
-## Transaction support
-
-Group multiple operations together with ACID transactions:
-
-```{r transactions}
-# Check what data we currently have
-get_ducklake_table("nl_train_stations") |>
-  select(code, name_short) |>
-  collect()
-
-# Start a transaction
-begin_transaction()
-
-# Make multiple changes atomically within the transaction
-duckplyr::db_exec("UPDATE nl_train_stations SET name_short = 'COMMITTED_CHANGE' WHERE code = 'HT'")
-duckplyr::db_exec("UPDATE nl_train_stations SET name_short = 'ALSO_COMMITTED' WHERE code = 'ASB'")
-
-# Commit both changes together
-commit_transaction()
-
-# Add author and commit message metadata to the snapshot
-set_snapshot_metadata(
-  ducklake_name = "my_ducklake",
-  author = "Data Team",
-  commit_message = "Updated station names for clarity"
-)
-
-# Verify the changes were applied
-get_ducklake_table("nl_train_stations") |>
-  select(code, name_short) |>
-  collect()
-
-# View the recent commit history with metadata
-get_metadata_table("ducklake_snapshot_changes", ducklake_name = "my_ducklake") |>
-  select(snapshot_id, changes_made, author, commit_message) |>
-  collect() |>
-  tail(3)
-```
-
-```{r rollback-example}
-# Example of rolling back a transaction
-begin_transaction()
-
-# Make a change we'll roll back
-duckplyr::db_exec("UPDATE nl_train_stations SET name_short = 'ROLLBACK_TEST' WHERE code = 'HT'")
-
-# Decide to rollback instead of commit
-rollback_transaction()
-
-# Verify the change was NOT applied (should still be "COMMITTED_CHANGE")
-get_ducklake_table("nl_train_stations") |>
-  filter(code == "HT") |>
-  select(code, name_short) |>
-  collect()
-```
-
-## Time-travel queries
-
-DuckLake supports querying historical data at specific points in time using its built-in snapshot functionality.
-
-The package provides several time-travel functions:
-
-```{r time-travel, eval=FALSE}
-# Query data as it existed at a specific timestamp
-get_ducklake_table_asof("my_delta_table", "2024-01-15 10:30:00") |>
-  filter(status == "active") |>
-  collect()
-
-# Query data as it existed yesterday
-yesterday <- Sys.time() - (24 * 60 * 60)
-get_ducklake_table_asof("my_delta_table", yesterday) |>
-  summarise(n = n())
-
-# Query a specific version/snapshot number
-get_ducklake_table_version("my_delta_table", version = 5) |>
-  collect()
-
-# List all available snapshots for a table
-list_table_snapshots("my_delta_table")
-
-# Restore table to a previous version
-restore_table_version("my_delta_table", version = 3)
-# Or restore to a specific timestamp
-restore_table_version("my_delta_table", timestamp = "2024-01-15 10:00:00")
-```
-
-## Cleanup
-
-```{r cleanup}
-# When done, detach from the ducklake
+# Clean up
 detach_ducklake("my_ducklake")
 ```
+
+## Learn more
+
+Check out the [pkgdown site](https://tgerke.github.io/ducklake-r/) for detailed vignettes:
+
+- [Getting Started](https://tgerke.github.io/ducklake-r/articles/ducklake.html) - Create your first lakehouse
+- [Modifying Tables](https://tgerke.github.io/ducklake-r/articles/modifying-tables.html) - Two approaches for table modifications
+- [Upsert Operations](https://tgerke.github.io/ducklake-r/articles/upsert-operations.html) - Merge and update data
+- [Transactions](https://tgerke.github.io/ducklake-r/articles/transactions.html) - ACID transaction support
+- [Time Travel](https://tgerke.github.io/ducklake-r/articles/time-travel.html) - Query historical data
+
+## Key features
+
+- **Tidyverse-style interface** for DuckLake operations
+- **Two complementary approaches**: `rows_*` functions for data.frames and pipeline functions for dplyr workflows
+- **ACID transactions** with metadata tracking
+- **Time travel queries** to access historical snapshots
+- **Seamless integration** with duckdb and duckplyr

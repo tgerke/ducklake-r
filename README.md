@@ -1,412 +1,91 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# ducklake <a href="https://github.com/tgerke/ducklake-r"><img src="man/figures/ducklake-hex.jpg" align="right" height="138" /></a>
+# ducklake <a href="https://tgerke.github.io/ducklake-r/"><img src="man/figures/logo.png" align="right" height="123" alt="ducklake website" /></a>
 
-ducklake is an R package which complements the existing toolkits in the
+<!-- badges: start -->
+
+<!-- badges: end -->
+
+ducklake is an R package that complements the existing toolkits in the
 [duckdb](https://r.duckdb.org/index.html) and
-[duckplyr](https://duckplyr.tidyverse.org/index.html) packages, in order
-to support the new
+[duckplyr](https://duckplyr.tidyverse.org/index.html) packages,
+supporting the new
 [DuckLake](https://ducklake.select/docs/stable/duckdb/introduction.html)
 ecosystem.
 
 ## Installation
 
-Install the development version of ducklake with
+Install the development version of ducklake with:
 
 ``` r
 pak::pak("tgerke/ducklake-r")
 ```
 
-## Create a local duckdb lakehouse
+## Quick example
 
 ``` r
 library(ducklake)
 library(dplyr)
-#> Warning: package 'dplyr' was built under R version 4.5.2
 
-# install the ducklake extension to duckdb 
-# requires that you already have DuckDB v1.3.0 or higher
+# Install the ducklake extension (requires DuckDB v1.3.0 or higher)
 install_ducklake()
 
-# create the ducklake
+# Create a lakehouse
 attach_ducklake("my_ducklake")
-# show that we have ducklake files
-list.files()
-#> [1] "duckplyr"                 "my_ducklake.ducklake"    
-#> [3] "my_ducklake.ducklake.wal"
 
-# create a table using the Netherlands train traffic dataset 
+# Create a table
 create_table("nl_train_stations", "https://blobs.duckdb.org/nl_stations.csv")
-# show that we now have a .files directory
-list.files()
-#> [1] "duckplyr"                   "my_ducklake.ducklake"      
-#> [3] "my_ducklake.ducklake.files" "my_ducklake.ducklake.wal"
-# main/ is where the parquet files go
-list.files("my_ducklake.ducklake.files/main/nl_train_stations")
-#> [1] "ducklake-019c2a8c-a7af-72fc-9814-5dcdf50d77c3.parquet"
 
-# create a table from an R data.frame
-create_table("mtcars_table", mtcars)
-list.files("my_ducklake.ducklake.files/main/mtcars_table")
-#> [1] "ducklake-019c2a8c-a7ce-7a03-95b5-4de1f0edc4cd.parquet"
-```
-
-## Two approaches for table modifications
-
-ducklake provides two complementary approaches for modifying tables,
-both following tidyverse conventions:
-
-### 1. data.frame approach (`rows_*` functions)
-
-Best when you have **data in R** (data.frames/tibbles) that you want to
-apply to a table:
-
-``` r
-# Prepare your data in R
-updates <- data.frame(id = c(1, 2), value = c("new1", "new2"))
-
-# Apply to table
-rows_update(get_ducklake_table("my_table"), updates, by = "id")  # Update existing rows
-rows_insert(get_ducklake_table("my_table"), new_data, by = "id")  # Insert new rows
-rows_upsert(get_ducklake_table("my_table"), updates, by = "id")  # Update existing or insert new
-rows_delete(get_ducklake_table("my_table"), to_delete, by = "id")  # Delete rows by key
-```
-
-**Pros:** Explicit, familiar dplyr syntax, `in_place = TRUE` by default
-for DuckLake  
-**Use when:** You have data.frames/tibbles ready to apply
-
-### 2. Pipeline approach (`*_table` functions)
-
-Best when you’re **transforming data with dplyr** and want to apply
-results to a table:
-
-``` r
-# Build transformation pipeline, then execute
-get_ducklake_table("my_table") |>
-  filter(status == "active") |>
-  mutate(processed = TRUE) |>
-  ducklake_exec()  # for updates
-
-source_table |>
-  select(id, value) |>
-  mutate(value = toupper(value)) |>
-  upsert_table("target_table", by = "id")  # for merge/upsert
-```
-
-**Pros:** Chainable, works in pipelines, table name inference  
-**Use when:** Transforming data with `filter()`, `mutate()`,
-`summarize()`, etc.
-
-``` r
-# update the first row with ducklake::rows_update()
-# copy = TRUE and in_place = TRUE are the defaults for DuckLake operations
-rows_update(
-  get_ducklake_table("nl_train_stations"),
-  data.frame(
-    uic = 8400319,
-    name_short = "NEW"
-  ),
-  by = "uic",
-  copy = TRUE,
-  unmatched = "ignore"
-)
-#> # Source:   SQL [?? x 11]
-#> # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.1//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpHnMBLE/duckplyr/duckplyr11fe14478bf48.duckdb]
-#>       id code       uic name_short name_medium     name_long slug  country type 
-#>    <dbl> <chr>    <dbl> <chr>      <chr>           <chr>     <chr> <chr>   <chr>
-#>  1   269 HTO    8400320 Dn Bosch O 's-Hertogenb. … 's-Herto… s-he… NL      stop…
-#>  2   227 HDE    8400388 't Harde   't Harde        't Harde  t-ha… NL      stop…
-#>  3     8 AHBF   8015345 Aachen     Aachen Hbf      Aachen H… aach… D       knoo…
-#>  4   818 AW     8015199 Aachen W   Aachen West     Aachen W… aach… D       stop…
-#>  5    51 ATN    8400045 Aalten     Aalten          Aalten    aalt… NL      stop…
-#>  6     5 AC     8400047 Abcoude    Abcoude         Abcoude   abco… NL      stop…
-#>  7   550 EAHS   8021123 Ahaus      Ahaus           Ahaus     ahaus D       stop…
-#>  8    12 AIME   8774176 Aime-la-Pl Aime-la-Plagne  Aime-la-… aime… F       inte…
-#>  9   819 ACDG   8727149 Airport dG Airport deGaul… Airport … airp… F       knoo…
-#> 10   551 AIXTGV 8731901 Aix-en-Pro Aix-en-Provence Aix-en-P… aix-… F       inte…
-#> # ℹ more rows
-#> # ℹ 2 more variables: geo_lat <dbl>, geo_lng <dbl>
-
-# update with mutate and ducklake::ducklake_exec
-# table name is automatically inferred from the pipeline
+# View the data
 get_ducklake_table("nl_train_stations") |>
-  mutate(
-    name_long = dplyr::case_when(
-      code == "ASB" ~ "Johan Cruijff ArenA",
-      .default = name_long
-    )
-  ) |>
+  select(code, name_short, name_long) |>
+  head(5)
+#> # Source:   SQL [?? x 3]
+#> # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpaQczjh/duckplyr/duckplyr13fdd2632c51f.duckdb]
+#>   code  name_short name_long            
+#>   <chr> <chr>      <chr>                
+#> 1 HT    Den Bosch  's-Hertogenbosch     
+#> 2 HTO   Dn Bosch O 's-Hertogenbosch Oost
+#> 3 HDE   't Harde   't Harde             
+#> 4 AHBF  Aachen     Aachen Hbf           
+#> 5 AW    Aachen W   Aachen West
+
+# Update with dplyr syntax
+get_ducklake_table("nl_train_stations") |>
+  mutate(name_short = toupper(name_short)) |>
   ducklake_exec()
 #> [1] 578
 
-# if we want, we can always view the sql that will be submitted in advance
-get_ducklake_table("nl_train_stations") |>
-  mutate(
-    name_long = dplyr::case_when(
-      code == "ASB" ~ "Johan Cruijff ArenA",
-      .default = name_long
-    )
-  ) |>
-  show_ducklake_query()
-#> 
-#> === DuckLake SQL Preview ===
-#> 
-#> -- Main operation
-#> UPDATE nl_train_stations SET name_long = CASE WHEN (code = 'ASB') THEN 'Johan Cruijff ArenA' ELSE name_long END ;
-
-# filter using ducklake::ducklake_exec
-# with .quiet=FALSE we can see sql on execution, including the original dplyr
-get_ducklake_table("nl_train_stations") |>
-  filter(uic == 8400319 | code == "ASB") |>
-  ducklake_exec(.quiet = FALSE)
-#> 
-#> === Original dplyr SQL ===
-#> <SQL>
-#> SELECT nl_train_stations.*
-#> FROM nl_train_stations
-#> WHERE (uic = 8400319.0 OR code = 'ASB')
-#> # Source:   SQL [?? x 11]
-#> # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.1//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpHnMBLE/duckplyr/duckplyr11fe14478bf48.duckdb]
-#>      id code      uic name_short name_medium      name_long  slug  country type 
-#>   <dbl> <chr>   <dbl> <chr>      <chr>            <chr>      <chr> <chr>   <chr>
-#> 1   266 HT    8400319 Den Bosch  's-Hertogenbosch 's-Hertog… s-he… NL      knoo…
-#> 2    41 ASB   8400074 Bijlmer A  Bijlmer ArenA    Johan Cru… amst… NL      knoo…
-#> # ℹ 2 more variables: geo_lat <dbl>, geo_lng <dbl>
-#> 
-#> === Translated DuckLake SQL ===
-#> DELETE FROM nl_train_stations WHERE NOT ((uic = 8400319.0 OR code = 'ASB')) 
-#> 
-#> Rows affected: 576
-#> [1] 576
-
-# show our current table
-get_ducklake_table("nl_train_stations")
-#> # Source:   table<nl_train_stations> [?? x 11]
-#> # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.1//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpHnMBLE/duckplyr/duckplyr11fe14478bf48.duckdb]
-#>      id code      uic name_short name_medium      name_long  slug  country type 
-#>   <dbl> <chr>   <dbl> <chr>      <chr>            <chr>      <chr> <chr>   <chr>
-#> 1   266 HT    8400319 Den Bosch  's-Hertogenbosch 's-Hertog… s-he… NL      knoo…
-#> 2    41 ASB   8400074 Bijlmer A  Bijlmer ArenA    Johan Cru… amst… NL      knoo…
-#> # ℹ 2 more variables: geo_lat <dbl>, geo_lng <dbl>
-```
-
-## Upsert (merge) data
-
-``` r
-# Upsert: update existing rows or insert new ones based on a key
-# First, create some data to upsert
-upsert_data <- data.frame(
-  uic = c(8400319, 9999999),  # 8400319 exists, 9999999 is new
-  name_short = c("UPDATED", "NEW"),
-  name_long = c("Updated Station", "New Station"),
-  code = c("UPD", "NEW"),
-  stringsAsFactors = FALSE
-)
-
-# Use rows_upsert for data.frames (copy = TRUE and in_place = TRUE by default)
-rows_upsert(
-  get_ducklake_table("nl_train_stations"),
-  upsert_data,
-  by = "uic",
-  copy = TRUE
-)
-#> # Source:   SQL [?? x 11]
-#> # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.1//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpHnMBLE/duckplyr/duckplyr11fe14478bf48.duckdb]
-#>      id code      uic name_short name_medium      name_long  slug  country type 
-#>   <dbl> <chr>   <dbl> <chr>      <chr>            <chr>      <chr> <chr>   <chr>
-#> 1    41 ASB   8400074 Bijlmer A  Bijlmer ArenA    Johan Cru… amst… NL      knoo…
-#> 2   266 UPD   8400319 UPDATED    's-Hertogenbosch Updated S… s-he… NL      knoo…
-#> 3    NA NEW   9999999 NEW        <NA>             New Stati… <NA>  <NA>    <NA> 
-#> # ℹ 2 more variables: geo_lat <dbl>, geo_lng <dbl>
-
-get_ducklake_table("nl_train_stations") |>
-  select(uic, name_short, name_long, code)
-#> # Source:   SQL [?? x 4]
-#> # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.1//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpHnMBLE/duckplyr/duckplyr11fe14478bf48.duckdb]
-#>       uic name_short name_long           code 
-#>     <dbl> <chr>      <chr>               <chr>
-#> 1 8400319 Den Bosch  's-Hertogenbosch    HT   
-#> 2 8400074 Bijlmer A  Johan Cruijff ArenA ASB
-```
-
-## View metadata and snapshots
-
-``` r
-# List all tables in the lake
-get_ducklake_table("duckdb_tables") |> 
-  select(database_name, schema_name, table_name) |> 
-  print(n = Inf)
-#> # Source:   SQL [?? x 3]
-#> # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.1//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpHnMBLE/duckplyr/duckplyr11fe14478bf48.duckdb]
-#>    database_name                   schema_name table_name                       
-#>    <chr>                           <chr>       <chr>                            
-#>  1 __ducklake_metadata_my_ducklake main        ducklake_column                  
-#>  2 __ducklake_metadata_my_ducklake main        ducklake_column_mapping          
-#>  3 __ducklake_metadata_my_ducklake main        ducklake_column_tag              
-#>  4 __ducklake_metadata_my_ducklake main        ducklake_data_file               
-#>  5 __ducklake_metadata_my_ducklake main        ducklake_delete_file             
-#>  6 __ducklake_metadata_my_ducklake main        ducklake_files_scheduled_for_del…
-#>  7 __ducklake_metadata_my_ducklake main        ducklake_file_column_stats       
-#>  8 __ducklake_metadata_my_ducklake main        ducklake_file_partition_value    
-#>  9 __ducklake_metadata_my_ducklake main        ducklake_inlined_data_tables     
-#> 10 __ducklake_metadata_my_ducklake main        ducklake_metadata                
-#> 11 __ducklake_metadata_my_ducklake main        ducklake_name_mapping            
-#> 12 __ducklake_metadata_my_ducklake main        ducklake_partition_column        
-#> 13 __ducklake_metadata_my_ducklake main        ducklake_partition_info          
-#> 14 __ducklake_metadata_my_ducklake main        ducklake_schema                  
-#> 15 __ducklake_metadata_my_ducklake main        ducklake_schema_versions         
-#> 16 __ducklake_metadata_my_ducklake main        ducklake_snapshot                
-#> 17 __ducklake_metadata_my_ducklake main        ducklake_snapshot_changes        
-#> 18 __ducklake_metadata_my_ducklake main        ducklake_table                   
-#> 19 __ducklake_metadata_my_ducklake main        ducklake_table_column_stats      
-#> 20 __ducklake_metadata_my_ducklake main        ducklake_table_stats             
-#> 21 __ducklake_metadata_my_ducklake main        ducklake_tag                     
-#> 22 __ducklake_metadata_my_ducklake main        ducklake_view                    
-#> 23 my_ducklake                     main        mtcars_table                     
-#> 24 my_ducklake                     main        nl_train_stations                
-#> 25 temp                            main        dbplyr_hgd3LTeWY5                
-#> 26 temp                            main        dbplyr_m1KgFQGn4e
-
-# View snapshot history
-get_metadata_table("ducklake_snapshot_changes", ducklake_name = "my_ducklake")
-#> # Source:   SQL [?? x 5]
-#> # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.1//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpHnMBLE/duckplyr/duckplyr11fe14478bf48.duckdb]
-#>   snapshot_id changes_made               author commit_message commit_extra_info
-#>         <dbl> <chr>                      <chr>  <chr>          <chr>            
-#> 1           0 "created_schema:\"main\""  <NA>   <NA>           <NA>             
-#> 2           1 "created_table:\"main\".\… <NA>   <NA>           <NA>             
-#> 3           2 "created_table:\"main\".\… <NA>   <NA>           <NA>             
-#> 4           3 "inserted_into_table:1,de… <NA>   <NA>           <NA>             
-#> 5           4 "deleted_from_table:1"     <NA>   <NA>           <NA>
-get_metadata_table("ducklake_snapshot", ducklake_name = "my_ducklake")
-#> # Source:   SQL [?? x 5]
-#> # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.1//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpHnMBLE/duckplyr/duckplyr11fe14478bf48.duckdb]
-#>   snapshot_id snapshot_time       schema_version next_catalog_id next_file_id
-#>         <dbl> <dttm>                       <dbl>           <dbl>        <dbl>
-#> 1           0 2026-02-04 21:26:26              0               1            0
-#> 2           1 2026-02-04 21:26:26              1               2            1
-#> 3           2 2026-02-04 21:26:27              2               3            2
-#> 4           3 2026-02-04 21:26:27              2               3            3
-#> 5           4 2026-02-04 21:26:27              2               3            4
-```
-
-## Transaction support
-
-Group multiple operations together with ACID transactions:
-
-``` r
-# Check what data we currently have
-get_ducklake_table("nl_train_stations") |>
-  select(code, name_short) |>
-  collect()
-#> # A tibble: 2 × 2
-#>   code  name_short
-#>   <chr> <chr>     
-#> 1 HT    Den Bosch 
-#> 2 ASB   Bijlmer A
-
-# Start a transaction
-begin_transaction()
-#> Transaction started
-
-# Make multiple changes atomically within the transaction
-duckplyr::db_exec("UPDATE nl_train_stations SET name_short = 'COMMITTED_CHANGE' WHERE code = 'HT'")
-duckplyr::db_exec("UPDATE nl_train_stations SET name_short = 'ALSO_COMMITTED' WHERE code = 'ASB'")
-
-# Commit both changes together
-commit_transaction()
-#> Transaction committed
-
-# Add author and commit message metadata to the snapshot
-set_snapshot_metadata(
-  ducklake_name = "my_ducklake",
-  author = "Data Team",
-  commit_message = "Updated station names for clarity"
-)
-#> Snapshot metadata updated
-
-# Verify the changes were applied
-get_ducklake_table("nl_train_stations") |>
-  select(code, name_short) |>
-  collect()
-#> # A tibble: 2 × 2
-#>   code  name_short      
-#>   <chr> <chr>           
-#> 1 HT    COMMITTED_CHANGE
-#> 2 ASB   ALSO_COMMITTED
-
-# View the recent commit history with metadata
-get_metadata_table("ducklake_snapshot_changes", ducklake_name = "my_ducklake") |>
-  select(snapshot_id, changes_made, author, commit_message) |>
-  collect() |>
-  tail(3)
-#> # A tibble: 3 × 4
-#>   snapshot_id changes_made                               author   commit_message
-#>         <dbl> <chr>                                      <chr>    <chr>         
-#> 1           3 inserted_into_table:1,deleted_from_table:1 <NA>     <NA>          
-#> 2           4 deleted_from_table:1                       <NA>     <NA>          
-#> 3           5 inserted_into_table:1,deleted_from_table:1 Data Te… Updated stati…
-```
-
-``` r
-# Example of rolling back a transaction
-begin_transaction()
-#> Transaction started
-
-# Make a change we'll roll back
-duckplyr::db_exec("UPDATE nl_train_stations SET name_short = 'ROLLBACK_TEST' WHERE code = 'HT'")
-
-# Decide to rollback instead of commit
-rollback_transaction()
-#> Transaction rolled back
-
-# Verify the change was NOT applied (should still be "COMMITTED_CHANGE")
-get_ducklake_table("nl_train_stations") |>
-  filter(code == "HT") |>
-  select(code, name_short) |>
-  collect()
-#> # A tibble: 1 × 2
-#>   code  name_short      
-#>   <chr> <chr>           
-#> 1 HT    COMMITTED_CHANGE
-```
-
-## Time-travel queries
-
-DuckLake supports querying historical data at specific points in time
-using its built-in snapshot functionality.
-
-The package provides several time-travel functions:
-
-``` r
-# Query data as it existed at a specific timestamp
-get_ducklake_table_asof("my_delta_table", "2024-01-15 10:30:00") |>
-  filter(status == "active") |>
-  collect()
-
-# Query data as it existed yesterday
-yesterday <- Sys.time() - (24 * 60 * 60)
-get_ducklake_table_asof("my_delta_table", yesterday) |>
-  summarise(n = n())
-
-# Query a specific version/snapshot number
-get_ducklake_table_version("my_delta_table", version = 5) |>
-  collect()
-
-# List all available snapshots for a table
-list_table_snapshots("my_delta_table")
-
-# Restore table to a previous version
-restore_table_version("my_delta_table", version = 3)
-# Or restore to a specific timestamp
-restore_table_version("my_delta_table", timestamp = "2024-01-15 10:00:00")
-```
-
-## Cleanup
-
-``` r
-# When done, detach from the ducklake
+# Clean up
 detach_ducklake("my_ducklake")
 ```
+
+## Learn more
+
+Check out the [pkgdown site](https://tgerke.github.io/ducklake-r/) for
+detailed vignettes:
+
+- [Getting
+  Started](https://tgerke.github.io/ducklake-r/articles/ducklake.html) -
+  Create your first lakehouse
+- [Modifying
+  Tables](https://tgerke.github.io/ducklake-r/articles/modifying-tables.html) -
+  Two approaches for table modifications
+- [Upsert
+  Operations](https://tgerke.github.io/ducklake-r/articles/upsert-operations.html) -
+  Merge and update data
+- [Transactions](https://tgerke.github.io/ducklake-r/articles/transactions.html) -
+  ACID transaction support
+- [Time
+  Travel](https://tgerke.github.io/ducklake-r/articles/time-travel.html) -
+  Query historical data
+
+## Key features
+
+- **Tidyverse-style interface** for DuckLake operations
+- **Two complementary approaches**: `rows_*` functions for data.frames
+  and pipeline functions for dplyr workflows
+- **ACID transactions** with metadata tracking
+- **Time travel queries** to access historical snapshots
+- **Seamless integration** with duckdb and duckplyr

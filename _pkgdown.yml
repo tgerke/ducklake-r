@@ -1,0 +1,92 @@
+url: https://tgerke.github.io/ducklake-r/
+template:
+  bootstrap: 5
+  bslib:
+    pkgdown-nav-height: 100px
+
+home:
+  title: "ducklake: Interact with DuckLake from R"
+  description: >
+    R package that complements duckdb and duckplyr packages to support 
+    the new DuckLake ecosystem.
+  sidebar:
+    structure: [links, license, community, citation, authors, dev]
+
+navbar:
+  structure:
+    left:  [intro, reference, articles, tutorials, news]
+    right: [search, github]
+  components:
+    articles:
+      text: Articles
+      menu:
+      - text: Getting Started
+        href: articles/ducklake.html
+      - text: -------
+      - text: Core Operations
+      - text: Modifying Tables
+        href: articles/modifying-tables.html
+      - text: Upsert Operations
+        href: articles/upsert-operations.html
+      - text: -------
+      - text: Advanced Features
+      - text: Working with Transactions
+        href: articles/transactions.html
+      - text: Time Travel Queries
+        href: articles/time-travel.html
+
+reference:
+  - title: "Setup and Connection"
+    desc: "Initialize and manage DuckLake connections"
+    contents:
+    - install_ducklake
+    - attach_ducklake
+    - detach_ducklake
+    - get_ducklake_connection
+    - set_ducklake_connection
+    
+  - title: "Table Operations"
+    desc: "Create and query tables"
+    contents:
+    - create_table
+    - get_ducklake_table
+    - update_table
+    - upsert_table
+    
+  - title: "Row Operations"
+    desc: "Modify table rows with dplyr-style functions"
+    contents:
+    - rows_insert
+    - rows_update
+    - rows_upsert
+    - rows_delete
+    - rows_patch
+    
+  - title: "Query Execution"
+    desc: "Execute and preview SQL queries"
+    contents:
+    - ducklake_exec
+    - show_ducklake_query
+    - extract_assignments_from_sql
+    
+  - title: "Transactions"
+    desc: "ACID transaction support"
+    contents:
+    - begin_transaction
+    - commit_transaction
+    - rollback_transaction
+    
+  - title: "Time Travel"
+    desc: "Query and restore historical data"
+    contents:
+    - get_ducklake_table_asof
+    - get_ducklake_table_version
+    - list_table_snapshots
+    - restore_table_version
+    
+  - title: "Metadata"
+    desc: "Access metadata and snapshots"
+    contents:
+    - get_metadata_table
+    - set_snapshot_metadata
+

@@ -5,6 +5,8 @@ Authors@R:
     person("Travis", "Gerke", , "tgerke@mail.harvard.edu", role = c("aut", "cre"))
 Description: Some features of the new DuckLake ecosystem are not readily available from the existing duckdb and duckplyr packages. This package seeks to fill that gap.
 License: MIT + file LICENSE
+URL: https://tgerke.github.io/ducklake-r/, https://github.com/tgerke/ducklake-r
+BugReports: https://github.com/tgerke/ducklake-r/issues
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
@@ -14,3 +16,7 @@ Imports:
     dplyr,
     duckdb,
     duckplyr
+Suggests: 
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr

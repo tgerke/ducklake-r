@@ -1,0 +1,100 @@
+---
+title: "Upsert Operations"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Upsert Operations}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+knitr::opts_knit$set(root.dir = tempdir())
+```
+
+```{r setup, message=FALSE, eval=FALSE}
+library(ducklake)
+library(dplyr)
+
+# Setup for examples
+install_ducklake()
+attach_ducklake("my_ducklake")
+create_table("nl_train_stations", "https://blobs.duckdb.org/nl_stations.csv")
+```
+
+## What is upsert?
+
+Upsert (merge) operations allow you to update existing rows or insert new ones based on a key. This is useful when you have data that may contain both updates to existing records and new records.
+
+## Using `rows_upsert()` with data.frames
+
+When you have data in R that you want to upsert into a table:
+
+```{r upsert-rows, eval=FALSE}
+# Create some data to upsert
+upsert_data <- data.frame(
+  uic = c(8400319, 9999999),  # 8400319 exists, 9999999 is new
+  name_short = c("UPDATED", "NEW"),
+  name_long = c("Updated Station", "New Station"),
+  code = c("UPD", "NEW"),
+  stringsAsFactors = FALSE
+)
+
+# Use rows_upsert for data.frames (copy = TRUE and in_place = TRUE by default)
+rows_upsert(
+  get_ducklake_table("nl_train_stations"),
+  upsert_data,
+  by = "uic",
+  copy = TRUE
+)
+
+# View the results - both the updated and new row
+get_ducklake_table("nl_train_stations") |>
+  filter(uic %in% c(8400319, 9999999)) |>
+  select(uic, name_short, name_long, code)
+```
+
+## Using `upsert_table()` with pipelines
+
+When you're transforming data with dplyr and want to upsert the results:
+
+```{r upsert-pipeline, eval=FALSE}
+# Create a source table
+source_data <- data.frame(
+  id = c(1, 2, 3),
+  value = c("apple", "banana", "cherry"),
+  count = c(10, 20, 30)
+)
+create_table("source_table", source_data)
+
+# Create a target table with some overlapping data
+target_data <- data.frame(
+  id = c(1, 2),
+  value = c("old_apple", "old_banana"),
+  count = c(5, 15)
+)
+create_table("target_table", target_data)
+
+# Transform and upsert in a pipeline
+get_ducklake_table("source_table") |>
+  select(id, value, count) |>
+  mutate(value = toupper(value)) |>
+  upsert_table("target_table", by = "id")
+
+# View the merged results
+get_ducklake_table("target_table") |>
+  select(id, value, count)
+```
+
+## Key considerations
+
+- The `by` parameter specifies which column(s) to use as the key for matching
+- For `rows_upsert()`, `copy = TRUE` and `in_place = TRUE` are the defaults for DuckLake operations
+- Existing rows are updated, new rows are inserted based on the key match
+
+```{r cleanup, include=FALSE, eval=FALSE}
+detach_ducklake("my_ducklake")
+```
