@@ -44,12 +44,12 @@ list.files()
 #> [3] "my_ducklake.ducklake.files" "my_ducklake.ducklake.wal"
 # main/ is where the parquet files go
 list.files("my_ducklake.ducklake.files/main/nl_train_stations")
-#> [1] "ducklake-019c2a6d-5307-7601-9e1d-4f3fb2a65ef1.parquet"
+#> [1] "ducklake-019c2a86-c1a5-763e-97e4-0d914ac3ce77.parquet"
 
 # create a table from an R data.frame
 create_table("mtcars_table", mtcars)
 list.files("my_ducklake.ducklake.files/main/mtcars_table")
-#> [1] "ducklake-019c2a6d-5327-7ce6-99e5-5fa4bce0d112.parquet"
+#> [1] "ducklake-019c2a86-c1c9-74ce-aa3d-3b93a839d4f8.parquet"
 ```
 
 ## Two approaches for table modifications
@@ -113,7 +113,7 @@ rows_update(
   unmatched = "ignore"
 )
 #> # Source:   SQL [?? x 11]
-#> # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.1//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/Rtmps9ilM8/duckplyr/duckplyr1115535c19b58.duckdb]
+#> # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.1//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpIOVsVF/duckplyr/duckplyr11ce8869b7c0.duckdb]
 #>       id code       uic name_short name_medium     name_long slug  country type 
 #>    <dbl> <chr>    <dbl> <chr>      <chr>           <chr>     <chr> <chr>   <chr>
 #>  1   269 HTO    8400320 Dn Bosch O 's-Hertogenb. … 's-Herto… s-he… NL      stop…
@@ -168,7 +168,7 @@ get_ducklake_table("nl_train_stations") |>
 #> FROM nl_train_stations
 #> WHERE (uic = 8400319.0 OR code = 'ASB')
 #> # Source:   SQL [?? x 11]
-#> # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.1//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/Rtmps9ilM8/duckplyr/duckplyr1115535c19b58.duckdb]
+#> # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.1//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpIOVsVF/duckplyr/duckplyr11ce8869b7c0.duckdb]
 #>      id code      uic name_short name_medium      name_long  slug  country type 
 #>   <dbl> <chr>   <dbl> <chr>      <chr>            <chr>      <chr> <chr>   <chr>
 #> 1   266 HT    8400319 Den Bosch  's-Hertogenbosch 's-Hertog… s-he… NL      knoo…
@@ -184,7 +184,7 @@ get_ducklake_table("nl_train_stations") |>
 # show our current table
 get_ducklake_table("nl_train_stations")
 #> # Source:   table<nl_train_stations> [?? x 11]
-#> # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.1//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/Rtmps9ilM8/duckplyr/duckplyr1115535c19b58.duckdb]
+#> # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.1//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpIOVsVF/duckplyr/duckplyr11ce8869b7c0.duckdb]
 #>      id code      uic name_short name_medium      name_long  slug  country type 
 #>   <dbl> <chr>   <dbl> <chr>      <chr>            <chr>      <chr> <chr>   <chr>
 #> 1   266 HT    8400319 Den Bosch  's-Hertogenbosch 's-Hertog… s-he… NL      knoo…
@@ -213,7 +213,7 @@ rows_upsert(
   copy = TRUE
 )
 #> # Source:   SQL [?? x 11]
-#> # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.1//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/Rtmps9ilM8/duckplyr/duckplyr1115535c19b58.duckdb]
+#> # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.1//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpIOVsVF/duckplyr/duckplyr11ce8869b7c0.duckdb]
 #>      id code      uic name_short name_medium      name_long  slug  country type 
 #>   <dbl> <chr>   <dbl> <chr>      <chr>            <chr>      <chr> <chr>   <chr>
 #> 1    41 ASB   8400074 Bijlmer A  Bijlmer ArenA    Johan Cru… amst… NL      knoo…
@@ -224,7 +224,7 @@ rows_upsert(
 get_ducklake_table("nl_train_stations") |>
   select(uic, name_short, name_long, code)
 #> # Source:   SQL [?? x 4]
-#> # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.1//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/Rtmps9ilM8/duckplyr/duckplyr1115535c19b58.duckdb]
+#> # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.1//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpIOVsVF/duckplyr/duckplyr11ce8869b7c0.duckdb]
 #>       uic name_short name_long           code 
 #>     <dbl> <chr>      <chr>               <chr>
 #> 1 8400319 Den Bosch  's-Hertogenbosch    HT   
@@ -239,7 +239,7 @@ get_ducklake_table("duckdb_tables") |>
   select(database_name, schema_name, table_name) |> 
   print(n = Inf)
 #> # Source:   SQL [?? x 3]
-#> # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.1//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/Rtmps9ilM8/duckplyr/duckplyr1115535c19b58.duckdb]
+#> # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.1//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpIOVsVF/duckplyr/duckplyr11ce8869b7c0.duckdb]
 #>    database_name                   schema_name table_name                       
 #>    <chr>                           <chr>       <chr>                            
 #>  1 __ducklake_metadata_my_ducklake main        ducklake_column                  
@@ -266,13 +266,13 @@ get_ducklake_table("duckdb_tables") |>
 #> 22 __ducklake_metadata_my_ducklake main        ducklake_view                    
 #> 23 my_ducklake                     main        mtcars_table                     
 #> 24 my_ducklake                     main        nl_train_stations                
-#> 25 temp                            main        dbplyr_A3Da8r21wL                
-#> 26 temp                            main        dbplyr_AbFZZXOzFd
+#> 25 temp                            main        dbplyr_7HHsuNTqCy                
+#> 26 temp                            main        dbplyr_9DaBiWc8Ol
 
 # View snapshot history
 get_metadata_table("ducklake_snapshot_changes", ducklake_name = "my_ducklake")
 #> # Source:   SQL [?? x 5]
-#> # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.1//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/Rtmps9ilM8/duckplyr/duckplyr1115535c19b58.duckdb]
+#> # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.1//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpIOVsVF/duckplyr/duckplyr11ce8869b7c0.duckdb]
 #>   snapshot_id changes_made               author commit_message commit_extra_info
 #>         <dbl> <chr>                      <chr>  <chr>          <chr>            
 #> 1           0 "created_schema:\"main\""  <NA>   <NA>           <NA>             
@@ -282,15 +282,133 @@ get_metadata_table("ducklake_snapshot_changes", ducklake_name = "my_ducklake")
 #> 5           4 "deleted_from_table:1"     <NA>   <NA>           <NA>
 get_metadata_table("ducklake_snapshot", ducklake_name = "my_ducklake")
 #> # Source:   SQL [?? x 5]
-#> # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.1//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/Rtmps9ilM8/duckplyr/duckplyr1115535c19b58.duckdb]
+#> # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.1//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpIOVsVF/duckplyr/duckplyr11ce8869b7c0.duckdb]
 #>   snapshot_id snapshot_time       schema_version next_catalog_id next_file_id
 #>         <dbl> <dttm>                       <dbl>           <dbl>        <dbl>
-#> 1           0 2026-02-04 20:52:13              0               1            0
-#> 2           1 2026-02-04 20:52:13              1               2            1
-#> 3           2 2026-02-04 20:52:13              2               3            2
-#> 4           3 2026-02-04 20:52:13              2               3            3
-#> 5           4 2026-02-04 20:52:14              2               3            4
+#> 1           0 2026-02-04 21:19:59              0               1            0
+#> 2           1 2026-02-04 21:20:00              1               2            1
+#> 3           2 2026-02-04 21:20:00              2               3            2
+#> 4           3 2026-02-04 21:20:00              2               3            3
+#> 5           4 2026-02-04 21:20:00              2               3            4
 ```
+
+## Transaction support
+
+Group multiple operations together with ACID transactions:
+
+``` r
+# Check what data we currently have
+get_ducklake_table("nl_train_stations") |>
+  select(code, name_short) |>
+  collect()
+#> # A tibble: 2 × 2
+#>   code  name_short
+#>   <chr> <chr>     
+#> 1 HT    Den Bosch 
+#> 2 ASB   Bijlmer A
+
+# Start a transaction
+begin_transaction()
+#> Transaction started
+
+# Make multiple changes atomically within the transaction
+duckplyr::db_exec("UPDATE nl_train_stations SET name_short = 'COMMITTED_CHANGE' WHERE code = 'HT'")
+duckplyr::db_exec("UPDATE nl_train_stations SET name_short = 'ALSO_COMMITTED' WHERE code = 'ASB'")
+
+# Commit both changes together
+commit_transaction()
+#> Transaction committed
+
+# Add author and commit message metadata to the snapshot
+set_snapshot_metadata(
+  ducklake_name = "my_ducklake",
+  author = "Data Team",
+  commit_message = "Updated station names for clarity"
+)
+#> Snapshot metadata updated
+
+# Verify the changes were applied
+get_ducklake_table("nl_train_stations") |>
+  select(code, name_short) |>
+  collect()
+#> # A tibble: 2 × 2
+#>   code  name_short      
+#>   <chr> <chr>           
+#> 1 HT    COMMITTED_CHANGE
+#> 2 ASB   ALSO_COMMITTED
+
+# View the recent commit history with metadata
+get_metadata_table("ducklake_snapshot_changes", ducklake_name = "my_ducklake") |>
+  select(snapshot_id, changes_made, author, commit_message) |>
+  collect() |>
+  tail(3)
+#> # A tibble: 3 × 4
+#>   snapshot_id changes_made                               author   commit_message
+#>         <dbl> <chr>                                      <chr>    <chr>         
+#> 1           3 inserted_into_table:1,deleted_from_table:1 <NA>     <NA>          
+#> 2           4 deleted_from_table:1                       <NA>     <NA>          
+#> 3           5 inserted_into_table:1,deleted_from_table:1 Data Te… Updated stati…
+```
+
+``` r
+# Example of rolling back a transaction
+begin_transaction()
+#> Transaction started
+
+# Make a change we'll roll back
+duckplyr::db_exec("UPDATE nl_train_stations SET name_short = 'ROLLBACK_TEST' WHERE code = 'HT'")
+
+# Decide to rollback instead of commit
+rollback_transaction()
+#> Transaction rolled back
+
+# Verify the change was NOT applied (should still be "COMMITTED_CHANGE")
+get_ducklake_table("nl_train_stations") |>
+  filter(code == "HT") |>
+  select(code, name_short) |>
+  collect()
+#> # A tibble: 1 × 2
+#>   code  name_short      
+#>   <chr> <chr>           
+#> 1 HT    COMMITTED_CHANGE
+```
+
+## Time-travel queries
+
+DuckLake supports querying historical data at specific points in time
+using snapshot functionality. This requires tables created with formats
+that support versioning (e.g., Delta Lake, Iceberg).
+
+The package provides several time-travel functions:
+
+``` r
+# Query data as it existed at a specific timestamp
+get_ducklake_table_asof("my_delta_table", "2024-01-15 10:30:00") |>
+  filter(status == "active") |>
+  collect()
+
+# Query data as it existed yesterday
+yesterday <- Sys.time() - (24 * 60 * 60)
+get_ducklake_table_asof("my_delta_table", yesterday) |>
+  summarise(n = n())
+
+# Query a specific version/snapshot number
+get_ducklake_table_version("my_delta_table", version = 5) |>
+  collect()
+
+# List all available snapshots for a table
+list_table_snapshots("my_delta_table")
+
+# Restore table to a previous version
+restore_table_version("my_delta_table", version = 3)
+# Or restore to a specific timestamp
+restore_table_version("my_delta_table", timestamp = "2024-01-15 10:00:00")
+```
+
+**Note:** The tables created in this README (`nl_train_stations`,
+`mtcars_table`) use DuckLake’s default format which doesn’t support
+time-travel queries. To use these features, create tables with Delta
+Lake or Iceberg format.
 
 ## Cleanup
 

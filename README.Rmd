@@ -180,6 +180,92 @@ get_metadata_table("ducklake_snapshot_changes", ducklake_name = "my_ducklake")
 get_metadata_table("ducklake_snapshot", ducklake_name = "my_ducklake")
 ```
 
+## Transaction support
+
+Group multiple operations together with ACID transactions:
+
+```{r transactions}
+# Check what data we currently have
+get_ducklake_table("nl_train_stations") |>
+  select(code, name_short) |>
+  collect()
+
+# Start a transaction
+begin_transaction()
+
+# Make multiple changes atomically within the transaction
+duckplyr::db_exec("UPDATE nl_train_stations SET name_short = 'COMMITTED_CHANGE' WHERE code = 'HT'")
+duckplyr::db_exec("UPDATE nl_train_stations SET name_short = 'ALSO_COMMITTED' WHERE code = 'ASB'")
+
+# Commit both changes together
+commit_transaction()
+
+# Add author and commit message metadata to the snapshot
+set_snapshot_metadata(
+  ducklake_name = "my_ducklake",
+  author = "Data Team",
+  commit_message = "Updated station names for clarity"
+)
+
+# Verify the changes were applied
+get_ducklake_table("nl_train_stations") |>
+  select(code, name_short) |>
+  collect()
+
+# View the recent commit history with metadata
+get_metadata_table("ducklake_snapshot_changes", ducklake_name = "my_ducklake") |>
+  select(snapshot_id, changes_made, author, commit_message) |>
+  collect() |>
+  tail(3)
+```
+
+```{r rollback-example}
+# Example of rolling back a transaction
+begin_transaction()
+
+# Make a change we'll roll back
+duckplyr::db_exec("UPDATE nl_train_stations SET name_short = 'ROLLBACK_TEST' WHERE code = 'HT'")
+
+# Decide to rollback instead of commit
+rollback_transaction()
+
+# Verify the change was NOT applied (should still be "COMMITTED_CHANGE")
+get_ducklake_table("nl_train_stations") |>
+  filter(code == "HT") |>
+  select(code, name_short) |>
+  collect()
+```
+
+## Time-travel queries
+
+DuckLake supports querying historical data at specific points in time using its built-in snapshot functionality.
+
+The package provides several time-travel functions:
+
+```{r time-travel, eval=FALSE}
+# Query data as it existed at a specific timestamp
+get_ducklake_table_asof("my_delta_table", "2024-01-15 10:30:00") |>
+  filter(status == "active") |>
+  collect()
+
+# Query data as it existed yesterday
+yesterday <- Sys.time() - (24 * 60 * 60)
+get_ducklake_table_asof("my_delta_table", yesterday) |>
+  summarise(n = n())
+
+# Query a specific version/snapshot number
+get_ducklake_table_version("my_delta_table", version = 5) |>
+  collect()
+
+# List all available snapshots for a table
+list_table_snapshots("my_delta_table")
+
+# Restore table to a previous version
+restore_table_version("my_delta_table", version = 3)
+# Or restore to a specific timestamp
+restore_table_version("my_delta_table", timestamp = "2024-01-15 10:00:00")
+```
+
 ## Cleanup
 
 ```{r cleanup}
