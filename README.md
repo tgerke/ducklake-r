@@ -5,6 +5,7 @@
 
 <!-- badges: start -->
 
+[![pkgdown](https://github.com/tgerke/ducklake-r/workflows/pkgdown/badge.svg)](https://github.com/tgerke/ducklake-r/actions)
 <!-- badges: end -->
 
 ducklake is an R package that complements the existing toolkits in the
@@ -42,7 +43,7 @@ get_ducklake_table("nl_train_stations") |>
   select(code, name_short, name_long) |>
   head(5)
 #> # Source:   SQL [?? x 3]
-#> # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpaQczjh/duckplyr/duckplyr13fdd2632c51f.duckdb]
+#> # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/Rtmpm6OHxc/duckplyr/duckplyr143e97f37364.duckdb]
 #>   code  name_short name_long            
 #>   <chr> <chr>      <chr>                
 #> 1 HT    Den Bosch  's-Hertogenbosch     
