@@ -22,13 +22,13 @@ navbar:
       menu:
       - text: Getting Started
         href: articles/ducklake.html
-      - text: -------
+      - text: "---------"
       - text: Core Operations
       - text: Modifying Tables
         href: articles/modifying-tables.html
       - text: Upsert Operations
         href: articles/upsert-operations.html
-      - text: -------
+      - text: "---------"
       - text: Advanced Features
       - text: Working with Transactions
         href: articles/transactions.html
