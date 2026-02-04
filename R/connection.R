@@ -41,15 +41,6 @@ set_ducklake_connection <- function(conn) {
 #' detach_ducklake("my_ducklake")
 #' }
 detach_ducklake <- function(ducklake_name = NULL) {
-  if (!is.null(ducklake_name)) {
-    # Detach the specific database
-    tryCatch({
-      duckplyr::db_exec(sprintf("DETACH %s;", ducklake_name))
-    }, error = function(e) {
-      warning("Could not detach ducklake: ", e$message)
-    })
-  }
-  
   # Clear the stored connection
   conn <- .ducklake_env$connection
   if (!is.null(conn)) {

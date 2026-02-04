@@ -44,12 +44,12 @@ list.files()
 #> [3] "my_ducklake.ducklake.files" "my_ducklake.ducklake.wal"
 # main/ is where the parquet files go
 list.files("my_ducklake.ducklake.files/main/nl_train_stations")
-#> [1] "ducklake-019c2a86-c1a5-763e-97e4-0d914ac3ce77.parquet"
+#> [1] "ducklake-019c2a8c-a7af-72fc-9814-5dcdf50d77c3.parquet"
 
 # create a table from an R data.frame
 create_table("mtcars_table", mtcars)
 list.files("my_ducklake.ducklake.files/main/mtcars_table")
-#> [1] "ducklake-019c2a86-c1c9-74ce-aa3d-3b93a839d4f8.parquet"
+#> [1] "ducklake-019c2a8c-a7ce-7a03-95b5-4de1f0edc4cd.parquet"
 ```
 
 ## Two approaches for table modifications
@@ -113,7 +113,7 @@ rows_update(
   unmatched = "ignore"
 )
 #> # Source:   SQL [?? x 11]
-#> # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.1//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpIOVsVF/duckplyr/duckplyr11ce8869b7c0.duckdb]
+#> # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.1//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpHnMBLE/duckplyr/duckplyr11fe14478bf48.duckdb]
 #>       id code       uic name_short name_medium     name_long slug  country type 
 #>    <dbl> <chr>    <dbl> <chr>      <chr>           <chr>     <chr> <chr>   <chr>
 #>  1   269 HTO    8400320 Dn Bosch O 's-Hertogenb. … 's-Herto… s-he… NL      stop…
@@ -168,7 +168,7 @@ get_ducklake_table("nl_train_stations") |>
 #> FROM nl_train_stations
 #> WHERE (uic = 8400319.0 OR code = 'ASB')
 #> # Source:   SQL [?? x 11]
-#> # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.1//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpIOVsVF/duckplyr/duckplyr11ce8869b7c0.duckdb]
+#> # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.1//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpHnMBLE/duckplyr/duckplyr11fe14478bf48.duckdb]
 #>      id code      uic name_short name_medium      name_long  slug  country type 
 #>   <dbl> <chr>   <dbl> <chr>      <chr>            <chr>      <chr> <chr>   <chr>
 #> 1   266 HT    8400319 Den Bosch  's-Hertogenbosch 's-Hertog… s-he… NL      knoo…
@@ -184,7 +184,7 @@ get_ducklake_table("nl_train_stations") |>
 # show our current table
 get_ducklake_table("nl_train_stations")
 #> # Source:   table<nl_train_stations> [?? x 11]
-#> # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.1//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpIOVsVF/duckplyr/duckplyr11ce8869b7c0.duckdb]
+#> # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.1//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpHnMBLE/duckplyr/duckplyr11fe14478bf48.duckdb]
 #>      id code      uic name_short name_medium      name_long  slug  country type 
 #>   <dbl> <chr>   <dbl> <chr>      <chr>            <chr>      <chr> <chr>   <chr>
 #> 1   266 HT    8400319 Den Bosch  's-Hertogenbosch 's-Hertog… s-he… NL      knoo…
@@ -213,7 +213,7 @@ rows_upsert(
   copy = TRUE
 )
 #> # Source:   SQL [?? x 11]
-#> # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.1//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpIOVsVF/duckplyr/duckplyr11ce8869b7c0.duckdb]
+#> # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.1//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpHnMBLE/duckplyr/duckplyr11fe14478bf48.duckdb]
 #>      id code      uic name_short name_medium      name_long  slug  country type 
 #>   <dbl> <chr>   <dbl> <chr>      <chr>            <chr>      <chr> <chr>   <chr>
 #> 1    41 ASB   8400074 Bijlmer A  Bijlmer ArenA    Johan Cru… amst… NL      knoo…
@@ -224,7 +224,7 @@ rows_upsert(
 get_ducklake_table("nl_train_stations") |>
   select(uic, name_short, name_long, code)
 #> # Source:   SQL [?? x 4]
-#> # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.1//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpIOVsVF/duckplyr/duckplyr11ce8869b7c0.duckdb]
+#> # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.1//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpHnMBLE/duckplyr/duckplyr11fe14478bf48.duckdb]
 #>       uic name_short name_long           code 
 #>     <dbl> <chr>      <chr>               <chr>
 #> 1 8400319 Den Bosch  's-Hertogenbosch    HT   
@@ -239,7 +239,7 @@ get_ducklake_table("duckdb_tables") |>
   select(database_name, schema_name, table_name) |> 
   print(n = Inf)
 #> # Source:   SQL [?? x 3]
-#> # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.1//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpIOVsVF/duckplyr/duckplyr11ce8869b7c0.duckdb]
+#> # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.1//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpHnMBLE/duckplyr/duckplyr11fe14478bf48.duckdb]
 #>    database_name                   schema_name table_name                       
 #>    <chr>                           <chr>       <chr>                            
 #>  1 __ducklake_metadata_my_ducklake main        ducklake_column                  
@@ -266,13 +266,13 @@ get_ducklake_table("duckdb_tables") |>
 #> 22 __ducklake_metadata_my_ducklake main        ducklake_view                    
 #> 23 my_ducklake                     main        mtcars_table                     
 #> 24 my_ducklake                     main        nl_train_stations                
-#> 25 temp                            main        dbplyr_7HHsuNTqCy                
-#> 26 temp                            main        dbplyr_9DaBiWc8Ol
+#> 25 temp                            main        dbplyr_hgd3LTeWY5                
+#> 26 temp                            main        dbplyr_m1KgFQGn4e
 
 # View snapshot history
 get_metadata_table("ducklake_snapshot_changes", ducklake_name = "my_ducklake")
 #> # Source:   SQL [?? x 5]
-#> # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.1//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpIOVsVF/duckplyr/duckplyr11ce8869b7c0.duckdb]
+#> # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.1//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpHnMBLE/duckplyr/duckplyr11fe14478bf48.duckdb]
 #>   snapshot_id changes_made               author commit_message commit_extra_info
 #>         <dbl> <chr>                      <chr>  <chr>          <chr>            
 #> 1           0 "created_schema:\"main\""  <NA>   <NA>           <NA>             
@@ -282,14 +282,14 @@ get_metadata_table("ducklake_snapshot_changes", ducklake_name = "my_ducklake")
 #> 5           4 "deleted_from_table:1"     <NA>   <NA>           <NA>
 get_metadata_table("ducklake_snapshot", ducklake_name = "my_ducklake")
 #> # Source:   SQL [?? x 5]
-#> # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.1//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpIOVsVF/duckplyr/duckplyr11ce8869b7c0.duckdb]
+#> # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.1//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpHnMBLE/duckplyr/duckplyr11fe14478bf48.duckdb]
 #>   snapshot_id snapshot_time       schema_version next_catalog_id next_file_id
 #>         <dbl> <dttm>                       <dbl>           <dbl>        <dbl>
-#> 1           0 2026-02-04 21:19:59              0               1            0
-#> 2           1 2026-02-04 21:20:00              1               2            1
-#> 3           2 2026-02-04 21:20:00              2               3            2
-#> 4           3 2026-02-04 21:20:00              2               3            3
-#> 5           4 2026-02-04 21:20:00              2               3            4
+#> 1           0 2026-02-04 21:26:26              0               1            0
+#> 2           1 2026-02-04 21:26:26              1               2            1
+#> 3           2 2026-02-04 21:26:27              2               3            2
+#> 4           3 2026-02-04 21:26:27              2               3            3
+#> 5           4 2026-02-04 21:26:27              2               3            4
 ```
 
 ## Transaction support
@@ -376,8 +376,7 @@ get_ducklake_table("nl_train_stations") |>
 ## Time-travel queries
 
 DuckLake supports querying historical data at specific points in time
-using snapshot functionality. This requires tables created with formats
-that support versioning (e.g., Delta Lake, Iceberg).
+using its built-in snapshot functionality.
 
 The package provides several time-travel functions:
 
@@ -405,17 +404,9 @@ restore_table_version("my_delta_table", version = 3)
 restore_table_version("my_delta_table", timestamp = "2024-01-15 10:00:00")
 ```
 
-**Note:** The tables created in this README (`nl_train_stations`,
-`mtcars_table`) use DuckLake’s default format which doesn’t support
-time-travel queries. To use these features, create tables with Delta
-Lake or Iceberg format.
-
 ## Cleanup
 
 ``` r
 # When done, detach from the ducklake
 detach_ducklake("my_ducklake")
-#> Warning in value[[3L]](cond): Could not detach ducklake: Invalid Error: Binder Error: Cannot detach database "my_ducklake" because it is the default database. Select a different database using `USE` to allow detaching this database
-#> ℹ Context: rapi_execute
-#> ℹ Error type: INVALID
 ```
