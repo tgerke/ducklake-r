@@ -2,11 +2,13 @@
 #'
 #' @param tbl_name Character string, name of the table to retrieve
 #'
-#' @returns A DuckLake table of class `tbl_duckdb_connection`
+#' @returns A DuckLake table of class `tbl_duckdb_connection` with the table name stored as an attribute
 #' @export
 #'
 get_ducklake_table <- function(tbl_name) {
-  return(dplyr::tbl(duckplyr:::get_default_duckdb_connection(), tbl_name))
+  tbl <- dplyr::tbl(duckplyr:::get_default_duckdb_connection(), tbl_name)
+  attr(tbl, "ducklake_table_name") <- tbl_name
+  return(tbl)
 }
 
 #' Get a DuckLake metadata table

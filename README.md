@@ -23,6 +23,7 @@ pak::pak("tgerke/ducklake-r")
 ``` r
 library(ducklake)
 library(dplyr)
+#> Warning: package 'dplyr' was built under R version 4.5.2
 
 # install the ducklake extension to duckdb 
 # requires that you already have DuckDB v1.3.0 or higher
@@ -43,7 +44,7 @@ list.files()
 #> [3] "my_ducklake.ducklake.files" "my_ducklake.ducklake.wal"
 # main/ is where the parquet files go
 list.files("my_ducklake.ducklake.files/main/nl_train_stations")
-#> [1] "ducklake-0199a07e-9fd9-74c3-88d3-90b4c69093d4.parquet"
+#> [1] "ducklake-019c2a4e-4192-75fb-b5d7-67c99335ac94.parquet"
 ```
 
 ## Update tables
@@ -63,6 +64,7 @@ rows_update(
 )
 
 # update with mutate and ducklake::ducklake_exec
+# table name is automatically inferred from the pipeline
 get_ducklake_table("nl_train_stations") |>
   mutate(
     name_long = dplyr::case_when(
@@ -70,7 +72,7 @@ get_ducklake_table("nl_train_stations") |>
       .default = name_long
     )
   ) |>
-  ducklake_exec("nl_train_stations")
+  ducklake_exec()
 #> [1] 578
 
 # if we want, we can always view the sql that will be submitted in advance
@@ -81,7 +83,7 @@ get_ducklake_table("nl_train_stations") |>
       .default = name_long
     )
   ) |>
-  show_ducklake_query("nl_train_stations")
+  show_ducklake_query()
 #> 
 #> === DuckLake SQL Preview ===
 #> 
@@ -92,7 +94,7 @@ get_ducklake_table("nl_train_stations") |>
 # with .quiet=FALSE we can see sql on execution, including the original dplyr
 get_ducklake_table("nl_train_stations") |>
   filter(uic == 8400319 | code == "ASB") |>
-  ducklake_exec("nl_train_stations", .quiet = FALSE)
+  ducklake_exec(.quiet = FALSE)
 #> 
 #> === Original dplyr SQL ===
 #> <SQL>
@@ -100,7 +102,7 @@ get_ducklake_table("nl_train_stations") |>
 #> FROM nl_train_stations
 #> WHERE (uic = 8400319.0 OR code = 'ASB')
 #> # Source:   SQL [?? x 11]
-#> # Database: DuckDB 1.4.0 [tgerke@Darwin 23.6.0:R 4.5.1//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpC8aACa/duckplyr/duckplyr59fa89078cd.duckdb]
+#> # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.1//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpYhvUdl/duckplyr/duckplyrfe70671cc150.duckdb]
 #>      id code      uic name_short name_medium      name_long  slug  country type 
 #>   <dbl> <chr>   <dbl> <chr>      <chr>            <chr>      <chr> <chr>   <chr>
 #> 1   266 HT    8400319 NEW        's-Hertogenbosch 's-Hertog… s-he… NL      knoo…
@@ -116,7 +118,7 @@ get_ducklake_table("nl_train_stations") |>
 # show our current table
 get_ducklake_table("nl_train_stations")
 #> # Source:   table<nl_train_stations> [?? x 11]
-#> # Database: DuckDB 1.4.0 [tgerke@Darwin 23.6.0:R 4.5.1//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpC8aACa/duckplyr/duckplyr59fa89078cd.duckdb]
+#> # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.1//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpYhvUdl/duckplyr/duckplyrfe70671cc150.duckdb]
 #>      id code      uic name_short name_medium      name_long  slug  country type 
 #>   <dbl> <chr>   <dbl> <chr>      <chr>            <chr>      <chr> <chr>   <chr>
 #> 1   266 HT    8400319 NEW        's-Hertogenbosch 's-Hertog… s-he… NL      knoo…
@@ -132,7 +134,7 @@ get_ducklake_table("duckdb_tables") |>
   select(database_name, schema_name, table_name) |> 
   print(n = Inf)
 #> # Source:   SQL [?? x 3]
-#> # Database: DuckDB 1.4.0 [tgerke@Darwin 23.6.0:R 4.5.1//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpC8aACa/duckplyr/duckplyr59fa89078cd.duckdb]
+#> # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.1//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpYhvUdl/duckplyr/duckplyrfe70671cc150.duckdb]
 #>    database_name                   schema_name table_name                       
 #>    <chr>                           <chr>       <chr>                            
 #>  1 __ducklake_metadata_my_ducklake main        ducklake_column                  
@@ -158,12 +160,12 @@ get_ducklake_table("duckdb_tables") |>
 #> 21 __ducklake_metadata_my_ducklake main        ducklake_tag                     
 #> 22 __ducklake_metadata_my_ducklake main        ducklake_view                    
 #> 23 my_ducklake                     main        nl_train_stations                
-#> 24 temp                            main        dbplyr_YZgmbWquRt
+#> 24 temp                            main        dbplyr_6NrOmqtRRe
 
 # View snapshot history
 get_metadata_table("ducklake_snapshot_changes", ducklake_name = "my_ducklake")
 #> # Source:   SQL [?? x 5]
-#> # Database: DuckDB 1.4.0 [tgerke@Darwin 23.6.0:R 4.5.1//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpC8aACa/duckplyr/duckplyr59fa89078cd.duckdb]
+#> # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.1//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpYhvUdl/duckplyr/duckplyrfe70671cc150.duckdb]
 #>   snapshot_id changes_made               author commit_message commit_extra_info
 #>         <dbl> <chr>                      <chr>  <chr>          <chr>            
 #> 1           0 "created_schema:\"main\""  <NA>   <NA>           <NA>             
@@ -173,12 +175,12 @@ get_metadata_table("ducklake_snapshot_changes", ducklake_name = "my_ducklake")
 #> 5           4 "deleted_from_table:1"     <NA>   <NA>           <NA>
 get_metadata_table("ducklake_snapshot", ducklake_name = "my_ducklake")
 #> # Source:   SQL [?? x 5]
-#> # Database: DuckDB 1.4.0 [tgerke@Darwin 23.6.0:R 4.5.1//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpC8aACa/duckplyr/duckplyr59fa89078cd.duckdb]
+#> # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.1//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpYhvUdl/duckplyr/duckplyrfe70671cc150.duckdb]
 #>   snapshot_id snapshot_time       schema_version next_catalog_id next_file_id
 #>         <dbl> <dttm>                       <dbl>           <dbl>        <dbl>
-#> 1           0 2025-10-01 15:57:56              0               1            0
-#> 2           1 2025-10-01 15:57:56              1               2            1
-#> 3           2 2025-10-01 15:57:57              1               2            3
-#> 4           3 2025-10-01 15:57:57              1               2            4
-#> 5           4 2025-10-01 15:57:57              1               2            5
+#> 1           0 2026-02-04 20:18:17              0               1            0
+#> 2           1 2026-02-04 20:18:17              1               2            1
+#> 3           2 2026-02-04 20:18:17              1               2            3
+#> 4           3 2026-02-04 20:18:17              1               2            4
+#> 5           4 2026-02-04 20:18:17              1               2            5
 ```

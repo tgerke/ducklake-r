@@ -10,7 +10,7 @@ get_ducklake_table(tbl_name)
 \item{tbl_name}{Character string, name of the table to retrieve}
 }
 \value{
-A DuckLake table of class \code{tbl_duckdb_connection}
+A DuckLake table of class \code{tbl_duckdb_connection} with the table name stored as an attribute
 }
 \description{
 Get a DuckLake table

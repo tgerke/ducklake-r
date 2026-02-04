@@ -66,6 +66,7 @@ rows_update(
 )
 
 # update with mutate and ducklake::ducklake_exec
+# table name is automatically inferred from the pipeline
 get_ducklake_table("nl_train_stations") |>
   mutate(
     name_long = dplyr::case_when(
@@ -73,7 +74,7 @@ get_ducklake_table("nl_train_stations") |>
       .default = name_long
     )
   ) |>
-  ducklake_exec("nl_train_stations")
+  ducklake_exec()
 
 # if we want, we can always view the sql that will be submitted in advance
 get_ducklake_table("nl_train_stations") |>
@@ -83,13 +84,13 @@ get_ducklake_table("nl_train_stations") |>
       .default = name_long
     )
   ) |>
-  show_ducklake_query("nl_train_stations")
+  show_ducklake_query()
 
 # filter using ducklake::ducklake_exec
 # with .quiet=FALSE we can see sql on execution, including the original dplyr
 get_ducklake_table("nl_train_stations") |>
   filter(uic == 8400319 | code == "ASB") |>
-  ducklake_exec("nl_train_stations", .quiet = FALSE)
+  ducklake_exec(.quiet = FALSE)
 
 # show our current table
 get_ducklake_table("nl_train_stations")

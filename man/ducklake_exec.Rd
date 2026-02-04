@@ -4,12 +4,12 @@
 \alias{ducklake_exec}
 \title{Execute DuckLake operations from dplyr queries}
 \usage{
-ducklake_exec(.data, table_name, .quiet = TRUE)
+ducklake_exec(.data, table_name = NULL, .quiet = TRUE)
 }
 \arguments{
 \item{.data}{A dplyr query object (tbl_lazy) with accumulated operations}
 
-\item{table_name}{The target table name for the operation}
+\item{table_name}{The target table name for the operation. If not provided, will be extracted from the table attribute (set by get_ducklake_table())}
 
 \item{.quiet}{Logical, whether to suppress debug output (default TRUE)}
 }
@@ -29,18 +29,18 @@ This function automatically detects the type of operation based on dplyr verbs:
 }
 \examples{
 \dontrun{
-# Delete rows that don't match filter
-tbl(con, "my_table") |>
+# Delete rows that don't match filter (table name inferred)
+get_ducklake_table("my_table") |>
   filter(status == "inactive") |>
-  ducklake_exec("my_table")
+  ducklake_exec()
 
-# Update specific rows
-tbl(con, "my_table") |>
+# Update specific rows (table name inferred)
+get_ducklake_table("my_table") |>
   filter(id == 123) |>
   mutate(status = "updated") |>
-  ducklake_exec("my_table")
+  ducklake_exec()
 
-# Insert new computed data
+# Or provide table name explicitly
 tbl(con, "my_table") |>
   select(id, name) |>
   mutate(computed_field = name * 2) |>
