@@ -17,6 +17,7 @@ knitr::opts_knit$set(root.dir = tempdir())
 # ducklake <a href="https://tgerke.github.io/ducklake-r/"><img src="man/figures/logo.png" align="right" height="123" alt="ducklake website" /></a>
 
 <!-- badges: start -->
+[![pkgdown](https://github.com/tgerke/ducklake-r/workflows/pkgdown/badge.svg)](https://github.com/tgerke/ducklake-r/actions)
 <!-- badges: end -->
 
 ducklake is an R package that complements the existing toolkits in the [duckdb](https://r.duckdb.org/index.html) and [duckplyr](https://duckplyr.tidyverse.org/index.html) packages, supporting the new [DuckLake](https://ducklake.select/docs/stable/duckdb/introduction.html) ecosystem.
