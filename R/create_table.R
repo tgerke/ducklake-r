@@ -25,13 +25,13 @@ create_table <- function(table_name, data_source) {
   if (is.data.frame(data_source)) {
     # Register the data.frame as a temporary view in DuckDB
     temp_view_name <- paste0("__temp_view_", gsub("[^a-zA-Z0-9]", "_", table_name))
-    duckdb::duckdb_register(duckplyr:::get_default_duckdb_connection(), temp_view_name, data_source)
+    duckdb::duckdb_register(get_ducklake_connection(), temp_view_name, data_source)
     
     # Create the table from the temporary view
     duckplyr::db_exec(sprintf("CREATE TABLE %s AS SELECT * FROM %s;", table_name, temp_view_name))
     
     # Unregister the temporary view
-    duckdb::duckdb_unregister(duckplyr:::get_default_duckdb_connection(), temp_view_name)
+    duckdb::duckdb_unregister(get_ducklake_connection(), temp_view_name)
     
     return(invisible(NULL))
   }

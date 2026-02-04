@@ -2,6 +2,7 @@
 
 export(attach_ducklake)
 export(create_table)
+export(detach_ducklake)
 export(ducklake_exec)
 export(get_ducklake_table)
 export(get_metadata_table)

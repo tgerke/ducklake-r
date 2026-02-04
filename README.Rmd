@@ -112,3 +112,10 @@ get_ducklake_table("duckdb_tables") |>
 get_metadata_table("ducklake_snapshot_changes", ducklake_name = "my_ducklake")
 get_metadata_table("ducklake_snapshot", ducklake_name = "my_ducklake")
 ```
+
+## Cleanup
+
+```{r cleanup}
+# When done, detach from the ducklake
+detach_ducklake("my_ducklake")
+```

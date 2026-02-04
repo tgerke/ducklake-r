@@ -14,4 +14,8 @@ attach_ducklake(ducklake_name, data_path = NULL)
 \description{
 This function is a wrapper for the ducklake \href{https://ducklake.select/docs/stable/duckdb/usage/connecting}{ATTACH} command.
 It will create a new DuckDB-backed DuckLake if the specified name does not exist, or connect to the existing DuckLake if it does exist.
+The connection is stored in the package environment and can be closed with detach_ducklake().
+}
+\seealso{
+\code{\link[=detach_ducklake]{detach_ducklake()}} to close the connection
 }
