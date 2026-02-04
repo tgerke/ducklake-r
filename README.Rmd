@@ -53,10 +53,53 @@ create_table("mtcars_table", mtcars)
 list.files("my_ducklake.ducklake.files/main/mtcars_table")
 ```
 
-## Update tables
+## Two approaches for table modifications
+
+ducklake provides two complementary approaches for modifying tables, both following tidyverse conventions:
+
+### 1. data.frame approach (`rows_*` functions)
+
+Best when you have **data in R** (data.frames/tibbles) that you want to apply to a table:
+
+```r
+# Prepare your data in R
+updates <- data.frame(id = c(1, 2), value = c("new1", "new2"))
+
+# Apply to table
+rows_update(get_ducklake_table("my_table"), updates, by = "id")  # Update existing rows
+rows_insert(get_ducklake_table("my_table"), new_data, by = "id")  # Insert new rows
+rows_upsert(get_ducklake_table("my_table"), updates, by = "id")  # Update existing or insert new
+rows_delete(get_ducklake_table("my_table"), to_delete, by = "id")  # Delete rows by key
+```
+
+**Pros:** Explicit, familiar dplyr syntax, `in_place = TRUE` by default for DuckLake  
+**Use when:** You have data.frames/tibbles ready to apply
+
+### 2. Pipeline approach (`*_table` functions)
+
+Best when you're **transforming data with dplyr** and want to apply results to a table:
+
+```r
+# Build transformation pipeline, then execute
+get_ducklake_table("my_table") |>
+  filter(status == "active") |>
+  mutate(processed = TRUE) |>
+  ducklake_exec()  # for updates
+
+source_table |>
+  select(id, value) |>
+  mutate(value = toupper(value)) |>
+  upsert_table("target_table", by = "id")  # for merge/upsert
+```
+
+**Pros:** Chainable, works in pipelines, table name inference  
+**Use when:** Transforming data with `filter()`, `mutate()`, `summarize()`, etc.
+
+
 
 ```{r update}
-# update the first row with dplyr::rows_update
+# update the first row with ducklake::rows_update()
+# copy = TRUE and in_place = TRUE are the defaults for DuckLake operations
 rows_update(
   get_ducklake_table("nl_train_stations"),
   data.frame(
@@ -65,7 +108,6 @@ rows_update(
   ),
   by = "uic",
   copy = TRUE,
-  in_place = TRUE,
   unmatched = "ignore"
 )
 
@@ -98,6 +140,31 @@ get_ducklake_table("nl_train_stations") |>
 
 # show our current table
 get_ducklake_table("nl_train_stations")
+```
+
+## Upsert (merge) data
+
+```{r upsert}
+# Upsert: update existing rows or insert new ones based on a key
+# First, create some data to upsert
+upsert_data <- data.frame(
+  uic = c(8400319, 9999999),  # 8400319 exists, 9999999 is new
+  name_short = c("UPDATED", "NEW"),
+  name_long = c("Updated Station", "New Station"),
+  code = c("UPD", "NEW"),
+  stringsAsFactors = FALSE
+)
+
+# Use rows_upsert for data.frames (copy = TRUE and in_place = TRUE by default)
+rows_upsert(
+  get_ducklake_table("nl_train_stations"),
+  upsert_data,
+  by = "uic",
+  copy = TRUE
+)
+
+get_ducklake_table("nl_train_stations") |>
+  select(uic, name_short, name_long, code)
 ```
 
 ## View metadata and snapshots
