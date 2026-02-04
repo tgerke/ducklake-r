@@ -47,6 +47,10 @@ create_table("nl_train_stations", "https://blobs.duckdb.org/nl_stations.csv")
 list.files()
 # main/ is where the parquet files go
 list.files("my_ducklake.ducklake.files/main/nl_train_stations")
+
+# create a table from an R data.frame
+create_table("mtcars_table", mtcars)
+list.files("my_ducklake.ducklake.files/main/mtcars_table")
 ```
 
 ## Update tables

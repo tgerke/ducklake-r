@@ -9,8 +9,25 @@ create_table(table_name, data_source)
 \arguments{
 \item{table_name}{Name of the new table}
 
-\item{data_source}{Raw data source}
+\item{data_source}{Raw data source. Can be:
+\itemize{
+\item A URL (http:// or https://)
+\item A file path (e.g., "data.csv", "data.parquet")
+\item An R data.frame or tibble
+}}
 }
 \description{
 Create a DuckLake table
+}
+\examples{
+\dontrun{
+# From URL
+create_table("my_table", "https://example.com/data.csv")
+
+# From local file
+create_table("my_table", "data.csv")
+
+# From data.frame
+create_table("my_table", mtcars)
+}
 }
