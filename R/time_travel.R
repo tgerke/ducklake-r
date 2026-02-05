@@ -120,30 +120,45 @@ get_ducklake_table_version <- function(table_name, version, conn = NULL) {
 #' # List all snapshots for a table
 #' list_table_snapshots("my_table")
 #' }
-list_table_snapshots <- function(table_name, conn = NULL) {
+list_table_snapshots <- function(table_name = NULL, ducklake_name = NULL, conn = NULL) {
   if (is.null(conn)) {
     conn <- get_ducklake_connection()
   }
   
-  # Try to query snapshot information
-  # For Delta Lake tables, this might be:
+  # If ducklake_name not provided, try to infer from current database
+  if (is.null(ducklake_name)) {
+    tryCatch({
+      current_db <- DBI::dbGetQuery(conn, "SELECT current_database() as db")$db
+      if (!is.null(current_db) && current_db != "") {
+        ducklake_name <- current_db
+      }
+    }, error = function(e) {
+      stop("Could not determine ducklake_name. Please provide it explicitly.")
+    })
+  }
+  
+  # Query snapshots using the DuckLake snapshots() function
   tryCatch({
-    query <- sprintf("SELECT * FROM delta_log('%s')", table_name)
+    query <- sprintf("SELECT * FROM %s.snapshots()", ducklake_name)
     result <- DBI::dbGetQuery(conn, query)
+    
+    # If table_name is provided, filter the results
+    if (!is.null(table_name) && nrow(result) > 0) {
+      # Filter by checking if table_name appears in changes column
+      # The changes column contains comma-separated values like "tables_created, tables_inserted_into, main.dm_raw, 1"
+      # We need to match the full table name including schema prefix, with word boundaries
+      full_table_name <- paste0("main.", table_name)
+      # Use regex with word boundaries to avoid matching "main.dm" when looking for "main.dm_raw"
+      pattern <- paste0("\\b", gsub("\\.", "\\\\.", full_table_name), "\\b")
+      result <- result[grepl(pattern, result$changes), ]
+    }
+    
     return(result)
   }, error = function(e) {
-    # If that doesn't work, try alternative methods
-    tryCatch({
-      # For Iceberg tables
-      query <- sprintf("SELECT * FROM %s.snapshots", table_name)
-      result <- DBI::dbGetQuery(conn, query)
-      return(result)
-    }, error = function(e2) {
-      warning("Could not retrieve snapshot information. ",
-              "The table may not support snapshots or may require a different query format. ",
-              "Error: ", e$message)
-      return(data.frame())
-    })
+    warning("Could not retrieve snapshot information. ",
+            "Make sure the ducklake is attached and has snapshots. ",
+            "Error: ", e$message)
+    return(data.frame())
   })
 }
 

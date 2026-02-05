@@ -22,7 +22,7 @@ library(dplyr)
 # Setup for examples
 install_ducklake()
 attach_ducklake("my_ducklake")
-create_table("nl_train_stations", "https://blobs.duckdb.org/nl_stations.csv")
+create_table("https://blobs.duckdb.org/nl_stations.csv", "nl_train_stations")
 ```
 
 ## What is upsert?
@@ -68,7 +68,7 @@ source_data <- data.frame(
   value = c("apple", "banana", "cherry"),
   count = c(10, 20, 30)
 )
-create_table("source_table", source_data)
+create_table(source_data, "source_table")
 
 # Create a target table with some overlapping data
 target_data <- data.frame(
@@ -76,7 +76,7 @@ target_data <- data.frame(
   value = c("old_apple", "old_banana"),
   count = c(5, 15)
 )
-create_table("target_table", target_data)
+create_table(target_data, "target_table")
 
 # Transform and upsert in a pipeline
 get_ducklake_table("source_table") |>

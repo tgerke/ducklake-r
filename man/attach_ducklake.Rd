@@ -4,12 +4,12 @@
 \alias{attach_ducklake}
 \title{Create or attach a ducklake}
 \usage{
-attach_ducklake(ducklake_name, data_path = NULL)
+attach_ducklake(ducklake_name, lake_path = NULL)
 }
 \arguments{
 \item{ducklake_name}{Name for the ducklake file, as in \verb{ducklake:\{ducklake_name\}.ducklake}}
 
-\item{data_path}{Optional directory where Parquet files are stored. If not specified, uses the default folder \verb{\{ducklake_name\}.ducklake.files} in the same directory as the DuckLake itself.}
+\item{lake_path}{Optional directory path for the ducklake. If specified, both the ducklake database file and Parquet data files will be stored in this location. If not specified, the ducklake is created in the current working directory with data files in \verb{\{ducklake_name\}.ducklake.files}.}
 }
 \description{
 This function is a wrapper for the ducklake \href{https://ducklake.select/docs/stable/duckdb/usage/connecting}{ATTACH} command.

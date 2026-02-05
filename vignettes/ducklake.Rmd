@@ -45,14 +45,14 @@ attach_ducklake("my_ducklake")
 list.files()
 
 # create a table using the Netherlands train traffic dataset 
-create_table("nl_train_stations", "https://blobs.duckdb.org/nl_stations.csv")
+create_table("https://blobs.duckdb.org/nl_stations.csv", "nl_train_stations")
 # show that we now have a .files directory
 list.files()
 # main/ is where the parquet files go
 list.files("my_ducklake.ducklake.files/main/nl_train_stations")
 
 # create a table from an R data.frame
-create_table("mtcars_table", mtcars)
+create_table(mtcars, "mtcars_table")
 list.files("my_ducklake.ducklake.files/main/mtcars_table")
 ```
 

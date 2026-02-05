@@ -4,17 +4,18 @@
 \alias{create_table}
 \title{Create a DuckLake table}
 \usage{
-create_table(table_name, data_source)
+create_table(data_source, table_name)
 }
 \arguments{
-\item{table_name}{Name of the new table}
-
 \item{data_source}{Raw data source. Can be:
 \itemize{
 \item A URL (http:// or https://)
 \item A file path (e.g., "data.csv", "data.parquet")
 \item An R data.frame or tibble
+\item A lazy table (tbl_duckdb_connection or tbl_lazy)
 }}
+
+\item{table_name}{Name of the new table}
 }
 \description{
 Create a DuckLake table
@@ -22,12 +23,17 @@ Create a DuckLake table
 \examples{
 \dontrun{
 # From URL
-create_table("my_table", "https://example.com/data.csv")
+create_table("https://example.com/data.csv", "my_table")
 
 # From local file
-create_table("my_table", "data.csv")
+create_table("data.csv", "my_table")
 
 # From data.frame
-create_table("my_table", mtcars)
+create_table(mtcars, "my_table")
+
+# From lazy table (pipe-friendly)
+get_ducklake_table("source_table") \%>\% 
+  filter(x > 5) \%>\%
+  create_table("filtered_table")
 }
 }

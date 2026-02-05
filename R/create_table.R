@@ -1,10 +1,11 @@
 #' Create a DuckLake table
 #'
-#' @param table_name Name of the new table
 #' @param data_source Raw data source. Can be:
 #'   - A URL (http:// or https://)
 #'   - A file path (e.g., "data.csv", "data.parquet")
 #'   - An R data.frame or tibble
+#'   - A lazy table (tbl_duckdb_connection or tbl_lazy)
+#' @param table_name Name of the new table
 #'
 #' @returns NULL
 #' @export
@@ -12,15 +13,26 @@
 #' @examples
 #' \dontrun{
 #' # From URL
-#' create_table("my_table", "https://example.com/data.csv")
+#' create_table("https://example.com/data.csv", "my_table")
 #' 
 #' # From local file
-#' create_table("my_table", "data.csv")
+#' create_table("data.csv", "my_table")
 #' 
 #' # From data.frame
-#' create_table("my_table", mtcars)
+#' create_table(mtcars, "my_table")
+#' 
+#' # From lazy table (pipe-friendly)
+#' get_ducklake_table("source_table") %>% 
+#'   filter(x > 5) %>%
+#'   create_table("filtered_table")
 #' }
-create_table <- function(table_name, data_source) {
+create_table <- function(data_source, table_name) {
+  # Handle lazy tables (tbl_duckdb_connection, tbl_lazy)
+  if (inherits(data_source, "tbl_lazy")) {
+    # Materialize the lazy table to a data.frame
+    data_source <- dplyr::collect(data_source)
+  }
+  
   # Handle data.frame or tibble
   if (is.data.frame(data_source)) {
     # Register the data.frame as a temporary view in DuckDB

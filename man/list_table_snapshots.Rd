@@ -4,7 +4,7 @@
 \alias{list_table_snapshots}
 \title{List available snapshots for a table}
 \usage{
-list_table_snapshots(table_name, conn = NULL)
+list_table_snapshots(table_name = NULL, ducklake_name = NULL, conn = NULL)
 }
 \arguments{
 \item{table_name}{The name of the table to query}
