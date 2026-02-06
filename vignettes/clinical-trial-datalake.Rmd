@@ -1018,9 +1018,11 @@ snapshots  # Shows all iterations with snapshot metadata
 # - changes: What operations created this snapshot
 
 # Time-travel to specific snapshots using snapshot_id
-adsl_v1 <- get_ducklake_table_version("adsl", 15)
-adsl_v2 <- get_ducklake_table_version("adsl", 22)
-adsl_final <- get_ducklake_table_version("adsl", 25)
+# Use actual snapshot IDs from the list (first, second, and last)
+snapshot_ids <- snapshots$snapshot_id
+adsl_v1 <- get_ducklake_table_version("adsl", snapshot_ids[1])
+adsl_v2 <- get_ducklake_table_version("adsl", snapshot_ids[2])
+adsl_final <- get_ducklake_table_version("adsl", snapshot_ids[length(snapshot_ids)])
 
 # Or use snapshot times for time-travel
 adsl_asof <- get_ducklake_table_asof("adsl", snapshots$snapshot_time[2])
