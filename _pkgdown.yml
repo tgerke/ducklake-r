@@ -36,6 +36,8 @@ navbar:
         href: articles/transactions.html
       - text: Time Travel Queries
         href: articles/time-travel.html
+      - text: Storage and Backup Management
+        href: articles/storage-and-backups.html
 
 reference:
   - title: "Setup and Connection"

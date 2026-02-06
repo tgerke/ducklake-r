@@ -50,9 +50,23 @@ set_ducklake_connection <- function(conn) {
 #' detach_ducklake("my_ducklake")
 #' }
 detach_ducklake <- function(ducklake_name = NULL) {
-  # Clear the stored connection
   conn <- .ducklake_env$connection
   if (!is.null(conn)) {
+    # If a ducklake name is provided, try to detach it first
+    if (!is.null(ducklake_name)) {
+      tryCatch({
+        # First detach the user-facing database
+        DBI::dbExecute(conn, sprintf("DETACH %s;", ducklake_name))
+        
+        # Also detach the metadata catalog that DuckLake creates
+        metadata_name <- sprintf("__ducklake_metadata_%s", ducklake_name)
+        DBI::dbExecute(conn, sprintf("DETACH %s;", metadata_name))
+      }, error = function(e) {
+        # Ignore errors if database is not attached
+      })
+    }
+    
+    # Close the connection
     tryCatch({
       DBI::dbDisconnect(conn, shutdown = TRUE)
     }, error = function(e) {

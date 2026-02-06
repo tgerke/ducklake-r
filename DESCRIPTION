@@ -20,6 +20,7 @@ Suggests:
     admiral,
     dbplyr,
     DiagrammeR,
+    fs,
     jsonlite,
     knitr,
     lubridate,
