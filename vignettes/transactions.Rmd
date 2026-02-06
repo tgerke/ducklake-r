@@ -15,96 +15,278 @@ knitr::opts_chunk$set(
 knitr::opts_knit$set(root.dir = tempdir())
 ```
 
-```{r setup, message=FALSE, eval=FALSE}
+```{r setup, message=FALSE}
 library(ducklake)
 library(dplyr)
-library(duckplyr)
 
 # Setup for examples
 install_ducklake()
-attach_ducklake("my_ducklake")
-create_table("https://blobs.duckdb.org/nl_stations.csv", "nl_train_stations")
+attach_ducklake("my_ducklake", lake_path = tempdir())
 ```
 
-## Transaction support
+## Introduction
 
-Group multiple operations together with ACID transactions. This ensures that either all operations succeed or none do, maintaining data consistency.
+Transactions are essential for maintaining data integrity when making multiple related changes to your data lake. 
+DuckLake provides full ACID (Atomicity, Consistency, Isolation, Durability) transaction support, ensuring that either all operations succeed or none do.
 
-## Basic transaction workflow
+DuckLake offers two approaches for working with transactions:
 
-```{r check-data, eval=FALSE}
-# Check what data we currently have
-get_ducklake_table("nl_train_stations") |>
-  filter(code %in% c("HT", "ASB")) |>
-  select(code, name_short) |>
+1. **`with_transaction()` (Recommended)**: A modern, R-idiomatic approach that automatically handles errors and rollbacks
+2. **`begin_transaction()` / `commit_transaction()` / `rollback_transaction()`**: Manual transaction control for advanced use cases
+
+This vignette demonstrates both approaches and explains when to use each one.
+
+## Setup: Loading Initial Data
+
+We'll use the `mtcars` dataset throughout this vignette to demonstrate transaction workflows.
+
+```{r load-data}
+# Load initial data
+with_transaction(
+  create_table(mtcars, "cars"),
+  author = "Tutorial",
+  commit_message = "Initial load of mtcars dataset"
+)
+
+# View the data
+get_ducklake_table("cars") |>
+  select(mpg, cyl, hp, wt) |>
+  head()
+```
+
+## Approach 1: with_transaction() (Recommended)
+
+The `with_transaction()` function provides automatic error handling and cleanup, similar to the `withr::with_*()` pattern used throughout the R ecosystem. This is the **recommended approach** for most use cases.
+
+### Why use with_transaction()?
+
+- **Automatic rollback on error**: If any operation fails, all changes are automatically rolled back
+- **Cleaner code**: No need to manually call `begin_transaction()` and `commit_transaction()`
+- **Built-in metadata support**: Easily add author and commit messages
+- **Safer**: Prevents accidentally leaving transactions open
+- **R-idiomatic**: Follows familiar patterns from packages like `withr`
+
+### Single Operation with Metadata
+
+```{r with-transaction-single}
+# Add a new column with automatic metadata tracking
+with_transaction(
+  get_ducklake_table("cars") |>
+    mutate(kpl = mpg * 0.425144) |>
+    replace_table("cars"),
+  author = "Data Team",
+  commit_message = "Add kilometers per liter column"
+)
+
+# Verify the change
+get_ducklake_table("cars") |>
+  select(mpg, kpl) |>
+  head()
+```
+
+### Multiple Operations in a Single Transaction
+
+You can group multiple operations together by wrapping them in curly braces:
+
+```{r with-transaction-multiple}
+# Multiple related changes in one atomic transaction
+with_transaction({
+  # Add efficiency rating
+  get_ducklake_table("cars") |>
+    mutate(
+      efficiency = case_when(
+        mpg >= 25 ~ "high",
+        mpg >= 20 ~ "medium",
+        TRUE ~ "low"
+      )
+    ) |>
+    replace_table("cars")
+  
+  # Create a summary table
+  get_ducklake_table("cars") |>
+    group_by(cyl) |>
+    summarize(
+      avg_mpg = mean(mpg, na.rm = TRUE),
+      avg_hp = mean(hp, na.rm = TRUE),
+      count = n()
+    ) |>
+    create_table("cars_summary")
+}, author = "Data Team", commit_message = "Add efficiency ratings and summary table")
+
+# View results
+get_ducklake_table("cars") |>
+  select(mpg, cyl, efficiency) |>
+  head()
+
+get_ducklake_table("cars_summary") |>
   collect()
 ```
 
-```{r commit-example, eval=FALSE}
+### Automatic Rollback on Error
+
+One of the key benefits of `with_transaction()` is automatic error handling:
+
+```{r with-transaction-error}
+# This transaction will fail and automatically rollback
+tryCatch(
+  with_transaction({
+    # This will succeed
+    get_ducklake_table("cars") |>
+      mutate(test_column = "temporary") |>
+      replace_table("cars")
+    
+    # This will fail
+    stop("Simulated error - something went wrong!")
+  }, author = "Data Team", commit_message = "This will be rolled back"),
+  error = function(e) {
+    message("Transaction automatically rolled back: ", e$message)
+  }
+)
+
+# Verify that test_column was NOT added (transaction was rolled back)
+get_ducklake_table("cars") |>
+  colnames()
+
+# View all versioned changes
+list_table_snapshots("cars")
+```
+
+## Approach 2: Manual Transaction Control
+
+For advanced use cases where you need explicit control over transaction boundaries, DuckLake provides manual transaction functions.
+
+### When to use manual transactions?
+
+- **Interactive workflows**: When you want to inspect data between operations before committing
+- **Conditional commits**: When commit logic depends on runtime conditions
+- **Long-running transactions**: When you need fine-grained control over transaction lifecycle
+- **Legacy code**: When migrating from other transaction systems
+
+### Basic Manual Transaction Workflow
+
+```{r manual-basic}
 # Start a transaction
 begin_transaction()
 
-# Make multiple changes atomically within the transaction
-duckplyr::db_exec("UPDATE nl_train_stations SET name_short = 'COMMITTED_CHANGE' WHERE code = 'HT'")
-duckplyr::db_exec("UPDATE nl_train_stations SET name_short = 'ALSO_COMMITTED' WHERE code = 'ASB'")
+# Make changes
+get_ducklake_table("cars") |>
+  filter(cyl == 4) |>
+  mutate(weight_kg = wt * 453.592) |>
+  replace_table("cars")
 
-# Commit both changes together
-commit_transaction()
-
-# Add author and commit message metadata to the snapshot
-set_snapshot_metadata(
-  ducklake_name = "my_ducklake",
+# Commit the changes with metadata
+commit_transaction(
   author = "Data Team",
-  commit_message = "Updated station names for clarity"
+  commit_message = "Add weight in kg for 4-cylinder cars"
 )
 
-# Verify the changes were applied
-get_ducklake_table("nl_train_stations") |>
-  filter(code %in% c("HT", "ASB")) |>
-  select(code, name_short) |>
-  collect()
+# Verify changes
+get_ducklake_table("cars") |>
+  filter(cyl == 4) |>
+  select(wt, weight_kg) |>
+  head()
 ```
 
-## View commit history
+### Manual Rollback
 
-```{r view-history, eval=FALSE}
-# View the recent commit history with metadata
-get_metadata_table("ducklake_snapshot_changes", ducklake_name = "my_ducklake") |>
-  select(snapshot_id, changes_made, author, commit_message) |>
-  collect() |>
-  tail(3)
-```
+Sometimes you may want to inspect data before deciding whether to commit:
 
-## Rolling back transactions
-
-If you need to undo changes before committing:
-
-```{r rollback-example, eval=FALSE}
-# Start another transaction
+```{r manual-rollback}
+# Start a transaction
 begin_transaction()
 
-# Make a change we'll roll back
-duckplyr::db_exec("UPDATE nl_train_stations SET name_short = 'ROLLBACK_TEST' WHERE code = 'HT'")
+# Make a test change
+get_ducklake_table("cars") |>
+  mutate(test_flag = TRUE) |>
+  replace_table("cars")
 
-# Decide to rollback instead of commit
+# Check the result
+test_result <- get_ducklake_table("cars") |>
+  select(mpg, test_flag) |>
+  head() |>
+  collect()
+
+print(test_result)
+
+# Decide to rollback
 rollback_transaction()
 
-# Verify the change was NOT applied (should still be "COMMITTED_CHANGE")
-get_ducklake_table("nl_train_stations") |>
-  filter(code == "HT") |>
-  select(code, name_short) |>
-  collect()
+# Verify the change was NOT applied
+"test_flag" %in% colnames(get_ducklake_table("cars"))
+
+# View all versioned changes
+list_table_snapshots("cars")
 ```
 
-## Key concepts
+### Setting Metadata Separately
 
-- **`begin_transaction()`**: Start a new transaction
-- **`commit_transaction()`**: Apply all changes made within the transaction
-- **`rollback_transaction()`**: Discard all changes made within the transaction
-- **`set_snapshot_metadata()`**: Add metadata (author, commit message) to snapshots
+With manual transactions, you can also set metadata after committing:
 
-Transactions are essential for maintaining data integrity when making multiple related changes.
+```{r manual-metadata}
+# Start transaction
+begin_transaction()
 
-```{r cleanup, include=FALSE, eval=FALSE}
+# Make changes
+get_ducklake_table("cars") |>
+  mutate(hp_per_liter = hp / (cyl * 0.5)) |>
+  replace_table("cars")
+
+# Commit
+commit_transaction()
+
+# Add metadata separately
+set_snapshot_metadata(
+  ducklake_name = "my_ducklake",
+  author = "Performance Team",
+  commit_message = "Add horsepower per liter metric"
+)
+
+# Verify
+get_ducklake_table("cars") |>
+  select(hp, cyl, hp_per_liter) |>
+  head()
+```
+
+## Viewing Transaction History
+
+Regardless of which approach you use, all transactions are tracked with complete metadata:
+
+```{r view-history}
+# View recent transaction history
+list_table_snapshots("cars") |>
+  select(snapshot_id, snapshot_time, author, commit_message) |>
+  tail(5)
+```
+
+## Comparison: with_transaction() vs Manual Control
+
+| Feature | `with_transaction()` | Manual (`begin/commit/rollback`) |
+|---------|---------------------|----------------------------------|
+| **Ease of use** | ✅ Simple, one function | ❌ Requires multiple function calls |
+| **Error handling** | ✅ Automatic rollback | ❌ Must handle manually |
+| **Metadata** | ✅ Inline with transaction | ⚠️ Requires separate call or parameter |
+| **Safety** | ✅ Can't forget to commit | ❌ Risk of open transactions |
+| **Use case** | Most production workflows | Interactive/conditional workflows |
+| **Code clarity** | ✅ Clear transaction scope | ⚠️ Scope can be unclear |
+
+## Best Practices
+
+1. **Default to `with_transaction()`**: Use it for all standard workflows
+2. **Always add metadata**: Include `author` and `commit_message` for audit trails
+3. **Keep transactions focused**: Group related changes, but avoid overly long transactions
+4. **Handle errors gracefully**: When using manual transactions, always use `tryCatch()` to ensure rollback
+5. **Test rollback behavior**: Verify that your error handling works correctly
+
+## Key Concepts Summary
+
+- **`with_transaction(expr, author, commit_message)`**: Modern, automatic transaction handling (recommended)
+- **`begin_transaction()`**: Start a manual transaction
+- **`commit_transaction(author, commit_message)`**: Apply changes from a manual transaction
+- **`rollback_transaction()`**: Discard changes from a manual transaction
+- **`set_snapshot_metadata()`**: Add metadata to snapshots after committing
+
+Transactions ensure data integrity and provide complete audit trails for all changes in your DuckLake.
+
+```{r cleanup, include=FALSE}
 detach_ducklake("my_ducklake")
 ```
