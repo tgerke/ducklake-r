@@ -128,14 +128,20 @@ The Demographics domain contains baseline characteristics for each subject.
 # Bronze layer: Load raw SDTM Demographics exactly as received
 begin_transaction()
 create_table(pharmaversesdtm::dm, "dm_raw")
-commit_transaction()
+commit_transaction(
+  author = "T Gerke",
+  commit_message = "Add raw demographics"
+)
 
 # Silver layer: Apply cleaning transformations
 begin_transaction()
 get_ducklake_table("dm_raw") |> 
   admiral::convert_blanks_to_na() |> 
   create_table("dm")
-commit_transaction()
+commit_transaction(
+  author = "T Gerke",
+  commit_message = "Clean demographics data"
+)
 
 # Verify the cleaned table
 get_ducklake_table("dm") |> 
@@ -151,14 +157,20 @@ Supplemental domains contain additional variables not in the parent domain.
 # Bronze layer: Raw data
 begin_transaction()
 create_table(pharmaversesdtm::suppdm, "suppdm_raw")
-commit_transaction()
+commit_transaction(
+  author = "T Gerke",
+  commit_message = "Add raw supplemental demographics"
+)
 
 # Silver layer: Cleaned data
 begin_transaction()
 get_ducklake_table("suppdm_raw") |> 
   admiral::convert_blanks_to_na() |> 
   create_table("suppdm")
-commit_transaction()
+commit_transaction(
+  author = "T Gerke",
+  commit_message = "Clean supplemental demographics"
+)
 ```
 
 ### Disposition (DS)
@@ -169,14 +181,20 @@ The Disposition domain tracks subject progress through the study.
 # Bronze layer
 begin_transaction()
 create_table(pharmaversesdtm::ds, "ds_raw")
-commit_transaction()
+commit_transaction(
+  author = "T Gerke",
+  commit_message = "Add raw disposition"
+)
 
 # Silver layer
 begin_transaction()
 ds <- get_ducklake_table("ds_raw") |> 
   admiral::convert_blanks_to_na() |> 
   create_table("ds")
-commit_transaction()
+commit_transaction(
+  author = "T Gerke",
+  commit_message = "Clean disposition data"
+)
 ```
 
 ### Exposure (EX)
@@ -187,14 +205,20 @@ The Exposure domain contains treatment administration records.
 # Bronze layer
 begin_transaction()
 create_table(pharmaversesdtm::ex, "ex_raw")
-commit_transaction()
+commit_transaction(
+  author = "T Gerke",
+  commit_message = "Add raw exposure"
+)
 
 # Silver layer
 begin_transaction()
 ex <- get_ducklake_table("ex_raw") |> 
   admiral::convert_blanks_to_na() |> 
   create_table("ex")
-commit_transaction()
+commit_transaction(
+  author = "T Gerke",
+  commit_message = "Clean exposure data"
+)
 ```
 
 ### Adverse Events (AE)
@@ -205,14 +229,20 @@ The Adverse Events domain records safety data.
 # Bronze layer
 begin_transaction()
 create_table(pharmaversesdtm::ae, "ae_raw")
-commit_transaction()
+commit_transaction(
+  author = "T Gerke",
+  commit_message = "Add raw adverse events"
+)
 
 # Silver layer
 begin_transaction()
 ae <- get_ducklake_table("ae_raw") |> 
   admiral::convert_blanks_to_na() |> 
   create_table("ae")
-commit_transaction()
+commit_transaction(
+  author = "T Gerke",
+  commit_message = "Clean adverse events"
+)
 ```
 
 ### Vital Signs (VS)
@@ -223,14 +253,20 @@ Vital Signs data will be used for deriving baseline values.
 # Bronze layer
 begin_transaction()
 create_table(pharmaversesdtm::vs, "vs_raw")
-commit_transaction()
+commit_transaction(
+  author = "T Gerke",
+  commit_message = "Add raw vital signs"
+)
 
 # Silver layer
 begin_transaction()
 vs <- get_ducklake_table("vs_raw") |> 
   admiral::convert_blanks_to_na() |> 
   create_table("vs")
-commit_transaction()
+commit_transaction(
+  author = "T Gerke",
+  commit_message = "Clean vital signs"
+)
 ```
 
 ### Pharmacokinetic Concentrations (PC)
@@ -241,14 +277,20 @@ For PK analysis, we'll also load concentration data.
 # Bronze layer
 begin_transaction()
 create_table(pharmaversesdtm::pc, "pc_raw")
-commit_transaction()
+commit_transaction(
+  author = "T Gerke",
+  commit_message = "Add raw PK concentrations"
+)
 
 # Silver layer
 begin_transaction()
 pc <- get_ducklake_table("pc_raw") |> 
   admiral::convert_blanks_to_na() |> 
   create_table("pc")
-commit_transaction()
+commit_transaction(
+  author = "T Gerke",
+  commit_message = "Clean PK concentrations"
+)
 ```
 
 ### Verifying SDTM Version Control
@@ -405,7 +447,11 @@ adsl <- dm_suppdm |>
 # Store ADSL in the data lake
 begin_transaction()
 create_table(adsl, "adsl")
-commit_transaction()
+commit_transaction(
+  author = "T Gerke",
+  commit_message = "Create ADSL dataset",
+  commit_extra_info = "Derived from DM, SUPPDM, DS, EX; includes treatment dates, safety flags, age groups"
+)
 
 # Preview ADSL
 get_ducklake_table("adsl") |> 
@@ -462,7 +508,11 @@ adae <- ae |>
 # Store ADAE in the data lake
 begin_transaction()
 create_table(adae, "adae")
-commit_transaction()
+commit_transaction(
+  author = "T Gerke",
+  commit_message = "Create ADAE dataset",
+  commit_extra_info = "Includes treatment-emergent flags and occurrence flags"
+)
 
 # Preview ADAE
 get_ducklake_table("adae") |>
@@ -545,7 +595,11 @@ adpc <- bind_rows(pc_dates, ex_dates) |>
 # Store ADPC in the data lake
 begin_transaction()
 create_table(adpc, "adpc")
-commit_transaction()
+commit_transaction(
+  author = "T Gerke",
+  commit_message = "Create ADPC dataset",
+  commit_extra_info = "PK concentrations with dosing records for NCA"
+)
 
 # Preview ADPC
 get_ducklake_table("adpc") |>
@@ -582,7 +636,10 @@ regulatory_docs <- tibble(
 
 begin_transaction()
 create_table(regulatory_docs, "regulatory_documents")
-commit_transaction()
+commit_transaction(
+  author = "T Gerke",
+  commit_message = "Add define.xml metadata"
+)
 
 get_ducklake_table("regulatory_documents")
 ```
@@ -603,17 +660,24 @@ arm_content <- tibble(
 )
 
 # Add to or update regulatory documents table
-rows_upsert(
-  get_ducklake_table("regulatory_documents"),
-  tibble(
-    doc_type = "ARM",
-    doc_version = "1.0",
-    content = jsonlite::toJSON(arm_content),
-    created_date = Sys.Date(),
-    description = "Analysis Results Metadata"
-  ),
-  by = c("doc_type", "doc_version"),
-  copy = TRUE
+begin_transaction()
+get_ducklake_table("regulatory_documents") |>
+  collect() |>
+  mutate(content = as.character(content)) |>
+  bind_rows(
+    tibble(
+      doc_type = "ARM",
+      doc_version = "1.0",
+      content = as.character(jsonlite::toJSON(arm_content)),
+      created_date = Sys.Date(),
+      description = "Analysis Results Metadata"
+    )
+  ) |>
+  distinct(doc_type, doc_version, .keep_all = TRUE) |>
+  replace_table("regulatory_documents")
+commit_transaction(
+  author = "T Gerke",
+  commit_message = "Add ARM metadata"
 )
 
 # Example: Store Analysis Results Data (ARD)
@@ -627,17 +691,24 @@ ard_content <- tibble(
   sd = c(8.59, 7.89, 7.89)
 )
 
-rows_upsert(
-  get_ducklake_table("regulatory_documents"),
-  tibble(
-    doc_type = "ARD",
-    doc_version = "1.0",
-    content = jsonlite::toJSON(ard_content),
-    created_date = Sys.Date(),
-    description = "Analysis Results Data for Demographics Table"
-  ),
-  by = c("doc_type", "doc_version"),
-  copy = TRUE
+begin_transaction()
+get_ducklake_table("regulatory_documents") |>
+  collect() |>
+  mutate(content = as.character(content)) |>
+  bind_rows(
+    tibble(
+      doc_type = "ARD",
+      doc_version = "1.0",
+      content = as.character(jsonlite::toJSON(ard_content)),
+      created_date = Sys.Date(),
+      description = "Analysis Results Data for Demographics Table"
+    )
+  ) |>
+  distinct(doc_type, doc_version, .keep_all = TRUE) |>
+  replace_table("regulatory_documents")
+commit_transaction(
+  author = "T Gerke",
+  commit_message = "Add demographics ARD"
 )
 ```
 
@@ -662,7 +733,12 @@ adsl_spec <- tibble(
   derivation = c("DM.USUBJID", "DM.AGE", "Derived from AGE", "DM.ARM", "Derived")
 )
 
+begin_transaction()
 create_table(adsl_spec, "dataset_specifications")
+commit_transaction(
+  author = "T Gerke",
+  commit_message = "Add ADSL specifications"
+)
 
 # Query specifications when needed
 get_ducklake_table("dataset_specifications") |>
@@ -787,7 +863,7 @@ integrity_check <- adae_tbl |>
   collect()
 
 # ADAE records without ADSL subject:
-integrity_check$orphaned_records
+integrity_check |> pull(orphaned_records)
 ```
 
 This relational approach means your clinical trial data lake functions as a purpose-built data warehouse, designed specifically for the relational nature of CDISC standards.
@@ -813,7 +889,10 @@ get_ducklake_table("adsl") |>
     )
   ) |>
   replace_table("adsl")
-commit_transaction()
+commit_transaction(
+  author = "T Gerke",
+  commit_message = "Add age categorization vars"
+)
 
 # View version history - should now show 2 snapshots
 list_table_snapshots("adsl")
@@ -861,14 +940,20 @@ begin_transaction()
 get_ducklake_table("adsl") |>
   mutate(SAFFL = if_else(USUBJID == "01-701-1015", "N", SAFFL)) |>
   replace_table("adsl")
-commit_transaction()
+commit_transaction(
+  author = "T Gerke",
+  commit_message = "Correct safety flag"
+)
 
 # Adding new derived columns - creates auditable snapshot
 begin_transaction()
 get_ducklake_table("adsl") |>
   mutate(AGE65FL = if_else(AGE >= 65, "Y", "N")) |>
   replace_table("adsl")
-commit_transaction()
+commit_transaction(
+  author = "T Gerke",
+  commit_message = "Add age 65+ flag"
+)
 ```
 
 Both operations create snapshots you can time-travel back to and include in your regulatory audit trail.
@@ -886,7 +971,10 @@ get_ducklake_table("adsl") |>
     AGE >= 50 ~ "Older"
   )) |>
   replace_table("adsl")
-commit_transaction()
+commit_transaction(
+  author = "T Gerke",
+  commit_message = "Test age categories v1"
+)
 
 # Iteration 2: Refinement (creates snapshot v3)
 begin_transaction()
@@ -897,7 +985,10 @@ get_ducklake_table("adsl") |>
     AGE >= 65 ~ "65+"
   )) |>
   replace_table("adsl")
-commit_transaction()
+commit_transaction(
+  author = "T Gerke",
+  commit_message = "Refine age categories v2"
+)
 
 # Iteration 3: Final version (creates snapshot v4)
 begin_transaction()
@@ -912,7 +1003,10 @@ get_ducklake_table("adsl") |>
     )
   ) |>
   replace_table("adsl")
-commit_transaction()
+commit_transaction(
+  author = "T Gerke",
+  commit_message = "Finalize age categories"
+)
 
 # Complete audit trail available
 snapshots <- list_table_snapshots("adsl")
@@ -925,8 +1019,8 @@ snapshots  # Shows all iterations with snapshot metadata
 
 # Time-travel to specific snapshots using snapshot_id
 adsl_v1 <- get_ducklake_table_version("adsl", 15)
-adsl_v2 <- get_ducklake_table_version("adsl", 19)
-adsl_final <- get_ducklake_table_version("adsl", 22)
+adsl_v2 <- get_ducklake_table_version("adsl", 22)
+adsl_final <- get_ducklake_table_version("adsl", 25)
 
 # Or use snapshot times for time-travel
 adsl_asof <- get_ducklake_table_asof("adsl", snapshots$snapshot_time[2])
@@ -996,7 +1090,10 @@ tryCatch({
     replace_table("adae")  # Creates versioned snapshot
   
   # Both updates succeed - commit the transaction
-  commit_transaction()
+  commit_transaction(
+    author = "T Gerke",
+    commit_message = "Add analysis flag"
+  )
   cat("Both tables updated successfully\n")
   
 }, error = function(e) {
@@ -1024,7 +1121,10 @@ get_ducklake_table("adae") |>
     )
   ) |>
   replace_table("adae")  # Creates versioned snapshot
-commit_transaction()
+commit_transaction(
+  author = "T Gerke",
+  commit_message = "Correct AE severity"
+)
 
 # Verify the update
 get_ducklake_table("adae") |>

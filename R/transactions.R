@@ -44,9 +44,13 @@ begin_transaction <- function(conn = NULL) {
 
 #' Commit a transaction
 #'
-#' Commits the current transaction, making all changes permanent.
+#' Commits the current transaction, making all changes permanent. Optionally adds
+#' metadata (author, commit message, and extra info) to the snapshot.
 #'
 #' @param conn Optional DuckDB connection object. If not provided, uses the default ducklake connection.
+#' @param author Optional author name to associate with the snapshot
+#' @param commit_message Optional commit message describing the changes
+#' @param commit_extra_info Optional extra information about the commit
 #'
 #' @return Invisibly returns TRUE on success
 #' @export
@@ -56,29 +60,51 @@ begin_transaction <- function(conn = NULL) {
 #' making them permanent in the database. DuckLake automatically tracks changes
 #' in the \code{ducklake_snapshot_changes} metadata table.
 #'
-#' To add author and commit message metadata to the snapshot, use \code{set_snapshot_metadata()}
-#' after committing.
+#' If \code{author}, \code{commit_message}, or \code{commit_extra_info} are provided,
+#' they will be automatically added to the snapshot metadata after committing.
 #'
 #' @examples
 #' \dontrun{
+#' # Basic commit
 #' begin_transaction()
 #' # ... make changes ...
 #' commit_transaction()
 #' 
-#' # Optionally add metadata to the snapshot
-#' set_snapshot_metadata(
-#'   ducklake_name = "my_ducklake",
+#' # Commit with metadata
+#' begin_transaction()
+#' create_table(mtcars, "cars")
+#' commit_transaction(
 #'   author = "John Doe",
-#'   commit_message = "Updated customer records"
+#'   commit_message = "Add cars dataset"
 #' )
 #' }
-commit_transaction <- function(conn = NULL) {
+commit_transaction <- function(conn = NULL, author = NULL, commit_message = NULL,
+                                commit_extra_info = NULL) {
   if (is.null(conn)) {
     conn <- get_ducklake_connection()
   }
   
   DBI::dbExecute(conn, "COMMIT;")
   message("Transaction committed")
+  
+  # Add metadata if any is provided
+  if (!is.null(author) || !is.null(commit_message) || !is.null(commit_extra_info)) {
+    # Get the current database name
+    current_db <- DBI::dbGetQuery(conn, "SELECT current_database() as db")$db
+    
+    if (!is.null(current_db) && current_db != "") {
+      set_snapshot_metadata(
+        ducklake_name = current_db,
+        author = author,
+        commit_message = commit_message,
+        commit_extra_info = commit_extra_info,
+        conn = conn
+      )
+    } else {
+      warning("Could not determine ducklake name; metadata not set")
+    }
+  }
+  
   invisible(TRUE)
 }
 

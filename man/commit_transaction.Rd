@@ -4,36 +4,50 @@
 \alias{commit_transaction}
 \title{Commit a transaction}
 \usage{
-commit_transaction(conn = NULL)
+commit_transaction(
+  conn = NULL,
+  author = NULL,
+  commit_message = NULL,
+  commit_extra_info = NULL
+)
 }
 \arguments{
 \item{conn}{Optional DuckDB connection object. If not provided, uses the default ducklake connection.}
+
+\item{author}{Optional author name to associate with the snapshot}
+
+\item{commit_message}{Optional commit message describing the changes}
+
+\item{commit_extra_info}{Optional extra information about the commit}
 }
 \value{
 Invisibly returns TRUE on success
 }
 \description{
-Commits the current transaction, making all changes permanent.
+Commits the current transaction, making all changes permanent. Optionally adds
+metadata (author, commit message, and extra info) to the snapshot.
 }
 \details{
 This function commits all changes made since \code{begin_transaction()} was called,
 making them permanent in the database. DuckLake automatically tracks changes
 in the \code{ducklake_snapshot_changes} metadata table.
 
-To add author and commit message metadata to the snapshot, use \code{set_snapshot_metadata()}
-after committing.
+If \code{author}, \code{commit_message}, or \code{commit_extra_info} are provided,
+they will be automatically added to the snapshot metadata after committing.
 }
 \examples{
 \dontrun{
+# Basic commit
 begin_transaction()
 # ... make changes ...
 commit_transaction()
 
-# Optionally add metadata to the snapshot
-set_snapshot_metadata(
-  ducklake_name = "my_ducklake",
+# Commit with metadata
+begin_transaction()
+create_table(mtcars, "cars")
+commit_transaction(
   author = "John Doe",
-  commit_message = "Updated customer records"
+  commit_message = "Add cars dataset"
 )
 }
 }

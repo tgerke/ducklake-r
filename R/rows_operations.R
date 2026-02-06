@@ -86,31 +86,72 @@ rows_delete <- function(x, y, by = NULL, copy = TRUE, in_place = TRUE, unmatched
 #' Upsert rows in a DuckLake table
 #'
 #' A wrapper around dplyr::rows_upsert() with in_place = TRUE as the default,
-#' since DuckLake is designed for in-place modifications.
+#' since DuckLake is designed for in-place modifications. Optionally adds
+#' snapshot metadata after the operation completes.
 #'
 #' @param x Target table (from get_ducklake_table())
 #' @param y Data frame with rows to upsert (update existing, insert new)
 #' @param by Column(s) to match on
 #' @param copy Whether to copy y to the same source as x (default TRUE)
 #' @param in_place Whether to modify the table in place (default TRUE for DuckLake)
+#' @param author Optional author name to associate with the snapshot
+#' @param commit_message Optional commit message describing the changes
+#' @param commit_extra_info Optional extra information about the commit
 #' @param ... Additional arguments passed to dplyr::rows_upsert()
 #'
 #' @return The updated table
 #' @export
 #'
+#' @details
+#' This function performs an upsert operation: updates existing rows and inserts
+#' new ones. Rows are matched using the columns specified in \code{by}.
+#'
+#' If \code{author}, \code{commit_message}, or \code{commit_extra_info} are provided,
+#' they will be added to the snapshot metadata after the upsert completes.
+#'
 #' @seealso [upsert_table()] for pipeline-based upserts using dplyr transformations
 #'
 #' @examples
 #' \dontrun{
-#' # Upsert (update if exists, insert if new)
+#' # Basic upsert
 #' rows_upsert(
 #'   get_ducklake_table("my_table"),
 #'   data.frame(id = c(1, 99), value = c("updated", "new")),
 #'   by = "id"
 #' )
+#' 
+#' # Upsert with metadata
+#' rows_upsert(
+#'   get_ducklake_table("my_table"),
+#'   data.frame(id = c(1, 99), value = c("updated", "new")),
+#'   by = "id",
+#'   author = "Data Team",
+#'   commit_message = "Update and add records"
+#' )
 #' }
-rows_upsert <- function(x, y, by = NULL, copy = TRUE, in_place = TRUE, ...) {
-  dplyr::rows_upsert(x = x, y = y, by = by, copy = copy, in_place = in_place, ...)
+rows_upsert <- function(x, y, by = NULL, copy = TRUE, in_place = TRUE, 
+                        author = NULL, commit_message = NULL, commit_extra_info = NULL, ...) {
+  # Perform the upsert operation (metadata params are NOT passed via ...)
+  result <- dplyr::rows_upsert(x = x, y = y, by = by, copy = copy, in_place = in_place, ...)
+  
+  # Add metadata if any is provided
+  if (!is.null(author) || !is.null(commit_message) || !is.null(commit_extra_info)) {
+    conn <- get_ducklake_connection()
+    # Get the current database name
+    current_db <- DBI::dbGetQuery(conn, "SELECT current_database() as db")$db
+    
+    if (!is.null(current_db) && current_db != "") {
+      set_snapshot_metadata(
+        ducklake_name = current_db,
+        author = author,
+        commit_message = commit_message,
+        commit_extra_info = commit_extra_info,
+        conn = conn
+      )
+    }
+  }
+  
+  invisible(result)
 }
 
 #' Patch rows in a DuckLake table
