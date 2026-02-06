@@ -95,4 +95,8 @@ reference:
     contents:
     - get_metadata_table
     - set_snapshot_metadata
-
+    
+  - title: "Backup and Maintenance"
+    desc: "Backup and restore operations"
+    contents:
+    - backup_ducklake
