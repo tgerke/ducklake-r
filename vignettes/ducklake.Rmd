@@ -1,8 +1,8 @@
 ---
-title: "Getting Started with ducklake"
+title: "ducklake Cookbook"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Getting Started with ducklake}
+  %\VignetteIndexEntry{ducklake Cookbook}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -15,70 +15,299 @@ knitr::opts_chunk$set(
 knitr::opts_knit$set(root.dir = tempdir())
 ```
 
-```{r setup, eval=FALSE}
+```{r setup, message=FALSE}
 library(ducklake)
 library(dplyr)
 ```
 
 ## Introduction
 
-ducklake is an R package that complements the existing toolkits in the [duckdb](https://r.duckdb.org/index.html) and [duckplyr](https://duckplyr.tidyverse.org/index.html) packages, supporting the new [DuckLake](https://ducklake.select/docs/stable/duckdb/introduction.html) ecosystem.
+This cookbook provides quick recipes for common ducklake operations. Each recipe is a self-contained example you can adapt for your workflow.
 
-## Installation
+For a comprehensive real-world example, see the [clinical trial data lake](clinical-trial-datalake.html) vignette.
 
-Install the development version of ducklake with:
+## Setup recipes
 
-```r
-pak::pak("tgerke/ducklake-r")
+### Create a new data lake
+
+```{r create, message=FALSE}
+# Create a data lake in a specific directory
+attach_ducklake("my_lake", lake_path = tempdir())
 ```
 
-## Create a local duckdb lakehouse
+### Attach to an existing data lake
 
-```{r create, message=FALSE, eval=FALSE}
-# install the ducklake extension to duckdb 
-# requires that you already have DuckDB v1.3.0 or higher
-install_ducklake()
-
-# create the ducklake
-attach_ducklake("my_ducklake")
-# show that we have ducklake files
-list.files()
-
-# create a table using the Netherlands train traffic dataset 
-create_table("https://blobs.duckdb.org/nl_stations.csv", "nl_train_stations")
-# show that we now have a .files directory
-list.files()
-# main/ is where the parquet files go
-list.files("my_ducklake.ducklake.files/main/nl_train_stations")
-
-# create a table from an R data.frame
-create_table(mtcars, "mtcars_table")
-list.files("my_ducklake.ducklake.files/main/mtcars_table")
+```{r attach, eval=FALSE}
+# Attach to an existing lake (creates it if it doesn't exist)
+attach_ducklake("existing_lake", lake_path = "/path/to/data_lake")
 ```
 
-## View metadata and snapshots
+### Detach from a data lake
 
-```{r metadata, eval=FALSE}
-# List all tables in the lake
-get_ducklake_table("duckdb_tables") |> 
-  select(database_name, schema_name, table_name) |> 
+```{r detach, eval=FALSE}
+# Detach when done (doesn't delete the lake)
+detach_ducklake("my_lake")
+```
+
+## Loading data recipes
+
+### Load data from a data.frame
+
+```{r load_df}
+with_transaction(
+  create_table(mtcars, "cars"),
+  author = "Data Engineer",
+  commit_message = "Initial car data load"
+)
+```
+
+### Update an existing table
+
+```{r update_cars}
+# Create a second version of the cars table
+with_transaction(
+  get_ducklake_table("cars") |>
+    mutate(kpl = mpg * 0.425144) |>  # Add km/L conversion
+    replace_table("cars"),
+  author = "Data Engineer",
+  commit_message = "Add km/L metric to cars table"
+)
+```
+
+### Load data from a CSV file
+
+```{r load_csv}
+with_transaction(
+  create_table("inst/extdata/storms.csv", "storms"),
+  author = "Data Engineer",
+  commit_message = "Load storms data from CSV"
+)
+```
+
+### Load data from a URL
+
+```{r load_url}
+with_transaction(
+  create_table("https://blobs.duckdb.org/nl_stations.csv", "nl_train_stations"),
+  author = "Data Engineer",
+  commit_message = "Load remote train stations dataset"
+)
+```
+
+### Load with a dplyr pipeline
+
+```{r load_pipeline}
+with_transaction(
+  mtcars |>
+    filter(mpg > 20) |>
+    create_table("efficient_cars"),
+  author = "Data Analyst",
+  commit_message = "Load filtered car data"
+)
+```
+
+### List all tables in the lake
+
+```{r list_all_tables}
+# See what tables exist in your lake
+get_ducklake_table("duckdb_tables") |>
+  filter(schema_name == "main") |>
+  select(table_name) |>
+  collect() |>
   print(n = Inf)
+```
 
-# View snapshot history
-get_metadata_table("ducklake_snapshot_changes", ducklake_name = "my_ducklake")
-get_metadata_table("ducklake_snapshot", ducklake_name = "my_ducklake")
+## Reading data recipes
+
+### Read a table
+
+```{r read_table}
+# Returns a lazy dplyr tbl
+cars_data <- get_ducklake_table("cars")
+
+# Use dplyr verbs
+cars_data |>
+  filter(cyl == 6) |>
+  select(mpg, cyl, hp) |>
+  head(3)
+```
+
+### Collect data into memory
+
+```{r collect}
+# Fetch all data into a data.frame
+cars_df <- get_ducklake_table("cars") |> collect()
+head(cars_df, 3)
+```
+
+### View all versions of a table
+
+```{r view_versions}
+# See all snapshots for the cars table
+list_table_snapshots("cars")
+```
+
+### Read a specific version
+
+```{r read_version, eval=FALSE}
+# Query data as it existed at snapshot 1
+get_ducklake_table_version("cars", version = 1) |>
+  collect()
+```
+
+### Read data at a specific timestamp
+
+```{r read_timestamp, eval=FALSE}
+# Query data as of a specific time
+get_ducklake_table_asof("cars", timestamp = "2024-01-15 10:30:00") |>
+  collect()
+```
+
+## Updating data recipes
+
+### Replace entire table
+
+```{r replace_table}
+with_transaction(
+  get_ducklake_table("cars") |>
+    mutate(hp_per_cyl = hp / as.numeric(cyl)) |>  # Add derived metric
+    replace_table("cars"),
+  author = "Data Engineer",
+  commit_message = "Add horsepower per cylinder metric"
+)
+```
+
+Note: For most use cases, use `replace_table()` to update tables. This creates clean snapshots and maintains full versioning. Advanced row-level operations (`rows_update`, `rows_insert`, `rows_delete`, `rows_upsert`) are available when you need granular control - see the [Upsert Operations](upsert-operations.html) vignette for details.
+
+## Metadata and versioning recipes
+
+### List all tables
+
+```{r list_tables}
+get_ducklake_table("duckdb_tables") |>
+  filter(schema_name == "main") |>
+  select(table_name) |>
+  collect()
+```
+
+### View all snapshots
+
+```{r list_snapshots}
+list_table_snapshots()
+```
+
+### View snapshots for a specific table
+
+```{r list_table_snapshots, eval=FALSE}
+list_table_snapshots("cars")
+```
+
+### Restore a table to a previous version
+
+```{r restore, eval=FALSE}
+# Use time travel to read an old version, then replace the current table
+with_transaction(
+  get_ducklake_table_version("cars", version = 1) |>
+    replace_table("cars"),
+  author = "Data Engineer",
+  commit_message = "Restore to version 1"
+)
+
+list_table_snapshots("cars")
+```
+
+## Transaction recipes
+
+### Simple transaction
+
+```{r simple_transaction, eval=FALSE}
+with_transaction(
+  create_table(my_data, "my_table"),
+  author = "Your Name",
+  commit_message = "What changed and why"
+)
+```
+
+### Multi-step transaction
+
+```{r multi_step, eval=FALSE}
+with_transaction({
+  # All these operations happen atomically
+  create_table(raw_data, "raw_table")
+  
+  cleaned <- get_ducklake_table("raw_table") |>
+    filter(!is.na(key_field)) |>
+    create_table("clean_table")
+  
+  get_ducklake_table("clean_table") |>
+    mutate(derived_field = calculate_something(x)) |>
+    create_table("analysis_table")
+},
+author = "Data Engineer",
+commit_message = "Full ETL pipeline run"
+)
+```
+
+### Manual transaction control
+
+```{r manual_transaction, eval=FALSE}
+# For fine-grained control
+begin_transaction()
+
+create_table(data1, "table1")
+create_table(data2, "table2")
+
+# Commit or rollback
+commit_transaction(
+  author = "Your Name",
+  commit_message = "Manual transaction commit"
+)
+
+# Or if something went wrong:
+# rollback_transaction()
+```
+
+## Query optimization recipes
+
+### Preview query without execution
+
+```{r show_query, eval=FALSE}
+get_ducklake_table("cars") |>
+  filter(mpg > 25) |>
+  mutate(efficient = TRUE) |>
+  show_ducklake_query()
+```
+
+### Filter early for performance
+
+```{r filter_early}
+# Good: Filter before other operations
+get_ducklake_table("cars") |>
+  filter(cyl == 6) |>
+  mutate(kpl = mpg * 0.425144) |>
+  head(3)
+```
+
+### Use specific columns
+
+```{r select_columns}
+# Good: Select only needed columns
+get_ducklake_table("cars") |>
+  select(mpg, cyl, hp) |>
+  filter(mpg > 25)
 ```
 
 ## Cleanup
 
-```{r cleanup, eval=FALSE}
-# When done, detach from the ducklake
-detach_ducklake("my_ducklake")
+```{r cleanup}
+# Detach from the lake
+detach_ducklake("my_lake")
 ```
 
-## Next steps
+## See also
 
-- Learn about [modifying tables](modifying-tables.html)
-- Explore [upsert operations](upsert-operations.html)
-- Work with [transactions](transactions.html)
-- Query historical data with [time travel](time-travel.html)
+- [Modifying Tables](modifying-tables.html) - Detailed guide to table modification approaches
+- [Upsert Operations](upsert-operations.html) - In-depth upsert patterns
+- [Transactions](transactions.html) - Advanced transaction patterns
+- [Time Travel](time-travel.html) - Comprehensive time travel guide
+- [Clinical Trial Data Lake](clinical-trial-datalake.html) - Complete real-world workflow
