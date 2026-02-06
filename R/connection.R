@@ -3,8 +3,17 @@
 
 #' Get the current DuckLake connection
 #'
+#' This function retrieves the active DuckLake connection. If no connection
+#' has been explicitly set via \code{set_ducklake_connection()}, it falls back
+#' to duckplyr's default DuckDB connection for seamless integration.
+#'
 #' @return A DuckDB connection object
-#' @keywords internal
+#' @export
+#'
+#' @note This function uses \code{duckplyr:::get_default_duckdb_connection()}
+#' as a fallback. While this is an unexported function from duckplyr, it is
+#' necessary for proper integration with the duckplyr ecosystem when no
+#' explicit ducklake connection is set.
 get_ducklake_connection <- function() {
   conn <- .ducklake_env$connection
   

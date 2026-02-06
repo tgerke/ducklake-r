@@ -130,6 +130,7 @@ get_ducklake_table_version <- function(table_name, version, conn = NULL) {
 #' Retrieves information about available snapshots/versions for a table.
 #'
 #' @param table_name The name of the table to query
+#' @param ducklake_name The name of the ducklake (database) to query. If NULL, will attempt to infer from current database.
 #' @param conn Optional DuckDB connection object. If not provided, uses the default ducklake connection.
 #'
 #' @return A data frame with snapshot information (version, timestamp, etc.)

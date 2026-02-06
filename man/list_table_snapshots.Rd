@@ -9,6 +9,8 @@ list_table_snapshots(table_name = NULL, ducklake_name = NULL, conn = NULL)
 \arguments{
 \item{table_name}{The name of the table to query}
 
+\item{ducklake_name}{The name of the ducklake (database) to query. If NULL, will attempt to infer from current database.}
+
 \item{conn}{Optional DuckDB connection object. If not provided, uses the default ducklake connection.}
 }
 \value{

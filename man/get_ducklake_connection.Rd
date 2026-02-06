@@ -10,6 +10,13 @@ get_ducklake_connection()
 A DuckDB connection object
 }
 \description{
-Get the current DuckLake connection
+This function retrieves the active DuckLake connection. If no connection
+has been explicitly set via \code{set_ducklake_connection()}, it falls back
+to duckplyr's default DuckDB connection for seamless integration.
 }
-\keyword{internal}
+\note{
+This function uses \code{duckplyr:::get_default_duckdb_connection()}
+as a fallback. While this is an unexported function from duckplyr, it is
+necessary for proper integration with the duckplyr ecosystem when no
+explicit ducklake connection is set.
+}
