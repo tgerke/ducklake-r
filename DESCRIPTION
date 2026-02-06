@@ -18,6 +18,7 @@ Imports:
     duckplyr
 Suggests: 
     admiral,
+    dbplyr,
     DiagrammeR,
     jsonlite,
     knitr,
