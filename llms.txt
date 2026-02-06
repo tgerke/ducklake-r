@@ -316,6 +316,13 @@ Access metadata and snapshots
 - [`set_snapshot_metadata()`](https://tgerke.github.io/ducklake-r/reference/set_snapshot_metadata.md)
   : Set metadata for the most recent snapshot
 
+## Backup and Maintenance
+
+Backup and restore operations
+
+- [`backup_ducklake()`](https://tgerke.github.io/ducklake-r/reference/backup_ducklake.md)
+  : Create a complete DuckLake backup
+
 # Articles
 
 ### All vignettes
@@ -326,6 +333,8 @@ Access metadata and snapshots
   Cookbook](https://tgerke.github.io/ducklake-r/articles/ducklake.md):
 - [Modifying Tables with Version
   Control](https://tgerke.github.io/ducklake-r/articles/modifying-tables.md):
+- [Storage and Backup
+  Management](https://tgerke.github.io/ducklake-r/articles/storage-and-backups.md):
 - [Time Travel
   Queries](https://tgerke.github.io/ducklake-r/articles/time-travel.md):
 - [Working with

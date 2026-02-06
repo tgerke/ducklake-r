@@ -6,11 +6,13 @@
 <url><loc>https://tgerke.github.io/ducklake-r/articles/ducklake.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/articles/index.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/articles/modifying-tables.html</loc></url>
+<url><loc>https://tgerke.github.io/ducklake-r/articles/storage-and-backups.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/articles/time-travel.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/articles/transactions.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/authors.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/index.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/attach_ducklake.html</loc></url>
+<url><loc>https://tgerke.github.io/ducklake-r/reference/backup_ducklake.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/begin_transaction.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/commit_transaction.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/create_table.html</loc></url>

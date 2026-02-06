@@ -90,3 +90,10 @@ Access metadata and snapshots
   : Get a DuckLake metadata table
 - [`set_snapshot_metadata()`](https://tgerke.github.io/ducklake-r/reference/set_snapshot_metadata.md)
   : Set metadata for the most recent snapshot
+
+## Backup and Maintenance
+
+Backup and restore operations
+
+- [`backup_ducklake()`](https://tgerke.github.io/ducklake-r/reference/backup_ducklake.md)
+  : Create a complete DuckLake backup

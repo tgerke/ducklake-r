@@ -52,7 +52,7 @@ get_ducklake_table("cars") |>
   select(mpg, cyl, hp, wt) |>
   head()
 #> # Source:   SQL [?? x 4]
-#> # Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpJEF01C/duckplyr/duckplyr20e94502119b.duckdb]
+#> # Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpLeGQWv/duckplyr/duckplyr218630769ac7.duckdb]
 #>     mpg   cyl    hp    wt
 #>   <dbl> <dbl> <dbl> <dbl>
 #> 1  21       6   110  2.62
@@ -103,7 +103,7 @@ get_ducklake_table("cars") |>
   select(mpg, kpl) |>
   head()
 #> # Source:   SQL [?? x 2]
-#> # Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpJEF01C/duckplyr/duckplyr20e94502119b.duckdb]
+#> # Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpLeGQWv/duckplyr/duckplyr218630769ac7.duckdb]
 #>     mpg   kpl
 #>   <dbl> <dbl>
 #> 1  21    8.93
@@ -152,7 +152,7 @@ get_ducklake_table("cars") |>
   select(mpg, cyl, efficiency) |>
   head()
 #> # Source:   SQL [?? x 3]
-#> # Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpJEF01C/duckplyr/duckplyr20e94502119b.duckdb]
+#> # Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpLeGQWv/duckplyr/duckplyr218630769ac7.duckdb]
 #>     mpg   cyl efficiency
 #>   <dbl> <dbl> <chr>     
 #> 1  21       6 medium    
@@ -167,9 +167,9 @@ get_ducklake_table("cars_summary") |>
 #> # A tibble: 3 × 4
 #>     cyl avg_mpg avg_hp count
 #>   <dbl>   <dbl>  <dbl> <dbl>
-#> 1     4    26.7   82.6    11
-#> 2     6    19.7  122.      7
-#> 3     8    15.1  209.     14
+#> 1     6    19.7  122.      7
+#> 2     8    15.1  209.     14
+#> 3     4    26.7   82.6    11
 ```
 
 ### Automatic Rollback on Error
@@ -208,9 +208,9 @@ get_ducklake_table("cars") |>
 # View all versioned changes
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 2           1 2026-02-06 22:47:01              1
-#> 3           2 2026-02-06 22:47:01              2
-#> 4           3 2026-02-06 22:47:01              3
+#> 2           1 2026-02-06 23:27:30              1
+#> 3           2 2026-02-06 23:27:30              2
+#> 4           3 2026-02-06 23:27:30              3
 #>                                                                                       changes
 #> 2                                          tables_created, tables_inserted_into, main.cars, 1
 #> 3                       tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2
@@ -263,7 +263,7 @@ get_ducklake_table("cars") |>
   select(wt, weight_kg) |>
   head()
 #> # Source:   SQL [?? x 2]
-#> # Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpJEF01C/duckplyr/duckplyr20e94502119b.duckdb]
+#> # Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpLeGQWv/duckplyr/duckplyr218630769ac7.duckdb]
 #>      wt weight_kg
 #>   <dbl>     <dbl>
 #> 1  2.32     1052.
@@ -317,10 +317,10 @@ rollback_transaction()
 # View all versioned changes
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 2           1 2026-02-06 22:47:01              1
-#> 3           2 2026-02-06 22:47:01              2
-#> 4           3 2026-02-06 22:47:01              3
-#> 5           4 2026-02-06 22:47:02              4
+#> 2           1 2026-02-06 23:27:30              1
+#> 3           2 2026-02-06 23:27:30              2
+#> 4           3 2026-02-06 23:27:30              3
+#> 5           4 2026-02-06 23:27:31              4
 #>                                                                                       changes
 #> 2                                          tables_created, tables_inserted_into, main.cars, 1
 #> 3                       tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2
@@ -364,7 +364,7 @@ get_ducklake_table("cars") |>
   select(hp, cyl, hp_per_liter) |>
   head()
 #> # Source:   SQL [?? x 3]
-#> # Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpJEF01C/duckplyr/duckplyr20e94502119b.duckdb]
+#> # Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpLeGQWv/duckplyr/duckplyr218630769ac7.duckdb]
 #>      hp   cyl hp_per_liter
 #>   <dbl> <dbl>        <dbl>
 #> 1    93     4         46.5
@@ -386,11 +386,11 @@ list_table_snapshots("cars") |>
   select(snapshot_id, snapshot_time, author, commit_message) |>
   tail(5)
 #>   snapshot_id       snapshot_time           author
-#> 2           1 2026-02-06 22:47:01         Tutorial
-#> 3           2 2026-02-06 22:47:01        Data Team
-#> 4           3 2026-02-06 22:47:01        Data Team
-#> 5           4 2026-02-06 22:47:02        Data Team
-#> 6           5 2026-02-06 22:47:02 Performance Team
+#> 2           1 2026-02-06 23:27:30         Tutorial
+#> 3           2 2026-02-06 23:27:30        Data Team
+#> 4           3 2026-02-06 23:27:30        Data Team
+#> 5           4 2026-02-06 23:27:31        Data Team
+#> 6           5 2026-02-06 23:27:31 Performance Team
 #>                             commit_message
 #> 2           Initial load of mtcars dataset
 #> 3          Add kilometers per liter column
