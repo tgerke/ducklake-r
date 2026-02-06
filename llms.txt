@@ -145,6 +145,8 @@ Execute and preview SQL queries
 
 ACID transaction support
 
+- [`with_transaction()`](https://tgerke.github.io/ducklake-r/reference/with_transaction.md)
+  : Execute code within a transaction
 - [`begin_transaction()`](https://tgerke.github.io/ducklake-r/reference/begin_transaction.md)
   : Begin a transaction
 - [`commit_transaction()`](https://tgerke.github.io/ducklake-r/reference/commit_transaction.md)
