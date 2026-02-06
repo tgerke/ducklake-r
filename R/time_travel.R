@@ -1,7 +1,7 @@
 #' Query a table at a specific timestamp (time travel)
 #'
-#' Retrieves data from a DuckDB table as it existed at a specific point in time
-#' using DuckDB's snapshot/time-travel functionality.
+#' Retrieves data from a DuckLake table as it existed at a specific point in time
+#' using DuckLake's AT (TIMESTAMP => ...) syntax.
 #'
 #' @param table_name The name of the table to query
 #' @param timestamp A POSIXct timestamp or character string in ISO 8601 format (e.g., "2024-01-15 10:30:00")
@@ -11,14 +11,18 @@
 #' @export
 #'
 #' @details
-#' DuckDB supports time-travel queries using the ASOF syntax, allowing you to query
-#' historical data as it existed at a specific timestamp. This is useful for:
+#' DuckLake supports time-travel queries, allowing you to query historical data
+#' as it existed at a specific timestamp. This uses the syntax:
+#' \code{SELECT * FROM table AT (TIMESTAMP => 'timestamp')}
+#' 
+#' This is useful for:
 #' - Auditing changes over time
-#' - Recovering accidentally deleted or modified data
+#' - Recovering accidentally deleted or modified data  
 #' - Comparing data states across different time points
+#' - Regulatory compliance and data lineage documentation
 #'
-#' Note: This functionality requires that the table has been properly configured with
-#' DuckDB's time-travel features (e.g., Delta Lake tables with snapshot support).
+#' The timestamp must be within the range of available snapshots for the table.
+#' Use \code{list_table_snapshots()} to see available snapshot times.
 #'
 #' @examples
 #' \dontrun{
@@ -28,8 +32,9 @@
 #'   filter(category == "A") |>
 #'   collect()
 #'
-#' # Query data at a specific timestamp
-#' get_ducklake_table_asof("my_table", "2024-01-15 10:30:00") |>
+#' # Query data at a specific snapshot time
+#' snapshots <- list_table_snapshots("my_table")
+#' get_ducklake_table_asof("my_table", snapshots$snapshot_time[2]) |>
 #'   summarise(total = sum(amount))
 #' }
 get_ducklake_table_asof <- function(table_name, timestamp, conn = NULL) {
@@ -44,9 +49,14 @@ get_ducklake_table_asof <- function(table_name, timestamp, conn = NULL) {
     timestamp_str <- as.character(timestamp)
   }
   
-  # Create a query with ASOF clause
-  # Note: Actual syntax may vary depending on DuckDB version and table type
-  query <- sprintf("SELECT * FROM %s ASOF TIMESTAMP '%s'", table_name, timestamp_str)
+  # Add schema prefix if not already present
+  if (!grepl("\\.", table_name)) {
+    table_name <- paste0("main.", table_name)
+  }
+  
+  # Use DuckLake's AT (TIMESTAMP => ...) syntax for time travel
+  query <- sprintf("SELECT * FROM %s AT (TIMESTAMP => '%s')", 
+                   table_name, timestamp_str)
   
   # Return as a dplyr tbl
   result <- dplyr::tbl(conn, dplyr::sql(query))
@@ -59,24 +69,33 @@ get_ducklake_table_asof <- function(table_name, timestamp, conn = NULL) {
 
 #' Query a table at a specific version/snapshot
 #'
-#' Retrieves data from a DuckDB table at a specific version or snapshot number.
+#' Retrieves data from a DuckLake table at a specific snapshot ID using DuckLake's
+#' AT (VERSION => ...) syntax.
 #'
 #' @param table_name The name of the table to query
-#' @param version The version or snapshot number to query
+#' @param version The snapshot_id to query (get this from \code{list_table_snapshots()})
 #' @param conn Optional DuckDB connection object. If not provided, uses the default ducklake connection.
 #'
 #' @return A dplyr lazy query object (tbl_lazy) that can be further manipulated with dplyr verbs
 #' @export
 #'
 #' @details
-#' This function allows you to query a specific version/snapshot of a table.
-#' This is particularly useful with Delta Lake or Iceberg tables that maintain
-#' version history.
+#' This function allows you to query a specific snapshot of a table using its snapshot_id.
+#' This uses the syntax: \code{SELECT * FROM table AT (VERSION => snapshot_id)}
+#' 
+#' Each time you create or modify a table within a transaction, DuckLake creates a new
+#' snapshot with a unique snapshot_id. Note that snapshot_id and schema_version are 
+#' typically the same value - both represent the snapshot identifier.
+#'
+#' Use \code{list_table_snapshots(table_name)} to see all available snapshots and their IDs.
 #'
 #' @examples
 #' \dontrun{
-#' # Query version 5 of a table
-#' get_ducklake_table_version("my_table", 5) |>
+#' # Get available snapshots
+#' snapshots <- list_table_snapshots("my_table")
+#' 
+#' # Query the first snapshot version
+#' get_ducklake_table_version("my_table", snapshots$snapshot_id[1]) |>
 #'   filter(status == "active") |>
 #'   collect()
 #' }
@@ -85,16 +104,25 @@ get_ducklake_table_version <- function(table_name, version, conn = NULL) {
     conn <- get_ducklake_connection()
   }
   
-  # Create a query with VERSION clause
-  query <- sprintf("SELECT * FROM %s VERSION AS OF %d", table_name, as.integer(version))
+  # Get current ducklake name
+  tryCatch({
+    current_db <- DBI::dbGetQuery(conn, "SELECT current_database() as db")$db
+    ducklake_name <- current_db
+  }, error = function(e) {
+    stop("Could not determine ducklake_name. Make sure a ducklake is attached.")
+  })
   
-  # Return as a dplyr tbl
-  result <- dplyr::tbl(conn, dplyr::sql(query))
+  # Add schema prefix if not already present
+  if (!grepl("\\.", table_name)) {
+    table_name <- paste0("main.", table_name)
+  }
   
-  # Store the table name as an attribute
-  attr(result, "ducklake_table_name") <- table_name
+  # Use DuckLake's AT (VERSION => ...) syntax to query a specific snapshot
+  # The version parameter should be the snapshot_id from list_table_snapshots()
+  query <- sprintf("SELECT * FROM %s AT (VERSION => %d)", 
+                   table_name, version)
   
-  return(result)
+  dplyr::tbl(conn, dplyr::sql(query))
 }
 
 #' List available snapshots for a table

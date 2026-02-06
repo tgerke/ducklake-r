@@ -2,20 +2,59 @@
 % Please edit documentation in R/update_table.R
 \name{update_table}
 \alias{update_table}
-\title{Convert a dplyr query to DuckLake SQL operations}
+\title{Update existing column values in a table (in-place, no versioning)}
 \usage{
 update_table(.data, table_name, .quiet = FALSE)
 }
 \arguments{
-\item{.data}{A dplyr query object (tbl_lazy)}
+\item{.data}{A dplyr query object (tbl_lazy) with mutate() operations}
 
-\item{table_name}{Table name (required when using update_table)}
+\item{table_name}{Table name to update}
 
 \item{.quiet}{Logical, whether to suppress debug output (default FALSE for backward compatibility)}
 }
 \value{
-A SQL statement string
+Invisibly returns the SQL statement string after executing it
 }
 \description{
-Convert a dplyr query to DuckLake SQL operations
+Update existing column values in a table (in-place, no versioning)
+}
+\details{
+This function performs in-place UPDATE operations on existing columns.
+\strong{Important limitations:}
+\itemize{
+\item \strong{Cannot add or remove columns} - Only modifies values in existing columns
+\item \strong{Does not create snapshots} - UPDATE operations modify in-place without creating
+snapshots, even when wrapped in transactions. Only CREATE operations trigger snapshots.
+\item \strong{All columns must exist} - Any column referenced in mutate() must already exist in the table
+}
+
+Use \code{replace_table()} if you need to:
+\itemize{
+\item Add new derived columns
+\item Remove columns
+\item Create a new versioned snapshot
+}
+
+Use \code{update_table()} when:
+\itemize{
+\item Making targeted value corrections to existing columns
+\item Performance is critical and versioning is not needed
+\item Updating specific rows with filter()
+}
+}
+\examples{
+\dontrun{n#' # Correct a specific value (no versioning needed)
+get_ducklake_table("adsl") |>
+  mutate(SAFFL = if_else(USUBJID == "01-701-1015", "N", SAFFL)) |>
+  update_table("adsl")
+
+# Update multiple columns
+get_ducklake_table("adae") |>
+  mutate(
+    AESEV = if_else(AESEV == "MILD", "MODERATE", AESEV),
+    AESER = if_else(AESEV == "SEVERE", "Y", AESER)
+  ) |>
+  update_table("adae")
+}
 }
