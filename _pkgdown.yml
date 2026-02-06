@@ -56,6 +56,7 @@ reference:
     - get_ducklake_table
     - update_table
     - upsert_table
+    - replace_table
     
   - title: "Row Operations"
     desc: "Modify table rows with dplyr-style functions"
