@@ -5,7 +5,7 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>Modifying Tables • ducklake</title>
+<title>Modifying Tables with Version Control • ducklake</title>
 <!-- favicons --><link rel="icon" type="image/png" sizes="96x96" href="../favicon-96x96.png">
 <link rel="icon" type="”image/svg+xml”" href="../favicon.svg">
 <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
@@ -15,7 +15,7 @@
 <link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
-<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Modifying Tables">
+<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Modifying Tables with Version Control">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -71,7 +71,7 @@
 
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
-      <img src="../logo.png" class="logo" alt=""><h1>Modifying Tables</h1>
+      <img src="../logo.png" class="logo" alt=""><h1>Modifying Tables with Version Control</h1>
             
       
       <small class="dont-index">Source: <a href="https://github.com/tgerke/ducklake-r/blob/main/vignettes/modifying-tables.Rmd" class="external-link"><code>vignettes/modifying-tables.Rmd</code></a></small>
@@ -80,124 +80,260 @@
 
     
     
+<p>This vignette demonstrates how to modify tables in a DuckLake while
+maintaining complete version control and audit trails. This is essential
+for reproducible workflows.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://tgerke.github.io/ducklake-r/">ducklake</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Attaching package: 'dplyr'</span></span>
+<span><span class="co">#&gt; The following objects are masked from 'package:ducklake':</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt;     rows_delete, rows_insert, rows_patch, rows_update, rows_upsert</span></span>
+<span><span class="co">#&gt; The following objects are masked from 'package:stats':</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt;     filter, lag</span></span>
+<span><span class="co">#&gt; The following objects are masked from 'package:base':</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt;     intersect, setdiff, setequal, union</span></span>
 <span></span>
 <span><span class="co"># Setup for examples</span></span>
 <span><span class="fu"><a href="../reference/install_ducklake.html">install_ducklake</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/attach_ducklake.html">attach_ducklake</a></span><span class="op">(</span><span class="st">"my_ducklake"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/create_table.html">create_table</a></span><span class="op">(</span><span class="st">"https://blobs.duckdb.org/nl_stations.csv"</span>, <span class="st">"nl_train_stations"</span><span class="op">)</span></span></code></pre></div>
-<div class="section level2">
-<h2 id="two-approaches-for-table-modifications">Two approaches for table modifications<a class="anchor" aria-label="anchor" href="#two-approaches-for-table-modifications"></a>
-</h2>
-<p>ducklake provides two complementary approaches for modifying tables,
-both following tidyverse conventions:</p>
-<div class="section level3">
-<h3 id="data-frame-approach-rows_-functions">1. data.frame approach (<code>rows_*</code> functions)<a class="anchor" aria-label="anchor" href="#data-frame-approach-rows_-functions"></a>
-</h3>
-<p>Best when you have <strong>data in R</strong> (data.frames/tibbles)
-that you want to apply to a table:</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Prepare your data in R</span></span>
-<span><span class="va">updates</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>id <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span>, value <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"new1"</span>, <span class="st">"new2"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/attach_ducklake.html">attach_ducklake</a></span><span class="op">(</span><span class="st">"my_ducklake"</span>, lake_path <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Apply to table</span></span>
-<span><span class="fu"><a href="../reference/rows_update.html">rows_update</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"my_table"</span><span class="op">)</span>, <span class="va">updates</span>, by <span class="op">=</span> <span class="st">"id"</span><span class="op">)</span>  <span class="co"># Update existing rows</span></span>
-<span><span class="fu"><a href="../reference/rows_insert.html">rows_insert</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"my_table"</span><span class="op">)</span>, <span class="va">new_data</span>, by <span class="op">=</span> <span class="st">"id"</span><span class="op">)</span>  <span class="co"># Insert new rows</span></span>
-<span><span class="fu"><a href="../reference/rows_upsert.html">rows_upsert</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"my_table"</span><span class="op">)</span>, <span class="va">updates</span>, by <span class="op">=</span> <span class="st">"id"</span><span class="op">)</span>  <span class="co"># Update existing or insert new</span></span>
-<span><span class="fu"><a href="../reference/rows_delete.html">rows_delete</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"my_table"</span><span class="op">)</span>, <span class="va">to_delete</span>, by <span class="op">=</span> <span class="st">"id"</span><span class="op">)</span>  <span class="co"># Delete rows by key</span></span></code></pre></div>
-<p><strong>Pros:</strong> Explicit, familiar dplyr syntax,
-<code>in_place = TRUE</code> by default for DuckLake<br><strong>Use when:</strong> You have data.frames/tibbles ready to
-apply</p>
+<span><span class="co"># Load a sample dataset</span></span>
+<span><span class="fu"><a href="../reference/with_transaction.html">with_transaction</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="../reference/create_table.html">create_table</a></span><span class="op">(</span><span class="va">mtcars</span>, <span class="st">"cars"</span><span class="op">)</span>,</span>
+<span>  author <span class="op">=</span> <span class="st">"Data Engineer"</span>,</span>
+<span>  commit_message <span class="op">=</span> <span class="st">"Initial car data load"</span></span>
+<span><span class="op">)</span></span>
+<span><span class="co">#&gt; Transaction started</span></span>
+<span><span class="co">#&gt; Transaction committed</span></span>
+<span><span class="co">#&gt; Snapshot metadata updated</span></span></code></pre></div>
+<div class="section level2">
+<h2 id="best-practices-for-table-modifications">Best Practices for Table Modifications<a class="anchor" aria-label="anchor" href="#best-practices-for-table-modifications"></a>
+</h2>
+<p>For data workflows requiring audit trails and reproducibility,
+ducklake offers versioning functions that preserve complete history of
+all changes.</p>
+<div class="section level3">
+<h3 id="recommended-replace_table-with-transactions">Recommended: <code>replace_table()</code> with transactions<a class="anchor" aria-label="anchor" href="#recommended-replace_table-with-transactions"></a>
+</h3>
+<p><strong>Use <code><a href="../reference/replace_table.html">replace_table()</a></code> wrapped in
+<code><a href="../reference/with_transaction.html">with_transaction()</a></code> for all table
+modifications:</strong></p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Modify and replace - creates versioned snapshot</span></span>
+<span><span class="fu"><a href="../reference/with_transaction.html">with_transaction</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"my_table"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">status</span> <span class="op">==</span> <span class="st">"active"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>processed <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>    <span class="fu"><a href="../reference/replace_table.html">replace_table</a></span><span class="op">(</span><span class="st">"my_table"</span><span class="op">)</span>,</span>
+<span>  author <span class="op">=</span> <span class="st">"Your Name"</span>,</span>
+<span>  commit_message <span class="op">=</span> <span class="st">"Mark active records as processed"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p><strong>Why this approach?</strong></p>
+<ul>
+<li>
+<strong>Creates snapshots</strong> - Every change is versioned and
+can be time-traveled back to</li>
+<li>
+<strong>Maintains audit trail</strong> - Complete history of what
+changed, when, and by whom</li>
+<li>
+<strong>Enables reproducibility</strong> - Recreate analyses from
+any point in time</li>
+<li>
+<strong>Supports regulatory compliance</strong> - Meets 21 CFR Part
+11 requirements for GxP work</li>
+<li>
+<strong>Works with dplyr</strong> - Natural pipeline syntax with
+<code><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter()</a></code>, <code><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate()</a></code>, <code><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select()</a></code>,
+etc.</li>
+</ul>
 </div>
 <div class="section level3">
-<h3 id="pipeline-approach-_table-functions">2. Pipeline approach (<code>*_table</code> functions)<a class="anchor" aria-label="anchor" href="#pipeline-approach-_table-functions"></a>
+<h3 id="alternative-rows_-functions-no-versioning">Alternative: <code>rows_*</code> functions (⚠️ No versioning)<a class="anchor" aria-label="anchor" href="#alternative-rows_-functions-no-versioning"></a>
 </h3>
-<p>Best when you’re <strong>transforming data with dplyr</strong> and
-want to apply results to a table:</p>
+<p>The <code>rows_*</code> functions provide dplyr-style operations but
+<strong>do not create snapshots or audit trails</strong>:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Build transformation pipeline, then execute</span></span>
-<span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"my_table"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">status</span> <span class="op">==</span> <span class="st">"active"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>processed <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/ducklake_exec.html">ducklake_exec</a></span><span class="op">(</span><span class="op">)</span>  <span class="co"># for updates</span></span>
-<span></span>
-<span><span class="va">source_table</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">id</span>, <span class="va">value</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>value <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/chartr.html" class="external-link">toupper</a></span><span class="op">(</span><span class="va">value</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/upsert_table.html">upsert_table</a></span><span class="op">(</span><span class="st">"target_table"</span>, by <span class="op">=</span> <span class="st">"id"</span><span class="op">)</span>  <span class="co"># for merge/upsert</span></span></code></pre></div>
-<p><strong>Pros:</strong> Chainable, works in pipelines, table name
-inference<br><strong>Use when:</strong> Transforming data with <code><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter()</a></code>,
-<code><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate()</a></code>, <code><a href="https://dplyr.tidyverse.org/reference/summarise.html" class="external-link">summarize()</a></code>, etc.</p>
+<code class="sourceCode R"><span><span class="co"># These modify tables in-place WITHOUT creating snapshots</span></span>
+<span><span class="fu"><a href="../reference/rows_update.html">rows_update</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"my_table"</span><span class="op">)</span>, <span class="va">updates</span>, by <span class="op">=</span> <span class="st">"id"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/rows_insert.html">rows_insert</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"my_table"</span><span class="op">)</span>, <span class="va">new_data</span>, by <span class="op">=</span> <span class="st">"id"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/rows_delete.html">rows_delete</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"my_table"</span><span class="op">)</span>, <span class="va">to_delete</span>, by <span class="op">=</span> <span class="st">"id"</span><span class="op">)</span></span></code></pre></div>
+<p><strong>⚠️ Use only when:</strong> - Working in non-GxP environments
+where audit trails are not required - You explicitly want to avoid
+creating new versions</p>
+<p><strong>For most workflows, especially those requiring
+reproducibility or regulatory compliance, prefer
+<code><a href="../reference/replace_table.html">replace_table()</a></code> to maintain complete data
+lineage.</strong></p>
 </div>
 </div>
 <div class="section level2">
 <h2 id="examples">Examples<a class="anchor" aria-label="anchor" href="#examples"></a>
 </h2>
 <div class="section level3">
-<h3 id="update-with-rows_update">Update with <code>rows_update()</code><a class="anchor" aria-label="anchor" href="#update-with-rows_update"></a>
+<h3 id="updating-specific-rows-with-replace_table">Updating specific rows with <code>replace_table()</code><a class="anchor" aria-label="anchor" href="#updating-specific-rows-with-replace_table"></a>
 </h3>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># update the first row with ducklake::rows_update()</span></span>
-<span><span class="co"># copy = TRUE and in_place = TRUE are the defaults for DuckLake operations</span></span>
-<span><span class="fu"><a href="../reference/rows_update.html">rows_update</a></span><span class="op">(</span></span>
-<span>  <span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"nl_train_stations"</span><span class="op">)</span>,</span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
-<span>    uic <span class="op">=</span> <span class="fl">8400319</span>,</span>
-<span>    name_short <span class="op">=</span> <span class="st">"NEW"</span></span>
-<span>  <span class="op">)</span>,</span>
-<span>  by <span class="op">=</span> <span class="st">"uic"</span>,</span>
-<span>  copy <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  unmatched <span class="op">=</span> <span class="st">"ignore"</span></span>
+<code class="sourceCode R"><span><span class="co"># Update mpg values for specific cars (4-cylinder cars get a 5% efficiency boost)</span></span>
+<span><span class="fu"><a href="../reference/with_transaction.html">with_transaction</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span></span>
+<span>      mpg <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/if_else.html" class="external-link">if_else</a></span><span class="op">(</span><span class="va">cyl</span> <span class="op">==</span> <span class="fl">4</span>, <span class="va">mpg</span> <span class="op">*</span> <span class="fl">1.05</span>, <span class="va">mpg</span><span class="op">)</span></span>
+<span>    <span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>    <span class="fu"><a href="../reference/replace_table.html">replace_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span>,</span>
+<span>  author <span class="op">=</span> <span class="st">"Data Engineer"</span>,</span>
+<span>  commit_message <span class="op">=</span> <span class="st">"Update MPG for 4-cylinder vehicles"</span></span>
 <span><span class="op">)</span></span>
+<span><span class="co">#&gt; Transaction started</span></span>
+<span><span class="co">#&gt; Transaction committed</span></span>
+<span><span class="co">#&gt; Snapshot metadata updated</span></span>
 <span></span>
-<span><span class="co"># View the change</span></span>
-<span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"nl_train_stations"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">uic</span> <span class="op">==</span> <span class="fl">8400319</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">uic</span>, <span class="va">name_short</span><span class="op">)</span></span></code></pre></div>
+<span><span class="co"># Check version history - should show the new snapshot</span></span>
+<span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
+<span><span class="co">#&gt; 2           1 2026-02-06 22:16:35              1</span></span>
+<span><span class="co">#&gt; 3           2 2026-02-06 22:16:35              2</span></span>
+<span><span class="co">#&gt;                                                                 changes</span></span>
+<span><span class="co">#&gt; 2                    tables_created, tables_inserted_into, main.cars, 1</span></span>
+<span><span class="co">#&gt; 3 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2</span></span>
+<span><span class="co">#&gt;          author                     commit_message commit_extra_info</span></span>
+<span><span class="co">#&gt; 2 Data Engineer              Initial car data load              &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 3 Data Engineer Update MPG for 4-cylinder vehicles              &lt;NA&gt;</span></span></code></pre></div>
 </div>
 <div class="section level3">
-<h3 id="update-with-pipeline-and-ducklake_exec">Update with pipeline and <code>ducklake_exec()</code><a class="anchor" aria-label="anchor" href="#update-with-pipeline-and-ducklake_exec"></a>
+<h3 id="adding-derived-columns">Adding derived columns<a class="anchor" aria-label="anchor" href="#adding-derived-columns"></a>
 </h3>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># update with mutate and ducklake::ducklake_exec</span></span>
-<span><span class="co"># table name is automatically inferred from the pipeline</span></span>
-<span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"nl_train_stations"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span></span>
-<span>    name_long <span class="op">=</span> <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/case-and-replace-when.html" class="external-link">case_when</a></span><span class="op">(</span></span>
-<span>      <span class="va">code</span> <span class="op">==</span> <span class="st">"ASB"</span> <span class="op">~</span> <span class="st">"Johan Cruijff ArenA"</span>,</span>
-<span>      .default <span class="op">=</span> <span class="va">name_long</span></span>
-<span>    <span class="op">)</span></span>
-<span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/ducklake_exec.html">ducklake_exec</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="co"># Add new derived columns to existing table</span></span>
+<span><span class="fu"><a href="../reference/with_transaction.html">with_transaction</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span></span>
+<span>      hp_per_cyl <span class="op">=</span> <span class="va">hp</span> <span class="op">/</span> <span class="va">cyl</span>,</span>
+<span>      <span class="co"># Add a new flag column</span></span>
+<span>      high_performance <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/if_else.html" class="external-link">if_else</a></span><span class="op">(</span><span class="va">hp</span> <span class="op">&gt;</span> <span class="fl">200</span>, <span class="st">"Y"</span>, <span class="st">"N"</span><span class="op">)</span></span>
+<span>    <span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>    <span class="fu"><a href="../reference/replace_table.html">replace_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span>,</span>
+<span>  author <span class="op">=</span> <span class="st">"Data Engineer"</span>,</span>
+<span>  commit_message <span class="op">=</span> <span class="st">"Add HP per cylinder and performance flag"</span></span>
+<span><span class="op">)</span></span>
+<span><span class="co">#&gt; Transaction started</span></span>
+<span><span class="co">#&gt; Transaction committed</span></span>
+<span><span class="co">#&gt; Snapshot metadata updated</span></span>
+<span></span>
+<span><span class="co"># Verify new columns exist</span></span>
+<span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">hp</span> <span class="op">&gt;</span> <span class="fl">200</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">hp</span>, <span class="va">cyl</span>, <span class="va">hp_per_cyl</span>, <span class="va">high_performance</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Source:   SQL [?? x 4]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpAfohVp/duckplyr/duckplyr20654614893d.duckdb]</span></span></span>
+<span><span class="co">#&gt;      hp   cyl hp_per_cyl high_performance</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>   245     8       30.6 Y               </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span>   205     8       25.6 Y               </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span>   215     8       26.9 Y               </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span>   230     8       28.8 Y               </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span>   245     8       30.6 Y               </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span>   264     8       33   Y               </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">7</span>   335     8       41.9 Y</span></span></code></pre></div>
 </div>
 <div class="section level3">
-<h3 id="preview-sql-before-execution">Preview SQL before execution<a class="anchor" aria-label="anchor" href="#preview-sql-before-execution"></a>
+<h3 id="filtering-rows-with-replace_table">Filtering rows with <code>replace_table()</code><a class="anchor" aria-label="anchor" href="#filtering-rows-with-replace_table"></a>
 </h3>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># if we want, we can always view the sql that will be submitted in advance</span></span>
-<span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"nl_train_stations"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span></span>
-<span>    name_long <span class="op">=</span> <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/case-and-replace-when.html" class="external-link">case_when</a></span><span class="op">(</span></span>
-<span>      <span class="va">code</span> <span class="op">==</span> <span class="st">"ASB"</span> <span class="op">~</span> <span class="st">"Johan Cruijff ArenA"</span>,</span>
-<span>      .default <span class="op">=</span> <span class="va">name_long</span></span>
-<span>    <span class="op">)</span></span>
-<span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/show_ducklake_query.html">show_ducklake_query</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="co"># Keep only specific rows - creates a versioned snapshot</span></span>
+<span><span class="fu"><a href="../reference/with_transaction.html">with_transaction</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">cyl</span> <span class="op">==</span> <span class="fl">8</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>    <span class="fu"><a href="../reference/replace_table.html">replace_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span>,</span>
+<span>  author <span class="op">=</span> <span class="st">"Data Engineer"</span>,</span>
+<span>  commit_message <span class="op">=</span> <span class="st">"Filter to V8 engines only"</span></span>
+<span><span class="op">)</span></span>
+<span><span class="co">#&gt; Transaction started</span></span>
+<span><span class="co">#&gt; Transaction committed</span></span>
+<span><span class="co">#&gt; Snapshot metadata updated</span></span>
+<span></span>
+<span><span class="co"># Show the filtered table</span></span>
+<span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Source:   table&lt;cars&gt; [?? x 13]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpAfohVp/duckplyr/duckplyr20654614893d.duckdb]</span></span></span>
+<span><span class="co">#&gt;      mpg   cyl  disp    hp  drat    wt  qsec    vs    am  gear  carb hp_per_cyl</span></span>
+<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span>  18.7     8  360    175  3.15  3.44  17.0     0     0     3     2       21.9</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span>  14.3     8  360    245  3.21  3.57  15.8     0     0     3     4       30.6</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span>  16.4     8  276.   180  3.07  4.07  17.4     0     0     3     3       22.5</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span>  17.3     8  276.   180  3.07  3.73  17.6     0     0     3     3       22.5</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span>  15.2     8  276.   180  3.07  3.78  18       0     0     3     3       22.5</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span>  10.4     8  472    205  2.93  5.25  18.0     0     0     3     4       25.6</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span>  10.4     8  460    215  3     5.42  17.8     0     0     3     4       26.9</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span>  14.7     8  440    230  3.23  5.34  17.4     0     0     3     4       28.8</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span>  15.5     8  318    150  2.76  3.52  16.9     0     0     3     2       18.8</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span>  15.2     8  304    150  3.15  3.44  17.3     0     0     3     2       18.8</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">11</span>  13.3     8  350    245  3.73  3.84  15.4     0     0     3     4       30.6</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">12</span>  19.2     8  400    175  3.08  3.84  17.0     0     0     3     2       21.9</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">13</span>  15.8     8  351    264  4.22  3.17  14.5     0     1     5     4       33  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">14</span>  15       8  301    335  3.54  3.57  14.6     0     1     5     8       41.9</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 1 more variable: high_performance &lt;chr&gt;</span></span></span>
+<span></span>
+<span><span class="co"># View version history - old versions still accessible via time travel</span></span>
+<span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
+<span><span class="co">#&gt; 2           1 2026-02-06 22:16:35              1</span></span>
+<span><span class="co">#&gt; 3           2 2026-02-06 22:16:35              2</span></span>
+<span><span class="co">#&gt; 4           3 2026-02-06 22:16:35              3</span></span>
+<span><span class="co">#&gt; 5           4 2026-02-06 22:16:36              4</span></span>
+<span><span class="co">#&gt;                                                                 changes</span></span>
+<span><span class="co">#&gt; 2                    tables_created, tables_inserted_into, main.cars, 1</span></span>
+<span><span class="co">#&gt; 3 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2</span></span>
+<span><span class="co">#&gt; 4 tables_created, tables_dropped, tables_inserted_into, main.cars, 2, 3</span></span>
+<span><span class="co">#&gt; 5 tables_created, tables_dropped, tables_inserted_into, main.cars, 3, 4</span></span>
+<span><span class="co">#&gt;          author                           commit_message commit_extra_info</span></span>
+<span><span class="co">#&gt; 2 Data Engineer                    Initial car data load              &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 3 Data Engineer       Update MPG for 4-cylinder vehicles              &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 4 Data Engineer Add HP per cylinder and performance flag              &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 5 Data Engineer                Filter to V8 engines only              &lt;NA&gt;</span></span></code></pre></div>
 </div>
 <div class="section level3">
-<h3 id="filter-and-execute">Filter and execute<a class="anchor" aria-label="anchor" href="#filter-and-execute"></a>
+<h3 id="time-travel-accessing-previous-versions">Time Travel: Accessing Previous Versions<a class="anchor" aria-label="anchor" href="#time-travel-accessing-previous-versions"></a>
 </h3>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># filter using ducklake::ducklake_exec</span></span>
-<span><span class="co"># with .quiet=FALSE we can see sql on execution, including the original dplyr</span></span>
-<span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"nl_train_stations"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">uic</span> <span class="op">==</span> <span class="fl">8400319</span> <span class="op">|</span> <span class="va">code</span> <span class="op">==</span> <span class="st">"ASB"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/ducklake_exec.html">ducklake_exec</a></span><span class="op">(</span>.quiet <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="co"># Get the current version</span></span>
+<span><span class="va">current</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/compute.html" class="external-link">collect</a></span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># show our current table</span></span>
-<span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"nl_train_stations"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="co"># List all snapshots to see available versions</span></span>
+<span><span class="va">snapshots</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span></span>
+<span><span class="va">snapshots</span></span>
+<span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
+<span><span class="co">#&gt; 2           1 2026-02-06 22:16:35              1</span></span>
+<span><span class="co">#&gt; 3           2 2026-02-06 22:16:35              2</span></span>
+<span><span class="co">#&gt; 4           3 2026-02-06 22:16:35              3</span></span>
+<span><span class="co">#&gt; 5           4 2026-02-06 22:16:36              4</span></span>
+<span><span class="co">#&gt;                                                                 changes</span></span>
+<span><span class="co">#&gt; 2                    tables_created, tables_inserted_into, main.cars, 1</span></span>
+<span><span class="co">#&gt; 3 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2</span></span>
+<span><span class="co">#&gt; 4 tables_created, tables_dropped, tables_inserted_into, main.cars, 2, 3</span></span>
+<span><span class="co">#&gt; 5 tables_created, tables_dropped, tables_inserted_into, main.cars, 3, 4</span></span>
+<span><span class="co">#&gt;          author                           commit_message commit_extra_info</span></span>
+<span><span class="co">#&gt; 2 Data Engineer                    Initial car data load              &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 3 Data Engineer       Update MPG for 4-cylinder vehicles              &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 4 Data Engineer Add HP per cylinder and performance flag              &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 5 Data Engineer                Filter to V8 engines only              &lt;NA&gt;</span></span>
+<span></span>
+<span><span class="co"># Access a specific previous version by snapshot_id</span></span>
+<span><span class="va">original_version</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_ducklake_table_version.html">get_ducklake_table_version</a></span><span class="op">(</span></span>
+<span>  <span class="st">"cars"</span>, </span>
+<span>  <span class="va">snapshots</span><span class="op">$</span><span class="va">snapshot_id</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span></span>
+<span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/compute.html" class="external-link">collect</a></span><span class="op">(</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Compare: how many rows changed?</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">current</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 14</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">original_version</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 32</span></span></code></pre></div>
 </div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

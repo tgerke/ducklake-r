@@ -286,7 +286,7 @@ subject.</p>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">USUBJID</span>, <span class="va">AGE</span>, <span class="va">SEX</span>, <span class="va">RACE</span>, <span class="va">ARM</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Source:   SQL [?? x 5]</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/Rtmp7uf3pW/duckplyr/duckplyr1f0f28ce38ed.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpaI5WHo/duckplyr/duckplyr1f7952922021.duckdb]</span></span></span>
 <span><span class="co">#&gt;   USUBJID       AGE SEX   RACE  ARM                 </span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>               </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 01-701-1015    63 F     WHITE Placebo             </span></span>
@@ -470,11 +470,11 @@ transaction automatically creates a snapshot with metadata.</p>
 <span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">5</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 1           0 2026-02-06 21:46:28              0</span></span>
-<span><span class="co">#&gt; 2           1 2026-02-06 21:46:28              1</span></span>
-<span><span class="co">#&gt; 3           2 2026-02-06 21:46:28              2</span></span>
-<span><span class="co">#&gt; 4           3 2026-02-06 21:46:29              3</span></span>
-<span><span class="co">#&gt; 5           4 2026-02-06 21:46:29              4</span></span>
+<span><span class="co">#&gt; 1           0 2026-02-06 22:16:16              0</span></span>
+<span><span class="co">#&gt; 2           1 2026-02-06 22:16:16              1</span></span>
+<span><span class="co">#&gt; 3           2 2026-02-06 22:16:16              2</span></span>
+<span><span class="co">#&gt; 4           3 2026-02-06 22:16:16              3</span></span>
+<span><span class="co">#&gt; 5           4 2026-02-06 22:16:16              4</span></span>
 <span><span class="co">#&gt;                                                    changes  author</span></span>
 <span><span class="co">#&gt; 1                                    schemas_created, main    &lt;NA&gt;</span></span>
 <span><span class="co">#&gt; 2     tables_created, tables_inserted_into, main.dm_raw, 1 T Gerke</span></span>
@@ -491,14 +491,14 @@ transaction automatically creates a snapshot with metadata.</p>
 <span><span class="co"># Filter snapshots for specific tables</span></span>
 <span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"dm_raw"</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 2           1 2026-02-06 21:46:28              1</span></span>
+<span><span class="co">#&gt; 2           1 2026-02-06 22:16:16              1</span></span>
 <span><span class="co">#&gt;                                                changes  author</span></span>
 <span><span class="co">#&gt; 2 tables_created, tables_inserted_into, main.dm_raw, 1 T Gerke</span></span>
 <span><span class="co">#&gt;         commit_message commit_extra_info</span></span>
 <span><span class="co">#&gt; 2 Add raw demographics              &lt;NA&gt;</span></span>
 <span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"dm"</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 3           2 2026-02-06 21:46:28              2</span></span>
+<span><span class="co">#&gt; 3           2 2026-02-06 22:16:16              2</span></span>
 <span><span class="co">#&gt;                                            changes  author</span></span>
 <span><span class="co">#&gt; 3 tables_created, tables_inserted_into, main.dm, 2 T Gerke</span></span>
 <span><span class="co">#&gt;            commit_message commit_extra_info</span></span>
@@ -671,7 +671,7 @@ subject with key analysis variables.</p>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">USUBJID</span>, <span class="va">AGE</span>, <span class="va">AGEGR1</span>, <span class="va">TRT01P</span>, <span class="va">TRTSDT</span>, <span class="va">TRTEDT</span>, <span class="va">SAFFL</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">10</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Source:   SQL [?? x 7]</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/Rtmp7uf3pW/duckplyr/duckplyr1f0f28ce38ed.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpaI5WHo/duckplyr/duckplyr1f7952922021.duckdb]</span></span></span>
 <span><span class="co">#&gt;    USUBJID       AGE AGEGR1 TRT01P               TRTSDT     TRTEDT     SAFFL</span></span>
 <span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> 01-701-1015    63 18-64  Placebo              2014-01-02 2014-07-02 Y    </span></span>
@@ -749,7 +749,7 @@ treatment-emergent flags and severity grades.</p>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">USUBJID</span>, <span class="va">AEDECOD</span>, <span class="va">ASTDT</span>, <span class="va">AESEV</span>, <span class="va">TRTEMFL</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">10</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Source:   SQL [?? x 5]</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/Rtmp7uf3pW/duckplyr/duckplyr1f0f28ce38ed.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpaI5WHo/duckplyr/duckplyr1f7952922021.duckdb]</span></span></span>
 <span><span class="co">#&gt;    USUBJID     AEDECOD                              ASTDT      AESEV    TRTEMFL</span></span>
 <span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                                <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> 01-701-1015 APPLICATION SITE ERYTHEMA            2014-01-03 MILD     Y      </span></span>
@@ -852,7 +852,7 @@ concentrations with dosing records.</p>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">USUBJID</span>, <span class="va">ADT</span>, <span class="va">PCTPT</span>, <span class="va">AVAL</span>, <span class="va">PARAM</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">10</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Source:   SQL [?? x 5]</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/Rtmp7uf3pW/duckplyr/duckplyr1f0f28ce38ed.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpaI5WHo/duckplyr/duckplyr1f7952922021.duckdb]</span></span></span>
 <span><span class="co">#&gt;    USUBJID     ADT        PCTPT             AVAL PARAM                   </span></span>
 <span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                   </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> 01-701-1015 2014-01-01 Pre-dose         0     Xanomeline Concentration</span></span>
@@ -907,7 +907,7 @@ artifact:</p>
 <span></span>
 <span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"regulatory_documents"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Source:   table&lt;regulatory_documents&gt; [?? x 5]</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/Rtmp7uf3pW/duckplyr/duckplyr1f0f28ce38ed.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpaI5WHo/duckplyr/duckplyr1f7952922021.duckdb]</span></span></span>
 <span><span class="co">#&gt;   doc_type   doc_version content                        created_date description</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                          <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> define.xml 1.0         <span style="color: #949494;">"</span>&lt;?xml version=\"1.0\" encodi… 2026-02-06   Dataset an…</span></span></code></pre></div>
@@ -1077,8 +1077,8 @@ preserves these relationships with version control built in:</p>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> 01-704-1266    82 Xanomeline High Dose    16       <span style="text-decoration: underline;">2</span>160</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> 01-701-1275    61 Xanomeline High Dose    15       <span style="text-decoration: underline;">2</span>025</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> 01-709-1309    65 Xanomeline High Dose    15       <span style="text-decoration: underline;">2</span>835</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> 01-701-1192    80 Xanomeline Low Dose     15       <span style="text-decoration: underline;">2</span>430</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> 01-713-1179    64 Placebo                 15          0</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> 01-713-1179    64 Placebo                 15          0</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> 01-701-1192    80 Xanomeline Low Dose     15       <span style="text-decoration: underline;">2</span>430</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> 01-711-1143    76 Xanomeline Low Dose     14       <span style="text-decoration: underline;">1</span>512</span></span></code></pre></div>
 </div>
 <div class="section level3">
@@ -1137,19 +1137,19 @@ clinical trials:</p>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">AESEV</span> <span class="op">==</span> <span class="st">"SEVERE"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">distinct</a></span><span class="op">(</span><span class="va">USUBJID</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Source:   SQL [?? x 1]</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/Rtmp7uf3pW/duckplyr/duckplyr1f0f28ce38ed.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpaI5WHo/duckplyr/duckplyr1f7952922021.duckdb]</span></span></span>
 <span><span class="co">#&gt;    USUBJID    </span></span>
 <span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> 01-703-1175</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> 01-705-1393</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> 01-708-1272</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> 01-709-1007</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> 01-710-1077</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> 01-710-1154</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> 01-710-1271</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> 01-717-1174</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> 01-718-1066</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> 01-718-1371</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> 01-703-1086</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> 01-703-1119</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> 01-706-1049</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> 01-708-1428</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> 01-710-1083</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> 01-718-1079</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> 01-718-1170</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> 01-704-1008</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> 01-704-1445</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> 01-710-1070</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ more rows</span></span></span>
 <span></span>
 <span><span class="co"># 3. Aggregations performed at database level</span></span>
@@ -1162,13 +1162,13 @@ clinical trials:</p>
 <span>    .groups <span class="op">=</span> <span class="st">"drop"</span></span>
 <span>  <span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Source:   SQL [?? x 4]</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/Rtmp7uf3pW/duckplyr/duckplyr1f0f28ce38ed.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpaI5WHo/duckplyr/duckplyr1f7952922021.duckdb]</span></span></span>
 <span><span class="co">#&gt;   TRT01A               AESEV    n_events n_subjects</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> Placebo              MODERATE       65         25</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> Xanomeline Low Dose  SEVERE         25         16</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> Xanomeline Low Dose  MILD          232         64</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> Xanomeline High Dose MODERATE      115         46</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> Xanomeline Low Dose  MILD          232         64</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> Xanomeline High Dose MODERATE      115         46</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> Placebo              MODERATE       65         25</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> Xanomeline Low Dose  SEVERE         25         16</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> Xanomeline High Dose MILD          287         65</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> Xanomeline Low Dose  MODERATE      170         58</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">7</span> Placebo              SEVERE          6          5</span></span>
@@ -1196,7 +1196,7 @@ clinical trials:</p>
 <span>    adam_term <span class="op">=</span> <span class="va">adae_term</span></span>
 <span>  <span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Source:   SQL [?? x 5]</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/Rtmp7uf3pW/duckplyr/duckplyr1f0f28ce38ed.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpaI5WHo/duckplyr/duckplyr1f7952922021.duckdb]</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 5 variables: USUBJID &lt;chr&gt;, sdtm_start_date &lt;chr&gt;, adam_start_date &lt;date&gt;,</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;">#   sdtm_term &lt;chr&gt;, adam_term &lt;chr&gt;</span></span></span>
 <span><span class="co"># Note: This returns 0 rows with clean pharmaversesdtm data,</span></span>
@@ -1261,13 +1261,13 @@ clinical trials:</p>
 <span><span class="op">}</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">table</span>, <span class="va">snapshot_id</span>, <span class="va">snapshot_time</span>, <span class="va">changes</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   table snapshot_id       snapshot_time</span></span>
-<span><span class="co">#&gt; 1    dm           2 2026-02-06 21:46:28</span></span>
-<span><span class="co">#&gt; 2    ex           8 2026-02-06 21:46:29</span></span>
-<span><span class="co">#&gt; 3    ae          10 2026-02-06 21:46:29</span></span>
-<span><span class="co">#&gt; 4    pc          14 2026-02-06 21:46:30</span></span>
-<span><span class="co">#&gt; 5  adsl          15 2026-02-06 21:46:31</span></span>
-<span><span class="co">#&gt; 6  adae          16 2026-02-06 21:46:31</span></span>
-<span><span class="co">#&gt; 7  adpc          17 2026-02-06 21:46:32</span></span>
+<span><span class="co">#&gt; 1    dm           2 2026-02-06 22:16:16</span></span>
+<span><span class="co">#&gt; 2    ex           8 2026-02-06 22:16:17</span></span>
+<span><span class="co">#&gt; 3    ae          10 2026-02-06 22:16:17</span></span>
+<span><span class="co">#&gt; 4    pc          14 2026-02-06 22:16:17</span></span>
+<span><span class="co">#&gt; 5  adsl          15 2026-02-06 22:16:19</span></span>
+<span><span class="co">#&gt; 6  adae          16 2026-02-06 22:16:19</span></span>
+<span><span class="co">#&gt; 7  adpc          17 2026-02-06 22:16:20</span></span>
 <span><span class="co">#&gt;                                               changes</span></span>
 <span><span class="co">#&gt; 1    tables_created, tables_inserted_into, main.dm, 2</span></span>
 <span><span class="co">#&gt; 2    tables_created, tables_inserted_into, main.ex, 8</span></span>
@@ -1327,8 +1327,8 @@ demonstrate by adding new derived variables to ADSL:</p>
 <span><span class="co"># View version history - should now show 2 snapshots</span></span>
 <span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"adsl"</span><span class="op">)</span></span>
 <span><span class="co">#&gt;    snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 16          15 2026-02-06 21:46:31             15</span></span>
-<span><span class="co">#&gt; 22          21 2026-02-06 21:46:34             21</span></span>
+<span><span class="co">#&gt; 16          15 2026-02-06 22:16:19             15</span></span>
+<span><span class="co">#&gt; 22          21 2026-02-06 22:16:21             21</span></span>
 <span><span class="co">#&gt;                                                                    changes</span></span>
 <span><span class="co">#&gt; 16                     tables_created, tables_inserted_into, main.adsl, 15</span></span>
 <span><span class="co">#&gt; 22 tables_created, tables_dropped, tables_inserted_into, main.adsl, 15, 21</span></span>
@@ -1344,7 +1344,7 @@ demonstrate by adding new derived variables to ADSL:</p>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">USUBJID</span>, <span class="va">AGE</span>, <span class="va">AGE65FL</span>, <span class="va">AGECAT</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">5</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Source:   SQL [?? x 4]</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/Rtmp7uf3pW/duckplyr/duckplyr1f0f28ce38ed.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpaI5WHo/duckplyr/duckplyr1f7952922021.duckdb]</span></span></span>
 <span><span class="co">#&gt;   USUBJID       AGE AGE65FL AGECAT</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 01-701-1015    63 N       &lt;65   </span></span>
@@ -1494,11 +1494,11 @@ iteration to maintain a complete audit trail:</p>
 <span><span class="va">snapshots</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"adsl"</span><span class="op">)</span></span>
 <span><span class="va">snapshots</span>  <span class="co"># Shows all iterations with snapshot metadata</span></span>
 <span><span class="co">#&gt;    snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 16          15 2026-02-06 21:46:31             15</span></span>
-<span><span class="co">#&gt; 22          21 2026-02-06 21:46:34             21</span></span>
-<span><span class="co">#&gt; 23          22 2026-02-06 21:46:34             22</span></span>
-<span><span class="co">#&gt; 24          23 2026-02-06 21:46:34             23</span></span>
-<span><span class="co">#&gt; 25          24 2026-02-06 21:46:34             24</span></span>
+<span><span class="co">#&gt; 16          15 2026-02-06 22:16:19             15</span></span>
+<span><span class="co">#&gt; 22          21 2026-02-06 22:16:21             21</span></span>
+<span><span class="co">#&gt; 23          22 2026-02-06 22:16:22             22</span></span>
+<span><span class="co">#&gt; 24          23 2026-02-06 22:16:22             23</span></span>
+<span><span class="co">#&gt; 25          24 2026-02-06 22:16:22             24</span></span>
 <span><span class="co">#&gt;                                                                    changes</span></span>
 <span><span class="co">#&gt; 16                     tables_created, tables_inserted_into, main.adsl, 15</span></span>
 <span><span class="co">#&gt; 22 tables_created, tables_dropped, tables_inserted_into, main.adsl, 15, 21</span></span>
@@ -1571,11 +1571,11 @@ iteration to maintain a complete audit trail:</p>
 <span><span class="va">versions</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"adsl"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">versions</span><span class="op">)</span></span>
 <span><span class="co">#&gt;    snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 16          15 2026-02-06 21:46:31             15</span></span>
-<span><span class="co">#&gt; 22          21 2026-02-06 21:46:34             21</span></span>
-<span><span class="co">#&gt; 23          22 2026-02-06 21:46:34             22</span></span>
-<span><span class="co">#&gt; 24          23 2026-02-06 21:46:34             23</span></span>
-<span><span class="co">#&gt; 25          24 2026-02-06 21:46:34             24</span></span>
+<span><span class="co">#&gt; 16          15 2026-02-06 22:16:19             15</span></span>
+<span><span class="co">#&gt; 22          21 2026-02-06 22:16:21             21</span></span>
+<span><span class="co">#&gt; 23          22 2026-02-06 22:16:22             22</span></span>
+<span><span class="co">#&gt; 24          23 2026-02-06 22:16:22             23</span></span>
+<span><span class="co">#&gt; 25          24 2026-02-06 22:16:22             24</span></span>
 <span><span class="co">#&gt;                                                                    changes</span></span>
 <span><span class="co">#&gt; 16                     tables_created, tables_inserted_into, main.adsl, 15</span></span>
 <span><span class="co">#&gt; 22 tables_created, tables_dropped, tables_inserted_into, main.adsl, 15, 21</span></span>
@@ -1718,7 +1718,7 @@ trails:</p>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">USUBJID</span> <span class="op">==</span> <span class="st">"01-701-1015"</span>, <span class="va">AESEQ</span> <span class="op">==</span> <span class="fl">1</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">USUBJID</span>, <span class="va">AEDECOD</span>, <span class="va">AESEV</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Source:   SQL [?? x 3]</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/Rtmp7uf3pW/duckplyr/duckplyr1f0f28ce38ed.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpaI5WHo/duckplyr/duckplyr1f7952922021.duckdb]</span></span></span>
 <span><span class="co">#&gt;   USUBJID     AEDECOD                   AESEV </span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 01-701-1015 APPLICATION SITE ERYTHEMA SEVERE</span></span></code></pre></div>
@@ -1734,7 +1734,7 @@ trails:</p>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">EOSSTT</span>, <span class="va">TRT01P</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/arrange.html" class="external-link">arrange</a></span><span class="op">(</span><span class="va">TRT01P</span>, <span class="va">EOSSTT</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Source:     SQL [?? x 3]</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database:   DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/Rtmp7uf3pW/duckplyr/duckplyr1f0f28ce38ed.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database:   DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpaI5WHo/duckplyr/duckplyr1f7952922021.duckdb]</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Ordered by: TRT01P, EOSSTT</span></span></span>
 <span><span class="co">#&gt;   EOSSTT    TRT01P                   n</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
@@ -1749,7 +1749,7 @@ trails:</p>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">TRT01A</span>, <span class="va">AESEV</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/arrange.html" class="external-link">arrange</a></span><span class="op">(</span><span class="va">TRT01A</span>, <span class="va">AESEV</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Source:     SQL [?? x 3]</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database:   DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/Rtmp7uf3pW/duckplyr/duckplyr1f0f28ce38ed.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database:   DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpaI5WHo/duckplyr/duckplyr1f7952922021.duckdb]</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Ordered by: TRT01A, AESEV</span></span></span>
 <span><span class="co">#&gt;   TRT01A               AESEV        n</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
@@ -1774,7 +1774,7 @@ trails:</p>
 <span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/arrange.html" class="external-link">arrange</a></span><span class="op">(</span><span class="va">NFRLT</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Source:     SQL [?? x 4]</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database:   DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/Rtmp7uf3pW/duckplyr/duckplyr1f0f28ce38ed.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database:   DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpaI5WHo/duckplyr/duckplyr1f7952922021.duckdb]</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Ordered by: NFRLT</span></span></span>
 <span><span class="co">#&gt;    NFRLT     n mean_conc  sd_conc</span></span>
 <span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
@@ -1808,7 +1808,7 @@ trails:</p>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">AGEGR1</span>, <span class="va">TRT01A.x</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/arrange.html" class="external-link">arrange</a></span><span class="op">(</span><span class="va">AGEGR1</span>, <span class="va">TRT01A.x</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Source:     SQL [?? x 3]</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database:   DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/Rtmp7uf3pW/duckplyr/duckplyr1f0f28ce38ed.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database:   DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpaI5WHo/duckplyr/duckplyr1f7952922021.duckdb]</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Ordered by: AGEGR1, TRT01A.x</span></span></span>
 <span><span class="co">#&gt;   AGEGR1 TRT01A.x                 n</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
@@ -1829,12 +1829,12 @@ essential:</p>
 <span><span class="va">audit_report</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"adsl"</span><span class="op">)</span></span>
 <span><span class="va">audit_report</span></span>
 <span><span class="co">#&gt;    snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 16          15 2026-02-06 21:46:31             15</span></span>
-<span><span class="co">#&gt; 22          21 2026-02-06 21:46:34             21</span></span>
-<span><span class="co">#&gt; 23          22 2026-02-06 21:46:34             22</span></span>
-<span><span class="co">#&gt; 24          23 2026-02-06 21:46:34             23</span></span>
-<span><span class="co">#&gt; 25          24 2026-02-06 21:46:34             24</span></span>
-<span><span class="co">#&gt; 26          25 2026-02-06 21:46:35             25</span></span>
+<span><span class="co">#&gt; 16          15 2026-02-06 22:16:19             15</span></span>
+<span><span class="co">#&gt; 22          21 2026-02-06 22:16:21             21</span></span>
+<span><span class="co">#&gt; 23          22 2026-02-06 22:16:22             22</span></span>
+<span><span class="co">#&gt; 24          23 2026-02-06 22:16:22             23</span></span>
+<span><span class="co">#&gt; 25          24 2026-02-06 22:16:22             24</span></span>
+<span><span class="co">#&gt; 26          25 2026-02-06 22:16:22             25</span></span>
 <span><span class="co">#&gt;                                                                                       changes</span></span>
 <span><span class="co">#&gt; 16                                        tables_created, tables_inserted_into, main.adsl, 15</span></span>
 <span><span class="co">#&gt; 22                    tables_created, tables_dropped, tables_inserted_into, main.adsl, 15, 21</span></span>
@@ -1865,12 +1865,12 @@ essential:</p>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 8</span></span></span>
 <span><span class="co">#&gt;   table_id table_uuid     begin_snapshot end_snapshot schema_id table_name path </span></span>
 <span><span class="co">#&gt;      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>       15 019c34eb-c096…             15           21         0 adsl       adsl/</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span>       21 019c34eb-cc0e…             21           22         0 adsl       adsl/</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span>       22 019c34eb-ccf8…             22           23         0 adsl       adsl/</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span>       23 019c34eb-cdb5…             23           24         0 adsl       adsl/</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span>       24 019c34eb-ce70…             24           25         0 adsl       adsl/</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span>       26 019c34eb-d038…             25           <span style="color: #BB0000;">NA</span>         0 adsl       adsl/</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>       15 019c3507-0778…             15           21         0 adsl       adsl/</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span>       21 019c3507-1290…             21           22         0 adsl       adsl/</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span>       22 019c3507-136b…             22           23         0 adsl       adsl/</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span>       23 019c3507-1423…             23           24         0 adsl       adsl/</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span>       24 019c3507-14e0…             24           25         0 adsl       adsl/</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span>       26 019c3507-16a3…             25           <span style="color: #BB0000;">NA</span>         0 adsl       adsl/</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 1 more variable: path_is_relative &lt;lgl&gt;</span></span></span>
 <span></span>
 <span><span class="co"># Export audit information</span></span>
@@ -1881,12 +1881,12 @@ essential:</p>
 <span>  <span class="op">)</span></span>
 <span><span class="va">audit_export</span></span>
 <span><span class="co">#&gt;    snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 16          15 2026-02-06 21:46:31             15</span></span>
-<span><span class="co">#&gt; 22          21 2026-02-06 21:46:34             21</span></span>
-<span><span class="co">#&gt; 23          22 2026-02-06 21:46:34             22</span></span>
-<span><span class="co">#&gt; 24          23 2026-02-06 21:46:34             23</span></span>
-<span><span class="co">#&gt; 25          24 2026-02-06 21:46:34             24</span></span>
-<span><span class="co">#&gt; 26          25 2026-02-06 21:46:35             25</span></span>
+<span><span class="co">#&gt; 16          15 2026-02-06 22:16:19             15</span></span>
+<span><span class="co">#&gt; 22          21 2026-02-06 22:16:21             21</span></span>
+<span><span class="co">#&gt; 23          22 2026-02-06 22:16:22             22</span></span>
+<span><span class="co">#&gt; 24          23 2026-02-06 22:16:22             23</span></span>
+<span><span class="co">#&gt; 25          24 2026-02-06 22:16:22             24</span></span>
+<span><span class="co">#&gt; 26          25 2026-02-06 22:16:22             25</span></span>
 <span><span class="co">#&gt;                                                                                       changes</span></span>
 <span><span class="co">#&gt; 16                                        tables_created, tables_inserted_into, main.adsl, 15</span></span>
 <span><span class="co">#&gt; 22                    tables_created, tables_dropped, tables_inserted_into, main.adsl, 15, 21</span></span>
