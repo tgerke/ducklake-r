@@ -102,7 +102,7 @@ get_ducklake_table("vehicles_analysis") |>
   select(mpg, cyl, efficiency) |>
   head(3)
 #> # Source:   SQL [?? x 3]
-#> # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpOWJ6ih/duckplyr/duckplyr111960e4a3f1.duckdb]
+#> # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpNGLFLd/duckplyr/duckplyr194943385a72.duckdb]
 #>     mpg cyl   efficiency
 #>   <dbl> <chr> <chr>     
 #> 1  21   6.0   Medium    
@@ -112,11 +112,11 @@ get_ducklake_table("vehicles_analysis") |>
 # View complete audit trail across all layers with author and commit messages
 list_table_snapshots()
 #>   snapshot_id       snapshot_time schema_version
-#> 1           0 2026-02-06 20:31:26              0
-#> 2           1 2026-02-06 20:31:26              1
-#> 3           2 2026-02-06 20:31:26              2
-#> 4           3 2026-02-06 20:31:26              3
-#> 5           4 2026-02-06 20:31:26              4
+#> 1           0 2026-02-06 20:54:38              0
+#> 2           1 2026-02-06 20:54:38              1
+#> 3           2 2026-02-06 20:54:38              2
+#> 4           3 2026-02-06 20:54:38              3
+#> 5           4 2026-02-06 20:54:38              4
 #>                                                                           changes
 #> 1                                                           schemas_created, main
 #> 2                      tables_created, tables_inserted_into, main.vehicles_raw, 1
@@ -141,7 +141,7 @@ get_ducklake_table_version("vehicles_clean", version = 2) |>
   select(mpg, cyl, gear) |>
   head(3)
 #> # Source:   SQL [?? x 3]
-#> # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpOWJ6ih/duckplyr/duckplyr111960e4a3f1.duckdb]
+#> # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpNGLFLd/duckplyr/duckplyr194943385a72.duckdb]
 #>     mpg cyl    gear
 #>   <dbl> <chr> <dbl>
 #> 1  21   6.0       4
@@ -187,9 +187,8 @@ detailed vignettes:
   Lake](https://tgerke.github.io/ducklake-r/articles/clinical-trial-datalake.html) -
   **Start here**: Complete workflow from SDTM to ADaM with regulatory
   artifacts
-- [Getting
-  Started](https://tgerke.github.io/ducklake-r/articles/ducklake.html) -
-  Basic lakehouse operations
+- [Cookbook](https://tgerke.github.io/ducklake-r/articles/ducklake.html) -
+  Quick recipes for common operations
 - [Modifying
   Tables](https://tgerke.github.io/ducklake-r/articles/modifying-tables.html) -
   Two approaches for table modifications
@@ -326,8 +325,8 @@ Access metadata and snapshots
 
 - [Clinical Trial Data Lake with
   ducklake](https://tgerke.github.io/ducklake-r/articles/clinical-trial-datalake.md):
-- [Getting Started with
-  ducklake](https://tgerke.github.io/ducklake-r/articles/ducklake.md):
+- [ducklake
+  Cookbook](https://tgerke.github.io/ducklake-r/articles/ducklake.md):
 - [Modifying
   Tables](https://tgerke.github.io/ducklake-r/articles/modifying-tables.md):
 - [Time Travel
