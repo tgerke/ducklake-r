@@ -79,7 +79,36 @@
 </div>
 <!-- badges: start -->
 
-<p>ducklake is an R package that complements the existing toolkits in the <a href="https://r.duckdb.org/index.html" class="external-link">duckdb</a> and <a href="https://duckplyr.tidyverse.org/index.html" class="external-link">duckplyr</a> packages, supporting the new <a href="https://ducklake.select/docs/stable/duckdb/introduction.html" class="external-link">DuckLake</a> ecosystem.</p>
+<p>ducklake is an R package that brings versioned data lake infrastructure to data-intensive workflows. Built on <a href="https://r.duckdb.org/index.html" class="external-link">DuckDB</a> and <a href="https://ducklake.select/docs/stable/duckdb/introduction.html" class="external-link">DuckLake</a>, it provides ACID transactions, automatic versioning, time travel queries, and complete audit trails.</p>
+<div class="section level2">
+<h2 id="why-ducklake">Why DuckLake?<a class="anchor" aria-label="anchor" href="#why-ducklake"></a>
+</h2>
+<p>Many industries rely on flat-file workflows (CSV, XPT, Excel, etc.) that create significant data management challenges:</p>
+<ul>
+<li>
+<strong>Disconnected flat files</strong>: Related datasets stored as separate files despite being inherently relational</li>
+<li>
+<strong>Lost audit trails</strong>: No automatic tracking of who changed what and when</li>
+<li>
+<strong>Version control gaps</strong>: Multiple dataset versions scattered across folders with unclear provenance<br>
+</li>
+<li>
+<strong>Reproducibility issues</strong>: Inability to recreate analyses from specific time points</li>
+<li>
+<strong>Collaboration friction</strong>: Multiple analysts working with different versions of the same data</li>
+<li>
+<strong>Compliance challenges</strong>: Difficulty demonstrating data integrity and audit trails for regulated industries</li>
+</ul>
+<p><a href="https://ducklake.select/" class="external-link">DuckLake</a> solves these problems by implementing a <strong>versioned data lake</strong> architecture that:</p>
+<ul>
+<li>Preserves relational structure between related datasets</li>
+<li>Automatically versions every data change with timestamps and metadata</li>
+<li>Enables time travel to recreate analyses exactly as they were run</li>
+<li>Provides complete audit trails with author attribution and commit messages</li>
+<li>Supports layered architecture (bronze/silver/gold) for data lineage from raw to analysis-ready</li>
+<li>Allows multiple team members to collaborate safely with shared data</li>
+</ul>
+</div>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
@@ -88,7 +117,7 @@
 <code class="sourceCode R"><span><span class="fu">pak</span><span class="fu">::</span><span class="fu"><a href="https://pak.r-lib.org/reference/pak.html" class="external-link">pak</a></span><span class="op">(</span><span class="st">"tgerke/ducklake-r"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="quick-example">Quick example<a class="anchor" aria-label="anchor" href="#quick-example"></a>
+<h2 id="quick-example-layered-data-workflow">Quick example: Layered data workflow<a class="anchor" aria-label="anchor" href="#quick-example-layered-data-workflow"></a>
 </h2>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://tgerke.github.io/ducklake-r/">ducklake</a></span><span class="op">)</span></span>
@@ -97,34 +126,128 @@
 <span><span class="co"># Install the ducklake extension (requires DuckDB v1.3.0 or higher)</span></span>
 <span><span class="fu"><a href="reference/install_ducklake.html">install_ducklake</a></span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Create a lakehouse</span></span>
-<span><span class="fu"><a href="reference/attach_ducklake.html">attach_ducklake</a></span><span class="op">(</span><span class="st">"my_ducklake"</span><span class="op">)</span></span>
+<span><span class="co"># Create a data lake in a temporary directory</span></span>
+<span><span class="fu"><a href="reference/attach_ducklake.html">attach_ducklake</a></span><span class="op">(</span><span class="st">"my_data_lake"</span>, lake_path <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Create a table</span></span>
-<span><span class="fu"><a href="reference/create_table.html">create_table</a></span><span class="op">(</span><span class="st">"https://blobs.duckdb.org/nl_stations.csv"</span>, <span class="st">"nl_train_stations"</span><span class="op">)</span></span>
+<span><span class="co"># Bronze layer: Load raw data exactly as received</span></span>
+<span><span class="fu"><a href="reference/with_transaction.html">with_transaction</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="reference/create_table.html">create_table</a></span><span class="op">(</span><span class="va">mtcars</span>, <span class="st">"vehicles_raw"</span><span class="op">)</span>,</span>
+<span>  author <span class="op">=</span> <span class="st">"Data Engineer"</span>,</span>
+<span>  commit_message <span class="op">=</span> <span class="st">"Initial load of raw vehicle data"</span></span>
+<span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># View the data</span></span>
-<span><span class="fu"><a href="reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"nl_train_stations"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">code</span>, <span class="va">name_short</span>, <span class="va">name_long</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">5</span><span class="op">)</span></span>
+<span><span class="co"># Silver layer: Apply cleaning transformations</span></span>
+<span><span class="fu"><a href="reference/with_transaction.html">with_transaction</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"vehicles_raw"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>cyl <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span><span class="va">cyl</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>    <span class="fu"><a href="reference/create_table.html">create_table</a></span><span class="op">(</span><span class="st">"vehicles_clean"</span><span class="op">)</span>,</span>
+<span>  author <span class="op">=</span> <span class="st">"Data Engineer"</span>, </span>
+<span>  commit_message <span class="op">=</span> <span class="st">"Clean and standardize vehicle data"</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Gold layer: Create analysis dataset with business logic</span></span>
+<span><span class="fu"><a href="reference/with_transaction.html">with_transaction</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"vehicles_clean"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span></span>
+<span>      efficiency <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/case-and-replace-when.html" class="external-link">case_when</a></span><span class="op">(</span></span>
+<span>        <span class="va">mpg</span> <span class="op">&lt;</span> <span class="fl">15</span> <span class="op">~</span> <span class="st">"Low"</span>,</span>
+<span>        <span class="va">mpg</span> <span class="op">&lt;</span> <span class="fl">25</span> <span class="op">~</span> <span class="st">"Medium"</span>,</span>
+<span>        <span class="cn">TRUE</span> <span class="op">~</span> <span class="st">"High"</span></span>
+<span>      <span class="op">)</span></span>
+<span>    <span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>    <span class="fu"><a href="reference/create_table.html">create_table</a></span><span class="op">(</span><span class="st">"vehicles_analysis"</span><span class="op">)</span>,</span>
+<span>  author <span class="op">=</span> <span class="st">"Data Analyst"</span>,</span>
+<span>  commit_message <span class="op">=</span> <span class="st">"Create analysis-ready dataset with efficiency categories"</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Update the silver layer with additional transformations</span></span>
+<span><span class="fu"><a href="reference/with_transaction.html">with_transaction</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"vehicles_clean"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>gear <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/integer.html" class="external-link">as.integer</a></span><span class="op">(</span><span class="va">gear</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>    <span class="fu"><a href="reference/replace_table.html">replace_table</a></span><span class="op">(</span><span class="st">"vehicles_clean"</span><span class="op">)</span>,</span>
+<span>  author <span class="op">=</span> <span class="st">"Data Engineer"</span>,</span>
+<span>  commit_message <span class="op">=</span> <span class="st">"Add gear type conversion to silver layer"</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># View the analysis dataset</span></span>
+<span><span class="fu"><a href="reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"vehicles_analysis"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">mpg</span>, <span class="va">cyl</span>, <span class="va">efficiency</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">3</span><span class="op">)</span></span>
 <span><span class="co">#&gt; # Source:   SQL [?? x 3]</span></span>
-<span><span class="co">#&gt; # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpRatwuY/duckplyr/duckplyr6eab6d331290.duckdb]</span></span>
-<span><span class="co">#&gt;   code  name_short name_long            </span></span>
-<span><span class="co">#&gt;   &lt;chr&gt; &lt;chr&gt;      &lt;chr&gt;                </span></span>
-<span><span class="co">#&gt; 1 HT    Den Bosch  's-Hertogenbosch     </span></span>
-<span><span class="co">#&gt; 2 HTO   Dn Bosch O 's-Hertogenbosch Oost</span></span>
-<span><span class="co">#&gt; 3 HDE   't Harde   't Harde             </span></span>
-<span><span class="co">#&gt; 4 AHBF  Aachen     Aachen Hbf           </span></span>
-<span><span class="co">#&gt; 5 AW    Aachen W   Aachen West</span></span>
+<span><span class="co">#&gt; # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpOWJ6ih/duckplyr/duckplyr111960e4a3f1.duckdb]</span></span>
+<span><span class="co">#&gt;     mpg cyl   efficiency</span></span>
+<span><span class="co">#&gt;   &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt;     </span></span>
+<span><span class="co">#&gt; 1  21   6.0   Medium    </span></span>
+<span><span class="co">#&gt; 2  21   6.0   Medium    </span></span>
+<span><span class="co">#&gt; 3  22.8 4.0   Medium</span></span>
 <span></span>
-<span><span class="co"># Update with dplyr syntax</span></span>
-<span><span class="fu"><a href="reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"nl_train_stations"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>name_short <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/chartr.html" class="external-link">toupper</a></span><span class="op">(</span><span class="va">name_short</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="reference/ducklake_exec.html">ducklake_exec</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 578</span></span>
+<span><span class="co"># View complete audit trail across all layers with author and commit messages</span></span>
+<span><span class="fu"><a href="reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
+<span><span class="co">#&gt; 1           0 2026-02-06 20:31:26              0</span></span>
+<span><span class="co">#&gt; 2           1 2026-02-06 20:31:26              1</span></span>
+<span><span class="co">#&gt; 3           2 2026-02-06 20:31:26              2</span></span>
+<span><span class="co">#&gt; 4           3 2026-02-06 20:31:26              3</span></span>
+<span><span class="co">#&gt; 5           4 2026-02-06 20:31:26              4</span></span>
+<span><span class="co">#&gt;                                                                           changes</span></span>
+<span><span class="co">#&gt; 1                                                           schemas_created, main</span></span>
+<span><span class="co">#&gt; 2                      tables_created, tables_inserted_into, main.vehicles_raw, 1</span></span>
+<span><span class="co">#&gt; 3                    tables_created, tables_inserted_into, main.vehicles_clean, 2</span></span>
+<span><span class="co">#&gt; 4                 tables_created, tables_inserted_into, main.vehicles_analysis, 3</span></span>
+<span><span class="co">#&gt; 5 tables_created, tables_dropped, tables_inserted_into, main.vehicles_clean, 2, 4</span></span>
+<span><span class="co">#&gt;          author                                           commit_message</span></span>
+<span><span class="co">#&gt; 1          &lt;NA&gt;                                                     &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 2 Data Engineer                         Initial load of raw vehicle data</span></span>
+<span><span class="co">#&gt; 3 Data Engineer                       Clean and standardize vehicle data</span></span>
+<span><span class="co">#&gt; 4  Data Analyst Create analysis-ready dataset with efficiency categories</span></span>
+<span><span class="co">#&gt; 5 Data Engineer                 Add gear type conversion to silver layer</span></span>
+<span><span class="co">#&gt;   commit_extra_info</span></span>
+<span><span class="co">#&gt; 1              &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 2              &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 3              &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 4              &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 5              &lt;NA&gt;</span></span>
+<span></span>
+<span><span class="co"># Time travel: Query the silver layer as it existed at snapshot 2 (before updates)</span></span>
+<span><span class="fu"><a href="reference/get_ducklake_table_version.html">get_ducklake_table_version</a></span><span class="op">(</span><span class="st">"vehicles_clean"</span>, version <span class="op">=</span> <span class="fl">2</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">mpg</span>, <span class="va">cyl</span>, <span class="va">gear</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">3</span><span class="op">)</span></span>
+<span><span class="co">#&gt; # Source:   SQL [?? x 3]</span></span>
+<span><span class="co">#&gt; # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpOWJ6ih/duckplyr/duckplyr111960e4a3f1.duckdb]</span></span>
+<span><span class="co">#&gt;     mpg cyl    gear</span></span>
+<span><span class="co">#&gt;   &lt;dbl&gt; &lt;chr&gt; &lt;dbl&gt;</span></span>
+<span><span class="co">#&gt; 1  21   6.0       4</span></span>
+<span><span class="co">#&gt; 2  21   6.0       4</span></span>
+<span><span class="co">#&gt; 3  22.8 4.0       4</span></span>
 <span></span>
 <span><span class="co"># Clean up</span></span>
-<span><span class="fu"><a href="reference/detach_ducklake.html">detach_ducklake</a></span><span class="op">(</span><span class="st">"my_ducklake"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="reference/detach_ducklake.html">detach_ducklake</a></span><span class="op">(</span><span class="st">"my_data_lake"</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="medallion-architecture">Medallion architecture<a class="anchor" aria-label="anchor" href="#medallion-architecture"></a>
+</h2>
+<p>ducklake implements a layered data architecture (medallion pattern) that ensures data quality and traceability:</p>
+<ul>
+<li>
+<strong>Bronze layer</strong> (raw): Data exactly as received from source systems—preserves original data for audit trails</li>
+<li>
+<strong>Silver layer</strong> (cleaned): Standardized, cleaned data with transformations and validations—the trusted source for analysis</li>
+<li>
+<strong>Gold layer</strong> (analytics): Business-logic datasets optimized for specific analyses, dashboards, or reports</li>
+</ul>
+<p>Each layer is automatically versioned, providing complete data lineage from raw source through to analysis-ready datasets. This approach enables:</p>
+<ul>
+<li>
+<strong>Complete audit trail</strong>: Original data preserved alongside all transformations</li>
+<li>
+<strong>Reprocessability</strong>: Reprocess from bronze if cleaning logic changes without re-extracting from source</li>
+<li>
+<strong>Data lineage</strong>: Clear progression from raw → cleaned → analysis-ready</li>
+<li>
+<strong>Validation</strong>: Compare layers to verify transformations</li>
+<li>
+<strong>Quality assurance</strong>: Separate concerns between ingestion, cleaning, and analysis</li>
+</ul>
 </div>
 <div class="section level2">
 <h2 id="learn-more">Learn more<a class="anchor" aria-label="anchor" href="#learn-more"></a>
@@ -132,7 +255,9 @@
 <p>Check out the <a href="https://tgerke.github.io/ducklake-r/">pkgdown site</a> for detailed vignettes:</p>
 <ul>
 <li>
-<a href="https://tgerke.github.io/ducklake-r/articles/ducklake.html">Getting Started</a> - Create your first lakehouse</li>
+<a href="https://tgerke.github.io/ducklake-r/articles/clinical-trial-datalake.html">Clinical Trial Data Lake</a> - <strong>Start here</strong>: Complete workflow from SDTM to ADaM with regulatory artifacts</li>
+<li>
+<a href="https://tgerke.github.io/ducklake-r/articles/ducklake.html">Getting Started</a> - Basic lakehouse operations</li>
 <li>
 <a href="https://tgerke.github.io/ducklake-r/articles/modifying-tables.html">Modifying Tables</a> - Two approaches for table modifications</li>
 <li>
@@ -148,15 +273,27 @@
 </h2>
 <ul>
 <li>
-<strong>Tidyverse-style interface</strong> for DuckLake operations</li>
+<strong>Versioned data lake</strong>: Every data change automatically tracked with timestamps and metadata</li>
+<li>
+<strong>Lightweight snapshots</strong>: Create unlimited snapshots without frequent compacting steps</li>
+<li>
+<strong>Medallion architecture</strong>: Bronze/silver/gold layers for data lineage and quality</li>
+<li>
+<strong>ACID transactions</strong>: Atomic updates with concurrent access and transactional guarantees over multi-table operations</li>
+<li>
+<strong>Time travel</strong>: Query data exactly as it existed at any point in time—essential for reproducibility</li>
+<li>
+<strong>Performance-oriented</strong>: Uses Parquet columnar storage with statistics for filter pushdown, enabling fast queries on large datasets</li>
+<li>
+<strong>Schema evolution</strong>: Adapt table schemas over time as requirements change</li>
+<li>
+<strong>Tidyverse interface</strong>: Familiar dplyr syntax for data manipulation</li>
 <li>
 <strong>Two complementary approaches</strong>: <code>rows_*</code> functions for data.frames and pipeline functions for dplyr workflows</li>
 <li>
-<strong>ACID transactions</strong> with metadata tracking</li>
+<strong>Complete audit trails</strong>: Who changed what, when, and why—suitable for regulated industries</li>
 <li>
-<strong>Time travel queries</strong> to access historical snapshots</li>
-<li>
-<strong>Seamless integration</strong> with duckdb and duckplyr</li>
+<strong>Seamless integration</strong>: Works with duckdb, duckplyr, and the broader R ecosystem</li>
 </ul>
 </div>
 </div>
