@@ -263,8 +263,12 @@ subject.</p>
 <span><span class="fu"><a href="../reference/begin_transaction.html">begin_transaction</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Transaction started</span></span>
 <span><span class="fu"><a href="../reference/create_table.html">create_table</a></span><span class="op">(</span><span class="fu">pharmaversesdtm</span><span class="fu">::</span><span class="va"><a href="https://pharmaverse.github.io/pharmaversesdtm/reference/dm.html" class="external-link">dm</a></span>, <span class="st">"dm_raw"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/commit_transaction.html">commit_transaction</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/commit_transaction.html">commit_transaction</a></span><span class="op">(</span></span>
+<span>  author <span class="op">=</span> <span class="st">"T Gerke"</span>,</span>
+<span>  commit_message <span class="op">=</span> <span class="st">"Add raw demographics"</span></span>
+<span><span class="op">)</span></span>
 <span><span class="co">#&gt; Transaction committed</span></span>
+<span><span class="co">#&gt; Snapshot metadata updated</span></span>
 <span></span>
 <span><span class="co"># Silver layer: Apply cleaning transformations</span></span>
 <span><span class="fu"><a href="../reference/begin_transaction.html">begin_transaction</a></span><span class="op">(</span><span class="op">)</span></span>
@@ -272,15 +276,19 @@ subject.</p>
 <span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"dm_raw"</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu">admiral</span><span class="fu">::</span><span class="fu"><a href="https:/pharmaverse.github.io/admiral/v1.4.1/cran-release/reference/convert_blanks_to_na.html">convert_blanks_to_na</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="../reference/create_table.html">create_table</a></span><span class="op">(</span><span class="st">"dm"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/commit_transaction.html">commit_transaction</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/commit_transaction.html">commit_transaction</a></span><span class="op">(</span></span>
+<span>  author <span class="op">=</span> <span class="st">"T Gerke"</span>,</span>
+<span>  commit_message <span class="op">=</span> <span class="st">"Clean demographics data"</span></span>
+<span><span class="op">)</span></span>
 <span><span class="co">#&gt; Transaction committed</span></span>
+<span><span class="co">#&gt; Snapshot metadata updated</span></span>
 <span></span>
 <span><span class="co"># Verify the cleaned table</span></span>
 <span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"dm"</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">USUBJID</span>, <span class="va">AGE</span>, <span class="va">SEX</span>, <span class="va">RACE</span>, <span class="va">ARM</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Source:   SQL [?? x 5]</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpZrmVkb/duckplyr/duckplyr1fcd20684ea9.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpQYypn8/duckplyr/duckplyr1f1065bc1671.duckdb]</span></span></span>
 <span><span class="co">#&gt;   USUBJID       AGE SEX   RACE  ARM                 </span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>               </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 01-701-1015    63 F     WHITE Placebo             </span></span>
@@ -300,8 +308,12 @@ domain.</p>
 <span><span class="fu"><a href="../reference/begin_transaction.html">begin_transaction</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Transaction started</span></span>
 <span><span class="fu"><a href="../reference/create_table.html">create_table</a></span><span class="op">(</span><span class="fu">pharmaversesdtm</span><span class="fu">::</span><span class="va"><a href="https://pharmaverse.github.io/pharmaversesdtm/reference/suppdm.html" class="external-link">suppdm</a></span>, <span class="st">"suppdm_raw"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/commit_transaction.html">commit_transaction</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/commit_transaction.html">commit_transaction</a></span><span class="op">(</span></span>
+<span>  author <span class="op">=</span> <span class="st">"T Gerke"</span>,</span>
+<span>  commit_message <span class="op">=</span> <span class="st">"Add raw supplemental demographics"</span></span>
+<span><span class="op">)</span></span>
 <span><span class="co">#&gt; Transaction committed</span></span>
+<span><span class="co">#&gt; Snapshot metadata updated</span></span>
 <span></span>
 <span><span class="co"># Silver layer: Cleaned data</span></span>
 <span><span class="fu"><a href="../reference/begin_transaction.html">begin_transaction</a></span><span class="op">(</span><span class="op">)</span></span>
@@ -309,8 +321,12 @@ domain.</p>
 <span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"suppdm_raw"</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu">admiral</span><span class="fu">::</span><span class="fu"><a href="https:/pharmaverse.github.io/admiral/v1.4.1/cran-release/reference/convert_blanks_to_na.html">convert_blanks_to_na</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="../reference/create_table.html">create_table</a></span><span class="op">(</span><span class="st">"suppdm"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/commit_transaction.html">commit_transaction</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Transaction committed</span></span></code></pre></div>
+<span><span class="fu"><a href="../reference/commit_transaction.html">commit_transaction</a></span><span class="op">(</span></span>
+<span>  author <span class="op">=</span> <span class="st">"T Gerke"</span>,</span>
+<span>  commit_message <span class="op">=</span> <span class="st">"Clean supplemental demographics"</span></span>
+<span><span class="op">)</span></span>
+<span><span class="co">#&gt; Transaction committed</span></span>
+<span><span class="co">#&gt; Snapshot metadata updated</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="disposition-ds">Disposition (DS)<a class="anchor" aria-label="anchor" href="#disposition-ds"></a>
@@ -321,8 +337,12 @@ domain.</p>
 <span><span class="fu"><a href="../reference/begin_transaction.html">begin_transaction</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Transaction started</span></span>
 <span><span class="fu"><a href="../reference/create_table.html">create_table</a></span><span class="op">(</span><span class="fu">pharmaversesdtm</span><span class="fu">::</span><span class="va"><a href="https://pharmaverse.github.io/pharmaversesdtm/reference/ds.html" class="external-link">ds</a></span>, <span class="st">"ds_raw"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/commit_transaction.html">commit_transaction</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/commit_transaction.html">commit_transaction</a></span><span class="op">(</span></span>
+<span>  author <span class="op">=</span> <span class="st">"T Gerke"</span>,</span>
+<span>  commit_message <span class="op">=</span> <span class="st">"Add raw disposition"</span></span>
+<span><span class="op">)</span></span>
 <span><span class="co">#&gt; Transaction committed</span></span>
+<span><span class="co">#&gt; Snapshot metadata updated</span></span>
 <span></span>
 <span><span class="co"># Silver layer</span></span>
 <span><span class="fu"><a href="../reference/begin_transaction.html">begin_transaction</a></span><span class="op">(</span><span class="op">)</span></span>
@@ -330,8 +350,12 @@ domain.</p>
 <span><span class="va">ds</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"ds_raw"</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu">admiral</span><span class="fu">::</span><span class="fu"><a href="https:/pharmaverse.github.io/admiral/v1.4.1/cran-release/reference/convert_blanks_to_na.html">convert_blanks_to_na</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="../reference/create_table.html">create_table</a></span><span class="op">(</span><span class="st">"ds"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/commit_transaction.html">commit_transaction</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Transaction committed</span></span></code></pre></div>
+<span><span class="fu"><a href="../reference/commit_transaction.html">commit_transaction</a></span><span class="op">(</span></span>
+<span>  author <span class="op">=</span> <span class="st">"T Gerke"</span>,</span>
+<span>  commit_message <span class="op">=</span> <span class="st">"Clean disposition data"</span></span>
+<span><span class="op">)</span></span>
+<span><span class="co">#&gt; Transaction committed</span></span>
+<span><span class="co">#&gt; Snapshot metadata updated</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="exposure-ex">Exposure (EX)<a class="anchor" aria-label="anchor" href="#exposure-ex"></a>
@@ -342,8 +366,12 @@ domain.</p>
 <span><span class="fu"><a href="../reference/begin_transaction.html">begin_transaction</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Transaction started</span></span>
 <span><span class="fu"><a href="../reference/create_table.html">create_table</a></span><span class="op">(</span><span class="fu">pharmaversesdtm</span><span class="fu">::</span><span class="va"><a href="https://pharmaverse.github.io/pharmaversesdtm/reference/ex.html" class="external-link">ex</a></span>, <span class="st">"ex_raw"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/commit_transaction.html">commit_transaction</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/commit_transaction.html">commit_transaction</a></span><span class="op">(</span></span>
+<span>  author <span class="op">=</span> <span class="st">"T Gerke"</span>,</span>
+<span>  commit_message <span class="op">=</span> <span class="st">"Add raw exposure"</span></span>
+<span><span class="op">)</span></span>
 <span><span class="co">#&gt; Transaction committed</span></span>
+<span><span class="co">#&gt; Snapshot metadata updated</span></span>
 <span></span>
 <span><span class="co"># Silver layer</span></span>
 <span><span class="fu"><a href="../reference/begin_transaction.html">begin_transaction</a></span><span class="op">(</span><span class="op">)</span></span>
@@ -351,8 +379,12 @@ domain.</p>
 <span><span class="va">ex</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"ex_raw"</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu">admiral</span><span class="fu">::</span><span class="fu"><a href="https:/pharmaverse.github.io/admiral/v1.4.1/cran-release/reference/convert_blanks_to_na.html">convert_blanks_to_na</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="../reference/create_table.html">create_table</a></span><span class="op">(</span><span class="st">"ex"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/commit_transaction.html">commit_transaction</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Transaction committed</span></span></code></pre></div>
+<span><span class="fu"><a href="../reference/commit_transaction.html">commit_transaction</a></span><span class="op">(</span></span>
+<span>  author <span class="op">=</span> <span class="st">"T Gerke"</span>,</span>
+<span>  commit_message <span class="op">=</span> <span class="st">"Clean exposure data"</span></span>
+<span><span class="op">)</span></span>
+<span><span class="co">#&gt; Transaction committed</span></span>
+<span><span class="co">#&gt; Snapshot metadata updated</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="adverse-events-ae">Adverse Events (AE)<a class="anchor" aria-label="anchor" href="#adverse-events-ae"></a>
@@ -363,8 +395,12 @@ domain.</p>
 <span><span class="fu"><a href="../reference/begin_transaction.html">begin_transaction</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Transaction started</span></span>
 <span><span class="fu"><a href="../reference/create_table.html">create_table</a></span><span class="op">(</span><span class="fu">pharmaversesdtm</span><span class="fu">::</span><span class="va"><a href="https://pharmaverse.github.io/pharmaversesdtm/reference/ae.html" class="external-link">ae</a></span>, <span class="st">"ae_raw"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/commit_transaction.html">commit_transaction</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/commit_transaction.html">commit_transaction</a></span><span class="op">(</span></span>
+<span>  author <span class="op">=</span> <span class="st">"T Gerke"</span>,</span>
+<span>  commit_message <span class="op">=</span> <span class="st">"Add raw adverse events"</span></span>
+<span><span class="op">)</span></span>
 <span><span class="co">#&gt; Transaction committed</span></span>
+<span><span class="co">#&gt; Snapshot metadata updated</span></span>
 <span></span>
 <span><span class="co"># Silver layer</span></span>
 <span><span class="fu"><a href="../reference/begin_transaction.html">begin_transaction</a></span><span class="op">(</span><span class="op">)</span></span>
@@ -372,8 +408,12 @@ domain.</p>
 <span><span class="va">ae</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"ae_raw"</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu">admiral</span><span class="fu">::</span><span class="fu"><a href="https:/pharmaverse.github.io/admiral/v1.4.1/cran-release/reference/convert_blanks_to_na.html">convert_blanks_to_na</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="../reference/create_table.html">create_table</a></span><span class="op">(</span><span class="st">"ae"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/commit_transaction.html">commit_transaction</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Transaction committed</span></span></code></pre></div>
+<span><span class="fu"><a href="../reference/commit_transaction.html">commit_transaction</a></span><span class="op">(</span></span>
+<span>  author <span class="op">=</span> <span class="st">"T Gerke"</span>,</span>
+<span>  commit_message <span class="op">=</span> <span class="st">"Clean adverse events"</span></span>
+<span><span class="op">)</span></span>
+<span><span class="co">#&gt; Transaction committed</span></span>
+<span><span class="co">#&gt; Snapshot metadata updated</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="vital-signs-vs">Vital Signs (VS)<a class="anchor" aria-label="anchor" href="#vital-signs-vs"></a>
@@ -384,8 +424,12 @@ domain.</p>
 <span><span class="fu"><a href="../reference/begin_transaction.html">begin_transaction</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Transaction started</span></span>
 <span><span class="fu"><a href="../reference/create_table.html">create_table</a></span><span class="op">(</span><span class="fu">pharmaversesdtm</span><span class="fu">::</span><span class="va"><a href="https://pharmaverse.github.io/pharmaversesdtm/reference/vs.html" class="external-link">vs</a></span>, <span class="st">"vs_raw"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/commit_transaction.html">commit_transaction</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/commit_transaction.html">commit_transaction</a></span><span class="op">(</span></span>
+<span>  author <span class="op">=</span> <span class="st">"T Gerke"</span>,</span>
+<span>  commit_message <span class="op">=</span> <span class="st">"Add raw vital signs"</span></span>
+<span><span class="op">)</span></span>
 <span><span class="co">#&gt; Transaction committed</span></span>
+<span><span class="co">#&gt; Snapshot metadata updated</span></span>
 <span></span>
 <span><span class="co"># Silver layer</span></span>
 <span><span class="fu"><a href="../reference/begin_transaction.html">begin_transaction</a></span><span class="op">(</span><span class="op">)</span></span>
@@ -393,8 +437,12 @@ domain.</p>
 <span><span class="va">vs</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"vs_raw"</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu">admiral</span><span class="fu">::</span><span class="fu"><a href="https:/pharmaverse.github.io/admiral/v1.4.1/cran-release/reference/convert_blanks_to_na.html">convert_blanks_to_na</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="../reference/create_table.html">create_table</a></span><span class="op">(</span><span class="st">"vs"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/commit_transaction.html">commit_transaction</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Transaction committed</span></span></code></pre></div>
+<span><span class="fu"><a href="../reference/commit_transaction.html">commit_transaction</a></span><span class="op">(</span></span>
+<span>  author <span class="op">=</span> <span class="st">"T Gerke"</span>,</span>
+<span>  commit_message <span class="op">=</span> <span class="st">"Clean vital signs"</span></span>
+<span><span class="op">)</span></span>
+<span><span class="co">#&gt; Transaction committed</span></span>
+<span><span class="co">#&gt; Snapshot metadata updated</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="pharmacokinetic-concentrations-pc">Pharmacokinetic Concentrations (PC)<a class="anchor" aria-label="anchor" href="#pharmacokinetic-concentrations-pc"></a>
@@ -405,8 +453,12 @@ domain.</p>
 <span><span class="fu"><a href="../reference/begin_transaction.html">begin_transaction</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Transaction started</span></span>
 <span><span class="fu"><a href="../reference/create_table.html">create_table</a></span><span class="op">(</span><span class="fu">pharmaversesdtm</span><span class="fu">::</span><span class="va"><a href="https://pharmaverse.github.io/pharmaversesdtm/reference/pc.html" class="external-link">pc</a></span>, <span class="st">"pc_raw"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/commit_transaction.html">commit_transaction</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/commit_transaction.html">commit_transaction</a></span><span class="op">(</span></span>
+<span>  author <span class="op">=</span> <span class="st">"T Gerke"</span>,</span>
+<span>  commit_message <span class="op">=</span> <span class="st">"Add raw PK concentrations"</span></span>
+<span><span class="op">)</span></span>
 <span><span class="co">#&gt; Transaction committed</span></span>
+<span><span class="co">#&gt; Snapshot metadata updated</span></span>
 <span></span>
 <span><span class="co"># Silver layer</span></span>
 <span><span class="fu"><a href="../reference/begin_transaction.html">begin_transaction</a></span><span class="op">(</span><span class="op">)</span></span>
@@ -414,8 +466,12 @@ domain.</p>
 <span><span class="va">pc</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"pc_raw"</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu">admiral</span><span class="fu">::</span><span class="fu"><a href="https:/pharmaverse.github.io/admiral/v1.4.1/cran-release/reference/convert_blanks_to_na.html">convert_blanks_to_na</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="../reference/create_table.html">create_table</a></span><span class="op">(</span><span class="st">"pc"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/commit_transaction.html">commit_transaction</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Transaction committed</span></span></code></pre></div>
+<span><span class="fu"><a href="../reference/commit_transaction.html">commit_transaction</a></span><span class="op">(</span></span>
+<span>  author <span class="op">=</span> <span class="st">"T Gerke"</span>,</span>
+<span>  commit_message <span class="op">=</span> <span class="st">"Clean PK concentrations"</span></span>
+<span><span class="op">)</span></span>
+<span><span class="co">#&gt; Transaction committed</span></span>
+<span><span class="co">#&gt; Snapshot metadata updated</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="verifying-sdtm-version-control">Verifying SDTM Version Control<a class="anchor" aria-label="anchor" href="#verifying-sdtm-version-control"></a>
@@ -428,39 +484,39 @@ transaction automatically creates a snapshot with metadata.</p>
 <span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">5</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 1           0 2026-02-06 18:35:03              0</span></span>
-<span><span class="co">#&gt; 2           1 2026-02-06 18:35:03              1</span></span>
-<span><span class="co">#&gt; 3           2 2026-02-06 18:35:03              2</span></span>
-<span><span class="co">#&gt; 4           3 2026-02-06 18:35:04              3</span></span>
-<span><span class="co">#&gt; 5           4 2026-02-06 18:35:04              4</span></span>
-<span><span class="co">#&gt;                                                    changes author</span></span>
-<span><span class="co">#&gt; 1                                    schemas_created, main   &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 2     tables_created, tables_inserted_into, main.dm_raw, 1   &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 3         tables_created, tables_inserted_into, main.dm, 2   &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 4 tables_created, tables_inserted_into, main.suppdm_raw, 3   &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 5     tables_created, tables_inserted_into, main.suppdm, 4   &lt;NA&gt;</span></span>
-<span><span class="co">#&gt;   commit_message commit_extra_info</span></span>
-<span><span class="co">#&gt; 1           &lt;NA&gt;              &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 2           &lt;NA&gt;              &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 3           &lt;NA&gt;              &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 4           &lt;NA&gt;              &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 5           &lt;NA&gt;              &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 1           0 2026-02-06 19:22:37              0</span></span>
+<span><span class="co">#&gt; 2           1 2026-02-06 19:22:37              1</span></span>
+<span><span class="co">#&gt; 3           2 2026-02-06 19:22:37              2</span></span>
+<span><span class="co">#&gt; 4           3 2026-02-06 19:22:37              3</span></span>
+<span><span class="co">#&gt; 5           4 2026-02-06 19:22:37              4</span></span>
+<span><span class="co">#&gt;                                                    changes  author</span></span>
+<span><span class="co">#&gt; 1                                    schemas_created, main    &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 2     tables_created, tables_inserted_into, main.dm_raw, 1 T Gerke</span></span>
+<span><span class="co">#&gt; 3         tables_created, tables_inserted_into, main.dm, 2 T Gerke</span></span>
+<span><span class="co">#&gt; 4 tables_created, tables_inserted_into, main.suppdm_raw, 3 T Gerke</span></span>
+<span><span class="co">#&gt; 5     tables_created, tables_inserted_into, main.suppdm, 4 T Gerke</span></span>
+<span><span class="co">#&gt;                      commit_message commit_extra_info</span></span>
+<span><span class="co">#&gt; 1                              &lt;NA&gt;              &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 2              Add raw demographics              &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 3           Clean demographics data              &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 4 Add raw supplemental demographics              &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 5   Clean supplemental demographics              &lt;NA&gt;</span></span>
 <span></span>
 <span><span class="co"># Filter snapshots for specific tables</span></span>
 <span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"dm_raw"</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 2           1 2026-02-06 18:35:03              1</span></span>
-<span><span class="co">#&gt;                                                changes author commit_message</span></span>
-<span><span class="co">#&gt; 2 tables_created, tables_inserted_into, main.dm_raw, 1   &lt;NA&gt;           &lt;NA&gt;</span></span>
-<span><span class="co">#&gt;   commit_extra_info</span></span>
-<span><span class="co">#&gt; 2              &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 2           1 2026-02-06 19:22:37              1</span></span>
+<span><span class="co">#&gt;                                                changes  author</span></span>
+<span><span class="co">#&gt; 2 tables_created, tables_inserted_into, main.dm_raw, 1 T Gerke</span></span>
+<span><span class="co">#&gt;         commit_message commit_extra_info</span></span>
+<span><span class="co">#&gt; 2 Add raw demographics              &lt;NA&gt;</span></span>
 <span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"dm"</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 3           2 2026-02-06 18:35:03              2</span></span>
-<span><span class="co">#&gt;                                            changes author commit_message</span></span>
-<span><span class="co">#&gt; 3 tables_created, tables_inserted_into, main.dm, 2   &lt;NA&gt;           &lt;NA&gt;</span></span>
-<span><span class="co">#&gt;   commit_extra_info</span></span>
-<span><span class="co">#&gt; 3              &lt;NA&gt;</span></span></code></pre></div>
+<span><span class="co">#&gt; 3           2 2026-02-06 19:22:37              2</span></span>
+<span><span class="co">#&gt;                                            changes  author</span></span>
+<span><span class="co">#&gt; 3 tables_created, tables_inserted_into, main.dm, 2 T Gerke</span></span>
+<span><span class="co">#&gt;            commit_message commit_extra_info</span></span>
+<span><span class="co">#&gt; 3 Clean demographics data              &lt;NA&gt;</span></span></code></pre></div>
 <p>This demonstrates that:</p>
 <ol style="list-style-type: decimal">
 <li>
@@ -617,15 +673,20 @@ subject with key analysis variables.</p>
 <span><span class="fu"><a href="../reference/begin_transaction.html">begin_transaction</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Transaction started</span></span>
 <span><span class="fu"><a href="../reference/create_table.html">create_table</a></span><span class="op">(</span><span class="va">adsl</span>, <span class="st">"adsl"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/commit_transaction.html">commit_transaction</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/commit_transaction.html">commit_transaction</a></span><span class="op">(</span></span>
+<span>  author <span class="op">=</span> <span class="st">"T Gerke"</span>,</span>
+<span>  commit_message <span class="op">=</span> <span class="st">"Create ADSL dataset"</span>,</span>
+<span>  commit_extra_info <span class="op">=</span> <span class="st">"Derived from DM, SUPPDM, DS, EX; includes treatment dates, safety flags, age groups"</span></span>
+<span><span class="op">)</span></span>
 <span><span class="co">#&gt; Transaction committed</span></span>
+<span><span class="co">#&gt; Snapshot metadata updated</span></span>
 <span></span>
 <span><span class="co"># Preview ADSL</span></span>
 <span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"adsl"</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">USUBJID</span>, <span class="va">AGE</span>, <span class="va">AGEGR1</span>, <span class="va">TRT01P</span>, <span class="va">TRTSDT</span>, <span class="va">TRTEDT</span>, <span class="va">SAFFL</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">10</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Source:   SQL [?? x 7]</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpZrmVkb/duckplyr/duckplyr1fcd20684ea9.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpQYypn8/duckplyr/duckplyr1f1065bc1671.duckdb]</span></span></span>
 <span><span class="co">#&gt;    USUBJID       AGE AGEGR1 TRT01P               TRTSDT     TRTEDT     SAFFL</span></span>
 <span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> 01-701-1015    63 18-64  Placebo              2014-01-02 2014-07-02 Y    </span></span>
@@ -690,8 +751,13 @@ treatment-emergent flags and severity grades.</p>
 <span><span class="fu"><a href="../reference/begin_transaction.html">begin_transaction</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Transaction started</span></span>
 <span><span class="fu"><a href="../reference/create_table.html">create_table</a></span><span class="op">(</span><span class="va">adae</span>, <span class="st">"adae"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/commit_transaction.html">commit_transaction</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/commit_transaction.html">commit_transaction</a></span><span class="op">(</span></span>
+<span>  author <span class="op">=</span> <span class="st">"T Gerke"</span>,</span>
+<span>  commit_message <span class="op">=</span> <span class="st">"Create ADAE dataset"</span>,</span>
+<span>  commit_extra_info <span class="op">=</span> <span class="st">"Includes treatment-emergent flags and occurrence flags"</span></span>
+<span><span class="op">)</span></span>
 <span><span class="co">#&gt; Transaction committed</span></span>
+<span><span class="co">#&gt; Snapshot metadata updated</span></span>
 <span></span>
 <span><span class="co"># Preview ADAE</span></span>
 <span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"adae"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -699,7 +765,7 @@ treatment-emergent flags and severity grades.</p>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">USUBJID</span>, <span class="va">AEDECOD</span>, <span class="va">ASTDT</span>, <span class="va">AESEV</span>, <span class="va">TRTEMFL</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">10</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Source:   SQL [?? x 5]</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpZrmVkb/duckplyr/duckplyr1fcd20684ea9.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpQYypn8/duckplyr/duckplyr1f1065bc1671.duckdb]</span></span></span>
 <span><span class="co">#&gt;    USUBJID     AEDECOD                              ASTDT      AESEV    TRTEMFL</span></span>
 <span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                                <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> 01-701-1015 APPLICATION SITE ERYTHEMA            2014-01-03 MILD     Y      </span></span>
@@ -789,8 +855,13 @@ concentrations with dosing records.</p>
 <span><span class="fu"><a href="../reference/begin_transaction.html">begin_transaction</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Transaction started</span></span>
 <span><span class="fu"><a href="../reference/create_table.html">create_table</a></span><span class="op">(</span><span class="va">adpc</span>, <span class="st">"adpc"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/commit_transaction.html">commit_transaction</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/commit_transaction.html">commit_transaction</a></span><span class="op">(</span></span>
+<span>  author <span class="op">=</span> <span class="st">"T Gerke"</span>,</span>
+<span>  commit_message <span class="op">=</span> <span class="st">"Create ADPC dataset"</span>,</span>
+<span>  commit_extra_info <span class="op">=</span> <span class="st">"PK concentrations with dosing records for NCA"</span></span>
+<span><span class="op">)</span></span>
 <span><span class="co">#&gt; Transaction committed</span></span>
+<span><span class="co">#&gt; Snapshot metadata updated</span></span>
 <span></span>
 <span><span class="co"># Preview ADPC</span></span>
 <span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"adpc"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -798,7 +869,7 @@ concentrations with dosing records.</p>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">USUBJID</span>, <span class="va">ADT</span>, <span class="va">PCTPT</span>, <span class="va">AVAL</span>, <span class="va">PARAM</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">10</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Source:   SQL [?? x 5]</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpZrmVkb/duckplyr/duckplyr1fcd20684ea9.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpQYypn8/duckplyr/duckplyr1f1065bc1671.duckdb]</span></span></span>
 <span><span class="co">#&gt;    USUBJID     ADT        PCTPT             AVAL PARAM                   </span></span>
 <span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                   </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> 01-701-1015 2014-01-01 Pre-dose         0     Xanomeline Concentration</span></span>
@@ -845,12 +916,16 @@ artifact:</p>
 <span><span class="fu"><a href="../reference/begin_transaction.html">begin_transaction</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Transaction started</span></span>
 <span><span class="fu"><a href="../reference/create_table.html">create_table</a></span><span class="op">(</span><span class="va">regulatory_docs</span>, <span class="st">"regulatory_documents"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/commit_transaction.html">commit_transaction</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/commit_transaction.html">commit_transaction</a></span><span class="op">(</span></span>
+<span>  author <span class="op">=</span> <span class="st">"T Gerke"</span>,</span>
+<span>  commit_message <span class="op">=</span> <span class="st">"Add define.xml metadata"</span></span>
+<span><span class="op">)</span></span>
 <span><span class="co">#&gt; Transaction committed</span></span>
+<span><span class="co">#&gt; Snapshot metadata updated</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"regulatory_documents"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Source:   table&lt;regulatory_documents&gt; [?? x 5]</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpZrmVkb/duckplyr/duckplyr1fcd20684ea9.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpQYypn8/duckplyr/duckplyr1f1065bc1671.duckdb]</span></span></span>
 <span><span class="co">#&gt;   doc_type   doc_version content                        created_date description</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                          <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> define.xml 1.0         <span style="color: #949494;">"</span>&lt;?xml version=\"1.0\" encodi… 2026-02-06   Dataset an…</span></span></code></pre></div>
@@ -874,24 +949,28 @@ lake:</p>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Add to or update regulatory documents table</span></span>
-<span><span class="fu"><a href="../reference/rows_upsert.html">rows_upsert</a></span><span class="op">(</span></span>
-<span>  <span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"regulatory_documents"</span><span class="op">)</span>,</span>
-<span>  <span class="fu"><a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link">tibble</a></span><span class="op">(</span></span>
-<span>    doc_type <span class="op">=</span> <span class="st">"ARM"</span>,</span>
-<span>    doc_version <span class="op">=</span> <span class="st">"1.0"</span>,</span>
-<span>    content <span class="op">=</span> <span class="fu">jsonlite</span><span class="fu">::</span><span class="fu"><a href="https://jeroen.r-universe.dev/jsonlite/reference/fromJSON.html" class="external-link">toJSON</a></span><span class="op">(</span><span class="va">arm_content</span><span class="op">)</span>,</span>
-<span>    created_date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.time.html" class="external-link">Sys.Date</a></span><span class="op">(</span><span class="op">)</span>,</span>
-<span>    description <span class="op">=</span> <span class="st">"Analysis Results Metadata"</span></span>
-<span>  <span class="op">)</span>,</span>
-<span>  by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"doc_type"</span>, <span class="st">"doc_version"</span><span class="op">)</span>,</span>
-<span>  copy <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span><span class="fu"><a href="../reference/begin_transaction.html">begin_transaction</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Transaction started</span></span>
+<span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"regulatory_documents"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/compute.html" class="external-link">collect</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>content <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span><span class="va">content</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/bind_rows.html" class="external-link">bind_rows</a></span><span class="op">(</span></span>
+<span>    <span class="fu"><a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link">tibble</a></span><span class="op">(</span></span>
+<span>      doc_type <span class="op">=</span> <span class="st">"ARM"</span>,</span>
+<span>      doc_version <span class="op">=</span> <span class="st">"1.0"</span>,</span>
+<span>      content <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span><span class="fu">jsonlite</span><span class="fu">::</span><span class="fu"><a href="https://jeroen.r-universe.dev/jsonlite/reference/fromJSON.html" class="external-link">toJSON</a></span><span class="op">(</span><span class="va">arm_content</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>      created_date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.time.html" class="external-link">Sys.Date</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>      description <span class="op">=</span> <span class="st">"Analysis Results Metadata"</span></span>
+<span>    <span class="op">)</span></span>
+<span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">distinct</a></span><span class="op">(</span><span class="va">doc_type</span>, <span class="va">doc_version</span>, .keep_all <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/replace_table.html">replace_table</a></span><span class="op">(</span><span class="st">"regulatory_documents"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/commit_transaction.html">commit_transaction</a></span><span class="op">(</span></span>
+<span>  author <span class="op">=</span> <span class="st">"T Gerke"</span>,</span>
+<span>  commit_message <span class="op">=</span> <span class="st">"Add ARM metadata"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Source:   SQL [?? x 5]</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpZrmVkb/duckplyr/duckplyr1fcd20684ea9.duckdb]</span></span></span>
-<span><span class="co">#&gt;   doc_type   doc_version content                        created_date description</span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                          <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> define.xml 1.0         <span style="color: #949494;">"</span>&lt;?xml version=\"1.0\" encodi… 2026-02-06   Dataset an…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> ARM        1.0         <span style="color: #949494;">"</span>[{\"analysis_id\":\"DEMO01\"… 2026-02-06   Analysis R…</span></span>
+<span><span class="co">#&gt; Transaction committed</span></span>
+<span><span class="co">#&gt; Snapshot metadata updated</span></span>
 <span></span>
 <span><span class="co"># Example: Store Analysis Results Data (ARD)</span></span>
 <span><span class="va">ard_content</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link">tibble</a></span><span class="op">(</span></span>
@@ -904,24 +983,28 @@ lake:</p>
 <span>  sd <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">8.59</span>, <span class="fl">7.89</span>, <span class="fl">7.89</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="../reference/rows_upsert.html">rows_upsert</a></span><span class="op">(</span></span>
-<span>  <span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"regulatory_documents"</span><span class="op">)</span>,</span>
-<span>  <span class="fu"><a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link">tibble</a></span><span class="op">(</span></span>
-<span>    doc_type <span class="op">=</span> <span class="st">"ARD"</span>,</span>
-<span>    doc_version <span class="op">=</span> <span class="st">"1.0"</span>,</span>
-<span>    content <span class="op">=</span> <span class="fu">jsonlite</span><span class="fu">::</span><span class="fu"><a href="https://jeroen.r-universe.dev/jsonlite/reference/fromJSON.html" class="external-link">toJSON</a></span><span class="op">(</span><span class="va">ard_content</span><span class="op">)</span>,</span>
-<span>    created_date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.time.html" class="external-link">Sys.Date</a></span><span class="op">(</span><span class="op">)</span>,</span>
-<span>    description <span class="op">=</span> <span class="st">"Analysis Results Data for Demographics Table"</span></span>
-<span>  <span class="op">)</span>,</span>
-<span>  by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"doc_type"</span>, <span class="st">"doc_version"</span><span class="op">)</span>,</span>
-<span>  copy <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span><span class="fu"><a href="../reference/begin_transaction.html">begin_transaction</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Transaction started</span></span>
+<span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"regulatory_documents"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/compute.html" class="external-link">collect</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>content <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span><span class="va">content</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/bind_rows.html" class="external-link">bind_rows</a></span><span class="op">(</span></span>
+<span>    <span class="fu"><a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link">tibble</a></span><span class="op">(</span></span>
+<span>      doc_type <span class="op">=</span> <span class="st">"ARD"</span>,</span>
+<span>      doc_version <span class="op">=</span> <span class="st">"1.0"</span>,</span>
+<span>      content <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span><span class="fu">jsonlite</span><span class="fu">::</span><span class="fu"><a href="https://jeroen.r-universe.dev/jsonlite/reference/fromJSON.html" class="external-link">toJSON</a></span><span class="op">(</span><span class="va">ard_content</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>      created_date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.time.html" class="external-link">Sys.Date</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>      description <span class="op">=</span> <span class="st">"Analysis Results Data for Demographics Table"</span></span>
+<span>    <span class="op">)</span></span>
+<span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">distinct</a></span><span class="op">(</span><span class="va">doc_type</span>, <span class="va">doc_version</span>, .keep_all <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/replace_table.html">replace_table</a></span><span class="op">(</span><span class="st">"regulatory_documents"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/commit_transaction.html">commit_transaction</a></span><span class="op">(</span></span>
+<span>  author <span class="op">=</span> <span class="st">"T Gerke"</span>,</span>
+<span>  commit_message <span class="op">=</span> <span class="st">"Add demographics ARD"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Source:   SQL [?? x 5]</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpZrmVkb/duckplyr/duckplyr1fcd20684ea9.duckdb]</span></span></span>
-<span><span class="co">#&gt;   doc_type   doc_version content                        created_date description</span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                          <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> define.xml 1.0         <span style="color: #949494;">"</span>&lt;?xml version=\"1.0\" encodi… 2026-02-06   Dataset an…</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> ARD        1.0         <span style="color: #949494;">"</span>[{\"analysis_id\":\"DEMO01\"… 2026-02-06   Analysis R…</span></span></code></pre></div>
+<span><span class="co">#&gt; Transaction committed</span></span>
+<span><span class="co">#&gt; Snapshot metadata updated</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="dataset-specifications">Dataset Specifications<a class="anchor" aria-label="anchor" href="#dataset-specifications"></a>
@@ -944,7 +1027,12 @@ lake:</p>
 <span>  derivation <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"DM.USUBJID"</span>, <span class="st">"DM.AGE"</span>, <span class="st">"Derived from AGE"</span>, <span class="st">"DM.ARM"</span>, <span class="st">"Derived"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
+<span><span class="fu"><a href="../reference/begin_transaction.html">begin_transaction</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/create_table.html">create_table</a></span><span class="op">(</span><span class="va">adsl_spec</span>, <span class="st">"dataset_specifications"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/commit_transaction.html">commit_transaction</a></span><span class="op">(</span></span>
+<span>  author <span class="op">=</span> <span class="st">"T Gerke"</span>,</span>
+<span>  commit_message <span class="op">=</span> <span class="st">"Add ADSL specifications"</span></span>
+<span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Query specifications when needed</span></span>
 <span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"dataset_specifications"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -1005,13 +1093,13 @@ preserves these relationships with version control built in:</p>
 <span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> 01-701-1302    61 Xanomeline High Dose    23       <span style="text-decoration: underline;">3</span>105</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> 01-717-1004    80 Xanomeline Low Dose     19       <span style="text-decoration: underline;">3</span>078</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> 01-704-1266    82 Xanomeline High Dose    16       <span style="text-decoration: underline;">2</span>160</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> 01-718-1427    74 Xanomeline High Dose    16       <span style="text-decoration: underline;">2</span>160</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> 01-709-1029    82 Xanomeline High Dose    16       <span style="text-decoration: underline;">3</span>024</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> 01-718-1427    74 Xanomeline High Dose    16       <span style="text-decoration: underline;">2</span>160</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> 01-709-1029    82 Xanomeline High Dose    16       <span style="text-decoration: underline;">3</span>024</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> 01-704-1266    82 Xanomeline High Dose    16       <span style="text-decoration: underline;">2</span>160</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> 01-701-1192    80 Xanomeline Low Dose     15       <span style="text-decoration: underline;">2</span>430</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> 01-701-1275    61 Xanomeline High Dose    15       <span style="text-decoration: underline;">2</span>025</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> 01-713-1179    64 Placebo                 15          0</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> 01-709-1309    65 Xanomeline High Dose    15       <span style="text-decoration: underline;">2</span>835</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> 01-709-1309    65 Xanomeline High Dose    15       <span style="text-decoration: underline;">2</span>835</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> 01-713-1179    64 Placebo                 15          0</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> 01-711-1143    76 Xanomeline Low Dose     14       <span style="text-decoration: underline;">1</span>512</span></span></code></pre></div>
 </div>
 <div class="section level3">
@@ -1028,43 +1116,41 @@ clinical trials:</p>
 <span><span class="co">#&gt;  [3] "adsl"                                 </span></span>
 <span><span class="co">#&gt;  [4] "ae"                                   </span></span>
 <span><span class="co">#&gt;  [5] "ae_raw"                               </span></span>
-<span><span class="co">#&gt;  [6] "dbplyr_SwlKLUUEdL"                    </span></span>
-<span><span class="co">#&gt;  [7] "dbplyr_euR8HfdVHI"                    </span></span>
-<span><span class="co">#&gt;  [8] "dm"                                   </span></span>
-<span><span class="co">#&gt;  [9] "dm_raw"                               </span></span>
-<span><span class="co">#&gt; [10] "ds"                                   </span></span>
-<span><span class="co">#&gt; [11] "ds_raw"                               </span></span>
-<span><span class="co">#&gt; [12] "ducklake_column"                      </span></span>
-<span><span class="co">#&gt; [13] "ducklake_column_mapping"              </span></span>
-<span><span class="co">#&gt; [14] "ducklake_column_tag"                  </span></span>
-<span><span class="co">#&gt; [15] "ducklake_data_file"                   </span></span>
-<span><span class="co">#&gt; [16] "ducklake_delete_file"                 </span></span>
-<span><span class="co">#&gt; [17] "ducklake_file_column_stats"           </span></span>
-<span><span class="co">#&gt; [18] "ducklake_file_partition_value"        </span></span>
-<span><span class="co">#&gt; [19] "ducklake_files_scheduled_for_deletion"</span></span>
-<span><span class="co">#&gt; [20] "ducklake_inlined_data_tables"         </span></span>
-<span><span class="co">#&gt; [21] "ducklake_metadata"                    </span></span>
-<span><span class="co">#&gt; [22] "ducklake_name_mapping"                </span></span>
-<span><span class="co">#&gt; [23] "ducklake_partition_column"            </span></span>
-<span><span class="co">#&gt; [24] "ducklake_partition_info"              </span></span>
-<span><span class="co">#&gt; [25] "ducklake_schema"                      </span></span>
-<span><span class="co">#&gt; [26] "ducklake_schema_versions"             </span></span>
-<span><span class="co">#&gt; [27] "ducklake_snapshot"                    </span></span>
-<span><span class="co">#&gt; [28] "ducklake_snapshot_changes"            </span></span>
-<span><span class="co">#&gt; [29] "ducklake_table"                       </span></span>
-<span><span class="co">#&gt; [30] "ducklake_table_column_stats"          </span></span>
-<span><span class="co">#&gt; [31] "ducklake_table_stats"                 </span></span>
-<span><span class="co">#&gt; [32] "ducklake_tag"                         </span></span>
-<span><span class="co">#&gt; [33] "ducklake_view"                        </span></span>
-<span><span class="co">#&gt; [34] "ex"                                   </span></span>
-<span><span class="co">#&gt; [35] "ex_raw"                               </span></span>
-<span><span class="co">#&gt; [36] "pc"                                   </span></span>
-<span><span class="co">#&gt; [37] "pc_raw"                               </span></span>
-<span><span class="co">#&gt; [38] "regulatory_documents"                 </span></span>
-<span><span class="co">#&gt; [39] "suppdm"                               </span></span>
-<span><span class="co">#&gt; [40] "suppdm_raw"                           </span></span>
-<span><span class="co">#&gt; [41] "vs"                                   </span></span>
-<span><span class="co">#&gt; [42] "vs_raw"</span></span>
+<span><span class="co">#&gt;  [6] "dm"                                   </span></span>
+<span><span class="co">#&gt;  [7] "dm_raw"                               </span></span>
+<span><span class="co">#&gt;  [8] "ds"                                   </span></span>
+<span><span class="co">#&gt;  [9] "ds_raw"                               </span></span>
+<span><span class="co">#&gt; [10] "ducklake_column"                      </span></span>
+<span><span class="co">#&gt; [11] "ducklake_column_mapping"              </span></span>
+<span><span class="co">#&gt; [12] "ducklake_column_tag"                  </span></span>
+<span><span class="co">#&gt; [13] "ducklake_data_file"                   </span></span>
+<span><span class="co">#&gt; [14] "ducklake_delete_file"                 </span></span>
+<span><span class="co">#&gt; [15] "ducklake_file_column_stats"           </span></span>
+<span><span class="co">#&gt; [16] "ducklake_file_partition_value"        </span></span>
+<span><span class="co">#&gt; [17] "ducklake_files_scheduled_for_deletion"</span></span>
+<span><span class="co">#&gt; [18] "ducklake_inlined_data_tables"         </span></span>
+<span><span class="co">#&gt; [19] "ducklake_metadata"                    </span></span>
+<span><span class="co">#&gt; [20] "ducklake_name_mapping"                </span></span>
+<span><span class="co">#&gt; [21] "ducklake_partition_column"            </span></span>
+<span><span class="co">#&gt; [22] "ducklake_partition_info"              </span></span>
+<span><span class="co">#&gt; [23] "ducklake_schema"                      </span></span>
+<span><span class="co">#&gt; [24] "ducklake_schema_versions"             </span></span>
+<span><span class="co">#&gt; [25] "ducklake_snapshot"                    </span></span>
+<span><span class="co">#&gt; [26] "ducklake_snapshot_changes"            </span></span>
+<span><span class="co">#&gt; [27] "ducklake_table"                       </span></span>
+<span><span class="co">#&gt; [28] "ducklake_table_column_stats"          </span></span>
+<span><span class="co">#&gt; [29] "ducklake_table_stats"                 </span></span>
+<span><span class="co">#&gt; [30] "ducklake_tag"                         </span></span>
+<span><span class="co">#&gt; [31] "ducklake_view"                        </span></span>
+<span><span class="co">#&gt; [32] "ex"                                   </span></span>
+<span><span class="co">#&gt; [33] "ex_raw"                               </span></span>
+<span><span class="co">#&gt; [34] "pc"                                   </span></span>
+<span><span class="co">#&gt; [35] "pc_raw"                               </span></span>
+<span><span class="co">#&gt; [36] "regulatory_documents"                 </span></span>
+<span><span class="co">#&gt; [37] "suppdm"                               </span></span>
+<span><span class="co">#&gt; [38] "suppdm_raw"                           </span></span>
+<span><span class="co">#&gt; [39] "vs"                                   </span></span>
+<span><span class="co">#&gt; [40] "vs_raw"</span></span>
 <span></span>
 <span><span class="co"># 2. Efficient filtering before loading into R</span></span>
 <span><span class="co"># Only load subjects with adverse events</span></span>
@@ -1072,19 +1158,19 @@ clinical trials:</p>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">AESEV</span> <span class="op">==</span> <span class="st">"SEVERE"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">distinct</a></span><span class="op">(</span><span class="va">USUBJID</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Source:   SQL [?? x 1]</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpZrmVkb/duckplyr/duckplyr1fcd20684ea9.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpQYypn8/duckplyr/duckplyr1f1065bc1671.duckdb]</span></span></span>
 <span><span class="co">#&gt;    USUBJID    </span></span>
 <span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> 01-703-1086</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> 01-703-1119</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> 01-706-1049</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> 01-708-1428</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> 01-710-1083</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> 01-718-1079</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> 01-718-1170</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> 01-701-1211</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> 01-704-1135</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> 01-708-1019</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> 01-703-1175</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> 01-705-1393</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> 01-708-1272</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> 01-709-1007</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> 01-710-1077</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> 01-710-1154</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> 01-710-1271</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> 01-717-1174</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> 01-718-1066</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> 01-718-1371</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ more rows</span></span></span>
 <span></span>
 <span><span class="co"># 3. Aggregations performed at database level</span></span>
@@ -1097,15 +1183,15 @@ clinical trials:</p>
 <span>    .groups <span class="op">=</span> <span class="st">"drop"</span></span>
 <span>  <span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Source:   SQL [?? x 4]</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpZrmVkb/duckplyr/duckplyr1fcd20684ea9.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpQYypn8/duckplyr/duckplyr1f1065bc1671.duckdb]</span></span></span>
 <span><span class="co">#&gt;   TRT01A               AESEV    n_events n_subjects</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> Placebo              MODERATE       65         25</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> Xanomeline Low Dose  SEVERE         25         16</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> Placebo              MILD          210         58</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> Xanomeline High Dose SEVERE         10          8</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> Xanomeline Low Dose  MILD          232         64</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> Xanomeline High Dose MODERATE      115         46</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> Xanomeline Low Dose  MILD          232         64</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> Xanomeline High Dose MODERATE      115         46</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> Placebo              MILD          210         58</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> Xanomeline High Dose SEVERE         10          8</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">7</span> Xanomeline High Dose MILD          287         65</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">8</span> Xanomeline Low Dose  MODERATE      170         58</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">9</span> Placebo              SEVERE          6          5</span></span>
@@ -1131,7 +1217,7 @@ clinical trials:</p>
 <span>    adam_term <span class="op">=</span> <span class="va">adae_term</span></span>
 <span>  <span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Source:   SQL [?? x 5]</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpZrmVkb/duckplyr/duckplyr1fcd20684ea9.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpQYypn8/duckplyr/duckplyr1f1065bc1671.duckdb]</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 5 variables: USUBJID &lt;chr&gt;, sdtm_start_date &lt;chr&gt;, adam_start_date &lt;date&gt;,</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;">#   sdtm_term &lt;chr&gt;, adam_term &lt;chr&gt;</span></span></span>
 <span><span class="co"># Note: This returns 0 rows with clean pharmaversesdtm data,</span></span>
@@ -1149,43 +1235,41 @@ clinical trials:</p>
 <span><span class="co">#&gt;  [3] "adsl"                                 </span></span>
 <span><span class="co">#&gt;  [4] "ae"                                   </span></span>
 <span><span class="co">#&gt;  [5] "ae_raw"                               </span></span>
-<span><span class="co">#&gt;  [6] "dbplyr_SwlKLUUEdL"                    </span></span>
-<span><span class="co">#&gt;  [7] "dbplyr_euR8HfdVHI"                    </span></span>
-<span><span class="co">#&gt;  [8] "dm"                                   </span></span>
-<span><span class="co">#&gt;  [9] "dm_raw"                               </span></span>
-<span><span class="co">#&gt; [10] "ds"                                   </span></span>
-<span><span class="co">#&gt; [11] "ds_raw"                               </span></span>
-<span><span class="co">#&gt; [12] "ducklake_column"                      </span></span>
-<span><span class="co">#&gt; [13] "ducklake_column_mapping"              </span></span>
-<span><span class="co">#&gt; [14] "ducklake_column_tag"                  </span></span>
-<span><span class="co">#&gt; [15] "ducklake_data_file"                   </span></span>
-<span><span class="co">#&gt; [16] "ducklake_delete_file"                 </span></span>
-<span><span class="co">#&gt; [17] "ducklake_file_column_stats"           </span></span>
-<span><span class="co">#&gt; [18] "ducklake_file_partition_value"        </span></span>
-<span><span class="co">#&gt; [19] "ducklake_files_scheduled_for_deletion"</span></span>
-<span><span class="co">#&gt; [20] "ducklake_inlined_data_tables"         </span></span>
-<span><span class="co">#&gt; [21] "ducklake_metadata"                    </span></span>
-<span><span class="co">#&gt; [22] "ducklake_name_mapping"                </span></span>
-<span><span class="co">#&gt; [23] "ducklake_partition_column"            </span></span>
-<span><span class="co">#&gt; [24] "ducklake_partition_info"              </span></span>
-<span><span class="co">#&gt; [25] "ducklake_schema"                      </span></span>
-<span><span class="co">#&gt; [26] "ducklake_schema_versions"             </span></span>
-<span><span class="co">#&gt; [27] "ducklake_snapshot"                    </span></span>
-<span><span class="co">#&gt; [28] "ducklake_snapshot_changes"            </span></span>
-<span><span class="co">#&gt; [29] "ducklake_table"                       </span></span>
-<span><span class="co">#&gt; [30] "ducklake_table_column_stats"          </span></span>
-<span><span class="co">#&gt; [31] "ducklake_table_stats"                 </span></span>
-<span><span class="co">#&gt; [32] "ducklake_tag"                         </span></span>
-<span><span class="co">#&gt; [33] "ducklake_view"                        </span></span>
-<span><span class="co">#&gt; [34] "ex"                                   </span></span>
-<span><span class="co">#&gt; [35] "ex_raw"                               </span></span>
-<span><span class="co">#&gt; [36] "pc"                                   </span></span>
-<span><span class="co">#&gt; [37] "pc_raw"                               </span></span>
-<span><span class="co">#&gt; [38] "regulatory_documents"                 </span></span>
-<span><span class="co">#&gt; [39] "suppdm"                               </span></span>
-<span><span class="co">#&gt; [40] "suppdm_raw"                           </span></span>
-<span><span class="co">#&gt; [41] "vs"                                   </span></span>
-<span><span class="co">#&gt; [42] "vs_raw"</span></span>
+<span><span class="co">#&gt;  [6] "dm"                                   </span></span>
+<span><span class="co">#&gt;  [7] "dm_raw"                               </span></span>
+<span><span class="co">#&gt;  [8] "ds"                                   </span></span>
+<span><span class="co">#&gt;  [9] "ds_raw"                               </span></span>
+<span><span class="co">#&gt; [10] "ducklake_column"                      </span></span>
+<span><span class="co">#&gt; [11] "ducklake_column_mapping"              </span></span>
+<span><span class="co">#&gt; [12] "ducklake_column_tag"                  </span></span>
+<span><span class="co">#&gt; [13] "ducklake_data_file"                   </span></span>
+<span><span class="co">#&gt; [14] "ducklake_delete_file"                 </span></span>
+<span><span class="co">#&gt; [15] "ducklake_file_column_stats"           </span></span>
+<span><span class="co">#&gt; [16] "ducklake_file_partition_value"        </span></span>
+<span><span class="co">#&gt; [17] "ducklake_files_scheduled_for_deletion"</span></span>
+<span><span class="co">#&gt; [18] "ducklake_inlined_data_tables"         </span></span>
+<span><span class="co">#&gt; [19] "ducklake_metadata"                    </span></span>
+<span><span class="co">#&gt; [20] "ducklake_name_mapping"                </span></span>
+<span><span class="co">#&gt; [21] "ducklake_partition_column"            </span></span>
+<span><span class="co">#&gt; [22] "ducklake_partition_info"              </span></span>
+<span><span class="co">#&gt; [23] "ducklake_schema"                      </span></span>
+<span><span class="co">#&gt; [24] "ducklake_schema_versions"             </span></span>
+<span><span class="co">#&gt; [25] "ducklake_snapshot"                    </span></span>
+<span><span class="co">#&gt; [26] "ducklake_snapshot_changes"            </span></span>
+<span><span class="co">#&gt; [27] "ducklake_table"                       </span></span>
+<span><span class="co">#&gt; [28] "ducklake_table_column_stats"          </span></span>
+<span><span class="co">#&gt; [29] "ducklake_table_stats"                 </span></span>
+<span><span class="co">#&gt; [30] "ducklake_tag"                         </span></span>
+<span><span class="co">#&gt; [31] "ducklake_view"                        </span></span>
+<span><span class="co">#&gt; [32] "ex"                                   </span></span>
+<span><span class="co">#&gt; [33] "ex_raw"                               </span></span>
+<span><span class="co">#&gt; [34] "pc"                                   </span></span>
+<span><span class="co">#&gt; [35] "pc_raw"                               </span></span>
+<span><span class="co">#&gt; [36] "regulatory_documents"                 </span></span>
+<span><span class="co">#&gt; [37] "suppdm"                               </span></span>
+<span><span class="co">#&gt; [38] "suppdm_raw"                           </span></span>
+<span><span class="co">#&gt; [39] "vs"                                   </span></span>
+<span><span class="co">#&gt; [40] "vs_raw"</span></span>
 <span></span>
 <span><span class="co"># View snapshot history for key tables</span></span>
 <span><span class="va">metadata_tables</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"dm"</span>, <span class="st">"ex"</span>, <span class="st">"ae"</span>, <span class="st">"pc"</span>, </span>
@@ -1198,13 +1282,13 @@ clinical trials:</p>
 <span><span class="op">}</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">table</span>, <span class="va">snapshot_id</span>, <span class="va">snapshot_time</span>, <span class="va">changes</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   table snapshot_id       snapshot_time</span></span>
-<span><span class="co">#&gt; 1    dm           2 2026-02-06 18:35:03</span></span>
-<span><span class="co">#&gt; 2    ex           8 2026-02-06 18:35:04</span></span>
-<span><span class="co">#&gt; 3    ae          10 2026-02-06 18:35:04</span></span>
-<span><span class="co">#&gt; 4    pc          14 2026-02-06 18:35:05</span></span>
-<span><span class="co">#&gt; 5  adsl          15 2026-02-06 18:35:06</span></span>
-<span><span class="co">#&gt; 6  adae          16 2026-02-06 18:35:06</span></span>
-<span><span class="co">#&gt; 7  adpc          17 2026-02-06 18:35:07</span></span>
+<span><span class="co">#&gt; 1    dm           2 2026-02-06 19:22:37</span></span>
+<span><span class="co">#&gt; 2    ex           8 2026-02-06 19:22:38</span></span>
+<span><span class="co">#&gt; 3    ae          10 2026-02-06 19:22:38</span></span>
+<span><span class="co">#&gt; 4    pc          14 2026-02-06 19:22:38</span></span>
+<span><span class="co">#&gt; 5  adsl          15 2026-02-06 19:22:40</span></span>
+<span><span class="co">#&gt; 6  adae          16 2026-02-06 19:22:40</span></span>
+<span><span class="co">#&gt; 7  adpc          17 2026-02-06 19:22:41</span></span>
 <span><span class="co">#&gt;                                               changes</span></span>
 <span><span class="co">#&gt; 1    tables_created, tables_inserted_into, main.dm, 2</span></span>
 <span><span class="co">#&gt; 2    tables_created, tables_inserted_into, main.ex, 8</span></span>
@@ -1224,7 +1308,7 @@ clinical trials:</p>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/compute.html" class="external-link">collect</a></span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># ADAE records without ADSL subject:</span></span>
-<span><span class="va">integrity_check</span><span class="op">$</span><span class="va">orphaned_records</span></span>
+<span><span class="va">integrity_check</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/pull.html" class="external-link">pull</a></span><span class="op">(</span><span class="va">orphaned_records</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 0</span></span></code></pre></div>
 <p>This relational approach means your clinical trial data lake
 functions as a purpose-built data warehouse, designed specifically for
@@ -1255,27 +1339,34 @@ demonstrate by adding new derived variables to ADSL:</p>
 <span>    <span class="op">)</span></span>
 <span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/replace_table.html">replace_table</a></span><span class="op">(</span><span class="st">"adsl"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/commit_transaction.html">commit_transaction</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/commit_transaction.html">commit_transaction</a></span><span class="op">(</span></span>
+<span>  author <span class="op">=</span> <span class="st">"T Gerke"</span>,</span>
+<span>  commit_message <span class="op">=</span> <span class="st">"Add age categorization vars"</span></span>
+<span><span class="op">)</span></span>
 <span><span class="co">#&gt; Transaction committed</span></span>
+<span><span class="co">#&gt; Snapshot metadata updated</span></span>
 <span></span>
 <span><span class="co"># View version history - should now show 2 snapshots</span></span>
 <span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"adsl"</span><span class="op">)</span></span>
 <span><span class="co">#&gt;    snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 16          15 2026-02-06 18:35:06             15</span></span>
-<span><span class="co">#&gt; 20          19 2026-02-06 18:35:09             19</span></span>
+<span><span class="co">#&gt; 16          15 2026-02-06 19:22:40             15</span></span>
+<span><span class="co">#&gt; 22          21 2026-02-06 19:22:42             21</span></span>
 <span><span class="co">#&gt;                                                                    changes</span></span>
 <span><span class="co">#&gt; 16                     tables_created, tables_inserted_into, main.adsl, 15</span></span>
-<span><span class="co">#&gt; 20 tables_created, tables_dropped, tables_inserted_into, main.adsl, 15, 19</span></span>
-<span><span class="co">#&gt;    author commit_message commit_extra_info</span></span>
-<span><span class="co">#&gt; 16   &lt;NA&gt;           &lt;NA&gt;              &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 20   &lt;NA&gt;           &lt;NA&gt;              &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 22 tables_created, tables_dropped, tables_inserted_into, main.adsl, 15, 21</span></span>
+<span><span class="co">#&gt;     author              commit_message</span></span>
+<span><span class="co">#&gt; 16 T Gerke         Create ADSL dataset</span></span>
+<span><span class="co">#&gt; 22 T Gerke Add age categorization vars</span></span>
+<span><span class="co">#&gt;                                                                      commit_extra_info</span></span>
+<span><span class="co">#&gt; 16 Derived from DM, SUPPDM, DS, EX; includes treatment dates, safety flags, age groups</span></span>
+<span><span class="co">#&gt; 22                                                                                &lt;NA&gt;</span></span>
 <span></span>
 <span><span class="co"># Verify new columns exist</span></span>
 <span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"adsl"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">USUBJID</span>, <span class="va">AGE</span>, <span class="va">AGE65FL</span>, <span class="va">AGECAT</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">5</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Source:   SQL [?? x 4]</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpZrmVkb/duckplyr/duckplyr1fcd20684ea9.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpQYypn8/duckplyr/duckplyr1f1065bc1671.duckdb]</span></span></span>
 <span><span class="co">#&gt;   USUBJID       AGE AGE65FL AGECAT</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 01-701-1015    63 N       &lt;65   </span></span>
@@ -1349,14 +1440,20 @@ columns:</p>
 <span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"adsl"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>SAFFL <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/if_else.html" class="external-link">if_else</a></span><span class="op">(</span><span class="va">USUBJID</span> <span class="op">==</span> <span class="st">"01-701-1015"</span>, <span class="st">"N"</span>, <span class="va">SAFFL</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/replace_table.html">replace_table</a></span><span class="op">(</span><span class="st">"adsl"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/commit_transaction.html">commit_transaction</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/commit_transaction.html">commit_transaction</a></span><span class="op">(</span></span>
+<span>  author <span class="op">=</span> <span class="st">"T Gerke"</span>,</span>
+<span>  commit_message <span class="op">=</span> <span class="st">"Correct safety flag"</span></span>
+<span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Adding new derived columns - creates auditable snapshot</span></span>
 <span><span class="fu"><a href="../reference/begin_transaction.html">begin_transaction</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"adsl"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>AGE65FL <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/if_else.html" class="external-link">if_else</a></span><span class="op">(</span><span class="va">AGE</span> <span class="op">&gt;=</span> <span class="fl">65</span>, <span class="st">"Y"</span>, <span class="st">"N"</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/replace_table.html">replace_table</a></span><span class="op">(</span><span class="st">"adsl"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/commit_transaction.html">commit_transaction</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="../reference/commit_transaction.html">commit_transaction</a></span><span class="op">(</span></span>
+<span>  author <span class="op">=</span> <span class="st">"T Gerke"</span>,</span>
+<span>  commit_message <span class="op">=</span> <span class="st">"Add age 65+ flag"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
 <p>Both operations create snapshots you can time-travel back to and
 include in your regulatory audit trail.</p>
 </div>
@@ -1375,8 +1472,12 @@ iteration to maintain a complete audit trail:</p>
 <span>    <span class="va">AGE</span> <span class="op">&gt;=</span> <span class="fl">50</span> <span class="op">~</span> <span class="st">"Older"</span></span>
 <span>  <span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/replace_table.html">replace_table</a></span><span class="op">(</span><span class="st">"adsl"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/commit_transaction.html">commit_transaction</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/commit_transaction.html">commit_transaction</a></span><span class="op">(</span></span>
+<span>  author <span class="op">=</span> <span class="st">"T Gerke"</span>,</span>
+<span>  commit_message <span class="op">=</span> <span class="st">"Test age categories v1"</span></span>
+<span><span class="op">)</span></span>
 <span><span class="co">#&gt; Transaction committed</span></span>
+<span><span class="co">#&gt; Snapshot metadata updated</span></span>
 <span></span>
 <span><span class="co"># Iteration 2: Refinement (creates snapshot v3)</span></span>
 <span><span class="fu"><a href="../reference/begin_transaction.html">begin_transaction</a></span><span class="op">(</span><span class="op">)</span></span>
@@ -1388,8 +1489,12 @@ iteration to maintain a complete audit trail:</p>
 <span>    <span class="va">AGE</span> <span class="op">&gt;=</span> <span class="fl">65</span> <span class="op">~</span> <span class="st">"65+"</span></span>
 <span>  <span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/replace_table.html">replace_table</a></span><span class="op">(</span><span class="st">"adsl"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/commit_transaction.html">commit_transaction</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/commit_transaction.html">commit_transaction</a></span><span class="op">(</span></span>
+<span>  author <span class="op">=</span> <span class="st">"T Gerke"</span>,</span>
+<span>  commit_message <span class="op">=</span> <span class="st">"Refine age categories v2"</span></span>
+<span><span class="op">)</span></span>
 <span><span class="co">#&gt; Transaction committed</span></span>
+<span><span class="co">#&gt; Snapshot metadata updated</span></span>
 <span></span>
 <span><span class="co"># Iteration 3: Final version (creates snapshot v4)</span></span>
 <span><span class="fu"><a href="../reference/begin_transaction.html">begin_transaction</a></span><span class="op">(</span><span class="op">)</span></span>
@@ -1405,30 +1510,40 @@ iteration to maintain a complete audit trail:</p>
 <span>    <span class="op">)</span></span>
 <span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/replace_table.html">replace_table</a></span><span class="op">(</span><span class="st">"adsl"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/commit_transaction.html">commit_transaction</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/commit_transaction.html">commit_transaction</a></span><span class="op">(</span></span>
+<span>  author <span class="op">=</span> <span class="st">"T Gerke"</span>,</span>
+<span>  commit_message <span class="op">=</span> <span class="st">"Finalize age categories"</span></span>
+<span><span class="op">)</span></span>
 <span><span class="co">#&gt; Transaction committed</span></span>
+<span><span class="co">#&gt; Snapshot metadata updated</span></span>
 <span></span>
 <span><span class="co"># Complete audit trail available</span></span>
 <span><span class="va">snapshots</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"adsl"</span><span class="op">)</span></span>
 <span><span class="va">snapshots</span>  <span class="co"># Shows all iterations with snapshot metadata</span></span>
 <span><span class="co">#&gt;    snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 16          15 2026-02-06 18:35:06             15</span></span>
-<span><span class="co">#&gt; 20          19 2026-02-06 18:35:09             19</span></span>
-<span><span class="co">#&gt; 21          20 2026-02-06 18:35:09             20</span></span>
-<span><span class="co">#&gt; 22          21 2026-02-06 18:35:09             21</span></span>
-<span><span class="co">#&gt; 23          22 2026-02-06 18:35:09             22</span></span>
+<span><span class="co">#&gt; 16          15 2026-02-06 19:22:40             15</span></span>
+<span><span class="co">#&gt; 22          21 2026-02-06 19:22:42             21</span></span>
+<span><span class="co">#&gt; 23          22 2026-02-06 19:22:43             22</span></span>
+<span><span class="co">#&gt; 24          23 2026-02-06 19:22:43             23</span></span>
+<span><span class="co">#&gt; 25          24 2026-02-06 19:22:43             24</span></span>
 <span><span class="co">#&gt;                                                                    changes</span></span>
 <span><span class="co">#&gt; 16                     tables_created, tables_inserted_into, main.adsl, 15</span></span>
-<span><span class="co">#&gt; 20 tables_created, tables_dropped, tables_inserted_into, main.adsl, 15, 19</span></span>
-<span><span class="co">#&gt; 21 tables_created, tables_dropped, tables_inserted_into, main.adsl, 19, 20</span></span>
-<span><span class="co">#&gt; 22 tables_created, tables_dropped, tables_inserted_into, main.adsl, 20, 21</span></span>
+<span><span class="co">#&gt; 22 tables_created, tables_dropped, tables_inserted_into, main.adsl, 15, 21</span></span>
 <span><span class="co">#&gt; 23 tables_created, tables_dropped, tables_inserted_into, main.adsl, 21, 22</span></span>
-<span><span class="co">#&gt;    author commit_message commit_extra_info</span></span>
-<span><span class="co">#&gt; 16   &lt;NA&gt;           &lt;NA&gt;              &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 20   &lt;NA&gt;           &lt;NA&gt;              &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 21   &lt;NA&gt;           &lt;NA&gt;              &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 22   &lt;NA&gt;           &lt;NA&gt;              &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 23   &lt;NA&gt;           &lt;NA&gt;              &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 24 tables_created, tables_dropped, tables_inserted_into, main.adsl, 22, 23</span></span>
+<span><span class="co">#&gt; 25 tables_created, tables_dropped, tables_inserted_into, main.adsl, 23, 24</span></span>
+<span><span class="co">#&gt;     author              commit_message</span></span>
+<span><span class="co">#&gt; 16 T Gerke         Create ADSL dataset</span></span>
+<span><span class="co">#&gt; 22 T Gerke Add age categorization vars</span></span>
+<span><span class="co">#&gt; 23 T Gerke      Test age categories v1</span></span>
+<span><span class="co">#&gt; 24 T Gerke    Refine age categories v2</span></span>
+<span><span class="co">#&gt; 25 T Gerke     Finalize age categories</span></span>
+<span><span class="co">#&gt;                                                                      commit_extra_info</span></span>
+<span><span class="co">#&gt; 16 Derived from DM, SUPPDM, DS, EX; includes treatment dates, safety flags, age groups</span></span>
+<span><span class="co">#&gt; 22                                                                                &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 23                                                                                &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 24                                                                                &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 25                                                                                &lt;NA&gt;</span></span>
 <span></span>
 <span><span class="co"># Each row represents a point in time you can restore to</span></span>
 <span><span class="co"># - snapshot_id: Unique identifier for this version</span></span>
@@ -1436,9 +1551,11 @@ iteration to maintain a complete audit trail:</p>
 <span><span class="co"># - changes: What operations created this snapshot</span></span>
 <span></span>
 <span><span class="co"># Time-travel to specific snapshots using snapshot_id</span></span>
-<span><span class="va">adsl_v1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_ducklake_table_version.html">get_ducklake_table_version</a></span><span class="op">(</span><span class="st">"adsl"</span>, <span class="fl">15</span><span class="op">)</span></span>
-<span><span class="va">adsl_v2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_ducklake_table_version.html">get_ducklake_table_version</a></span><span class="op">(</span><span class="st">"adsl"</span>, <span class="fl">19</span><span class="op">)</span></span>
-<span><span class="va">adsl_final</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_ducklake_table_version.html">get_ducklake_table_version</a></span><span class="op">(</span><span class="st">"adsl"</span>, <span class="fl">22</span><span class="op">)</span></span>
+<span><span class="co"># Use actual snapshot IDs from the list (first, second, and last)</span></span>
+<span><span class="va">snapshot_ids</span> <span class="op">&lt;-</span> <span class="va">snapshots</span><span class="op">$</span><span class="va">snapshot_id</span></span>
+<span><span class="va">adsl_v1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_ducklake_table_version.html">get_ducklake_table_version</a></span><span class="op">(</span><span class="st">"adsl"</span>, <span class="va">snapshot_ids</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span><span class="op">)</span></span>
+<span><span class="va">adsl_v2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_ducklake_table_version.html">get_ducklake_table_version</a></span><span class="op">(</span><span class="st">"adsl"</span>, <span class="va">snapshot_ids</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span><span class="op">)</span></span>
+<span><span class="va">adsl_final</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_ducklake_table_version.html">get_ducklake_table_version</a></span><span class="op">(</span><span class="st">"adsl"</span>, <span class="va">snapshot_ids</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">snapshot_ids</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Or use snapshot times for time-travel</span></span>
 <span><span class="va">adsl_asof</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_ducklake_table_asof.html">get_ducklake_table_asof</a></span><span class="op">(</span><span class="st">"adsl"</span>, <span class="va">snapshots</span><span class="op">$</span><span class="va">snapshot_time</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span><span class="op">)</span></span>
@@ -1481,23 +1598,29 @@ iteration to maintain a complete audit trail:</p>
 <span><span class="va">versions</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"adsl"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">versions</span><span class="op">)</span></span>
 <span><span class="co">#&gt;    snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 16          15 2026-02-06 18:35:06             15</span></span>
-<span><span class="co">#&gt; 20          19 2026-02-06 18:35:09             19</span></span>
-<span><span class="co">#&gt; 21          20 2026-02-06 18:35:09             20</span></span>
-<span><span class="co">#&gt; 22          21 2026-02-06 18:35:09             21</span></span>
-<span><span class="co">#&gt; 23          22 2026-02-06 18:35:09             22</span></span>
+<span><span class="co">#&gt; 16          15 2026-02-06 19:22:40             15</span></span>
+<span><span class="co">#&gt; 22          21 2026-02-06 19:22:42             21</span></span>
+<span><span class="co">#&gt; 23          22 2026-02-06 19:22:43             22</span></span>
+<span><span class="co">#&gt; 24          23 2026-02-06 19:22:43             23</span></span>
+<span><span class="co">#&gt; 25          24 2026-02-06 19:22:43             24</span></span>
 <span><span class="co">#&gt;                                                                    changes</span></span>
 <span><span class="co">#&gt; 16                     tables_created, tables_inserted_into, main.adsl, 15</span></span>
-<span><span class="co">#&gt; 20 tables_created, tables_dropped, tables_inserted_into, main.adsl, 15, 19</span></span>
-<span><span class="co">#&gt; 21 tables_created, tables_dropped, tables_inserted_into, main.adsl, 19, 20</span></span>
-<span><span class="co">#&gt; 22 tables_created, tables_dropped, tables_inserted_into, main.adsl, 20, 21</span></span>
+<span><span class="co">#&gt; 22 tables_created, tables_dropped, tables_inserted_into, main.adsl, 15, 21</span></span>
 <span><span class="co">#&gt; 23 tables_created, tables_dropped, tables_inserted_into, main.adsl, 21, 22</span></span>
-<span><span class="co">#&gt;    author commit_message commit_extra_info</span></span>
-<span><span class="co">#&gt; 16   &lt;NA&gt;           &lt;NA&gt;              &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 20   &lt;NA&gt;           &lt;NA&gt;              &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 21   &lt;NA&gt;           &lt;NA&gt;              &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 22   &lt;NA&gt;           &lt;NA&gt;              &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 23   &lt;NA&gt;           &lt;NA&gt;              &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 24 tables_created, tables_dropped, tables_inserted_into, main.adsl, 22, 23</span></span>
+<span><span class="co">#&gt; 25 tables_created, tables_dropped, tables_inserted_into, main.adsl, 23, 24</span></span>
+<span><span class="co">#&gt;     author              commit_message</span></span>
+<span><span class="co">#&gt; 16 T Gerke         Create ADSL dataset</span></span>
+<span><span class="co">#&gt; 22 T Gerke Add age categorization vars</span></span>
+<span><span class="co">#&gt; 23 T Gerke      Test age categories v1</span></span>
+<span><span class="co">#&gt; 24 T Gerke    Refine age categories v2</span></span>
+<span><span class="co">#&gt; 25 T Gerke     Finalize age categories</span></span>
+<span><span class="co">#&gt;                                                                      commit_extra_info</span></span>
+<span><span class="co">#&gt; 16 Derived from DM, SUPPDM, DS, EX; includes treatment dates, safety flags, age groups</span></span>
+<span><span class="co">#&gt; 22                                                                                &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 23                                                                                &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 24                                                                                &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 25                                                                                &lt;NA&gt;</span></span>
 <span></span>
 <span><span class="co"># Get data from the first snapshot version</span></span>
 <span><span class="va">first_snapshot_id</span> <span class="op">&lt;-</span> <span class="va">versions</span> <span class="op">|&gt;</span></span>
@@ -1583,7 +1706,10 @@ atomically:</p>
 <span>    <span class="fu"><a href="../reference/replace_table.html">replace_table</a></span><span class="op">(</span><span class="st">"adae"</span><span class="op">)</span>  <span class="co"># Creates versioned snapshot</span></span>
 <span>  </span>
 <span>  <span class="co"># Both updates succeed - commit the transaction</span></span>
-<span>  <span class="fu"><a href="../reference/commit_transaction.html">commit_transaction</a></span><span class="op">(</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="../reference/commit_transaction.html">commit_transaction</a></span><span class="op">(</span></span>
+<span>    author <span class="op">=</span> <span class="st">"T Gerke"</span>,</span>
+<span>    commit_message <span class="op">=</span> <span class="st">"Add analysis flag"</span></span>
+<span>  <span class="op">)</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Both tables updated successfully\n"</span><span class="op">)</span></span>
 <span>  </span>
 <span><span class="op">}</span>, error <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">e</span><span class="op">)</span> <span class="op">{</span></span>
@@ -1592,6 +1718,7 @@ atomically:</p>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/message.html" class="external-link">message</a></span><span class="op">(</span><span class="st">"Transaction rolled back due to error: "</span>, <span class="va">e</span><span class="op">$</span><span class="va">message</span><span class="op">)</span></span>
 <span><span class="op">}</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Transaction committed</span></span>
+<span><span class="co">#&gt; Snapshot metadata updated</span></span>
 <span><span class="co">#&gt; Both tables updated successfully</span></span></code></pre></div>
 <p>This ensures ADSL and ADAE stay synchronized - either both get the
 new <code>ANALYSISFL</code> column or neither does. Both updates are
@@ -1615,15 +1742,19 @@ trails:</p>
 <span>    <span class="op">)</span></span>
 <span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/replace_table.html">replace_table</a></span><span class="op">(</span><span class="st">"adae"</span><span class="op">)</span>  <span class="co"># Creates versioned snapshot</span></span>
-<span><span class="fu"><a href="../reference/commit_transaction.html">commit_transaction</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/commit_transaction.html">commit_transaction</a></span><span class="op">(</span></span>
+<span>  author <span class="op">=</span> <span class="st">"T Gerke"</span>,</span>
+<span>  commit_message <span class="op">=</span> <span class="st">"Correct AE severity"</span></span>
+<span><span class="op">)</span></span>
 <span><span class="co">#&gt; Transaction committed</span></span>
+<span><span class="co">#&gt; Snapshot metadata updated</span></span>
 <span></span>
 <span><span class="co"># Verify the update</span></span>
 <span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"adae"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">USUBJID</span> <span class="op">==</span> <span class="st">"01-701-1015"</span>, <span class="va">AESEQ</span> <span class="op">==</span> <span class="fl">1</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">USUBJID</span>, <span class="va">AEDECOD</span>, <span class="va">AESEV</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Source:   SQL [?? x 3]</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpZrmVkb/duckplyr/duckplyr1fcd20684ea9.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpQYypn8/duckplyr/duckplyr1f1065bc1671.duckdb]</span></span></span>
 <span><span class="co">#&gt;   USUBJID     AEDECOD                   AESEV </span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 01-701-1015 APPLICATION SITE ERYTHEMA SEVERE</span></span></code></pre></div>
@@ -1639,7 +1770,7 @@ trails:</p>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">EOSSTT</span>, <span class="va">TRT01P</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/arrange.html" class="external-link">arrange</a></span><span class="op">(</span><span class="va">TRT01P</span>, <span class="va">EOSSTT</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Source:     SQL [?? x 3]</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database:   DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpZrmVkb/duckplyr/duckplyr1fcd20684ea9.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database:   DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpQYypn8/duckplyr/duckplyr1f1065bc1671.duckdb]</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Ordered by: TRT01P, EOSSTT</span></span></span>
 <span><span class="co">#&gt;   EOSSTT    TRT01P                   n</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
@@ -1654,7 +1785,7 @@ trails:</p>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">TRT01A</span>, <span class="va">AESEV</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/arrange.html" class="external-link">arrange</a></span><span class="op">(</span><span class="va">TRT01A</span>, <span class="va">AESEV</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Source:     SQL [?? x 3]</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database:   DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpZrmVkb/duckplyr/duckplyr1fcd20684ea9.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database:   DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpQYypn8/duckplyr/duckplyr1f1065bc1671.duckdb]</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Ordered by: TRT01A, AESEV</span></span></span>
 <span><span class="co">#&gt;   TRT01A               AESEV        n</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
@@ -1679,7 +1810,7 @@ trails:</p>
 <span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/arrange.html" class="external-link">arrange</a></span><span class="op">(</span><span class="va">NFRLT</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Source:     SQL [?? x 4]</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database:   DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpZrmVkb/duckplyr/duckplyr1fcd20684ea9.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database:   DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpQYypn8/duckplyr/duckplyr1f1065bc1671.duckdb]</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Ordered by: NFRLT</span></span></span>
 <span><span class="co">#&gt;    NFRLT     n mean_conc  sd_conc</span></span>
 <span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
@@ -1713,7 +1844,7 @@ trails:</p>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">AGEGR1</span>, <span class="va">TRT01A.x</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/arrange.html" class="external-link">arrange</a></span><span class="op">(</span><span class="va">AGEGR1</span>, <span class="va">TRT01A.x</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Source:     SQL [?? x 3]</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database:   DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpZrmVkb/duckplyr/duckplyr1fcd20684ea9.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database:   DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpQYypn8/duckplyr/duckplyr1f1065bc1671.duckdb]</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Ordered by: AGEGR1, TRT01A.x</span></span></span>
 <span><span class="co">#&gt;   AGEGR1 TRT01A.x                 n</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
@@ -1734,26 +1865,33 @@ essential:</p>
 <span><span class="va">audit_report</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"adsl"</span><span class="op">)</span></span>
 <span><span class="va">audit_report</span></span>
 <span><span class="co">#&gt;    snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 16          15 2026-02-06 18:35:06             15</span></span>
-<span><span class="co">#&gt; 20          19 2026-02-06 18:35:09             19</span></span>
-<span><span class="co">#&gt; 21          20 2026-02-06 18:35:09             20</span></span>
-<span><span class="co">#&gt; 22          21 2026-02-06 18:35:09             21</span></span>
-<span><span class="co">#&gt; 23          22 2026-02-06 18:35:09             22</span></span>
-<span><span class="co">#&gt; 24          23 2026-02-06 18:35:10             23</span></span>
+<span><span class="co">#&gt; 16          15 2026-02-06 19:22:40             15</span></span>
+<span><span class="co">#&gt; 22          21 2026-02-06 19:22:42             21</span></span>
+<span><span class="co">#&gt; 23          22 2026-02-06 19:22:43             22</span></span>
+<span><span class="co">#&gt; 24          23 2026-02-06 19:22:43             23</span></span>
+<span><span class="co">#&gt; 25          24 2026-02-06 19:22:43             24</span></span>
+<span><span class="co">#&gt; 26          25 2026-02-06 19:22:43             25</span></span>
 <span><span class="co">#&gt;                                                                                       changes</span></span>
 <span><span class="co">#&gt; 16                                        tables_created, tables_inserted_into, main.adsl, 15</span></span>
-<span><span class="co">#&gt; 20                    tables_created, tables_dropped, tables_inserted_into, main.adsl, 15, 19</span></span>
-<span><span class="co">#&gt; 21                    tables_created, tables_dropped, tables_inserted_into, main.adsl, 19, 20</span></span>
-<span><span class="co">#&gt; 22                    tables_created, tables_dropped, tables_inserted_into, main.adsl, 20, 21</span></span>
+<span><span class="co">#&gt; 22                    tables_created, tables_dropped, tables_inserted_into, main.adsl, 15, 21</span></span>
 <span><span class="co">#&gt; 23                    tables_created, tables_dropped, tables_inserted_into, main.adsl, 21, 22</span></span>
-<span><span class="co">#&gt; 24 tables_created, tables_dropped, tables_inserted_into, main.adsl, main.adae, 16, 22, 23, 24</span></span>
-<span><span class="co">#&gt;    author commit_message commit_extra_info</span></span>
-<span><span class="co">#&gt; 16   &lt;NA&gt;           &lt;NA&gt;              &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 20   &lt;NA&gt;           &lt;NA&gt;              &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 21   &lt;NA&gt;           &lt;NA&gt;              &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 22   &lt;NA&gt;           &lt;NA&gt;              &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 23   &lt;NA&gt;           &lt;NA&gt;              &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 24   &lt;NA&gt;           &lt;NA&gt;              &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 24                    tables_created, tables_dropped, tables_inserted_into, main.adsl, 22, 23</span></span>
+<span><span class="co">#&gt; 25                    tables_created, tables_dropped, tables_inserted_into, main.adsl, 23, 24</span></span>
+<span><span class="co">#&gt; 26 tables_created, tables_dropped, tables_inserted_into, main.adsl, main.adae, 16, 24, 25, 26</span></span>
+<span><span class="co">#&gt;     author              commit_message</span></span>
+<span><span class="co">#&gt; 16 T Gerke         Create ADSL dataset</span></span>
+<span><span class="co">#&gt; 22 T Gerke Add age categorization vars</span></span>
+<span><span class="co">#&gt; 23 T Gerke      Test age categories v1</span></span>
+<span><span class="co">#&gt; 24 T Gerke    Refine age categories v2</span></span>
+<span><span class="co">#&gt; 25 T Gerke     Finalize age categories</span></span>
+<span><span class="co">#&gt; 26 T Gerke           Add analysis flag</span></span>
+<span><span class="co">#&gt;                                                                      commit_extra_info</span></span>
+<span><span class="co">#&gt; 16 Derived from DM, SUPPDM, DS, EX; includes treatment dates, safety flags, age groups</span></span>
+<span><span class="co">#&gt; 22                                                                                &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 23                                                                                &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 24                                                                                &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 25                                                                                &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 26                                                                                &lt;NA&gt;</span></span>
 <span></span>
 <span><span class="co"># Get table metadata from DuckLake system tables</span></span>
 <span><span class="va">adsl_table_meta</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_metadata_table.html">get_metadata_table</a></span><span class="op">(</span><span class="st">"ducklake_table"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -1763,12 +1901,12 @@ essential:</p>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 8</span></span></span>
 <span><span class="co">#&gt;   table_id table_uuid     begin_snapshot end_snapshot schema_id table_name path </span></span>
 <span><span class="co">#&gt;      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>       15 019c343c-8030…             15           19         0 adsl       adsl/</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span>       19 019c343c-8cb3…             19           20         0 adsl       adsl/</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span>       20 019c343c-8d8d…             20           21         0 adsl       adsl/</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span>       21 019c343c-8e38…             21           22         0 adsl       adsl/</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span>       22 019c343c-8ee6…             22           23         0 adsl       adsl/</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span>       24 019c343c-90a5…             23           <span style="color: #BB0000;">NA</span>         0 adsl       adsl/</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>       15 019c3468-0c35…             15           21         0 adsl       adsl/</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span>       21 019c3468-177d…             21           22         0 adsl       adsl/</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span>       22 019c3468-185f…             22           23         0 adsl       adsl/</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span>       23 019c3468-1917…             23           24         0 adsl       adsl/</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span>       24 019c3468-19d0…             24           25         0 adsl       adsl/</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span>       26 019c3468-1b8b…             25           <span style="color: #BB0000;">NA</span>         0 adsl       adsl/</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 1 more variable: path_is_relative &lt;lgl&gt;</span></span></span>
 <span></span>
 <span><span class="co"># Export audit information</span></span>
@@ -1779,33 +1917,40 @@ essential:</p>
 <span>  <span class="op">)</span></span>
 <span><span class="va">audit_export</span></span>
 <span><span class="co">#&gt;    snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 16          15 2026-02-06 18:35:06             15</span></span>
-<span><span class="co">#&gt; 20          19 2026-02-06 18:35:09             19</span></span>
-<span><span class="co">#&gt; 21          20 2026-02-06 18:35:09             20</span></span>
-<span><span class="co">#&gt; 22          21 2026-02-06 18:35:09             21</span></span>
-<span><span class="co">#&gt; 23          22 2026-02-06 18:35:09             22</span></span>
-<span><span class="co">#&gt; 24          23 2026-02-06 18:35:10             23</span></span>
+<span><span class="co">#&gt; 16          15 2026-02-06 19:22:40             15</span></span>
+<span><span class="co">#&gt; 22          21 2026-02-06 19:22:42             21</span></span>
+<span><span class="co">#&gt; 23          22 2026-02-06 19:22:43             22</span></span>
+<span><span class="co">#&gt; 24          23 2026-02-06 19:22:43             23</span></span>
+<span><span class="co">#&gt; 25          24 2026-02-06 19:22:43             24</span></span>
+<span><span class="co">#&gt; 26          25 2026-02-06 19:22:43             25</span></span>
 <span><span class="co">#&gt;                                                                                       changes</span></span>
 <span><span class="co">#&gt; 16                                        tables_created, tables_inserted_into, main.adsl, 15</span></span>
-<span><span class="co">#&gt; 20                    tables_created, tables_dropped, tables_inserted_into, main.adsl, 15, 19</span></span>
-<span><span class="co">#&gt; 21                    tables_created, tables_dropped, tables_inserted_into, main.adsl, 19, 20</span></span>
-<span><span class="co">#&gt; 22                    tables_created, tables_dropped, tables_inserted_into, main.adsl, 20, 21</span></span>
+<span><span class="co">#&gt; 22                    tables_created, tables_dropped, tables_inserted_into, main.adsl, 15, 21</span></span>
 <span><span class="co">#&gt; 23                    tables_created, tables_dropped, tables_inserted_into, main.adsl, 21, 22</span></span>
-<span><span class="co">#&gt; 24 tables_created, tables_dropped, tables_inserted_into, main.adsl, main.adae, 16, 22, 23, 24</span></span>
-<span><span class="co">#&gt;    author commit_message commit_extra_info table_name</span></span>
-<span><span class="co">#&gt; 16   &lt;NA&gt;           &lt;NA&gt;              &lt;NA&gt;       adsl</span></span>
-<span><span class="co">#&gt; 20   &lt;NA&gt;           &lt;NA&gt;              &lt;NA&gt;       adsl</span></span>
-<span><span class="co">#&gt; 21   &lt;NA&gt;           &lt;NA&gt;              &lt;NA&gt;       adsl</span></span>
-<span><span class="co">#&gt; 22   &lt;NA&gt;           &lt;NA&gt;              &lt;NA&gt;       adsl</span></span>
-<span><span class="co">#&gt; 23   &lt;NA&gt;           &lt;NA&gt;              &lt;NA&gt;       adsl</span></span>
-<span><span class="co">#&gt; 24   &lt;NA&gt;           &lt;NA&gt;              &lt;NA&gt;       adsl</span></span>
-<span><span class="co">#&gt;                     dataset_label</span></span>
-<span><span class="co">#&gt; 16 Subject-Level Analysis Dataset</span></span>
-<span><span class="co">#&gt; 20 Subject-Level Analysis Dataset</span></span>
-<span><span class="co">#&gt; 21 Subject-Level Analysis Dataset</span></span>
-<span><span class="co">#&gt; 22 Subject-Level Analysis Dataset</span></span>
-<span><span class="co">#&gt; 23 Subject-Level Analysis Dataset</span></span>
-<span><span class="co">#&gt; 24 Subject-Level Analysis Dataset</span></span></code></pre></div>
+<span><span class="co">#&gt; 24                    tables_created, tables_dropped, tables_inserted_into, main.adsl, 22, 23</span></span>
+<span><span class="co">#&gt; 25                    tables_created, tables_dropped, tables_inserted_into, main.adsl, 23, 24</span></span>
+<span><span class="co">#&gt; 26 tables_created, tables_dropped, tables_inserted_into, main.adsl, main.adae, 16, 24, 25, 26</span></span>
+<span><span class="co">#&gt;     author              commit_message</span></span>
+<span><span class="co">#&gt; 16 T Gerke         Create ADSL dataset</span></span>
+<span><span class="co">#&gt; 22 T Gerke Add age categorization vars</span></span>
+<span><span class="co">#&gt; 23 T Gerke      Test age categories v1</span></span>
+<span><span class="co">#&gt; 24 T Gerke    Refine age categories v2</span></span>
+<span><span class="co">#&gt; 25 T Gerke     Finalize age categories</span></span>
+<span><span class="co">#&gt; 26 T Gerke           Add analysis flag</span></span>
+<span><span class="co">#&gt;                                                                      commit_extra_info</span></span>
+<span><span class="co">#&gt; 16 Derived from DM, SUPPDM, DS, EX; includes treatment dates, safety flags, age groups</span></span>
+<span><span class="co">#&gt; 22                                                                                &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 23                                                                                &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 24                                                                                &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 25                                                                                &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 26                                                                                &lt;NA&gt;</span></span>
+<span><span class="co">#&gt;    table_name                  dataset_label</span></span>
+<span><span class="co">#&gt; 16       adsl Subject-Level Analysis Dataset</span></span>
+<span><span class="co">#&gt; 22       adsl Subject-Level Analysis Dataset</span></span>
+<span><span class="co">#&gt; 23       adsl Subject-Level Analysis Dataset</span></span>
+<span><span class="co">#&gt; 24       adsl Subject-Level Analysis Dataset</span></span>
+<span><span class="co">#&gt; 25       adsl Subject-Level Analysis Dataset</span></span>
+<span><span class="co">#&gt; 26       adsl Subject-Level Analysis Dataset</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="cleanup">Cleanup<a class="anchor" aria-label="anchor" href="#cleanup"></a>
