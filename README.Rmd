@@ -142,7 +142,6 @@ Check out the [pkgdown site](https://tgerke.github.io/ducklake-r/) for detailed 
 - [Clinical Trial Data Lake](https://tgerke.github.io/ducklake-r/articles/clinical-trial-datalake.html) - **Start here**: Complete workflow from SDTM to ADaM with regulatory artifacts
 - [Cookbook](https://tgerke.github.io/ducklake-r/articles/ducklake.html) - Quick recipes for common operations
 - [Modifying Tables](https://tgerke.github.io/ducklake-r/articles/modifying-tables.html) - Two approaches for table modifications
-- [Upsert Operations](https://tgerke.github.io/ducklake-r/articles/upsert-operations.html) - Merge and update data
 - [Transactions](https://tgerke.github.io/ducklake-r/articles/transactions.html) - ACID transaction support
 - [Time Travel](https://tgerke.github.io/ducklake-r/articles/time-travel.html) - Query historical data
 

@@ -30,8 +30,6 @@ navbar:
       - text: Core Operations
       - text: Modifying Tables
         href: articles/modifying-tables.html
-      - text: Upsert Operations
-        href: articles/upsert-operations.html
       - text: -------
       - text: Advanced Features
       - text: Working with Transactions

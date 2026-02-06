@@ -183,7 +183,7 @@ with_transaction(
 )
 ```
 
-Note: For most use cases, use `replace_table()` to update tables. This creates clean snapshots and maintains full versioning. Advanced row-level operations (`rows_update`, `rows_insert`, `rows_delete`, `rows_upsert`) are available when you need granular control - see the [Upsert Operations](upsert-operations.html) vignette for details.
+Note: For most use cases, use `replace_table()` to update tables. This creates clean snapshots and maintains full versioning. Advanced row-level operations (`rows_update`, `rows_insert`, `rows_delete`, `rows_upsert`) are available when you need granular control, but they do not create versioned snapshots.
 
 ## Metadata and versioning recipes
 
@@ -313,7 +313,6 @@ detach_ducklake("my_lake")
 ## See also
 
 - [Modifying Tables](modifying-tables.html) - Detailed guide to table modification approaches
-- [Upsert Operations](upsert-operations.html) - In-depth upsert patterns
 - [Transactions](transactions.html) - Advanced transaction patterns
 - [Time Travel](time-travel.html) - Comprehensive time travel guide
 - [Clinical Trial Data Lake](clinical-trial-datalake.html) - Complete real-world workflow

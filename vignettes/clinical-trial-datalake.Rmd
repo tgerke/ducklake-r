@@ -1198,7 +1198,6 @@ For more information on specific features:
 - `vignette("ducklake")` - Getting started guide
 - `vignette("time-travel")` - Time travel and version control
 - `vignette("transactions")` - Transaction management
-- `vignette("upsert-operations")` - Upsert operations
 
 ## References
 
