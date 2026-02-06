@@ -46,7 +46,6 @@
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Core Operations</h6></li>
     <li><a class="dropdown-item" href="../articles/modifying-tables.html">Modifying Tables</a></li>
-    <li><a class="dropdown-item" href="../articles/upsert-operations.html">Upsert Operations</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Advanced Features</h6></li>
     <li><a class="dropdown-item" href="../articles/transactions.html">Working with Transactions</a></li>
@@ -249,7 +248,7 @@ vignette.</p>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">mpg</span>, <span class="va">cyl</span>, <span class="va">hp</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">3</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Source:   SQL [?? x 3]</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpBiAV0Y/duckplyr/duckplyr1ff8263e3e13.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpUQSYXF/duckplyr/duckplyr1fc121bc2597.duckdb]</span></span></span>
 <span><span class="co">#&gt;     mpg   cyl    hp</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>  21       6   110</span></span>
@@ -277,8 +276,8 @@ vignette.</p>
 <code class="sourceCode R"><span><span class="co"># See all snapshots for the cars table</span></span>
 <span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 2           1 2026-02-06 22:16:30              1</span></span>
-<span><span class="co">#&gt; 3           2 2026-02-06 22:16:30              2</span></span>
+<span><span class="co">#&gt; 2           1 2026-02-06 22:25:01              1</span></span>
+<span><span class="co">#&gt; 3           2 2026-02-06 22:25:01              2</span></span>
 <span><span class="co">#&gt;                                                                 changes</span></span>
 <span><span class="co">#&gt; 2                    tables_created, tables_inserted_into, main.cars, 1</span></span>
 <span><span class="co">#&gt; 3 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2</span></span>
@@ -324,9 +323,8 @@ vignette.</p>
 tables. This creates clean snapshots and maintains full versioning.
 Advanced row-level operations (<code>rows_update</code>,
 <code>rows_insert</code>, <code>rows_delete</code>,
-<code>rows_upsert</code>) are available when you need granular control -
-see the <a href="upsert-operations.html">Upsert Operations</a> vignette
-for details.</p>
+<code>rows_upsert</code>) are available when you need granular control,
+but they do not create versioned snapshots.</p>
 </div>
 </div>
 <div class="section level2">
@@ -361,12 +359,12 @@ for details.</p>
 <div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 1           0 2026-02-06 22:16:30              0</span></span>
-<span><span class="co">#&gt; 2           1 2026-02-06 22:16:30              1</span></span>
-<span><span class="co">#&gt; 3           2 2026-02-06 22:16:30              2</span></span>
-<span><span class="co">#&gt; 4           3 2026-02-06 22:16:31              3</span></span>
-<span><span class="co">#&gt; 5           4 2026-02-06 22:16:31              4</span></span>
-<span><span class="co">#&gt; 6           5 2026-02-06 22:16:31              5</span></span>
+<span><span class="co">#&gt; 1           0 2026-02-06 22:25:00              0</span></span>
+<span><span class="co">#&gt; 2           1 2026-02-06 22:25:01              1</span></span>
+<span><span class="co">#&gt; 3           2 2026-02-06 22:25:01              2</span></span>
+<span><span class="co">#&gt; 4           3 2026-02-06 22:25:01              3</span></span>
+<span><span class="co">#&gt; 5           4 2026-02-06 22:25:01              4</span></span>
+<span><span class="co">#&gt; 6           5 2026-02-06 22:25:02              5</span></span>
 <span><span class="co">#&gt;                                                                 changes</span></span>
 <span><span class="co">#&gt; 1                                                 schemas_created, main</span></span>
 <span><span class="co">#&gt; 2                    tables_created, tables_inserted_into, main.cars, 1</span></span>
@@ -478,7 +476,7 @@ for details.</p>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>kpl <span class="op">=</span> <span class="va">mpg</span> <span class="op">*</span> <span class="fl">0.425144</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">3</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Source:   SQL [?? x 13]</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpBiAV0Y/duckplyr/duckplyr1ff8263e3e13.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpUQSYXF/duckplyr/duckplyr1fc121bc2597.duckdb]</span></span></span>
 <span><span class="co">#&gt;     mpg   cyl  disp    hp  drat    wt  qsec    vs    am  gear  carb   kpl</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>  21       6   160   110  3.9   2.62  16.5     0     1     4     4  8.93</span></span>
@@ -495,7 +493,7 @@ for details.</p>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">mpg</span>, <span class="va">cyl</span>, <span class="va">hp</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">mpg</span> <span class="op">&gt;</span> <span class="fl">25</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Source:   SQL [?? x 3]</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpBiAV0Y/duckplyr/duckplyr1ff8263e3e13.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpUQSYXF/duckplyr/duckplyr1fc121bc2597.duckdb]</span></span></span>
 <span><span class="co">#&gt;     mpg   cyl    hp</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>  32.4     4    66</span></span>
@@ -520,9 +518,6 @@ for details.</p>
 <li>
 <a href="modifying-tables.html">Modifying Tables</a> - Detailed
 guide to table modification approaches</li>
-<li>
-<a href="upsert-operations.html">Upsert Operations</a> - In-depth
-upsert patterns</li>
 <li>
 <a href="transactions.html">Transactions</a> - Advanced transaction
 patterns</li>

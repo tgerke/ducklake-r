@@ -46,7 +46,6 @@
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Core Operations</h6></li>
     <li><a class="dropdown-item" href="../articles/modifying-tables.html">Modifying Tables</a></li>
-    <li><a class="dropdown-item" href="../articles/upsert-operations.html">Upsert Operations</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Advanced Features</h6></li>
     <li><a class="dropdown-item" href="../articles/transactions.html">Working with Transactions</a></li>
@@ -196,8 +195,8 @@ lineage.</strong></p>
 <span><span class="co"># Check version history - should show the new snapshot</span></span>
 <span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 2           1 2026-02-06 22:16:35              1</span></span>
-<span><span class="co">#&gt; 3           2 2026-02-06 22:16:35              2</span></span>
+<span><span class="co">#&gt; 2           1 2026-02-06 22:25:06              1</span></span>
+<span><span class="co">#&gt; 3           2 2026-02-06 22:25:06              2</span></span>
 <span><span class="co">#&gt;                                                                 changes</span></span>
 <span><span class="co">#&gt; 2                    tables_created, tables_inserted_into, main.cars, 1</span></span>
 <span><span class="co">#&gt; 3 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2</span></span>
@@ -230,7 +229,7 @@ lineage.</strong></p>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">hp</span> <span class="op">&gt;</span> <span class="fl">200</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">hp</span>, <span class="va">cyl</span>, <span class="va">hp_per_cyl</span>, <span class="va">high_performance</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Source:   SQL [?? x 4]</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpAfohVp/duckplyr/duckplyr20654614893d.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/Rtmpbmsufh/duckplyr/duckplyr20304526dfcc.duckdb]</span></span></span>
 <span><span class="co">#&gt;      hp   cyl hp_per_cyl high_performance</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>   245     8       30.6 Y               </span></span>
@@ -260,7 +259,7 @@ lineage.</strong></p>
 <span><span class="co"># Show the filtered table</span></span>
 <span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Source:   table&lt;cars&gt; [?? x 13]</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpAfohVp/duckplyr/duckplyr20654614893d.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/Rtmpbmsufh/duckplyr/duckplyr20304526dfcc.duckdb]</span></span></span>
 <span><span class="co">#&gt;      mpg   cyl  disp    hp  drat    wt  qsec    vs    am  gear  carb hp_per_cyl</span></span>
 <span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span>  18.7     8  360    175  3.15  3.44  17.0     0     0     3     2       21.9</span></span>
@@ -282,10 +281,10 @@ lineage.</strong></p>
 <span><span class="co"># View version history - old versions still accessible via time travel</span></span>
 <span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 2           1 2026-02-06 22:16:35              1</span></span>
-<span><span class="co">#&gt; 3           2 2026-02-06 22:16:35              2</span></span>
-<span><span class="co">#&gt; 4           3 2026-02-06 22:16:35              3</span></span>
-<span><span class="co">#&gt; 5           4 2026-02-06 22:16:36              4</span></span>
+<span><span class="co">#&gt; 2           1 2026-02-06 22:25:06              1</span></span>
+<span><span class="co">#&gt; 3           2 2026-02-06 22:25:06              2</span></span>
+<span><span class="co">#&gt; 4           3 2026-02-06 22:25:06              3</span></span>
+<span><span class="co">#&gt; 5           4 2026-02-06 22:25:06              4</span></span>
 <span><span class="co">#&gt;                                                                 changes</span></span>
 <span><span class="co">#&gt; 2                    tables_created, tables_inserted_into, main.cars, 1</span></span>
 <span><span class="co">#&gt; 3 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2</span></span>
@@ -308,10 +307,10 @@ lineage.</strong></p>
 <span><span class="va">snapshots</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span></span>
 <span><span class="va">snapshots</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 2           1 2026-02-06 22:16:35              1</span></span>
-<span><span class="co">#&gt; 3           2 2026-02-06 22:16:35              2</span></span>
-<span><span class="co">#&gt; 4           3 2026-02-06 22:16:35              3</span></span>
-<span><span class="co">#&gt; 5           4 2026-02-06 22:16:36              4</span></span>
+<span><span class="co">#&gt; 2           1 2026-02-06 22:25:06              1</span></span>
+<span><span class="co">#&gt; 3           2 2026-02-06 22:25:06              2</span></span>
+<span><span class="co">#&gt; 4           3 2026-02-06 22:25:06              3</span></span>
+<span><span class="co">#&gt; 5           4 2026-02-06 22:25:06              4</span></span>
 <span><span class="co">#&gt;                                                                 changes</span></span>
 <span><span class="co">#&gt; 2                    tables_created, tables_inserted_into, main.cars, 1</span></span>
 <span><span class="co">#&gt; 3 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2</span></span>

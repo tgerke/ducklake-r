@@ -51,7 +51,6 @@
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Core Operations</h6></li>
     <li><a class="dropdown-item" href="articles/modifying-tables.html">Modifying Tables</a></li>
-    <li><a class="dropdown-item" href="articles/upsert-operations.html">Upsert Operations</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Advanced Features</h6></li>
     <li><a class="dropdown-item" href="articles/transactions.html">Working with Transactions</a></li>
@@ -174,7 +173,7 @@
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">mpg</span>, <span class="va">cyl</span>, <span class="va">efficiency</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">3</span><span class="op">)</span></span>
 <span><span class="co">#&gt; # Source:   SQL [?? x 3]</span></span>
-<span><span class="co">#&gt; # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpNGLFLd/duckplyr/duckplyr194943385a72.duckdb]</span></span>
+<span><span class="co">#&gt; # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpYqzzxb/duckplyr/duckplyr36a67a876643.duckdb]</span></span>
 <span><span class="co">#&gt;     mpg cyl   efficiency</span></span>
 <span><span class="co">#&gt;   &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt;     </span></span>
 <span><span class="co">#&gt; 1  21   6.0   Medium    </span></span>
@@ -184,11 +183,11 @@
 <span><span class="co"># View complete audit trail across all layers with author and commit messages</span></span>
 <span><span class="fu"><a href="reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 1           0 2026-02-06 20:54:38              0</span></span>
-<span><span class="co">#&gt; 2           1 2026-02-06 20:54:38              1</span></span>
-<span><span class="co">#&gt; 3           2 2026-02-06 20:54:38              2</span></span>
-<span><span class="co">#&gt; 4           3 2026-02-06 20:54:38              3</span></span>
-<span><span class="co">#&gt; 5           4 2026-02-06 20:54:38              4</span></span>
+<span><span class="co">#&gt; 1           0 2026-02-06 22:22:21              0</span></span>
+<span><span class="co">#&gt; 2           1 2026-02-06 22:22:21              1</span></span>
+<span><span class="co">#&gt; 3           2 2026-02-06 22:22:21              2</span></span>
+<span><span class="co">#&gt; 4           3 2026-02-06 22:22:22              3</span></span>
+<span><span class="co">#&gt; 5           4 2026-02-06 22:22:22              4</span></span>
 <span><span class="co">#&gt;                                                                           changes</span></span>
 <span><span class="co">#&gt; 1                                                           schemas_created, main</span></span>
 <span><span class="co">#&gt; 2                      tables_created, tables_inserted_into, main.vehicles_raw, 1</span></span>
@@ -213,7 +212,7 @@
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">mpg</span>, <span class="va">cyl</span>, <span class="va">gear</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">3</span><span class="op">)</span></span>
 <span><span class="co">#&gt; # Source:   SQL [?? x 3]</span></span>
-<span><span class="co">#&gt; # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpNGLFLd/duckplyr/duckplyr194943385a72.duckdb]</span></span>
+<span><span class="co">#&gt; # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpYqzzxb/duckplyr/duckplyr36a67a876643.duckdb]</span></span>
 <span><span class="co">#&gt;     mpg cyl    gear</span></span>
 <span><span class="co">#&gt;   &lt;dbl&gt; &lt;chr&gt; &lt;dbl&gt;</span></span>
 <span><span class="co">#&gt; 1  21   6.0       4</span></span>
@@ -260,8 +259,6 @@
 <a href="https://tgerke.github.io/ducklake-r/articles/ducklake.html">Cookbook</a> - Quick recipes for common operations</li>
 <li>
 <a href="https://tgerke.github.io/ducklake-r/articles/modifying-tables.html">Modifying Tables</a> - Two approaches for table modifications</li>
-<li>
-<a href="https://tgerke.github.io/ducklake-r/articles/upsert-operations.html">Upsert Operations</a> - Merge and update data</li>
 <li>
 <a href="https://tgerke.github.io/ducklake-r/articles/transactions.html">Transactions</a> - ACID transaction support</li>
 <li>
