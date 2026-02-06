@@ -121,18 +121,6 @@ get_ducklake_table("cars") |>
   select(hp, cyl, hp_per_cyl, high_performance)
 ```
 
-### Preview SQL before execution
-
-```{r preview-sql}
-# View the SQL that will be executed before committing
-get_ducklake_table("cars") |>
-  mutate(
-    hp_per_cyl = hp / cyl,
-    high_performance = if_else(hp > 200, "Y", "N")
-  ) |>
-  show_ducklake_query()
-```
-
 ### Filtering rows with `replace_table()`
 
 ```{r filter}
