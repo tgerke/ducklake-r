@@ -91,11 +91,12 @@ with_transaction(
 
 ### Load data from a URL
 
-```{r load_url}
+```{r load_url, eval=FALSE}
+# ducklake can load data directly from URLs
 with_transaction(
-  create_table("https://blobs.duckdb.org/nl_stations.csv", "nl_train_stations"),
+  create_table("https://example.com/data.csv", "remote_data"),
   author = "Data Engineer",
-  commit_message = "Load remote train stations dataset"
+  commit_message = "Load remote dataset"
 )
 ```
 
