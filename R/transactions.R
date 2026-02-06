@@ -183,6 +183,91 @@ set_snapshot_metadata <- function(ducklake_name, author = NULL, commit_message =
   })
 }
 
+#' Execute code within a transaction
+#'
+#' Wraps code execution in a transaction, automatically committing on success
+#' or rolling back on error. This provides a more R-idiomatic and safer way to
+#' handle transactions compared to manually calling \code{begin_transaction()}
+#' and \code{commit_transaction()}.
+#'
+#' @param expr An R expression or code block to execute within the transaction.
+#'   Can be a single statement or a \code{\{...\}} block containing multiple statements.
+#' @param author Optional author name to associate with the snapshot
+#' @param commit_message Optional commit message describing the changes
+#' @param commit_extra_info Optional extra information about the commit
+#' @param conn Optional DuckDB connection object. If not provided, uses the default ducklake connection.
+#'
+#' @return Invisibly returns the result of the expression
+#' @export
+#'
+#' @details
+#' This function provides automatic error handling and cleanup for transactions:
+#' \itemize{
+#'   \item Begins a transaction before executing the code
+#'   \item Executes the provided expression
+#'   \item On success: commits the transaction and adds metadata (if provided)
+#'   \item On error: automatically rolls back the transaction and re-throws the error
+#' }
+#'
+#' This pattern is similar to \code{withr::with_*()} functions and provides
+#' better safety guarantees than manually managing transactions.
+#'
+#' @examples
+#' \dontrun{
+#' # Single operation
+#' with_transaction(
+#'   create_table(mtcars, "cars"),
+#'   author = "Data Team",
+#'   commit_message = "Add cars dataset"
+#' )
+#'
+#' # Multiple operations in a block
+#' with_transaction({
+#'   create_table(mtcars, "cars")
+#'   create_table(iris, "flowers")
+#' }, author = "Data Team", commit_message = "Add datasets")
+#'
+#' # With dplyr pipeline
+#' with_transaction(
+#'   get_ducklake_table("cars") |>
+#'     mutate(kpl = mpg * 0.425144) |>
+#'     replace_table("cars"),
+#'   author = "Data Team",
+#'   commit_message = "Add km/L column"
+#' )
+#'
+#' # Automatic rollback on error
+#' tryCatch(
+#'   with_transaction({
+#'     create_table(mtcars, "cars")
+#'     stop("Simulated error")  # Transaction will be rolled back
+#'   }),
+#'   error = function(e) message("Transaction was rolled back: ", e$message)
+#' )
+#' }
+with_transaction <- function(expr, author = NULL, commit_message = NULL,
+                             commit_extra_info = NULL, conn = NULL) {
+  if (is.null(conn)) {
+    conn <- get_ducklake_connection()
+  }
+  
+  begin_transaction(conn = conn)
+  
+  tryCatch({
+    result <- force(expr)
+    commit_transaction(
+      conn = conn,
+      author = author,
+      commit_message = commit_message,
+      commit_extra_info = commit_extra_info
+    )
+    invisible(result)
+  }, error = function(e) {
+    rollback_transaction(conn = conn)
+    stop("Transaction rolled back due to error: ", e$message, call. = FALSE)
+  })
+}
+
 #' Rollback a transaction
 #'
 #' Rolls back the current transaction, discarding all changes made since the
