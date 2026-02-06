@@ -17,6 +17,14 @@ Imports:
     duckdb,
     duckplyr
 Suggests: 
+    admiral,
+    DiagrammeR,
+    jsonlite,
     knitr,
-    rmarkdown
+    lubridate,
+    pharmaversesdtm,
+    purrr,
+    rmarkdown,
+    stringr,
+    tidyr
 VignetteBuilder: knitr

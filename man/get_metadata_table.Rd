@@ -4,12 +4,12 @@
 \alias{get_metadata_table}
 \title{Get a DuckLake metadata table}
 \usage{
-get_metadata_table(tbl_name, ducklake_name)
+get_metadata_table(tbl_name, ducklake_name = NULL)
 }
 \arguments{
 \item{tbl_name}{Character string, name of the table to retrieve}
 
-\item{ducklake_name}{Character string, name of the ducklake database}
+\item{ducklake_name}{Character string, name of the ducklake database (optional, defaults to current active ducklake)}
 }
 \value{
 A DuckLake table of class \code{tbl_duckdb_connection}

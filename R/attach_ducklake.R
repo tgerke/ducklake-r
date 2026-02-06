@@ -5,24 +5,26 @@
 #' The connection is stored in the package environment and can be closed with detach_ducklake().
 #'
 #' @param ducklake_name Name for the ducklake file, as in `ducklake:{ducklake_name}.ducklake`
-#' @param data_path Optional directory where Parquet files are stored. If not specified, uses the default folder `{ducklake_name}.ducklake.files` in the same directory as the DuckLake itself.
+#' @param lake_path Optional directory path for the ducklake. If specified, both the ducklake database file and Parquet data files will be stored in this location. If not specified, the ducklake is created in the current working directory with data files in `{ducklake_name}.ducklake.files`.
 #'
 #' @returns NULL
 #' @export
 #'
 #' @seealso [detach_ducklake()] to close the connection
 #'
-attach_ducklake <- function(ducklake_name, data_path = NULL) {
+attach_ducklake <- function(ducklake_name, lake_path = NULL) {
   # Get or create connection
   conn <- get_ducklake_connection()
   
   # Store the connection in our environment
   set_ducklake_connection(conn)
   
-  if (is.null(data_path)) {
+  if (is.null(lake_path)) {
     duckplyr::db_exec(sprintf("ATTACH 'ducklake:%s.ducklake' AS %s;", ducklake_name, ducklake_name))
   } else {
-    duckplyr::db_exec(sprintf("ATTACH 'ducklake:%s.ducklake' AS %s (DATA_PATH '%s');", ducklake_name, ducklake_name, data_path))
+    # Construct full path to ducklake file
+    ducklake_path <- file.path(lake_path, paste0(ducklake_name, ".ducklake"))
+    duckplyr::db_exec(sprintf("ATTACH 'ducklake:%s' AS %s (DATA_PATH '%s');", ducklake_path, ducklake_name, lake_path))
   }
 
   duckplyr::db_exec(sprintf("USE %s;", ducklake_name))

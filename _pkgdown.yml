@@ -23,6 +23,10 @@ navbar:
       - text: Getting Started
         href: articles/ducklake.html
       - text: -------
+      - text: Use Cases
+      - text: Clinical Trial Data Lake
+        href: articles/clinical-trial-datalake.html
+      - text: -------
       - text: Core Operations
       - text: Modifying Tables
         href: articles/modifying-tables.html

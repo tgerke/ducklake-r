@@ -1,11 +1,45 @@
-#' Convert a dplyr query to DuckLake SQL operations
+#' Update existing column values in a table (in-place, no versioning)
 #'
-#' @param .data A dplyr query object (tbl_lazy)
-#' @param table_name Table name (required when using update_table)
+#' @param .data A dplyr query object (tbl_lazy) with mutate() operations
+#' @param table_name Table name to update
 #' @param .quiet Logical, whether to suppress debug output (default FALSE for backward compatibility)
 #'
-#' @return A SQL statement string
+#' @return Invisibly returns the SQL statement string after executing it
 #' @export
+#'
+#' @details
+#' This function performs in-place UPDATE operations on existing columns.
+#' **Important limitations:**
+#' 
+#' - **Cannot add or remove columns** - Only modifies values in existing columns
+#' - **Does not create snapshots** - UPDATE operations modify in-place without creating 
+#'   snapshots, even when wrapped in transactions. Only CREATE operations trigger snapshots.
+#' - **All columns must exist** - Any column referenced in mutate() must already exist in the table
+#' 
+#' Use `replace_table()` if you need to:
+#' - Add new derived columns
+#' - Remove columns
+#' - Create a new versioned snapshot
+#' 
+#' Use `update_table()` when:
+#' - Making targeted value corrections to existing columns
+#' - Performance is critical and versioning is not needed
+#' - Updating specific rows with filter()
+#'
+#' @examples
+#' \dontrun{n#' # Correct a specific value (no versioning needed)
+#' get_ducklake_table("adsl") |>
+#'   mutate(SAFFL = if_else(USUBJID == "01-701-1015", "N", SAFFL)) |>
+#'   update_table("adsl")
+#' 
+#' # Update multiple columns
+#' get_ducklake_table("adae") |>
+#'   mutate(
+#'     AESEV = if_else(AESEV == "MILD", "MODERATE", AESEV),
+#'     AESER = if_else(AESEV == "SEVERE", "Y", AESER)
+#'   ) |>
+#'   update_table("adae")
+#' }
 update_table <- function(.data, table_name, .quiet = FALSE) {
 
   if (!.quiet) {
@@ -84,7 +118,12 @@ update_table <- function(.data, table_name, .quiet = FALSE) {
     }
 
     if (!.quiet) cat("Generated SQL:", result_sql, "\n")
-    return(result_sql)
+    
+    # Execute the generated SQL directly
+    result <- duckplyr::db_exec(result_sql)
+    
+    # Return invisibly for potential chaining
+    invisible(result_sql)
 
   }, error = function(e) {
     stop("Failed to generate DuckLake SQL: ", e$message)

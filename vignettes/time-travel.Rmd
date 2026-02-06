@@ -88,7 +88,7 @@ Time travel is particularly useful for:
 # Setup
 install_ducklake()
 attach_ducklake("my_ducklake")
-create_table("employees", employee_data)
+create_table(employee_data, "employees")
 
 # Make some changes over time
 rows_update(get_ducklake_table("employees"), updates_jan, by = "id")
