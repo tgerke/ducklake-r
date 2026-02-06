@@ -82,101 +82,507 @@
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://tgerke.github.io/ducklake-r/">ducklake</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://duckplyr.tidyverse.org" class="external-link">duckplyr</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Setup for examples</span></span>
 <span><span class="fu"><a href="../reference/install_ducklake.html">install_ducklake</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/attach_ducklake.html">attach_ducklake</a></span><span class="op">(</span><span class="st">"my_ducklake"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/create_table.html">create_table</a></span><span class="op">(</span><span class="st">"https://blobs.duckdb.org/nl_stations.csv"</span>, <span class="st">"nl_train_stations"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="../reference/attach_ducklake.html">attach_ducklake</a></span><span class="op">(</span><span class="st">"my_ducklake"</span>, lake_path <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <div class="section level2">
-<h2 id="transaction-support">Transaction support<a class="anchor" aria-label="anchor" href="#transaction-support"></a>
+<h2 id="introduction">Introduction<a class="anchor" aria-label="anchor" href="#introduction"></a>
 </h2>
-<p>Group multiple operations together with ACID transactions. This
-ensures that either all operations succeed or none do, maintaining data
-consistency.</p>
+<p>Transactions are essential for maintaining data integrity when making
+multiple related changes to your data lake. DuckLake provides full ACID
+(Atomicity, Consistency, Isolation, Durability) transaction support,
+ensuring that either all operations succeed or none do.</p>
+<p>DuckLake offers two approaches for working with transactions:</p>
+<ol style="list-style-type: decimal">
+<li>
+<strong><code><a href="../reference/with_transaction.html">with_transaction()</a></code> (Recommended)</strong>: A
+modern, R-idiomatic approach that automatically handles errors and
+rollbacks</li>
+<li>
+<strong><code><a href="../reference/begin_transaction.html">begin_transaction()</a></code> /
+<code><a href="../reference/commit_transaction.html">commit_transaction()</a></code> /
+<code><a href="../reference/rollback_transaction.html">rollback_transaction()</a></code></strong>: Manual transaction control
+for advanced use cases</li>
+</ol>
+<p>This vignette demonstrates both approaches and explains when to use
+each one.</p>
 </div>
 <div class="section level2">
-<h2 id="basic-transaction-workflow">Basic transaction workflow<a class="anchor" aria-label="anchor" href="#basic-transaction-workflow"></a>
+<h2 id="setup-loading-initial-data">Setup: Loading Initial Data<a class="anchor" aria-label="anchor" href="#setup-loading-initial-data"></a>
 </h2>
+<p>We’ll use the <code>mtcars</code> dataset throughout this vignette to
+demonstrate transaction workflows.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Check what data we currently have</span></span>
-<span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"nl_train_stations"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">code</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"HT"</span>, <span class="st">"ASB"</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">code</span>, <span class="va">name_short</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/compute.html" class="external-link">collect</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="co"># Load initial data</span></span>
+<span><span class="fu"><a href="../reference/with_transaction.html">with_transaction</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="../reference/create_table.html">create_table</a></span><span class="op">(</span><span class="va">mtcars</span>, <span class="st">"cars"</span><span class="op">)</span>,</span>
+<span>  author <span class="op">=</span> <span class="st">"Tutorial"</span>,</span>
+<span>  commit_message <span class="op">=</span> <span class="st">"Initial load of mtcars dataset"</span></span>
+<span><span class="op">)</span></span>
+<span><span class="co">#&gt; Transaction started</span></span>
+<span><span class="co">#&gt; Transaction committed</span></span>
+<span><span class="co">#&gt; Snapshot metadata updated</span></span>
+<span></span>
+<span><span class="co"># View the data</span></span>
+<span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">mpg</span>, <span class="va">cyl</span>, <span class="va">hp</span>, <span class="va">wt</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Source:   SQL [?? x 4]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpW7JHby/duckplyr/duckplyr20f1570e8e29.duckdb]</span></span></span>
+<span><span class="co">#&gt;     mpg   cyl    hp    wt</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>  21       6   110  2.62</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span>  21       6   110  2.88</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span>  22.8     4    93  2.32</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span>  21.4     6   110  3.22</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span>  18.7     8   175  3.44</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span>  18.1     6   105  3.46</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="approach-1-with_transaction-recommended">Approach 1: with_transaction() (Recommended)<a class="anchor" aria-label="anchor" href="#approach-1-with_transaction-recommended"></a>
+</h2>
+<p>The <code><a href="../reference/with_transaction.html">with_transaction()</a></code> function provides automatic error
+handling and cleanup, similar to the <code>withr::with_*()</code>
+pattern used throughout the R ecosystem. This is the <strong>recommended
+approach</strong> for most use cases.</p>
+<div class="section level3">
+<h3 id="why-use-with_transaction">Why use with_transaction()?<a class="anchor" aria-label="anchor" href="#why-use-with_transaction"></a>
+</h3>
+<ul>
+<li>
+<strong>Automatic rollback on error</strong>: If any operation
+fails, all changes are automatically rolled back</li>
+<li>
+<strong>Cleaner code</strong>: No need to manually call
+<code><a href="../reference/begin_transaction.html">begin_transaction()</a></code> and
+<code><a href="../reference/commit_transaction.html">commit_transaction()</a></code>
+</li>
+<li>
+<strong>Built-in metadata support</strong>: Easily add author and
+commit messages</li>
+<li>
+<strong>Safer</strong>: Prevents accidentally leaving transactions
+open</li>
+<li>
+<strong>R-idiomatic</strong>: Follows familiar patterns from
+packages like <code>withr</code>
+</li>
+</ul>
+</div>
+<div class="section level3">
+<h3 id="single-operation-with-metadata">Single Operation with Metadata<a class="anchor" aria-label="anchor" href="#single-operation-with-metadata"></a>
+</h3>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Add a new column with automatic metadata tracking</span></span>
+<span><span class="fu"><a href="../reference/with_transaction.html">with_transaction</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>kpl <span class="op">=</span> <span class="va">mpg</span> <span class="op">*</span> <span class="fl">0.425144</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>    <span class="fu"><a href="../reference/replace_table.html">replace_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span>,</span>
+<span>  author <span class="op">=</span> <span class="st">"Data Team"</span>,</span>
+<span>  commit_message <span class="op">=</span> <span class="st">"Add kilometers per liter column"</span></span>
+<span><span class="op">)</span></span>
+<span><span class="co">#&gt; Transaction started</span></span>
+<span><span class="co">#&gt; Transaction committed</span></span>
+<span><span class="co">#&gt; Snapshot metadata updated</span></span>
+<span></span>
+<span><span class="co"># Verify the change</span></span>
+<span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">mpg</span>, <span class="va">kpl</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Source:   SQL [?? x 2]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpW7JHby/duckplyr/duckplyr20f1570e8e29.duckdb]</span></span></span>
+<span><span class="co">#&gt;     mpg   kpl</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>  21    8.93</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span>  21    8.93</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span>  22.8  9.69</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span>  21.4  9.10</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span>  18.7  7.95</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span>  18.1  7.70</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="multiple-operations-in-a-single-transaction">Multiple Operations in a Single Transaction<a class="anchor" aria-label="anchor" href="#multiple-operations-in-a-single-transaction"></a>
+</h3>
+<p>You can group multiple operations together by wrapping them in curly
+braces:</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Multiple related changes in one atomic transaction</span></span>
+<span><span class="fu"><a href="../reference/with_transaction.html">with_transaction</a></span><span class="op">(</span><span class="op">{</span></span>
+<span>  <span class="co"># Add efficiency rating</span></span>
+<span>  <span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span></span>
+<span>      efficiency <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/case-and-replace-when.html" class="external-link">case_when</a></span><span class="op">(</span></span>
+<span>        <span class="va">mpg</span> <span class="op">&gt;=</span> <span class="fl">25</span> <span class="op">~</span> <span class="st">"high"</span>,</span>
+<span>        <span class="va">mpg</span> <span class="op">&gt;=</span> <span class="fl">20</span> <span class="op">~</span> <span class="st">"medium"</span>,</span>
+<span>        <span class="cn">TRUE</span> <span class="op">~</span> <span class="st">"low"</span></span>
+<span>      <span class="op">)</span></span>
+<span>    <span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>    <span class="fu"><a href="../reference/replace_table.html">replace_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span></span>
+<span>  </span>
+<span>  <span class="co"># Create a summary table</span></span>
+<span>  <span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by</a></span><span class="op">(</span><span class="va">cyl</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/summarise.html" class="external-link">summarize</a></span><span class="op">(</span></span>
+<span>      avg_mpg <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">mpg</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>
+<span>      avg_hp <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">hp</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>
+<span>      count <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/context.html" class="external-link">n</a></span><span class="op">(</span><span class="op">)</span></span>
+<span>    <span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>    <span class="fu"><a href="../reference/create_table.html">create_table</a></span><span class="op">(</span><span class="st">"cars_summary"</span><span class="op">)</span></span>
+<span><span class="op">}</span>, author <span class="op">=</span> <span class="st">"Data Team"</span>, commit_message <span class="op">=</span> <span class="st">"Add efficiency ratings and summary table"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Transaction started</span></span>
+<span><span class="co">#&gt; Transaction committed</span></span>
+<span><span class="co">#&gt; Snapshot metadata updated</span></span>
+<span></span>
+<span><span class="co"># View results</span></span>
+<span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">mpg</span>, <span class="va">cyl</span>, <span class="va">efficiency</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Source:   SQL [?? x 3]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpW7JHby/duckplyr/duckplyr20f1570e8e29.duckdb]</span></span></span>
+<span><span class="co">#&gt;     mpg   cyl efficiency</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>  21       6 medium    </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span>  21       6 medium    </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span>  22.8     4 medium    </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span>  21.4     6 medium    </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span>  18.7     8 low       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span>  18.1     6 low</span></span>
+<span></span>
+<span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"cars_summary"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/compute.html" class="external-link">collect</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 3 × 4</span></span></span>
+<span><span class="co">#&gt;     cyl avg_mpg avg_hp count</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>     4    26.7   82.6    11</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span>     6    19.7  122.      7</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span>     8    15.1  209.     14</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="automatic-rollback-on-error">Automatic Rollback on Error<a class="anchor" aria-label="anchor" href="#automatic-rollback-on-error"></a>
+</h3>
+<p>One of the key benefits of <code><a href="../reference/with_transaction.html">with_transaction()</a></code> is
+automatic error handling:</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># This transaction will fail and automatically rollback</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/conditions.html" class="external-link">tryCatch</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="../reference/with_transaction.html">with_transaction</a></span><span class="op">(</span><span class="op">{</span></span>
+<span>    <span class="co"># This will succeed</span></span>
+<span>    <span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>      <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>test_column <span class="op">=</span> <span class="st">"temporary"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>      <span class="fu"><a href="../reference/replace_table.html">replace_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span></span>
+<span>    </span>
+<span>    <span class="co"># This will fail</span></span>
+<span>    <span class="kw"><a href="https://rdrr.io/r/base/stop.html" class="external-link">stop</a></span><span class="op">(</span><span class="st">"Simulated error - something went wrong!"</span><span class="op">)</span></span>
+<span>  <span class="op">}</span>, author <span class="op">=</span> <span class="st">"Data Team"</span>, commit_message <span class="op">=</span> <span class="st">"This will be rolled back"</span><span class="op">)</span>,</span>
+<span>  error <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">e</span><span class="op">)</span> <span class="op">{</span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/base/message.html" class="external-link">message</a></span><span class="op">(</span><span class="st">"Transaction automatically rolled back: "</span>, <span class="va">e</span><span class="op">$</span><span class="va">message</span><span class="op">)</span></span>
+<span>  <span class="op">}</span></span>
+<span><span class="op">)</span></span>
+<span><span class="co">#&gt; Transaction started</span></span>
+<span><span class="co">#&gt; Transaction rolled back</span></span>
+<span><span class="co">#&gt; Transaction automatically rolled back: Transaction rolled back due to error: Simulated error - something went wrong!</span></span>
+<span></span>
+<span><span class="co"># Verify that test_column was NOT added (transaction was rolled back)</span></span>
+<span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt;  [1] "mpg"        "cyl"        "disp"       "hp"         "drat"      </span></span>
+<span><span class="co">#&gt;  [6] "wt"         "qsec"       "vs"         "am"         "gear"      </span></span>
+<span><span class="co">#&gt; [11] "carb"       "kpl"        "efficiency"</span></span>
+<span></span>
+<span><span class="co"># View all versioned changes</span></span>
+<span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
+<span><span class="co">#&gt; 2           1 2026-02-06 22:34:37              1</span></span>
+<span><span class="co">#&gt; 3           2 2026-02-06 22:34:37              2</span></span>
+<span><span class="co">#&gt; 4           3 2026-02-06 22:34:37              3</span></span>
+<span><span class="co">#&gt;                                                                                       changes</span></span>
+<span><span class="co">#&gt; 2                                          tables_created, tables_inserted_into, main.cars, 1</span></span>
+<span><span class="co">#&gt; 3                       tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2</span></span>
+<span><span class="co">#&gt; 4 tables_created, tables_dropped, tables_inserted_into, main.cars, main.cars_summary, 2, 3, 4</span></span>
+<span><span class="co">#&gt;      author                           commit_message commit_extra_info</span></span>
+<span><span class="co">#&gt; 2  Tutorial           Initial load of mtcars dataset              &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 3 Data Team          Add kilometers per liter column              &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 4 Data Team Add efficiency ratings and summary table              &lt;NA&gt;</span></span></code></pre></div>
+</div>
+</div>
+<div class="section level2">
+<h2 id="approach-2-manual-transaction-control">Approach 2: Manual Transaction Control<a class="anchor" aria-label="anchor" href="#approach-2-manual-transaction-control"></a>
+</h2>
+<p>For advanced use cases where you need explicit control over
+transaction boundaries, DuckLake provides manual transaction
+functions.</p>
+<div class="section level3">
+<h3 id="when-to-use-manual-transactions">When to use manual transactions?<a class="anchor" aria-label="anchor" href="#when-to-use-manual-transactions"></a>
+</h3>
+<ul>
+<li>
+<strong>Interactive workflows</strong>: When you want to inspect
+data between operations before committing</li>
+<li>
+<strong>Conditional commits</strong>: When commit logic depends on
+runtime conditions</li>
+<li>
+<strong>Long-running transactions</strong>: When you need
+fine-grained control over transaction lifecycle</li>
+<li>
+<strong>Legacy code</strong>: When migrating from other transaction
+systems</li>
+</ul>
+</div>
+<div class="section level3">
+<h3 id="basic-manual-transaction-workflow">Basic Manual Transaction Workflow<a class="anchor" aria-label="anchor" href="#basic-manual-transaction-workflow"></a>
+</h3>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Start a transaction</span></span>
 <span><span class="fu"><a href="../reference/begin_transaction.html">begin_transaction</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Transaction started</span></span>
 <span></span>
-<span><span class="co"># Make multiple changes atomically within the transaction</span></span>
-<span><span class="fu">duckplyr</span><span class="fu">::</span><span class="fu"><a href="https://duckplyr.tidyverse.org/reference/db_exec.html" class="external-link">db_exec</a></span><span class="op">(</span><span class="st">"UPDATE nl_train_stations SET name_short = 'COMMITTED_CHANGE' WHERE code = 'HT'"</span><span class="op">)</span></span>
-<span><span class="fu">duckplyr</span><span class="fu">::</span><span class="fu"><a href="https://duckplyr.tidyverse.org/reference/db_exec.html" class="external-link">db_exec</a></span><span class="op">(</span><span class="st">"UPDATE nl_train_stations SET name_short = 'ALSO_COMMITTED' WHERE code = 'ASB'"</span><span class="op">)</span></span>
+<span><span class="co"># Make changes</span></span>
+<span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">cyl</span> <span class="op">==</span> <span class="fl">4</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>weight_kg <span class="op">=</span> <span class="va">wt</span> <span class="op">*</span> <span class="fl">453.592</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/replace_table.html">replace_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Commit both changes together</span></span>
+<span><span class="co"># Commit the changes with metadata</span></span>
+<span><span class="fu"><a href="../reference/commit_transaction.html">commit_transaction</a></span><span class="op">(</span></span>
+<span>  author <span class="op">=</span> <span class="st">"Data Team"</span>,</span>
+<span>  commit_message <span class="op">=</span> <span class="st">"Add weight in kg for 4-cylinder cars"</span></span>
+<span><span class="op">)</span></span>
+<span><span class="co">#&gt; Transaction committed</span></span>
+<span><span class="co">#&gt; Snapshot metadata updated</span></span>
+<span></span>
+<span><span class="co"># Verify changes</span></span>
+<span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">cyl</span> <span class="op">==</span> <span class="fl">4</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">wt</span>, <span class="va">weight_kg</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Source:   SQL [?? x 2]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpW7JHby/duckplyr/duckplyr20f1570e8e29.duckdb]</span></span></span>
+<span><span class="co">#&gt;      wt weight_kg</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>  2.32     <span style="text-decoration: underline;">1</span>052.</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span>  3.19     <span style="text-decoration: underline;">1</span>447.</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span>  3.15     <span style="text-decoration: underline;">1</span>429.</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span>  2.2       998.</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span>  1.62      733.</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span>  1.84      832.</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="manual-rollback">Manual Rollback<a class="anchor" aria-label="anchor" href="#manual-rollback"></a>
+</h3>
+<p>Sometimes you may want to inspect data before deciding whether to
+commit:</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Start a transaction</span></span>
+<span><span class="fu"><a href="../reference/begin_transaction.html">begin_transaction</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Transaction started</span></span>
+<span></span>
+<span><span class="co"># Make a test change</span></span>
+<span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>test_flag <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/replace_table.html">replace_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Check the result</span></span>
+<span><span class="va">test_result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">mpg</span>, <span class="va">test_flag</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/compute.html" class="external-link">collect</a></span><span class="op">(</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">test_result</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 2</span></span></span>
+<span><span class="co">#&gt;     mpg test_flag</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span>    </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>  22.8 TRUE     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span>  24.4 TRUE     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span>  22.8 TRUE     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span>  32.4 TRUE     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span>  30.4 TRUE     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span>  33.9 TRUE</span></span>
+<span></span>
+<span><span class="co"># Decide to rollback</span></span>
+<span><span class="fu"><a href="../reference/rollback_transaction.html">rollback_transaction</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Transaction rolled back</span></span>
+<span></span>
+<span><span class="co"># Verify the change was NOT applied</span></span>
+<span><span class="st">"test_flag"</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] FALSE</span></span>
+<span></span>
+<span><span class="co"># View all versioned changes</span></span>
+<span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
+<span><span class="co">#&gt; 2           1 2026-02-06 22:34:37              1</span></span>
+<span><span class="co">#&gt; 3           2 2026-02-06 22:34:37              2</span></span>
+<span><span class="co">#&gt; 4           3 2026-02-06 22:34:37              3</span></span>
+<span><span class="co">#&gt; 5           4 2026-02-06 22:34:38              4</span></span>
+<span><span class="co">#&gt;                                                                                       changes</span></span>
+<span><span class="co">#&gt; 2                                          tables_created, tables_inserted_into, main.cars, 1</span></span>
+<span><span class="co">#&gt; 3                       tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2</span></span>
+<span><span class="co">#&gt; 4 tables_created, tables_dropped, tables_inserted_into, main.cars, main.cars_summary, 2, 3, 4</span></span>
+<span><span class="co">#&gt; 5                       tables_created, tables_dropped, tables_inserted_into, main.cars, 4, 5</span></span>
+<span><span class="co">#&gt;      author                           commit_message commit_extra_info</span></span>
+<span><span class="co">#&gt; 2  Tutorial           Initial load of mtcars dataset              &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 3 Data Team          Add kilometers per liter column              &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 4 Data Team Add efficiency ratings and summary table              &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 5 Data Team     Add weight in kg for 4-cylinder cars              &lt;NA&gt;</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="setting-metadata-separately">Setting Metadata Separately<a class="anchor" aria-label="anchor" href="#setting-metadata-separately"></a>
+</h3>
+<p>With manual transactions, you can also set metadata after
+committing:</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Start transaction</span></span>
+<span><span class="fu"><a href="../reference/begin_transaction.html">begin_transaction</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Transaction started</span></span>
+<span></span>
+<span><span class="co"># Make changes</span></span>
+<span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>hp_per_liter <span class="op">=</span> <span class="va">hp</span> <span class="op">/</span> <span class="op">(</span><span class="va">cyl</span> <span class="op">*</span> <span class="fl">0.5</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/replace_table.html">replace_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Commit</span></span>
 <span><span class="fu"><a href="../reference/commit_transaction.html">commit_transaction</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Transaction committed</span></span>
 <span></span>
-<span><span class="co"># Add author and commit message metadata to the snapshot</span></span>
+<span><span class="co"># Add metadata separately</span></span>
 <span><span class="fu"><a href="../reference/set_snapshot_metadata.html">set_snapshot_metadata</a></span><span class="op">(</span></span>
 <span>  ducklake_name <span class="op">=</span> <span class="st">"my_ducklake"</span>,</span>
-<span>  author <span class="op">=</span> <span class="st">"Data Team"</span>,</span>
-<span>  commit_message <span class="op">=</span> <span class="st">"Updated station names for clarity"</span></span>
+<span>  author <span class="op">=</span> <span class="st">"Performance Team"</span>,</span>
+<span>  commit_message <span class="op">=</span> <span class="st">"Add horsepower per liter metric"</span></span>
 <span><span class="op">)</span></span>
+<span><span class="co">#&gt; Snapshot metadata updated</span></span>
 <span></span>
-<span><span class="co"># Verify the changes were applied</span></span>
-<span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"nl_train_stations"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">code</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"HT"</span>, <span class="st">"ASB"</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">code</span>, <span class="va">name_short</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/compute.html" class="external-link">collect</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<span><span class="co"># Verify</span></span>
+<span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">hp</span>, <span class="va">cyl</span>, <span class="va">hp_per_liter</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Source:   SQL [?? x 3]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpW7JHby/duckplyr/duckplyr20f1570e8e29.duckdb]</span></span></span>
+<span><span class="co">#&gt;      hp   cyl hp_per_liter</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>    93     4         46.5</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span>    62     4         31  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span>    95     4         47.5</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span>    66     4         33  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span>    52     4         26  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span>    65     4         32.5</span></span></code></pre></div>
+</div>
 </div>
 <div class="section level2">
-<h2 id="view-commit-history">View commit history<a class="anchor" aria-label="anchor" href="#view-commit-history"></a>
+<h2 id="viewing-transaction-history">Viewing Transaction History<a class="anchor" aria-label="anchor" href="#viewing-transaction-history"></a>
 </h2>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># View the recent commit history with metadata</span></span>
-<span><span class="fu"><a href="../reference/get_metadata_table.html">get_metadata_table</a></span><span class="op">(</span><span class="st">"ducklake_snapshot_changes"</span>, ducklake_name <span class="op">=</span> <span class="st">"my_ducklake"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">snapshot_id</span>, <span class="va">changes_made</span>, <span class="va">author</span>, <span class="va">commit_message</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/compute.html" class="external-link">collect</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">tail</a></span><span class="op">(</span><span class="fl">3</span><span class="op">)</span></span></code></pre></div>
+<p>Regardless of which approach you use, all transactions are tracked
+with complete metadata:</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># View recent transaction history</span></span>
+<span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">snapshot_id</span>, <span class="va">snapshot_time</span>, <span class="va">author</span>, <span class="va">commit_message</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">tail</a></span><span class="op">(</span><span class="fl">5</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   snapshot_id       snapshot_time           author</span></span>
+<span><span class="co">#&gt; 2           1 2026-02-06 22:34:37         Tutorial</span></span>
+<span><span class="co">#&gt; 3           2 2026-02-06 22:34:37        Data Team</span></span>
+<span><span class="co">#&gt; 4           3 2026-02-06 22:34:37        Data Team</span></span>
+<span><span class="co">#&gt; 5           4 2026-02-06 22:34:38        Data Team</span></span>
+<span><span class="co">#&gt; 6           5 2026-02-06 22:34:38 Performance Team</span></span>
+<span><span class="co">#&gt;                             commit_message</span></span>
+<span><span class="co">#&gt; 2           Initial load of mtcars dataset</span></span>
+<span><span class="co">#&gt; 3          Add kilometers per liter column</span></span>
+<span><span class="co">#&gt; 4 Add efficiency ratings and summary table</span></span>
+<span><span class="co">#&gt; 5     Add weight in kg for 4-cylinder cars</span></span>
+<span><span class="co">#&gt; 6          Add horsepower per liter metric</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="rolling-back-transactions">Rolling back transactions<a class="anchor" aria-label="anchor" href="#rolling-back-transactions"></a>
+<h2 id="comparison-with_transaction-vs-manual-control">Comparison: with_transaction() vs Manual Control<a class="anchor" aria-label="anchor" href="#comparison-with_transaction-vs-manual-control"></a>
 </h2>
-<p>If you need to undo changes before committing:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Start another transaction</span></span>
-<span><span class="fu"><a href="../reference/begin_transaction.html">begin_transaction</a></span><span class="op">(</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Make a change we'll roll back</span></span>
-<span><span class="fu">duckplyr</span><span class="fu">::</span><span class="fu"><a href="https://duckplyr.tidyverse.org/reference/db_exec.html" class="external-link">db_exec</a></span><span class="op">(</span><span class="st">"UPDATE nl_train_stations SET name_short = 'ROLLBACK_TEST' WHERE code = 'HT'"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Decide to rollback instead of commit</span></span>
-<span><span class="fu"><a href="../reference/rollback_transaction.html">rollback_transaction</a></span><span class="op">(</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Verify the change was NOT applied (should still be "COMMITTED_CHANGE")</span></span>
-<span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"nl_train_stations"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">code</span> <span class="op">==</span> <span class="st">"HT"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">code</span>, <span class="va">name_short</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/compute.html" class="external-link">collect</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<table class="table">
+<colgroup>
+<col width="14%">
+<col width="32%">
+<col width="53%">
+</colgroup>
+<thead><tr class="header">
+<th>Feature</th>
+<th><code><a href="../reference/with_transaction.html">with_transaction()</a></code></th>
+<th>Manual (<code>begin/commit/rollback</code>)</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><strong>Ease of use</strong></td>
+<td>✅ Simple, one function</td>
+<td>❌ Requires multiple function calls</td>
+</tr>
+<tr class="even">
+<td><strong>Error handling</strong></td>
+<td>✅ Automatic rollback</td>
+<td>❌ Must handle manually</td>
+</tr>
+<tr class="odd">
+<td><strong>Metadata</strong></td>
+<td>✅ Inline with transaction</td>
+<td>⚠️ Requires separate call or parameter</td>
+</tr>
+<tr class="even">
+<td><strong>Safety</strong></td>
+<td>✅ Can’t forget to commit</td>
+<td>❌ Risk of open transactions</td>
+</tr>
+<tr class="odd">
+<td><strong>Use case</strong></td>
+<td>Most production workflows</td>
+<td>Interactive/conditional workflows</td>
+</tr>
+<tr class="even">
+<td><strong>Code clarity</strong></td>
+<td>✅ Clear transaction scope</td>
+<td>⚠️ Scope can be unclear</td>
+</tr>
+</tbody>
+</table>
 </div>
 <div class="section level2">
-<h2 id="key-concepts">Key concepts<a class="anchor" aria-label="anchor" href="#key-concepts"></a>
+<h2 id="best-practices">Best Practices<a class="anchor" aria-label="anchor" href="#best-practices"></a>
+</h2>
+<ol style="list-style-type: decimal">
+<li>
+<strong>Default to <code><a href="../reference/with_transaction.html">with_transaction()</a></code></strong>: Use it
+for all standard workflows</li>
+<li>
+<strong>Always add metadata</strong>: Include <code>author</code>
+and <code>commit_message</code> for audit trails</li>
+<li>
+<strong>Keep transactions focused</strong>: Group related changes,
+but avoid overly long transactions</li>
+<li>
+<strong>Handle errors gracefully</strong>: When using manual
+transactions, always use <code><a href="https://rdrr.io/r/base/conditions.html" class="external-link">tryCatch()</a></code> to ensure rollback</li>
+<li>
+<strong>Test rollback behavior</strong>: Verify that your error
+handling works correctly</li>
+</ol>
+</div>
+<div class="section level2">
+<h2 id="key-concepts-summary">Key Concepts Summary<a class="anchor" aria-label="anchor" href="#key-concepts-summary"></a>
 </h2>
 <ul>
 <li>
-<strong><code><a href="../reference/begin_transaction.html">begin_transaction()</a></code></strong>: Start a new
+<strong><code>with_transaction(expr, author, commit_message)</code></strong>:
+Modern, automatic transaction handling (recommended)</li>
+<li>
+<strong><code><a href="../reference/begin_transaction.html">begin_transaction()</a></code></strong>: Start a manual
 transaction</li>
 <li>
-<strong><code><a href="../reference/commit_transaction.html">commit_transaction()</a></code></strong>: Apply all
-changes made within the transaction</li>
+<strong><code>commit_transaction(author, commit_message)</code></strong>:
+Apply changes from a manual transaction</li>
 <li>
-<strong><code><a href="../reference/rollback_transaction.html">rollback_transaction()</a></code></strong>: Discard all
-changes made within the transaction</li>
+<strong><code><a href="../reference/rollback_transaction.html">rollback_transaction()</a></code></strong>: Discard
+changes from a manual transaction</li>
 <li>
 <strong><code><a href="../reference/set_snapshot_metadata.html">set_snapshot_metadata()</a></code></strong>: Add metadata
-(author, commit message) to snapshots</li>
+to snapshots after committing</li>
 </ul>
-<p>Transactions are essential for maintaining data integrity when making
-multiple related changes.</p>
+<p>Transactions ensure data integrity and provide complete audit trails
+for all changes in your DuckLake.</p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>
