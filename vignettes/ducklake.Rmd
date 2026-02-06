@@ -77,10 +77,15 @@ with_transaction(
 ### Load data from a CSV file
 
 ```{r load_csv}
+# First write a sample CSV (in practice, you'd have an existing file)
+csv_path <- file.path(tempdir(), "sample_data.csv")
+write.csv(head(iris, 20), csv_path, row.names = FALSE)
+
+# Load the CSV into the data lake
 with_transaction(
-  create_table("inst/extdata/storms.csv", "storms"),
+  create_table(csv_path, "iris_sample"),
   author = "Data Engineer",
-  commit_message = "Load storms data from CSV"
+  commit_message = "Load iris sample from CSV"
 )
 ```
 
