@@ -5,14 +5,10 @@ Create a DuckLake table
 ## Usage
 
 ``` r
-create_table(table_name, data_source)
+create_table(data_source, table_name)
 ```
 
 ## Arguments
-
-- table_name:
-
-  Name of the new table
 
 - data_source:
 
@@ -24,17 +20,28 @@ create_table(table_name, data_source)
 
   - An R data.frame or tibble
 
+  - A lazy table (tbl_duckdb_connection or tbl_lazy)
+
+- table_name:
+
+  Name of the new table
+
 ## Examples
 
 ``` r
 if (FALSE) { # \dontrun{
 # From URL
-create_table("my_table", "https://example.com/data.csv")
+create_table("https://example.com/data.csv", "my_table")
 
 # From local file
-create_table("my_table", "data.csv")
+create_table("data.csv", "my_table")
 
 # From data.frame
-create_table("my_table", mtcars)
+create_table(mtcars, "my_table")
+
+# From lazy table (pipe-friendly)
+get_ducklake_table("source_table") %>% 
+  filter(x > 5) %>%
+  create_table("filtered_table")
 } # }
 ```

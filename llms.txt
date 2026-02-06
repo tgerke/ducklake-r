@@ -28,14 +28,14 @@ install_ducklake()
 attach_ducklake("my_ducklake")
 
 # Create a table
-create_table("nl_train_stations", "https://blobs.duckdb.org/nl_stations.csv")
+create_table("https://blobs.duckdb.org/nl_stations.csv", "nl_train_stations")
 
 # View the data
 get_ducklake_table("nl_train_stations") |>
   select(code, name_short, name_long) |>
   head(5)
 #> # Source:   SQL [?? x 3]
-#> # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpsRDKEu/duckplyr/duckplyr14cf43ffa4f46.duckdb]
+#> # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpRatwuY/duckplyr/duckplyr6eab6d331290.duckdb]
 #>   code  name_short name_long            
 #>   <chr> <chr>      <chr>                
 #> 1 HT    Den Bosch  's-Hertogenbosch     
@@ -109,9 +109,11 @@ Create and query tables
 - [`get_ducklake_table()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_table.md)
   : Get a DuckLake table
 - [`update_table()`](https://tgerke.github.io/ducklake-r/reference/update_table.md)
-  : Convert a dplyr query to DuckLake SQL operations
+  : Update existing column values in a table (in-place, no versioning)
 - [`upsert_table()`](https://tgerke.github.io/ducklake-r/reference/upsert_table.md)
   : Upsert data from a dplyr query into a DuckLake table
+- [`replace_table()`](https://tgerke.github.io/ducklake-r/reference/replace_table.md)
+  : Replace a table with modified data and create a new snapshot
 
 ## Row Operations
 
@@ -176,6 +178,8 @@ Access metadata and snapshots
 
 ### All vignettes
 
+- [Clinical Trial Data Lake with
+  ducklake](https://tgerke.github.io/ducklake-r/articles/clinical-trial-datalake.md):
 - [Getting Started with
   ducklake](https://tgerke.github.io/ducklake-r/articles/ducklake.md):
 - [Modifying

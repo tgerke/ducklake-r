@@ -1,7 +1,7 @@
 # Query a table at a specific timestamp (time travel)
 
-Retrieves data from a DuckDB table as it existed at a specific point in
-time using DuckDB's snapshot/time-travel functionality.
+Retrieves data from a DuckLake table as it existed at a specific point
+in time using DuckLake's AT (TIMESTAMP =\> ...) syntax.
 
 ## Usage
 
@@ -32,9 +32,11 @@ with dplyr verbs
 
 ## Details
 
-DuckDB supports time-travel queries using the ASOF syntax, allowing you
-to query historical data as it existed at a specific timestamp. This is
-useful for:
+DuckLake supports time-travel queries, allowing you to query historical
+data as it existed at a specific timestamp. This uses the syntax:
+`SELECT * FROM table AT (TIMESTAMP => 'timestamp')`
+
+This is useful for:
 
 - Auditing changes over time
 
@@ -42,9 +44,12 @@ useful for:
 
 - Comparing data states across different time points
 
-Note: This functionality requires that the table has been properly
-configured with DuckDB's time-travel features (e.g., Delta Lake tables
-with snapshot support).
+- Regulatory compliance and data lineage documentation
+
+The timestamp must be within the range of available snapshots for the
+table. Use
+[`list_table_snapshots()`](https://tgerke.github.io/ducklake-r/reference/list_table_snapshots.md)
+to see available snapshot times.
 
 ## Examples
 
@@ -56,8 +61,9 @@ get_ducklake_table_asof("my_table", yesterday) |>
   filter(category == "A") |>
   collect()
 
-# Query data at a specific timestamp
-get_ducklake_table_asof("my_table", "2024-01-15 10:30:00") |>
+# Query data at a specific snapshot time
+snapshots <- list_table_snapshots("my_table")
+get_ducklake_table_asof("my_table", snapshots$snapshot_time[2]) |>
   summarise(total = sum(amount))
 } # }
 ```

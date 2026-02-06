@@ -28,14 +28,14 @@ install_ducklake()
 attach_ducklake("my_ducklake")
 
 # Create a table
-create_table("nl_train_stations", "https://blobs.duckdb.org/nl_stations.csv")
+create_table("https://blobs.duckdb.org/nl_stations.csv", "nl_train_stations")
 
 # View the data
 get_ducklake_table("nl_train_stations") |>
   select(code, name_short, name_long) |>
   head(5)
 #> # Source:   SQL [?? x 3]
-#> # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpsRDKEu/duckplyr/duckplyr14cf43ffa4f46.duckdb]
+#> # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpRatwuY/duckplyr/duckplyr6eab6d331290.duckdb]
 #>   code  name_short name_long            
 #>   <chr> <chr>      <chr>                
 #> 1 HT    Den Bosch  's-Hertogenbosch     

@@ -21,6 +21,9 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/ducklake.html">Getting Started</a></li>
     <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Use Cases</h6></li>
+    <li><a class="dropdown-item" href="../articles/clinical-trial-datalake.html">Clinical Trial Data Lake</a></li>
+    <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Core Operations</h6></li>
     <li><a class="dropdown-item" href="../articles/modifying-tables.html">Modifying Tables</a></li>
     <li><a class="dropdown-item" href="../articles/upsert-operations.html">Upsert Operations</a></li>
@@ -50,7 +53,7 @@
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">get_metadata_table</span><span class="op">(</span><span class="va">tbl_name</span>, <span class="va">ducklake_name</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">get_metadata_table</span><span class="op">(</span><span class="va">tbl_name</span>, ducklake_name <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -62,7 +65,7 @@
 
 
 <dt id="arg-ducklake-name">ducklake_name<a class="anchor" aria-label="anchor" href="#arg-ducklake-name"></a></dt>
-<dd><p>Character string, name of the ducklake database</p></dd>
+<dd><p>Character string, name of the ducklake database (optional, defaults to current active ducklake)</p></dd>
 
 </dl></div>
     <div class="section level2">

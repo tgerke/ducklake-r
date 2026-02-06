@@ -1,7 +1,7 @@
 # Query a table at a specific version/snapshot
 
-Retrieves data from a DuckDB table at a specific version or snapshot
-number.
+Retrieves data from a DuckLake table at a specific snapshot ID using
+DuckLake's AT (VERSION =\> ...) syntax.
 
 ## Usage
 
@@ -17,7 +17,8 @@ get_ducklake_table_version(table_name, version, conn = NULL)
 
 - version:
 
-  The version or snapshot number to query
+  The snapshot_id to query (get this from
+  [`list_table_snapshots()`](https://tgerke.github.io/ducklake-r/reference/list_table_snapshots.md))
 
 - conn:
 
@@ -31,16 +32,27 @@ with dplyr verbs
 
 ## Details
 
-This function allows you to query a specific version/snapshot of a
-table. This is particularly useful with Delta Lake or Iceberg tables
-that maintain version history.
+This function allows you to query a specific snapshot of a table using
+its snapshot_id. This uses the syntax:
+`SELECT * FROM table AT (VERSION => snapshot_id)`
+
+Each time you create or modify a table within a transaction, DuckLake
+creates a new snapshot with a unique snapshot_id. Note that snapshot_id
+and schema_version are typically the same value - both represent the
+snapshot identifier.
+
+Use `list_table_snapshots(table_name)` to see all available snapshots
+and their IDs.
 
 ## Examples
 
 ``` r
 if (FALSE) { # \dontrun{
-# Query version 5 of a table
-get_ducklake_table_version("my_table", 5) |>
+# Get available snapshots
+snapshots <- list_table_snapshots("my_table")
+
+# Query the first snapshot version
+get_ducklake_table_version("my_table", snapshots$snapshot_id[1]) |>
   filter(status == "active") |>
   collect()
 } # }

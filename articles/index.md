@@ -2,6 +2,8 @@
 
 ### All vignettes
 
+- [Clinical Trial Data Lake with
+  ducklake](https://tgerke.github.io/ducklake-r/articles/clinical-trial-datalake.md):
 - [Getting Started with
   ducklake](https://tgerke.github.io/ducklake-r/articles/ducklake.md):
 - [Modifying

@@ -10,7 +10,7 @@ closed with detach_ducklake().
 ## Usage
 
 ``` r
-attach_ducklake(ducklake_name, data_path = NULL)
+attach_ducklake(ducklake_name, lake_path = NULL)
 ```
 
 ## Arguments
@@ -19,11 +19,12 @@ attach_ducklake(ducklake_name, data_path = NULL)
 
   Name for the ducklake file, as in `ducklake:{ducklake_name}.ducklake`
 
-- data_path:
+- lake_path:
 
-  Optional directory where Parquet files are stored. If not specified,
-  uses the default folder `{ducklake_name}.ducklake.files` in the same
-  directory as the DuckLake itself.
+  Optional directory path for the ducklake. If specified, both the
+  ducklake database file and Parquet data files will be stored in this
+  location. If not specified, the ducklake is created in the current
+  working directory with data files in `{ducklake_name}.ducklake.files`.
 
 ## See also
 

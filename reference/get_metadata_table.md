@@ -5,7 +5,7 @@ Get a DuckLake metadata table
 ## Usage
 
 ``` r
-get_metadata_table(tbl_name, ducklake_name)
+get_metadata_table(tbl_name, ducklake_name = NULL)
 ```
 
 ## Arguments
@@ -16,7 +16,8 @@ get_metadata_table(tbl_name, ducklake_name)
 
 - ducklake_name:
 
-  Character string, name of the ducklake database
+  Character string, name of the ducklake database (optional, defaults to
+  current active ducklake)
 
 ## Value
 

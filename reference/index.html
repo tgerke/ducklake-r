@@ -21,6 +21,9 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/ducklake.html">Getting Started</a></li>
     <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Use Cases</h6></li>
+    <li><a class="dropdown-item" href="../articles/clinical-trial-datalake.html">Clinical Trial Data Lake</a></li>
+    <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Core Operations</h6></li>
     <li><a class="dropdown-item" href="../articles/modifying-tables.html">Modifying Tables</a></li>
     <li><a class="dropdown-item" href="../articles/upsert-operations.html">Upsert Operations</a></li>
@@ -115,7 +118,7 @@
           <code><a href="update_table.html">update_table()</a></code>
 
         </dt>
-        <dd>Convert a dplyr query to DuckLake SQL operations</dd>
+        <dd>Update existing column values in a table (in-place, no versioning)</dd>
 
         <dt>
 
@@ -123,6 +126,13 @@
 
         </dt>
         <dd>Upsert data from a dplyr query into a DuckLake table</dd>
+
+        <dt>
+
+          <code><a href="replace_table.html">replace_table()</a></code>
+
+        </dt>
+        <dd>Replace a table with modified data and create a new snapshot</dd>
       </dl></div><div class="section level2">
       <h2 id="row-operations">Row Operations<a class="anchor" aria-label="anchor" href="#row-operations"></a></h2>
 

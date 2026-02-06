@@ -2,6 +2,7 @@
 <url><loc>https://tgerke.github.io/ducklake-r/404.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/LICENSE-text.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/LICENSE.html</loc></url>
+<url><loc>https://tgerke.github.io/ducklake-r/articles/clinical-trial-datalake.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/articles/ducklake.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/articles/index.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/articles/modifying-tables.html</loc></url>
@@ -25,6 +26,7 @@
 <url><loc>https://tgerke.github.io/ducklake-r/reference/index.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/install_ducklake.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/list_table_snapshots.html</loc></url>
+<url><loc>https://tgerke.github.io/ducklake-r/reference/replace_table.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/restore_table_version.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/rollback_transaction.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/rows_delete.html</loc></url>

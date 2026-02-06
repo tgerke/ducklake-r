@@ -5,7 +5,7 @@ Retrieves information about available snapshots/versions for a table.
 ## Usage
 
 ``` r
-list_table_snapshots(table_name, conn = NULL)
+list_table_snapshots(table_name = NULL, ducklake_name = NULL, conn = NULL)
 ```
 
 ## Arguments
@@ -13,6 +13,11 @@ list_table_snapshots(table_name, conn = NULL)
 - table_name:
 
   The name of the table to query
+
+- ducklake_name:
+
+  The name of the ducklake (database) to query. If NULL, will attempt to
+  infer from current database.
 
 - conn:
 

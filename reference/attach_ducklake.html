@@ -25,6 +25,9 @@ The connection is stored in the package environment and can be closed with detac
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/ducklake.html">Getting Started</a></li>
     <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Use Cases</h6></li>
+    <li><a class="dropdown-item" href="../articles/clinical-trial-datalake.html">Clinical Trial Data Lake</a></li>
+    <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Core Operations</h6></li>
     <li><a class="dropdown-item" href="../articles/modifying-tables.html">Modifying Tables</a></li>
     <li><a class="dropdown-item" href="../articles/upsert-operations.html">Upsert Operations</a></li>
@@ -56,7 +59,7 @@ The connection is stored in the package environment and can be closed with detac
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">attach_ducklake</span><span class="op">(</span><span class="va">ducklake_name</span>, data_path <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">attach_ducklake</span><span class="op">(</span><span class="va">ducklake_name</span>, lake_path <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -67,8 +70,8 @@ The connection is stored in the package environment and can be closed with detac
 <dd><p>Name for the ducklake file, as in <code>ducklake:{ducklake_name}.ducklake</code></p></dd>
 
 
-<dt id="arg-data-path">data_path<a class="anchor" aria-label="anchor" href="#arg-data-path"></a></dt>
-<dd><p>Optional directory where Parquet files are stored. If not specified, uses the default folder <code>{ducklake_name}.ducklake.files</code> in the same directory as the DuckLake itself.</p></dd>
+<dt id="arg-lake-path">lake_path<a class="anchor" aria-label="anchor" href="#arg-lake-path"></a></dt>
+<dd><p>Optional directory path for the ducklake. If specified, both the ducklake database file and Parquet data files will be stored in this location. If not specified, the ducklake is created in the current working directory with data files in <code>{ducklake_name}.ducklake.files</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">

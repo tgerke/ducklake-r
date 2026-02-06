@@ -8,7 +8,7 @@ library(duckplyr)
 # Setup for examples
 install_ducklake()
 attach_ducklake("my_ducklake")
-create_table("nl_train_stations", "https://blobs.duckdb.org/nl_stations.csv")
+create_table("https://blobs.duckdb.org/nl_stations.csv", "nl_train_stations")
 ```
 
 ## Transaction support

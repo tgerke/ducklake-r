@@ -24,9 +24,11 @@ Create and query tables
 - [`get_ducklake_table()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_table.md)
   : Get a DuckLake table
 - [`update_table()`](https://tgerke.github.io/ducklake-r/reference/update_table.md)
-  : Convert a dplyr query to DuckLake SQL operations
+  : Update existing column values in a table (in-place, no versioning)
 - [`upsert_table()`](https://tgerke.github.io/ducklake-r/reference/upsert_table.md)
   : Upsert data from a dplyr query into a DuckLake table
+- [`replace_table()`](https://tgerke.github.io/ducklake-r/reference/replace_table.md)
+  : Replace a table with modified data and create a new snapshot
 
 ## Row Operations
 
