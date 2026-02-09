@@ -75,7 +75,7 @@
       <img src="../logo.png" class="logo" alt=""><h1>Working with Transactions</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/tgerke/ducklake-r/blob/main/vignettes/transactions.Rmd" class="external-link"><code>vignettes/transactions.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/tgerke/ducklake-r/blob/v0.1.0/vignettes/transactions.Rmd" class="external-link"><code>vignettes/transactions.Rmd</code></a></small>
       <div class="d-none name"><code>transactions.Rmd</code></div>
     </div>
 
@@ -131,7 +131,7 @@ demonstrate transaction workflows.</p>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">mpg</span>, <span class="va">cyl</span>, <span class="va">hp</span>, <span class="va">wt</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Source:   SQL [?? x 4]</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpjNMjPV/duckplyr/duckplyr21552ff144e9.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/Rtmpqu9CWA/duckplyr/duckplyr21712fe6b7f6.duckdb]</span></span></span>
 <span><span class="co">#&gt;     mpg   cyl    hp    wt</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>  21       6   110  2.62</span></span>
@@ -193,7 +193,7 @@ packages like <code>withr</code>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">mpg</span>, <span class="va">kpl</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Source:   SQL [?? x 2]</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpjNMjPV/duckplyr/duckplyr21552ff144e9.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/Rtmpqu9CWA/duckplyr/duckplyr21712fe6b7f6.duckdb]</span></span></span>
 <span><span class="co">#&gt;     mpg   kpl</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>  21    8.93</span></span>
@@ -241,7 +241,7 @@ braces:</p>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">mpg</span>, <span class="va">cyl</span>, <span class="va">efficiency</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Source:   SQL [?? x 3]</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpjNMjPV/duckplyr/duckplyr21552ff144e9.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/Rtmpqu9CWA/duckplyr/duckplyr21712fe6b7f6.duckdb]</span></span></span>
 <span><span class="co">#&gt;     mpg   cyl efficiency</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>  21       6 medium    </span></span>
@@ -295,9 +295,9 @@ automatic error handling:</p>
 <span><span class="co"># View all versioned changes</span></span>
 <span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 2           1 2026-02-09 21:17:12              1</span></span>
-<span><span class="co">#&gt; 3           2 2026-02-09 21:17:12              2</span></span>
-<span><span class="co">#&gt; 4           3 2026-02-09 21:17:12              3</span></span>
+<span><span class="co">#&gt; 2           1 2026-02-09 21:20:27              1</span></span>
+<span><span class="co">#&gt; 3           2 2026-02-09 21:20:27              2</span></span>
+<span><span class="co">#&gt; 4           3 2026-02-09 21:20:27              3</span></span>
 <span><span class="co">#&gt;                                                                                       changes</span></span>
 <span><span class="co">#&gt; 2                                          tables_created, tables_inserted_into, main.cars, 1</span></span>
 <span><span class="co">#&gt; 3                       tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2</span></span>
@@ -360,7 +360,7 @@ systems</li>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">wt</span>, <span class="va">weight_kg</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Source:   SQL [?? x 2]</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpjNMjPV/duckplyr/duckplyr21552ff144e9.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/Rtmpqu9CWA/duckplyr/duckplyr21712fe6b7f6.duckdb]</span></span></span>
 <span><span class="co">#&gt;      wt weight_kg</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>  2.32     <span style="text-decoration: underline;">1</span>052.</span></span>
@@ -413,10 +413,10 @@ commit:</p>
 <span><span class="co"># View all versioned changes</span></span>
 <span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 2           1 2026-02-09 21:17:12              1</span></span>
-<span><span class="co">#&gt; 3           2 2026-02-09 21:17:12              2</span></span>
-<span><span class="co">#&gt; 4           3 2026-02-09 21:17:12              3</span></span>
-<span><span class="co">#&gt; 5           4 2026-02-09 21:17:13              4</span></span>
+<span><span class="co">#&gt; 2           1 2026-02-09 21:20:27              1</span></span>
+<span><span class="co">#&gt; 3           2 2026-02-09 21:20:27              2</span></span>
+<span><span class="co">#&gt; 4           3 2026-02-09 21:20:27              3</span></span>
+<span><span class="co">#&gt; 5           4 2026-02-09 21:20:28              4</span></span>
 <span><span class="co">#&gt;                                                                                       changes</span></span>
 <span><span class="co">#&gt; 2                                          tables_created, tables_inserted_into, main.cars, 1</span></span>
 <span><span class="co">#&gt; 3                       tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2</span></span>
@@ -462,7 +462,7 @@ committing:</p>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">hp</span>, <span class="va">cyl</span>, <span class="va">hp_per_liter</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># Source:   SQL [?? x 3]</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpjNMjPV/duckplyr/duckplyr21552ff144e9.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/Rtmpqu9CWA/duckplyr/duckplyr21712fe6b7f6.duckdb]</span></span></span>
 <span><span class="co">#&gt;      hp   cyl hp_per_liter</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>    93     4         46.5</span></span>
@@ -484,11 +484,11 @@ with complete metadata:</p>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">snapshot_id</span>, <span class="va">snapshot_time</span>, <span class="va">author</span>, <span class="va">commit_message</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">tail</a></span><span class="op">(</span><span class="fl">5</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time    author</span></span>
-<span><span class="co">#&gt; 2           1 2026-02-09 21:17:12  Tutorial</span></span>
-<span><span class="co">#&gt; 3           2 2026-02-09 21:17:12 Data Team</span></span>
-<span><span class="co">#&gt; 4           3 2026-02-09 21:17:12 Data Team</span></span>
-<span><span class="co">#&gt; 5           4 2026-02-09 21:17:13 Data Team</span></span>
-<span><span class="co">#&gt; 6           5 2026-02-09 21:17:13      &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 2           1 2026-02-09 21:20:27  Tutorial</span></span>
+<span><span class="co">#&gt; 3           2 2026-02-09 21:20:27 Data Team</span></span>
+<span><span class="co">#&gt; 4           3 2026-02-09 21:20:27 Data Team</span></span>
+<span><span class="co">#&gt; 5           4 2026-02-09 21:20:28 Data Team</span></span>
+<span><span class="co">#&gt; 6           5 2026-02-09 21:20:28      &lt;NA&gt;</span></span>
 <span><span class="co">#&gt;                             commit_message</span></span>
 <span><span class="co">#&gt; 2           Initial load of mtcars dataset</span></span>
 <span><span class="co">#&gt; 3          Add kilometers per liter column</span></span>
