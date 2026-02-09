@@ -10,7 +10,7 @@ rows_insert(
   by = NULL,
   copy = TRUE,
   in_place = TRUE,
-  conflict = "error",
+  conflict = "ignore",
   ...
 )
 }
