@@ -18,6 +18,7 @@ knitr::opts_knit$set(root.dir = tempdir())
 
 <!-- badges: start -->
 [![pkgdown](https://github.com/tgerke/ducklake-r/workflows/pkgdown/badge.svg)](https://github.com/tgerke/ducklake-r/actions)
+[![codecov](https://codecov.io/gh/tgerke/ducklake-r/branch/main/graph/badge.svg)](https://codecov.io/gh/tgerke/ducklake-r)
 <!-- badges: end -->
 
 ducklake is an R package that brings versioned data lake infrastructure to data-intensive workflows. Built on [DuckDB](https://r.duckdb.org/index.html) and [DuckLake](https://ducklake.select/docs/stable/duckdb/introduction.html), it provides ACID transactions, automatic versioning, time travel queries, and complete audit trails.
