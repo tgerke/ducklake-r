@@ -183,7 +183,7 @@ with_transaction(
 )
 ```
 
-Note: For most use cases, use `replace_table()` to update tables. This creates clean snapshots and maintains full versioning. Advanced row-level operations (`rows_update`, `rows_insert`, `rows_delete`, `rows_upsert`) are available when you need granular control, but they do not create versioned snapshots.
+Note: For most use cases, use `replace_table()` to update tables. This creates clean snapshots and maintains full versioning. Advanced row-level operations (`rows_update`, `rows_insert`, `rows_delete`) are available when you need granular control, but they do not create versioned snapshots.
 
 ## Metadata and versioning recipes
 

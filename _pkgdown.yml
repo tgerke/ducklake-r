@@ -54,8 +54,6 @@ reference:
     contents:
     - create_table
     - get_ducklake_table
-    - update_table
-    - upsert_table
     - replace_table
     
   - title: "Row Operations"
@@ -63,9 +61,7 @@ reference:
     contents:
     - rows_insert
     - rows_update
-    - rows_upsert
     - rows_delete
-    - rows_patch
     
   - title: "Query Execution"
     desc: "Execute and preview SQL queries"
