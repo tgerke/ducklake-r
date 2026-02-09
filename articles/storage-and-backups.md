@@ -143,14 +143,14 @@ The catalog is a single database file containing all metadata:
 
 ``` r
 dir_tree(lake_dir)
-#> /tmp/RtmpSEvPJe/storage_demo
+#> /tmp/Rtmp2EVI2j/storage_demo
 #> ├── demo_lake.ducklake
 #> ├── demo_lake.ducklake.wal
 #> └── main
 #>     └── cars
-#>         ├── ducklake-019c3548-0cd9-7406-85a8-8a53f84e0ee6.parquet
-#>         ├── ducklake-019c3548-0daa-75bf-9d1b-5f3ea856f39d.parquet
-#>         └── ducklake-019c3548-0df7-7c4f-8fc7-cc7d080625b4.parquet
+#>         ├── ducklake-019c4378-e952-7243-9afb-c98c40800a35.parquet
+#>         ├── ducklake-019c4378-ea2d-744d-ab3a-d85946550b57.parquet
+#>         └── ducklake-019c4378-ea7b-71b4-813c-5eaea83365c3.parquet
 ```
 
 The catalog files (`demo_lake.ducklake` and `.wal`) contain all metadata
@@ -165,11 +165,11 @@ Data files are stored in Parquet format in a structured directory:
 main_dir <- file.path(lake_dir, "main")
 
 dir_tree(main_dir, recurse = 2)
-#> /tmp/RtmpSEvPJe/storage_demo/main
+#> /tmp/Rtmp2EVI2j/storage_demo/main
 #> └── cars
-#>     ├── ducklake-019c3548-0cd9-7406-85a8-8a53f84e0ee6.parquet
-#>     ├── ducklake-019c3548-0daa-75bf-9d1b-5f3ea856f39d.parquet
-#>     └── ducklake-019c3548-0df7-7c4f-8fc7-cc7d080625b4.parquet
+#>     ├── ducklake-019c4378-e952-7243-9afb-c98c40800a35.parquet
+#>     ├── ducklake-019c4378-ea2d-744d-ab3a-d85946550b57.parquet
+#>     └── ducklake-019c4378-ea7b-71b4-813c-5eaea83365c3.parquet
   
 # Get details about parquet files
 parquet_files <- dir_ls(main_dir, recurse = TRUE, regexp = "\\.parquet$")
@@ -178,9 +178,9 @@ for (f in parquet_files) {
               path_file(f), 
               file.size(f)))
 }
-#>   ducklake-019c3548-0cd9-7406-85a8-8a53f84e0ee6.parquet (2271 bytes)
-#>   ducklake-019c3548-0daa-75bf-9d1b-5f3ea856f39d.parquet (2462 bytes)
-#>   ducklake-019c3548-0df7-7c4f-8fc7-cc7d080625b4.parquet (2682 bytes)
+#>   ducklake-019c4378-e952-7243-9afb-c98c40800a35.parquet (2271 bytes)
+#>   ducklake-019c4378-ea2d-744d-ab3a-d85946550b57.parquet (2462 bytes)
+#>   ducklake-019c4378-ea7b-71b4-813c-5eaea83365c3.parquet (2682 bytes)
 ```
 
 ### Understanding File Organization
@@ -234,13 +234,13 @@ dir_copy(
 
 # Verify the backup was created
 dir_tree(backup_dir)
-#> /tmp/RtmpSEvPJe/storage_demo/backups
+#> /tmp/Rtmp2EVI2j/storage_demo/backups
 #> ├── demo_lake.ducklake
 #> └── main
 #>     └── cars
-#>         ├── ducklake-019c3548-0cd9-7406-85a8-8a53f84e0ee6.parquet
-#>         ├── ducklake-019c3548-0daa-75bf-9d1b-5f3ea856f39d.parquet
-#>         └── ducklake-019c3548-0df7-7c4f-8fc7-cc7d080625b4.parquet
+#>         ├── ducklake-019c4378-e952-7243-9afb-c98c40800a35.parquet
+#>         ├── ducklake-019c4378-ea2d-744d-ab3a-d85946550b57.parquet
+#>         └── ducklake-019c4378-ea7b-71b4-813c-5eaea83365c3.parquet
 
 # To use the backup, detach the current lake and attach to the backup
 # First detach the original
@@ -255,9 +255,9 @@ attach_ducklake(
 # Verify you're working with the backup
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 2           1 2026-02-06 23:27:20              1
-#> 3           2 2026-02-06 23:27:20              2
-#> 4           3 2026-02-06 23:27:20              3
+#> 2           1 2026-02-09 17:35:23              1
+#> 3           2 2026-02-09 17:35:23              2
+#> 4           3 2026-02-09 17:35:23              3
 #>                                                                 changes
 #> 2                    tables_created, tables_inserted_into, main.cars, 1
 #> 3 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2
@@ -413,11 +413,11 @@ backup_dir <- backup_ducklake(
 )
 #> Catalog backed up successfully
 #> Data files backed up successfully
-#> Backup completed: /tmp/RtmpSEvPJe/storage_demo/backups/backup_20260206_232721
+#> Backup completed: /tmp/Rtmp2EVI2j/storage_demo/backups/backup_20260209_173524
 
 # The function returns the backup directory path
 print(backup_dir)
-#> [1] "/tmp/RtmpSEvPJe/storage_demo/backups/backup_20260206_232721"
+#> [1] "/tmp/Rtmp2EVI2j/storage_demo/backups/backup_20260209_173524"
 ```
 
 The
