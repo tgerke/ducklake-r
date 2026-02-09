@@ -1,6 +1,6 @@
 Package: ducklake
 Title: Interact with DuckLake from R
-Version: 0.0.0.9000
+Version: 0.1.0
 Authors@R: 
     person("Travis", "Gerke", , "tgerke@mail.harvard.edu", role = c("aut", "cre"))
 Description: Some features of the new DuckLake ecosystem are not readily available from the existing duckdb and duckplyr packages. This package seeks to fill that gap.
