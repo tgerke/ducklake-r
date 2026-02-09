@@ -23,10 +23,6 @@ Create and query tables
   : Create a DuckLake table
 - [`get_ducklake_table()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_table.md)
   : Get a DuckLake table
-- [`update_table()`](https://tgerke.github.io/ducklake-r/reference/update_table.md)
-  : Update existing column values in a table (in-place, no versioning)
-- [`upsert_table()`](https://tgerke.github.io/ducklake-r/reference/upsert_table.md)
-  : Upsert data from a dplyr query into a DuckLake table
 - [`replace_table()`](https://tgerke.github.io/ducklake-r/reference/replace_table.md)
   : Replace a table with modified data and create a new snapshot
 
@@ -38,12 +34,8 @@ Modify table rows with dplyr-style functions
   : Insert rows into a DuckLake table
 - [`rows_update()`](https://tgerke.github.io/ducklake-r/reference/rows_update.md)
   : Update rows in a DuckLake table
-- [`rows_upsert()`](https://tgerke.github.io/ducklake-r/reference/rows_upsert.md)
-  : Upsert rows in a DuckLake table
 - [`rows_delete()`](https://tgerke.github.io/ducklake-r/reference/rows_delete.md)
   : Delete rows from a DuckLake table
-- [`rows_patch()`](https://tgerke.github.io/ducklake-r/reference/rows_patch.md)
-  : Patch rows in a DuckLake table
 
 ## Query Execution
 

@@ -174,7 +174,7 @@
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">mpg</span>, <span class="va">cyl</span>, <span class="va">efficiency</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">3</span><span class="op">)</span></span>
 <span><span class="co">#&gt; # Source:   SQL [?? x 3]</span></span>
-<span><span class="co">#&gt; # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpYqzzxb/duckplyr/duckplyr36a67a876643.duckdb]</span></span>
+<span><span class="co">#&gt; # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpGBvOI6/duckplyr/duckplyr144d62b5aa029.duckdb]</span></span>
 <span><span class="co">#&gt;     mpg cyl   efficiency</span></span>
 <span><span class="co">#&gt;   &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt;     </span></span>
 <span><span class="co">#&gt; 1  21   6.0   Medium    </span></span>
@@ -184,11 +184,11 @@
 <span><span class="co"># View complete audit trail across all layers with author and commit messages</span></span>
 <span><span class="fu"><a href="reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 1           0 2026-02-06 22:22:21              0</span></span>
-<span><span class="co">#&gt; 2           1 2026-02-06 22:22:21              1</span></span>
-<span><span class="co">#&gt; 3           2 2026-02-06 22:22:21              2</span></span>
-<span><span class="co">#&gt; 4           3 2026-02-06 22:22:22              3</span></span>
-<span><span class="co">#&gt; 5           4 2026-02-06 22:22:22              4</span></span>
+<span><span class="co">#&gt; 1           0 2026-02-09 17:47:44              0</span></span>
+<span><span class="co">#&gt; 2           1 2026-02-09 17:47:44              1</span></span>
+<span><span class="co">#&gt; 3           2 2026-02-09 17:47:44              2</span></span>
+<span><span class="co">#&gt; 4           3 2026-02-09 17:47:44              3</span></span>
+<span><span class="co">#&gt; 5           4 2026-02-09 17:47:44              4</span></span>
 <span><span class="co">#&gt;                                                                           changes</span></span>
 <span><span class="co">#&gt; 1                                                           schemas_created, main</span></span>
 <span><span class="co">#&gt; 2                      tables_created, tables_inserted_into, main.vehicles_raw, 1</span></span>
@@ -213,7 +213,7 @@
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">mpg</span>, <span class="va">cyl</span>, <span class="va">gear</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">3</span><span class="op">)</span></span>
 <span><span class="co">#&gt; # Source:   SQL [?? x 3]</span></span>
-<span><span class="co">#&gt; # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpYqzzxb/duckplyr/duckplyr36a67a876643.duckdb]</span></span>
+<span><span class="co">#&gt; # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpGBvOI6/duckplyr/duckplyr144d62b5aa029.duckdb]</span></span>
 <span><span class="co">#&gt;     mpg cyl    gear</span></span>
 <span><span class="co">#&gt;   &lt;dbl&gt; &lt;chr&gt; &lt;dbl&gt;</span></span>
 <span><span class="co">#&gt; 1  21   6.0       4</span></span>
@@ -330,6 +330,7 @@
 <h2 data-toc-skip>Dev status</h2>
 <ul class="list-unstyled">
 <li><a href="https://github.com/tgerke/ducklake-r/actions" class="external-link"><img src="https://github.com/tgerke/ducklake-r/workflows/pkgdown/badge.svg" alt="pkgdown"></a></li>
+<li><a href="https://codecov.io/gh/tgerke/ducklake-r" class="external-link"><img src="https://codecov.io/gh/tgerke/ducklake-r/branch/main/graph/badge.svg" alt="codecov"></a></li>
 </ul>
 </div>
 

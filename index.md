@@ -102,7 +102,7 @@ get_ducklake_table("vehicles_analysis") |>
   select(mpg, cyl, efficiency) |>
   head(3)
 #> # Source:   SQL [?? x 3]
-#> # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpYqzzxb/duckplyr/duckplyr36a67a876643.duckdb]
+#> # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpGBvOI6/duckplyr/duckplyr144d62b5aa029.duckdb]
 #>     mpg cyl   efficiency
 #>   <dbl> <chr> <chr>     
 #> 1  21   6.0   Medium    
@@ -112,11 +112,11 @@ get_ducklake_table("vehicles_analysis") |>
 # View complete audit trail across all layers with author and commit messages
 list_table_snapshots()
 #>   snapshot_id       snapshot_time schema_version
-#> 1           0 2026-02-06 22:22:21              0
-#> 2           1 2026-02-06 22:22:21              1
-#> 3           2 2026-02-06 22:22:21              2
-#> 4           3 2026-02-06 22:22:22              3
-#> 5           4 2026-02-06 22:22:22              4
+#> 1           0 2026-02-09 17:47:44              0
+#> 2           1 2026-02-09 17:47:44              1
+#> 3           2 2026-02-09 17:47:44              2
+#> 4           3 2026-02-09 17:47:44              3
+#> 5           4 2026-02-09 17:47:44              4
 #>                                                                           changes
 #> 1                                                           schemas_created, main
 #> 2                      tables_created, tables_inserted_into, main.vehicles_raw, 1
@@ -141,7 +141,7 @@ get_ducklake_table_version("vehicles_clean", version = 2) |>
   select(mpg, cyl, gear) |>
   head(3)
 #> # Source:   SQL [?? x 3]
-#> # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpYqzzxb/duckplyr/duckplyr36a67a876643.duckdb]
+#> # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpGBvOI6/duckplyr/duckplyr144d62b5aa029.duckdb]
 #>     mpg cyl    gear
 #>   <dbl> <chr> <dbl>
 #> 1  21   6.0       4
