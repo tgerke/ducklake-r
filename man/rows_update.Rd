@@ -10,7 +10,7 @@ rows_update(
   by = NULL,
   copy = TRUE,
   in_place = TRUE,
-  unmatched = "error",
+  unmatched = "ignore",
   ...
 )
 }

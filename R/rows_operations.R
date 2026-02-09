@@ -23,7 +23,7 @@
 #'   by = "id"
 #' )
 #' }
-rows_update <- function(x, y, by = NULL, copy = TRUE, in_place = TRUE, unmatched = "error", ...) {
+rows_update <- function(x, y, by = NULL, copy = TRUE, in_place = TRUE, unmatched = "ignore", ...) {
   dplyr::rows_update(x = x, y = y, by = by, copy = copy, in_place = in_place, unmatched = unmatched, ...)
 }
 
@@ -51,7 +51,7 @@ rows_update <- function(x, y, by = NULL, copy = TRUE, in_place = TRUE, unmatched
 #'   by = "id"
 #' )
 #' }
-rows_insert <- function(x, y, by = NULL, copy = TRUE, in_place = TRUE, conflict = "error", ...) {
+rows_insert <- function(x, y, by = NULL, copy = TRUE, in_place = TRUE, conflict = "ignore", ...) {
   dplyr::rows_insert(x = x, y = y, by = by, copy = copy, in_place = in_place, conflict = conflict, ...)
 }
 
@@ -79,7 +79,7 @@ rows_insert <- function(x, y, by = NULL, copy = TRUE, in_place = TRUE, conflict 
 #'   by = "id"
 #' )
 #' }
-rows_delete <- function(x, y, by = NULL, copy = TRUE, in_place = TRUE, unmatched = "error", ...) {
+rows_delete <- function(x, y, by = NULL, copy = TRUE, in_place = TRUE, unmatched = "ignore", ...) {
   dplyr::rows_delete(x = x, y = y, by = by, copy = copy, in_place = in_place, unmatched = unmatched, ...)
 }
 
@@ -179,6 +179,6 @@ rows_upsert <- function(x, y, by = NULL, copy = TRUE, in_place = TRUE,
 #'   by = "id"
 #' )
 #' }
-rows_patch <- function(x, y, by = NULL, copy = TRUE, in_place = TRUE, unmatched = "error", ...) {
+rows_patch <- function(x, y, by = NULL, copy = TRUE, in_place = TRUE, unmatched = "ignore", ...) {
   dplyr::rows_patch(x = x, y = y, by = by, copy = copy, in_place = in_place, unmatched = unmatched, ...)
 }
