@@ -5,7 +5,8 @@
 #' @param .quiet Logical, whether to suppress debug output (default FALSE for backward compatibility)
 #'
 #' @return Invisibly returns the SQL statement string after executing it
-#' @export
+#' @keywords internal
+#' @noRd
 #'
 #' @details
 #' This function performs in-place UPDATE operations on existing columns.

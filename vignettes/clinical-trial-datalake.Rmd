@@ -881,36 +881,20 @@ get_ducklake_table("adsl") |>
   head(5)
 ```
 
-#### Choosing Between replace_table() and update_table()
+#### Best Practice: Use replace_table() for All Modifications
 
-The ducklake package provides two functions for modifying tables, each optimized for different use cases:
+For clinical trial data workflows, **always use `replace_table()` wrapped in `with_transaction()`** to ensure complete audit trails and regulatory compliance.
 
-**Use `replace_table()` when:**
+**Why replace_table() is essential for GxP work:**
 
-- **Adding or removing columns** - DuckLake UPDATE operations can only modify existing column values, not change the schema
-- **You want versioning** - Creates a new snapshot via DROP + CREATE, enabling time travel to previous schemas
-- **Making bulk transformations** - Efficient for applying complex dplyr pipelines that restructure data
-- **Working with dplyr pipelines** - Provides a natural dplyr-like interface: `get_ducklake_table(name) |> mutate(...) |> replace_table(name)`
+- ✅ **Creates versioned snapshots** - Every change is recorded and can be time-traveled back to
+- ✅ **Complete audit trails** - Records what changed, when, and by whom
+- ✅ **Regulatory compliance** - Meets 21 CFR Part 11 and ICH GCP requirements
+- ✅ **Data lineage** - Proves data integrity for regulatory inspections
+- ✅ **Schema flexibility** - Add/remove columns or modify values with the same approach
+- ✅ **Natural dplyr interface** - `get_ducklake_table(name) |> mutate(...) |> replace_table(name)`
 
-**Use `update_table()` when:**
-
-- **Non-GxP workflows only** - Data pipelines where regulatory audit trails are not required
-- **Never for clinical trial submission datasets** - The lack of audit trail creates regulatory compliance gaps
-
-**⚠️ Critical for Clinical Trials:** `update_table()` is **not appropriate for GxP-validated work**. It permanently modifies tables **without creating snapshots or audit trails**, violating regulatory requirements (21 CFR Part 11, ICH GCP):
-
-- ❌ Changes cannot be time-traveled back to
-- ❌ No record of what values changed or when  
-- ❌ Cannot prove data integrity for regulatory inspections
-- ❌ Violates requirement for complete data lineage
-
-**Recommendation:** For clinical trial data, default to `replace_table()` for all modifications, no matter how minor. The audit trail is more important than avoiding "version clutter."
-
-**For GxP-compliant workflows, use `replace_table()` for all changes** to ensure complete audit trails and the ability to recreate previous states.
-
-**Note on versioning:** While transactions (`begin_transaction()`/`commit_transaction()`) ensure atomic operations, only CREATE operations trigger snapshot creation. UPDATE operations modify tables in-place without snapshots, regardless of transaction context.
-
-**Bottom line for clinical trials:** If a change matters enough to make, it matters enough to audit. Use `replace_table()` wrapped in a transaction for any data modification - whether correcting a single value or adding new columns:
+**For all modifications in clinical trials**, use this pattern:
 
 ```r
 # Correcting a specific value - creates auditable snapshot
@@ -998,7 +982,8 @@ adsl_v2 <- get_ducklake_table_version("adsl", snapshot_ids[2])
 adsl_final <- get_ducklake_table_version("adsl", snapshot_ids[length(snapshot_ids)])
 
 # Or use snapshot times for time-travel
-adsl_asof <- get_ducklake_table_asof("adsl", snapshots$snapshot_time[2])
+# Note: Add 1 second to ensure we query AFTER the snapshot was created
+adsl_asof <- get_ducklake_table_asof("adsl", snapshots$snapshot_time[2] + 1)
 
 # Compare columns across iterations
 colnames(adsl_v1 |> collect())  # Initial version
@@ -1074,7 +1059,7 @@ This ensures ADSL and ADAE stay synchronized - either both get the new `ANALYSIS
 
 Update existing records while maintaining version control and audit trails:
 
-```{r demonstrate-upsert}
+```{r update-records}
 # Update a specific record with versioning
 with_transaction(
   get_ducklake_table("adae") |>
@@ -1177,7 +1162,7 @@ This vignette demonstrated how **ducklake** provides a robust infrastructure for
 4. **ADaM Derivation**: Built analysis datasets (ADSL, ADAE, ADPC) with complete data lineage from silver to gold
 5. **Regulatory Artifacts**: Stored define.xml, ARD, ARM, and specifications alongside datasets
 6. **Organization**: Maintained cohesive relationships between related datasets and documentation
-7. **Functionality**: Demonstrated versioning, time travel, transactions, and upserts
+7. **Functionality**: Demonstrated versioning, time travel, transactions, and record updates
 8. **Analysis**: Showed efficient cross-domain queries
 9. **Compliance**: Generated audit trails for regulatory requirements with raw data preservation
 

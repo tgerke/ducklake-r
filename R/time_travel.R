@@ -23,6 +23,11 @@
 #'
 #' The timestamp must be within the range of available snapshots for the table.
 #' Use \code{list_table_snapshots()} to see available snapshot times.
+#' 
+#' **Important**: When querying at a snapshot's exact timestamp, you may need to 
+#' add a small time buffer (e.g., +1 second) to ensure the snapshot is found.
+#' This is because the time-travel query looks for snapshots created at or before
+#' the specified timestamp.
 #'
 #' @examples
 #' \dontrun{
@@ -34,7 +39,8 @@
 #'
 #' # Query data at a specific snapshot time
 #' snapshots <- list_table_snapshots("my_table")
-#' get_ducklake_table_asof("my_table", snapshots$snapshot_time[2]) |>
+#' # Add 1 second to ensure the snapshot is found
+#' get_ducklake_table_asof("my_table", snapshots$snapshot_time[2] + 1) |>
 #'   summarise(total = sum(amount))
 #' }
 get_ducklake_table_asof <- function(table_name, timestamp, conn = NULL) {
