@@ -69,9 +69,12 @@ to duckplyr's default DuckDB connection for seamless integration.</p>
     <div class="section level2">
     <h2 id="note">Note<a class="anchor" aria-label="anchor" href="#note"></a></h2>
     <p>This function uses <code>duckplyr:::get_default_duckdb_connection()</code>
-as a fallback. While this is an unexported function from duckplyr, it is
-necessary for proper integration with the duckplyr ecosystem when no
-explicit ducklake connection is set.</p>
+as a fallback when no connection has been explicitly set. While this accesses
+an unexported function, it is necessary for proper duckplyr integration as
+duckplyr's connection provides critical setup (singleton pattern, temp directory
+configuration, R function loading, and macro registration) that cannot be
+easily replicated. See the duckplyr source for details:
+<a href="https://github.com/tidyverse/duckplyr/blob/main/R/relational-duckdb.R" class="external-link">https://github.com/tidyverse/duckplyr/blob/main/R/relational-duckdb.R</a></p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

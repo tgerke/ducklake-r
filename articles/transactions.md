@@ -6,7 +6,7 @@ library(dplyr)
 
 # Setup for examples
 install_ducklake()
-attach_ducklake("my_ducklake", lake_path = tempdir())
+attach_ducklake("transactions_lake", lake_path = vignette_temp_dir)
 ```
 
 ## Introduction
@@ -52,7 +52,7 @@ get_ducklake_table("cars") |>
   select(mpg, cyl, hp, wt) |>
   head()
 #> # Source:   SQL [?? x 4]
-#> # Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpCbbTCx/duckplyr/duckplyr217f5c822cbd.duckdb]
+#> # Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/Rtmpx07Akr/duckplyr/duckplyr21a6a42e8a5.duckdb]
 #>     mpg   cyl    hp    wt
 #>   <dbl> <dbl> <dbl> <dbl>
 #> 1  21       6   110  2.62
@@ -103,7 +103,7 @@ get_ducklake_table("cars") |>
   select(mpg, kpl) |>
   head()
 #> # Source:   SQL [?? x 2]
-#> # Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpCbbTCx/duckplyr/duckplyr217f5c822cbd.duckdb]
+#> # Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/Rtmpx07Akr/duckplyr/duckplyr21a6a42e8a5.duckdb]
 #>     mpg   kpl
 #>   <dbl> <dbl>
 #> 1  21    8.93
@@ -152,7 +152,7 @@ get_ducklake_table("cars") |>
   select(mpg, cyl, efficiency) |>
   head()
 #> # Source:   SQL [?? x 3]
-#> # Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpCbbTCx/duckplyr/duckplyr217f5c822cbd.duckdb]
+#> # Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/Rtmpx07Akr/duckplyr/duckplyr21a6a42e8a5.duckdb]
 #>     mpg   cyl efficiency
 #>   <dbl> <dbl> <chr>     
 #> 1  21       6 medium    
@@ -208,9 +208,9 @@ get_ducklake_table("cars") |>
 # View all versioned changes
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 2           1 2026-02-09 19:25:58              1
-#> 3           2 2026-02-09 19:25:58              2
-#> 4           3 2026-02-09 19:25:58              3
+#> 2           1 2026-02-09 21:11:11              1
+#> 3           2 2026-02-09 21:11:11              2
+#> 4           3 2026-02-09 21:11:11              3
 #>                                                                                       changes
 #> 2                                          tables_created, tables_inserted_into, main.cars, 1
 #> 3                       tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2
@@ -263,7 +263,7 @@ get_ducklake_table("cars") |>
   select(wt, weight_kg) |>
   head()
 #> # Source:   SQL [?? x 2]
-#> # Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpCbbTCx/duckplyr/duckplyr217f5c822cbd.duckdb]
+#> # Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/Rtmpx07Akr/duckplyr/duckplyr21a6a42e8a5.duckdb]
 #>      wt weight_kg
 #>   <dbl>     <dbl>
 #> 1  2.32     1052.
@@ -317,10 +317,10 @@ rollback_transaction()
 # View all versioned changes
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 2           1 2026-02-09 19:25:58              1
-#> 3           2 2026-02-09 19:25:58              2
-#> 4           3 2026-02-09 19:25:58              3
-#> 5           4 2026-02-09 19:25:59              4
+#> 2           1 2026-02-09 21:11:11              1
+#> 3           2 2026-02-09 21:11:11              2
+#> 4           3 2026-02-09 21:11:11              3
+#> 5           4 2026-02-09 21:11:12              4
 #>                                                                                       changes
 #> 2                                          tables_created, tables_inserted_into, main.cars, 1
 #> 3                       tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2
@@ -357,14 +357,16 @@ set_snapshot_metadata(
   author = "Performance Team",
   commit_message = "Add horsepower per liter metric"
 )
-#> Snapshot metadata updated
+#> Warning in value[[3L]](cond): Could not update snapshot metadata: Binder Error: Catalog "__ducklake_metadata_my_ducklake" does not exist!
+#> ℹ Context: rapi_prepare
+#> ℹ Error type: BINDER
 
 # Verify
 get_ducklake_table("cars") |>
   select(hp, cyl, hp_per_liter) |>
   head()
 #> # Source:   SQL [?? x 3]
-#> # Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpCbbTCx/duckplyr/duckplyr217f5c822cbd.duckdb]
+#> # Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/Rtmpx07Akr/duckplyr/duckplyr21a6a42e8a5.duckdb]
 #>      hp   cyl hp_per_liter
 #>   <dbl> <dbl>        <dbl>
 #> 1    93     4         46.5
@@ -385,18 +387,18 @@ complete metadata:
 list_table_snapshots("cars") |>
   select(snapshot_id, snapshot_time, author, commit_message) |>
   tail(5)
-#>   snapshot_id       snapshot_time           author
-#> 2           1 2026-02-09 19:25:58         Tutorial
-#> 3           2 2026-02-09 19:25:58        Data Team
-#> 4           3 2026-02-09 19:25:58        Data Team
-#> 5           4 2026-02-09 19:25:59        Data Team
-#> 6           5 2026-02-09 19:25:59 Performance Team
+#>   snapshot_id       snapshot_time    author
+#> 2           1 2026-02-09 21:11:11  Tutorial
+#> 3           2 2026-02-09 21:11:11 Data Team
+#> 4           3 2026-02-09 21:11:11 Data Team
+#> 5           4 2026-02-09 21:11:12 Data Team
+#> 6           5 2026-02-09 21:11:12      <NA>
 #>                             commit_message
 #> 2           Initial load of mtcars dataset
 #> 3          Add kilometers per liter column
 #> 4 Add efficiency ratings and summary table
 #> 5     Add weight in kg for 4-cylinder cars
-#> 6          Add horsepower per liter metric
+#> 6                                     <NA>
 ```
 
 ## Comparison: with_transaction() vs Manual Control

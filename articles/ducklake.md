@@ -20,7 +20,7 @@ vignette.
 
 ``` r
 # Create a data lake in a specific directory
-attach_ducklake("my_lake", lake_path = tempdir())
+attach_ducklake("my_lake", lake_path = vignette_temp_dir)
 ```
 
 ### Attach to an existing data lake
@@ -72,7 +72,7 @@ with_transaction(
 
 ``` r
 # First write a sample CSV (in practice, you'd have an existing file)
-csv_path <- file.path(tempdir(), "sample_data.csv")
+csv_path <- file.path(vignette_temp_dir, "sample_data.csv")
 write.csv(head(iris, 20), csv_path, row.names = FALSE)
 
 # Load the CSV into the data lake
@@ -165,7 +165,7 @@ cars_data |>
   select(mpg, cyl, hp) |>
   head(3)
 #> # Source:   SQL [?? x 3]
-#> # Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/Rtmp6hZg9B/duckplyr/duckplyr1fbf25fc8b.duckdb]
+#> # Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpuZBBqk/duckplyr/duckplyr1fe76c9997bd.duckdb]
 #>     mpg   cyl    hp
 #>   <dbl> <dbl> <dbl>
 #> 1  21       6   110
@@ -193,8 +193,8 @@ head(cars_df, 3)
 # See all snapshots for the cars table
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 2           1 2026-02-09 19:25:39              1
-#> 3           2 2026-02-09 19:25:39              2
+#> 2           1 2026-02-09 21:10:52              1
+#> 3           2 2026-02-09 21:10:52              2
 #>                                                                 changes
 #> 2                    tables_created, tables_inserted_into, main.cars, 1
 #> 3 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2
@@ -273,12 +273,12 @@ get_ducklake_table("duckdb_tables") |>
 ``` r
 list_table_snapshots()
 #>   snapshot_id       snapshot_time schema_version
-#> 1           0 2026-02-09 19:25:38              0
-#> 2           1 2026-02-09 19:25:39              1
-#> 3           2 2026-02-09 19:25:39              2
-#> 4           3 2026-02-09 19:25:39              3
-#> 5           4 2026-02-09 19:25:39              4
-#> 6           5 2026-02-09 19:25:40              5
+#> 1           0 2026-02-09 21:10:52              0
+#> 2           1 2026-02-09 21:10:52              1
+#> 3           2 2026-02-09 21:10:52              2
+#> 4           3 2026-02-09 21:10:53              3
+#> 5           4 2026-02-09 21:10:53              4
+#> 6           5 2026-02-09 21:10:54              5
 #>                                                                 changes
 #> 1                                                 schemas_created, main
 #> 2                    tables_created, tables_inserted_into, main.cars, 1
@@ -386,7 +386,7 @@ get_ducklake_table("cars") |>
   mutate(kpl = mpg * 0.425144) |>
   head(3)
 #> # Source:   SQL [?? x 13]
-#> # Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/Rtmp6hZg9B/duckplyr/duckplyr1fbf25fc8b.duckdb]
+#> # Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpuZBBqk/duckplyr/duckplyr1fe76c9997bd.duckdb]
 #>     mpg   cyl  disp    hp  drat    wt  qsec    vs    am  gear  carb   kpl
 #>   <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>
 #> 1  21       6   160   110  3.9   2.62  16.5     0     1     4     4  8.93
@@ -403,7 +403,7 @@ get_ducklake_table("cars") |>
   select(mpg, cyl, hp) |>
   filter(mpg > 25)
 #> # Source:   SQL [?? x 3]
-#> # Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/Rtmp6hZg9B/duckplyr/duckplyr1fbf25fc8b.duckdb]
+#> # Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpuZBBqk/duckplyr/duckplyr1fe76c9997bd.duckdb]
 #>     mpg   cyl    hp
 #>   <dbl> <dbl> <dbl>
 #> 1  32.4     4    66

@@ -21,7 +21,7 @@ library(dplyr)
 
 # Setup for examples
 install_ducklake()
-attach_ducklake("my_ducklake", lake_path = tempdir())
+attach_ducklake("modifying_tables_lake", lake_path = vignette_temp_dir)
 
 # Load a sample dataset
 with_transaction(
@@ -117,8 +117,8 @@ with_transaction(
 # Check version history - should show the new snapshot
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 2           1 2026-02-09 19:25:43              1
-#> 3           2 2026-02-09 19:25:43              2
+#> 2           1 2026-02-09 21:10:57              1
+#> 3           2 2026-02-09 21:10:57              2
 #>                                                                 changes
 #> 2                    tables_created, tables_inserted_into, main.cars, 1
 #> 3 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2
@@ -151,7 +151,7 @@ get_ducklake_table("cars") |>
   filter(hp > 200) |>
   select(hp, cyl, hp_per_cyl, high_performance)
 #> # Source:   SQL [?? x 4]
-#> # Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpdrcG4N/duckplyr/duckplyr202c36d2dd89.duckdb]
+#> # Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmppDaq0E/duckplyr/duckplyr20537f9db9b.duckdb]
 #>      hp   cyl hp_per_cyl high_performance
 #>   <dbl> <dbl>      <dbl> <chr>           
 #> 1   245     8       30.6 Y               
@@ -181,7 +181,7 @@ with_transaction(
 # Show the filtered table
 get_ducklake_table("cars")
 #> # Source:   table<cars> [?? x 13]
-#> # Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpdrcG4N/duckplyr/duckplyr202c36d2dd89.duckdb]
+#> # Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmppDaq0E/duckplyr/duckplyr20537f9db9b.duckdb]
 #>      mpg   cyl  disp    hp  drat    wt  qsec    vs    am  gear  carb hp_per_cyl
 #>    <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>      <dbl>
 #>  1  18.7     8  360    175  3.15  3.44  17.0     0     0     3     2       21.9
@@ -203,10 +203,10 @@ get_ducklake_table("cars")
 # View version history - old versions still accessible via time travel
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 2           1 2026-02-09 19:25:43              1
-#> 3           2 2026-02-09 19:25:43              2
-#> 4           3 2026-02-09 19:25:44              3
-#> 5           4 2026-02-09 19:25:44              4
+#> 2           1 2026-02-09 21:10:57              1
+#> 3           2 2026-02-09 21:10:57              2
+#> 4           3 2026-02-09 21:10:57              3
+#> 5           4 2026-02-09 21:10:58              4
 #>                                                                 changes
 #> 2                    tables_created, tables_inserted_into, main.cars, 1
 #> 3 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2
@@ -229,10 +229,10 @@ current <- get_ducklake_table("cars") |> collect()
 snapshots <- list_table_snapshots("cars")
 snapshots
 #>   snapshot_id       snapshot_time schema_version
-#> 2           1 2026-02-09 19:25:43              1
-#> 3           2 2026-02-09 19:25:43              2
-#> 4           3 2026-02-09 19:25:44              3
-#> 5           4 2026-02-09 19:25:44              4
+#> 2           1 2026-02-09 21:10:57              1
+#> 3           2 2026-02-09 21:10:57              2
+#> 4           3 2026-02-09 21:10:57              3
+#> 5           4 2026-02-09 21:10:58              4
 #>                                                                 changes
 #> 2                    tables_created, tables_inserted_into, main.cars, 1
 #> 3 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2
