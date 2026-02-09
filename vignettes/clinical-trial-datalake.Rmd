@@ -998,7 +998,8 @@ adsl_v2 <- get_ducklake_table_version("adsl", snapshot_ids[2])
 adsl_final <- get_ducklake_table_version("adsl", snapshot_ids[length(snapshot_ids)])
 
 # Or use snapshot times for time-travel
-adsl_asof <- get_ducklake_table_asof("adsl", snapshots$snapshot_time[2])
+# Note: Add 1 second to ensure we query AFTER the snapshot was created
+adsl_asof <- get_ducklake_table_asof("adsl", snapshots$snapshot_time[2] + 1)
 
 # Compare columns across iterations
 colnames(adsl_v1 |> collect())  # Initial version

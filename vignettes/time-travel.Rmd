@@ -194,7 +194,8 @@ version2_timestamp <- snapshots |>
   pull(snapshot_time)
 
 # Query data as it existed at that time
-get_ducklake_table_asof("cars", version2_timestamp) |>
+# Note: Add 1 second to ensure we query AFTER the snapshot was created
+get_ducklake_table_asof("cars", version2_timestamp + 1) |>
   summarise(
     avg_mpg = mean(mpg, na.rm = TRUE)
   )
