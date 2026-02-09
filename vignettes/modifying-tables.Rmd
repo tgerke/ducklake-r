@@ -12,7 +12,10 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
-knitr::opts_knit$set(root.dir = tempdir())
+# Use a unique temp directory for this vignette to avoid conflicts during R CMD check
+vignette_temp_dir <- file.path(tempdir(), "modifying_tables_vignette")
+dir.create(vignette_temp_dir, showWarnings = FALSE, recursive = TRUE)
+knitr::opts_knit$set(root.dir = vignette_temp_dir)
 ```
 
 This vignette demonstrates how to modify tables in a DuckLake while maintaining complete version control and audit trails. 
@@ -24,7 +27,7 @@ library(dplyr)
 
 # Setup for examples
 install_ducklake()
-attach_ducklake("my_ducklake", lake_path = tempdir())
+attach_ducklake("modifying_tables_lake", lake_path = vignette_temp_dir)
 
 # Load a sample dataset
 with_transaction(

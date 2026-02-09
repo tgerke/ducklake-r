@@ -11,14 +11,17 @@
 #' @export
 #'
 #' @note This function uses \code{duckplyr:::get_default_duckdb_connection()}
-#' as a fallback. While this is an unexported function from duckplyr, it is
-#' necessary for proper integration with the duckplyr ecosystem when no
-#' explicit ducklake connection is set.
+#' as a fallback when no connection has been explicitly set. While this accesses
+#' an unexported function, it is necessary for proper duckplyr integration as
+#' duckplyr's connection provides critical setup (singleton pattern, temp directory
+#' configuration, R function loading, and macro registration) that cannot be
+#' easily replicated. See the duckplyr source for details:
+#' \url{https://github.com/tidyverse/duckplyr/blob/main/R/relational-duckdb.R}
 get_ducklake_connection <- function() {
   conn <- .ducklake_env$connection
   
   if (is.null(conn)) {
-    # Fall back to duckplyr's default connection if no ducklake connection is set
+    # Fall back to duckplyr's default connection for proper integration
     conn <- duckplyr:::get_default_duckdb_connection()
   }
   

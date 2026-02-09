@@ -12,7 +12,10 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
-knitr::opts_knit$set(root.dir = tempdir())
+# Use a unique temp directory for this vignette to avoid conflicts during R CMD check
+vignette_temp_dir <- file.path(tempdir(), "clinical_trial_vignette")
+dir.create(vignette_temp_dir, showWarnings = FALSE, recursive = TRUE)
+knitr::opts_knit$set(root.dir = vignette_temp_dir)
 ```
 
 ```{r setup, message=FALSE}
@@ -67,9 +70,9 @@ We'll use a temporary directory for this vignette, but in practice you would spe
 install_ducklake()
 
 # Define where to create a new data lake or access an existing one
-# For this vignette, we use tempdir(); in practice, use a permanent location
+# For this vignette, we use vignette_temp_dir; in practice, use a permanent location
 # lake_path <- "/path/to/your/project/data_lake"
-trial_lake_path <- tempdir()
+trial_lake_path <- vignette_temp_dir
 
 # attach_ducklake creates or attaches (if it already exists) a data lake
 attach_ducklake(

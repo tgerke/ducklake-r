@@ -12,7 +12,10 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
-knitr::opts_knit$set(root.dir = tempdir())
+# Use a unique temp directory for this vignette to avoid conflicts during R CMD check
+vignette_temp_dir <- file.path(tempdir(), "ducklake_vignette")
+dir.create(vignette_temp_dir, showWarnings = FALSE, recursive = TRUE)
+knitr::opts_knit$set(root.dir = vignette_temp_dir)
 ```
 
 ```{r setup, message=FALSE}
@@ -32,7 +35,7 @@ For a comprehensive real-world example, see the [clinical trial data lake](clini
 
 ```{r create, message=FALSE}
 # Create a data lake in a specific directory
-attach_ducklake("my_lake", lake_path = tempdir())
+attach_ducklake("my_lake", lake_path = vignette_temp_dir)
 ```
 
 ### Attach to an existing data lake
@@ -78,7 +81,7 @@ with_transaction(
 
 ```{r load_csv}
 # First write a sample CSV (in practice, you'd have an existing file)
-csv_path <- file.path(tempdir(), "sample_data.csv")
+csv_path <- file.path(vignette_temp_dir, "sample_data.csv")
 write.csv(head(iris, 20), csv_path, row.names = FALSE)
 
 # Load the CSV into the data lake

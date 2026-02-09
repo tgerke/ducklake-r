@@ -12,7 +12,10 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
-knitr::opts_knit$set(root.dir = tempdir())
+# Use a unique temp directory for this vignette to avoid conflicts during R CMD check
+vignette_temp_dir <- file.path(tempdir(), "storage_backups_vignette")
+dir.create(vignette_temp_dir, showWarnings = FALSE, recursive = TRUE)
+knitr::opts_knit$set(root.dir = vignette_temp_dir)
 ```
 
 ```{r setup, message=FALSE}
@@ -93,7 +96,7 @@ Let's create a sample DuckLake and explore what files it generates:
 
 ```{r create-sample-lake}
 # Create a temporary directory for our demo
-lake_dir <- file.path(tempdir(), "storage_demo")
+lake_dir <- file.path(vignette_temp_dir, "storage_demo")
 dir.create(lake_dir, showWarnings = FALSE, recursive = TRUE)
 
 # Install ducklake extension
