@@ -195,7 +195,7 @@ cars_data |>
   select(mpg, cyl, hp) |>
   head(3)
 #> # Source:   SQL [?? x 3]
-#> # Database: DuckDB 1.5.2 [unknown@Linux 6.17.0-1010-azure:R 4.5.3//tmp/RtmpIJyFGU/duckplyr/duckplyr1f4542d3c615.duckdb]
+#> # Database: DuckDB 1.5.2 [unknown@Linux 6.17.0-1010-azure:R 4.5.3//tmp/RtmptpETXC/duckplyr/duckplyr1e324dd39b5d.duckdb]
 #>     mpg   cyl    hp
 #>   <dbl> <dbl> <dbl>
 #> 1  21       6   110
@@ -223,8 +223,8 @@ head(cars_df, 3)
 # See all snapshots for the cars table
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 2           1 2026-04-14 18:19:42              1
-#> 3           2 2026-04-14 18:19:42              2
+#> 2           1 2026-04-14 18:22:11              1
+#> 3           2 2026-04-14 18:22:12              2
 #>                                                                 changes
 #> 2                    tables_created, tables_inserted_into, main.cars, 1
 #> 3 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2
@@ -303,12 +303,12 @@ get_ducklake_table("duckdb_tables") |>
 ``` r
 list_table_snapshots()
 #>   snapshot_id       snapshot_time schema_version
-#> 1           0 2026-04-14 18:19:42              0
-#> 2           1 2026-04-14 18:19:42              1
-#> 3           2 2026-04-14 18:19:42              2
-#> 4           3 2026-04-14 18:19:43              3
-#> 5           4 2026-04-14 18:19:43              4
-#> 6           5 2026-04-14 18:19:43              5
+#> 1           0 2026-04-14 18:22:11              0
+#> 2           1 2026-04-14 18:22:11              1
+#> 3           2 2026-04-14 18:22:12              2
+#> 4           3 2026-04-14 18:22:12              3
+#> 5           4 2026-04-14 18:22:12              4
+#> 6           5 2026-04-14 18:22:13              5
 #>                                                                 changes
 #> 1                                                 schemas_created, main
 #> 2                    tables_created, tables_inserted_into, main.cars, 1
@@ -416,7 +416,7 @@ get_ducklake_table("cars") |>
   mutate(kpl = mpg * 0.425144) |>
   head(3)
 #> # Source:   SQL [?? x 13]
-#> # Database: DuckDB 1.5.2 [unknown@Linux 6.17.0-1010-azure:R 4.5.3//tmp/RtmpIJyFGU/duckplyr/duckplyr1f4542d3c615.duckdb]
+#> # Database: DuckDB 1.5.2 [unknown@Linux 6.17.0-1010-azure:R 4.5.3//tmp/RtmptpETXC/duckplyr/duckplyr1e324dd39b5d.duckdb]
 #>     mpg   cyl  disp    hp  drat    wt  qsec    vs    am  gear  carb   kpl
 #>   <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>
 #> 1  21       6   160   110  3.9   2.62  16.5     0     1     4     4  8.93
@@ -433,7 +433,7 @@ get_ducklake_table("cars") |>
   select(mpg, cyl, hp) |>
   filter(mpg > 25)
 #> # Source:   SQL [?? x 3]
-#> # Database: DuckDB 1.5.2 [unknown@Linux 6.17.0-1010-azure:R 4.5.3//tmp/RtmpIJyFGU/duckplyr/duckplyr1f4542d3c615.duckdb]
+#> # Database: DuckDB 1.5.2 [unknown@Linux 6.17.0-1010-azure:R 4.5.3//tmp/RtmptpETXC/duckplyr/duckplyr1e324dd39b5d.duckdb]
 #>     mpg   cyl    hp
 #>   <dbl> <dbl> <dbl>
 #> 1  32.4     4    66
