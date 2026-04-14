@@ -30,7 +30,7 @@
 
     <a class="navbar-brand me-2" href="index.html">ducklake</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -175,7 +175,7 @@
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">mpg</span>, <span class="va">cyl</span>, <span class="va">efficiency</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">3</span><span class="op">)</span></span>
 <span><span class="co">#&gt; # Source:   SQL [?? x 3]</span></span>
-<span><span class="co">#&gt; # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpOkTzSg/duckplyr/duckplyr2e58131c620d.duckdb]</span></span>
+<span><span class="co">#&gt; # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpQeH3hD/duckplyr/duckplyr1132e288e0809.duckdb]</span></span>
 <span><span class="co">#&gt;     mpg cyl   efficiency</span></span>
 <span><span class="co">#&gt;   &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt;     </span></span>
 <span><span class="co">#&gt; 1  21   6.0   Medium    </span></span>
@@ -185,11 +185,11 @@
 <span><span class="co"># View complete audit trail across all layers with author and commit messages</span></span>
 <span><span class="fu"><a href="reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 1           0 2026-02-09 21:12:29              0</span></span>
-<span><span class="co">#&gt; 2           1 2026-02-09 21:12:29              1</span></span>
-<span><span class="co">#&gt; 3           2 2026-02-09 21:12:29              2</span></span>
-<span><span class="co">#&gt; 4           3 2026-02-09 21:12:29              3</span></span>
-<span><span class="co">#&gt; 5           4 2026-02-09 21:12:29              4</span></span>
+<span><span class="co">#&gt; 1           0 2026-04-14 17:50:52              0</span></span>
+<span><span class="co">#&gt; 2           1 2026-04-14 17:50:52              1</span></span>
+<span><span class="co">#&gt; 3           2 2026-04-14 17:50:52              2</span></span>
+<span><span class="co">#&gt; 4           3 2026-04-14 17:50:52              3</span></span>
+<span><span class="co">#&gt; 5           4 2026-04-14 17:50:52              4</span></span>
 <span><span class="co">#&gt;                                                                           changes</span></span>
 <span><span class="co">#&gt; 1                                                           schemas_created, main</span></span>
 <span><span class="co">#&gt; 2                      tables_created, tables_inserted_into, main.vehicles_raw, 1</span></span>
@@ -214,7 +214,7 @@
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">mpg</span>, <span class="va">cyl</span>, <span class="va">gear</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">3</span><span class="op">)</span></span>
 <span><span class="co">#&gt; # Source:   SQL [?? x 3]</span></span>
-<span><span class="co">#&gt; # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpOkTzSg/duckplyr/duckplyr2e58131c620d.duckdb]</span></span>
+<span><span class="co">#&gt; # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpQeH3hD/duckplyr/duckplyr1132e288e0809.duckdb]</span></span>
 <span><span class="co">#&gt;     mpg cyl    gear</span></span>
 <span><span class="co">#&gt;   &lt;dbl&gt; &lt;chr&gt; &lt;dbl&gt;</span></span>
 <span><span class="co">#&gt; 1  21   6.0       4</span></span>
@@ -274,6 +274,8 @@
 <li>
 <strong>Versioned data lake</strong>: Every data change automatically tracked with timestamps and metadata</li>
 <li>
+<strong>Multi-backend catalogs</strong>: Use DuckDB (default), PostgreSQL, SQLite, or MySQL as the catalog database — enables concurrent multi-client access with PostgreSQL or SQLite (<a href="https://ducklake.select/docs/stable/specification/introduction" class="external-link">DuckLake 1.0 spec</a>)</li>
+<li>
 <strong>Lightweight snapshots</strong>: Create unlimited snapshots without frequent compacting steps</li>
 <li>
 <strong>Medallion architecture</strong>: Bronze/silver/gold layers for data lineage and quality</li>
@@ -324,6 +326,7 @@
 <h2 data-toc-skip>Developers</h2>
 <ul class="list-unstyled">
 <li>Travis Gerke <br><small class="roles"> Author, maintainer </small>   </li>
+<li><a href="authors.html">More about authors...</a></li>
 </ul>
 </div>
 

@@ -102,7 +102,7 @@ get_ducklake_table("vehicles_analysis") |>
   select(mpg, cyl, efficiency) |>
   head(3)
 #> # Source:   SQL [?? x 3]
-#> # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpOkTzSg/duckplyr/duckplyr2e58131c620d.duckdb]
+#> # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpQeH3hD/duckplyr/duckplyr1132e288e0809.duckdb]
 #>     mpg cyl   efficiency
 #>   <dbl> <chr> <chr>     
 #> 1  21   6.0   Medium    
@@ -112,11 +112,11 @@ get_ducklake_table("vehicles_analysis") |>
 # View complete audit trail across all layers with author and commit messages
 list_table_snapshots()
 #>   snapshot_id       snapshot_time schema_version
-#> 1           0 2026-02-09 21:12:29              0
-#> 2           1 2026-02-09 21:12:29              1
-#> 3           2 2026-02-09 21:12:29              2
-#> 4           3 2026-02-09 21:12:29              3
-#> 5           4 2026-02-09 21:12:29              4
+#> 1           0 2026-04-14 17:50:52              0
+#> 2           1 2026-04-14 17:50:52              1
+#> 3           2 2026-04-14 17:50:52              2
+#> 4           3 2026-04-14 17:50:52              3
+#> 5           4 2026-04-14 17:50:52              4
 #>                                                                           changes
 #> 1                                                           schemas_created, main
 #> 2                      tables_created, tables_inserted_into, main.vehicles_raw, 1
@@ -141,7 +141,7 @@ get_ducklake_table_version("vehicles_clean", version = 2) |>
   select(mpg, cyl, gear) |>
   head(3)
 #> # Source:   SQL [?? x 3]
-#> # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpOkTzSg/duckplyr/duckplyr2e58131c620d.duckdb]
+#> # Database: DuckDB 1.4.4 [tgerke@Darwin 23.6.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpQeH3hD/duckplyr/duckplyr1132e288e0809.duckdb]
 #>     mpg cyl    gear
 #>   <dbl> <chr> <dbl>
 #> 1  21   6.0       4
@@ -202,6 +202,10 @@ detailed vignettes:
 
 - **Versioned data lake**: Every data change automatically tracked with
   timestamps and metadata
+- **Multi-backend catalogs**: Use DuckDB (default), PostgreSQL, SQLite,
+  or MySQL as the catalog database — enables concurrent multi-client
+  access with PostgreSQL or SQLite ([DuckLake 1.0
+  spec](https://ducklake.select/docs/stable/specification/introduction))
 - **Lightweight snapshots**: Create unlimited snapshots without frequent
   compacting steps
 - **Medallion architecture**: Bronze/silver/gold layers for data lineage

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ducklake</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -44,9 +44,42 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Changelog</h1>
-      <small>Source: <a href="https://github.com/tgerke/ducklake-r/blob/v0.1.0/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
+      <small>Source: <a href="https://github.com/tgerke/ducklake-r/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.2.0" id="ducklake-020">ducklake 0.2.0<a class="anchor" aria-label="anchor" href="#ducklake-020"></a></h2>
+<div class="section level3">
+<h3 id="multi-backend-catalog-support-0-2-0">Multi-Backend Catalog Support<a class="anchor" aria-label="anchor" href="#multi-backend-catalog-support-0-2-0"></a></h3>
+<p>DuckLake now supports PostgreSQL, SQLite, and MySQL as catalog backends in addition to DuckDB (<a href="https://github.com/tgerke/ducklake-r/issues/15" class="external-link">#15</a>, <a href="https://github.com/stefanlinner" class="external-link">@stefanlinner</a>). This aligns with the <a href="https://ducklake.select/docs/stable/specification/introduction" class="external-link">DuckLake 1.0 specification</a> and enables concurrent multi-client access when using PostgreSQL or SQLite.</p>
+<div class="section level4">
+<h4 id="new-features-0-2-0">New Features<a class="anchor" aria-label="anchor" href="#new-features-0-2-0"></a></h4>
+<ul><li>
+<code><a href="../reference/attach_ducklake.html">attach_ducklake()</a></code> gains <code>backend</code>, <code>catalog_connection_string</code>, <code>read_only</code>, and <code>override_data_path</code> parameters for multi-backend support.</li>
+<li>
+<code><a href="../reference/install_ducklake.html">install_ducklake()</a></code> gains a <code>backend</code> parameter to pre-install backend extensions (e.g., <code>install_ducklake(backend = "postgres")</code>).</li>
+<li>New <code><a href="../reference/get_ducklake_backend.html">get_ducklake_backend()</a></code> returns the active catalog backend type.</li>
+<li>
+<code><a href="../reference/detach_ducklake.html">detach_ducklake()</a></code> gains a <code>shutdown</code> parameter. By default it now performs a soft detach (SQL <code>DETACH</code> + <code>USE memory;</code>) instead of shutting down the connection, allowing backend switching within a session.</li>
+<li>
+<code><a href="../reference/backup_ducklake.html">backup_ducklake()</a></code> is now backend-aware: file-based backends (DuckDB, SQLite) get catalog + data copied; PostgreSQL/MySQL get data only with guidance to use <code>pg_dump</code>/<code>mysqldump</code>. Also fixes a pre-existing bug where catalog backups were silently 0 bytes due to DuckDB holding file locks during <code><a href="https://rdrr.io/r/base/files.html" class="external-link">file.copy()</a></code>.</li>
+</ul></div>
+<div class="section level4">
+<h4 id="breaking-changes-0-2-0">Breaking Changes<a class="anchor" aria-label="anchor" href="#breaking-changes-0-2-0"></a></h4>
+<ul><li>
+<code><a href="../reference/attach_ducklake.html">attach_ducklake()</a></code> now <strong>requires</strong> <code>lake_path</code> (previously optional).</li>
+<li>
+<code>set_ducklake_connection()</code> has been removed. The package now exclusively uses duckplyr’s singleton DuckDB connection.</li>
+<li>
+<code><a href="../reference/detach_ducklake.html">detach_ducklake()</a></code> no longer shuts down the DuckDB connection by default. Pass <code>shutdown = TRUE</code> for the previous behaviour.</li>
+</ul></div>
+<div class="section level4">
+<h4 id="internal-0-2-0">Internal<a class="anchor" aria-label="anchor" href="#internal-0-2-0"></a></h4>
+<ul><li>Schema qualifier logic updated throughout (<code><a href="../reference/get_metadata_table.html">get_metadata_table()</a></code>, <code>time_travel.R</code>, <code>transactions.R</code>) to handle PostgreSQL/MySQL backends that don’t use the <code>.main.</code> schema prefix.</li>
+<li>New internal helpers: <code><a href="../reference/build_attach_sql.html">build_attach_sql()</a></code>, <code><a href="../reference/ensure_extensions.html">ensure_extensions()</a></code>, <code><a href="../reference/shutdown_and_reset_singleton.html">shutdown_and_reset_singleton()</a></code>.</li>
+</ul><hr></div>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.1.0" id="ducklake-010">ducklake 0.1.0<a class="anchor" aria-label="anchor" href="#ducklake-010"></a></h2>
 <p>Initial release of ducklake, an R package for versioned data lake infrastructure built on DuckDB and DuckLake.</p>
@@ -106,7 +139,7 @@
 <li>
 <code><a href="../reference/detach_ducklake.html">detach_ducklake()</a></code> - Clean up connections</li>
 <li>
-<code><a href="../reference/get_ducklake_connection.html">get_ducklake_connection()</a></code>, <code><a href="../reference/set_ducklake_connection.html">set_ducklake_connection()</a></code> - Manage active connections</li>
+<code><a href="../reference/get_ducklake_connection.html">get_ducklake_connection()</a></code> - Retrieve the active DuckDB connection</li>
 </ul></div>
 <div class="section level4">
 <h4 id="query-execution-0-1-0">Query Execution<a class="anchor" aria-label="anchor" href="#query-execution-0-1-0"></a></h4>

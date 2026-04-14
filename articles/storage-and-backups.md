@@ -20,10 +20,12 @@ maintaining a robust data lake. This vignette explains:
 
 DuckLake separates data management into two distinct components:
 
-1.  **Catalog (Metadata)**: A database file (DuckDB, SQLite, or
-    PostgreSQL) that stores all metadata about your tables, snapshots,
-    transactions, and data file locations. This is typically small but
-    critically important.
+1.  **Catalog (Metadata)**: A database that stores all metadata about
+    your tables, snapshots, transactions, and data file locations. By
+    default this is a DuckDB file, but DuckLake also supports
+    PostgreSQL, SQLite, or MySQL as catalog backends (see
+    [`?attach_ducklake`](https://tgerke.github.io/ducklake-r/reference/attach_ducklake.md)).
+    The catalog is typically small but critically important.
 
 2.  **Storage (Data Files)**: A directory containing immutable Parquet
     files that hold your actual data. DuckLake never modifies existing
@@ -62,18 +64,20 @@ attach_ducklake(
   lake_path = "~/data/my_ducklake"
 )
 
-# Cloud storage - scalable, accessible from anywhere
+# PostgreSQL catalog with S3 data - multi-client, scalable
 attach_ducklake(
-  ducklake_name = "cloud_lake",
-  lake_path = "s3://my-bucket/ducklake",
-  data_path = "s3://my-bucket/ducklake/data"
+  ducklake_name = "shared_lake",
+  backend = "postgres",
+  catalog_connection_string = "dbname=ducklake_catalog host=localhost",
+  lake_path = "s3://my-bucket/ducklake/data"
 )
 
-# Hybrid approach - metadata local, data in cloud
+# SQLite catalog - lightweight multi-client option
 attach_ducklake(
-  ducklake_name = "hybrid_lake",
-  lake_path = "~/data/metadata",
-  data_path = "s3://my-bucket/data"
+  ducklake_name = "team_lake",
+  backend = "sqlite",
+  catalog_connection_string = "~/data/metadata.sqlite",
+  lake_path = "~/data/parquet_files"
 )
 ```
 
@@ -97,6 +101,7 @@ dir.create(lake_dir, showWarnings = FALSE, recursive = TRUE)
 
 # Install ducklake extension
 install_ducklake()
+#> Installed ducklake extension.
 
 # Create and populate a DuckLake
 attach_ducklake(
@@ -110,9 +115,9 @@ with_transaction(
   author = "Demo User",
   commit_message = "Initial load"
 )
-#> Transaction started
-#> Transaction committed
-#> Snapshot metadata updated
+#> Transaction started.
+#> Transaction committed.
+#> Snapshot metadata updated.
 
 with_transaction(
   get_ducklake_table("cars") |>
@@ -121,9 +126,9 @@ with_transaction(
   author = "Demo User",
   commit_message = "Add hp_per_cyl metric"
 )
-#> Transaction started
-#> Transaction committed
-#> Snapshot metadata updated
+#> Transaction started.
+#> Transaction committed.
+#> Snapshot metadata updated.
 
 with_transaction(
   get_ducklake_table("cars") |>
@@ -132,9 +137,9 @@ with_transaction(
   author = "Demo User",
   commit_message = "Add adjusted MPG for 4-cylinder cars"
 )
-#> Transaction started
-#> Transaction committed
-#> Snapshot metadata updated
+#> Transaction started.
+#> Transaction committed.
+#> Snapshot metadata updated.
 ```
 
 ### Catalog Files
@@ -143,14 +148,14 @@ The catalog is a single database file containing all metadata:
 
 ``` r
 dir_tree(lake_dir)
-#> /tmp/RtmpY4o8rb/storage_backups_vignette/storage_demo
+#> /tmp/RtmpP4EWRu/storage_backups_vignette/storage_demo
 #> ├── demo_lake.ducklake
 #> ├── demo_lake.ducklake.wal
 #> └── main
 #>     └── cars
-#>         ├── ducklake-019c4446-cd59-7c85-9621-ed0cb76d34a3.parquet
-#>         ├── ducklake-019c4446-ce3c-7a33-9c21-a15ed1de2dfb.parquet
-#>         └── ducklake-019c4446-ce8c-7120-ab58-bc4351e1a2f2.parquet
+#>         ├── ducklake-019d8d38-9e12-7c8a-86c1-9fb1965a7fee.parquet
+#>         ├── ducklake-019d8d38-9f06-7525-b663-1a5d74a0736c.parquet
+#>         └── ducklake-019d8d38-9fdc-7621-acd9-85f016d0907b.parquet
 ```
 
 The catalog files (`demo_lake.ducklake` and `.wal`) contain all metadata
@@ -165,11 +170,11 @@ Data files are stored in Parquet format in a structured directory:
 main_dir <- file.path(lake_dir, "main")
 
 dir_tree(main_dir, recurse = 2)
-#> /tmp/RtmpY4o8rb/storage_backups_vignette/storage_demo/main
+#> /tmp/RtmpP4EWRu/storage_backups_vignette/storage_demo/main
 #> └── cars
-#>     ├── ducklake-019c4446-cd59-7c85-9621-ed0cb76d34a3.parquet
-#>     ├── ducklake-019c4446-ce3c-7a33-9c21-a15ed1de2dfb.parquet
-#>     └── ducklake-019c4446-ce8c-7120-ab58-bc4351e1a2f2.parquet
+#>     ├── ducklake-019d8d38-9e12-7c8a-86c1-9fb1965a7fee.parquet
+#>     ├── ducklake-019d8d38-9f06-7525-b663-1a5d74a0736c.parquet
+#>     └── ducklake-019d8d38-9fdc-7621-acd9-85f016d0907b.parquet
   
 # Get details about parquet files
 parquet_files <- dir_ls(main_dir, recurse = TRUE, regexp = "\\.parquet$")
@@ -178,9 +183,9 @@ for (f in parquet_files) {
               path_file(f), 
               file.size(f)))
 }
-#>   ducklake-019c4446-cd59-7c85-9621-ed0cb76d34a3.parquet (2271 bytes)
-#>   ducklake-019c4446-ce3c-7a33-9c21-a15ed1de2dfb.parquet (2462 bytes)
-#>   ducklake-019c4446-ce8c-7120-ab58-bc4351e1a2f2.parquet (2682 bytes)
+#>   ducklake-019d8d38-9e12-7c8a-86c1-9fb1965a7fee.parquet (2307 bytes)
+#>   ducklake-019d8d38-9f06-7525-b663-1a5d74a0736c.parquet (2501 bytes)
+#>   ducklake-019d8d38-9fdc-7621-acd9-85f016d0907b.parquet (2724 bytes)
 ```
 
 ### Understanding File Organization
@@ -234,13 +239,13 @@ dir_copy(
 
 # Verify the backup was created
 dir_tree(backup_dir)
-#> /tmp/RtmpY4o8rb/storage_backups_vignette/storage_demo/backups
+#> /tmp/RtmpP4EWRu/storage_backups_vignette/storage_demo/backups
 #> ├── demo_lake.ducklake
 #> └── main
 #>     └── cars
-#>         ├── ducklake-019c4446-cd59-7c85-9621-ed0cb76d34a3.parquet
-#>         ├── ducklake-019c4446-ce3c-7a33-9c21-a15ed1de2dfb.parquet
-#>         └── ducklake-019c4446-ce8c-7120-ab58-bc4351e1a2f2.parquet
+#>         ├── ducklake-019d8d38-9e12-7c8a-86c1-9fb1965a7fee.parquet
+#>         ├── ducklake-019d8d38-9f06-7525-b663-1a5d74a0736c.parquet
+#>         └── ducklake-019d8d38-9fdc-7621-acd9-85f016d0907b.parquet
 
 # To use the backup, detach the current lake and attach to the backup
 # First detach the original
@@ -255,9 +260,9 @@ attach_ducklake(
 # Verify you're working with the backup
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 2           1 2026-02-09 21:20:16              1
-#> 3           2 2026-02-09 21:20:16              2
-#> 4           3 2026-02-09 21:20:16              3
+#> 2           1 2026-04-14 18:19:51              1
+#> 3           2 2026-04-14 18:19:51              2
+#> 4           3 2026-04-14 18:19:51              3
 #>                                                                 changes
 #> 2                    tables_created, tables_inserted_into, main.cars, 1
 #> 3 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2
@@ -317,13 +322,14 @@ When using cross-bucket replication, update your data path:
 # Original
 attach_ducklake(
   ducklake_name = "prod_lake",
-  data_path = "s3://original-bucket/data"
+  lake_path = "s3://original-bucket/data"
 )
 
 # After recovery from replicated bucket
 attach_ducklake(
   ducklake_name = "prod_lake",
-  data_path = "s3://backup-bucket/data"
+  lake_path = "s3://backup-bucket/data",
+  override_data_path = TRUE
 )
 ```
 
@@ -411,13 +417,14 @@ backup_dir <- backup_ducklake(
   lake_path = lake_dir,
   backup_path = file.path(lake_dir, "backups")
 )
-#> Catalog backed up successfully
-#> Data files backed up successfully
-#> Backup completed: /tmp/RtmpY4o8rb/storage_backups_vignette/storage_demo/backups/backup_20260209_212017
+#> Catalog backed up successfully.
+#> Data files backed up successfully.
+#> Backup completed:
+#> /tmp/RtmpP4EWRu/storage_backups_vignette/storage_demo/backups/backup_20260414_181952
 
 # The function returns the backup directory path
 print(backup_dir)
-#> [1] "/tmp/RtmpY4o8rb/storage_backups_vignette/storage_demo/backups/backup_20260209_212017"
+#> [1] "/tmp/RtmpP4EWRu/storage_backups_vignette/storage_demo/backups/backup_20260414_181952"
 ```
 
 The

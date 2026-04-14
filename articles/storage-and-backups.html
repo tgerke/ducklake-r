@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ducklake</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -75,7 +75,7 @@
       <img src="../logo.png" class="logo" alt=""><h1>Storage and Backup Management</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/tgerke/ducklake-r/blob/v0.1.0/vignettes/storage-and-backups.Rmd" class="external-link"><code>vignettes/storage-and-backups.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/tgerke/ducklake-r/blob/main/vignettes/storage-and-backups.Rmd" class="external-link"><code>vignettes/storage-and-backups.Rmd</code></a></small>
       <div class="d-none name"><code>storage-and-backups.Rmd</code></div>
     </div>
 
@@ -103,10 +103,12 @@ storage)</li>
 </h2>
 <p>DuckLake separates data management into two distinct components:</p>
 <ol style="list-style-type: decimal">
-<li><p><strong>Catalog (Metadata)</strong>: A database file (DuckDB,
-SQLite, or PostgreSQL) that stores all metadata about your tables,
-snapshots, transactions, and data file locations. This is typically
-small but critically important.</p></li>
+<li><p><strong>Catalog (Metadata)</strong>: A database that stores all
+metadata about your tables, snapshots, transactions, and data file
+locations. By default this is a DuckDB file, but DuckLake also supports
+PostgreSQL, SQLite, or MySQL as catalog backends (see
+<code><a href="../reference/attach_ducklake.html">?attach_ducklake</a></code>). The catalog is typically small but
+critically important.</p></li>
 <li><p><strong>Storage (Data Files)</strong>: A directory containing
 immutable Parquet files that hold your actual data. DuckLake never
 modifies existing files—it only creates new ones.</p></li>
@@ -156,18 +158,20 @@ filesystems</li>
 <span>  lake_path <span class="op">=</span> <span class="st">"~/data/my_ducklake"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Cloud storage - scalable, accessible from anywhere</span></span>
+<span><span class="co"># PostgreSQL catalog with S3 data - multi-client, scalable</span></span>
 <span><span class="fu"><a href="../reference/attach_ducklake.html">attach_ducklake</a></span><span class="op">(</span></span>
-<span>  ducklake_name <span class="op">=</span> <span class="st">"cloud_lake"</span>,</span>
-<span>  lake_path <span class="op">=</span> <span class="st">"s3://my-bucket/ducklake"</span>,</span>
-<span>  data_path <span class="op">=</span> <span class="st">"s3://my-bucket/ducklake/data"</span></span>
+<span>  ducklake_name <span class="op">=</span> <span class="st">"shared_lake"</span>,</span>
+<span>  backend <span class="op">=</span> <span class="st">"postgres"</span>,</span>
+<span>  catalog_connection_string <span class="op">=</span> <span class="st">"dbname=ducklake_catalog host=localhost"</span>,</span>
+<span>  lake_path <span class="op">=</span> <span class="st">"s3://my-bucket/ducklake/data"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Hybrid approach - metadata local, data in cloud</span></span>
+<span><span class="co"># SQLite catalog - lightweight multi-client option</span></span>
 <span><span class="fu"><a href="../reference/attach_ducklake.html">attach_ducklake</a></span><span class="op">(</span></span>
-<span>  ducklake_name <span class="op">=</span> <span class="st">"hybrid_lake"</span>,</span>
-<span>  lake_path <span class="op">=</span> <span class="st">"~/data/metadata"</span>,</span>
-<span>  data_path <span class="op">=</span> <span class="st">"s3://my-bucket/data"</span></span>
+<span>  ducklake_name <span class="op">=</span> <span class="st">"team_lake"</span>,</span>
+<span>  backend <span class="op">=</span> <span class="st">"sqlite"</span>,</span>
+<span>  catalog_connection_string <span class="op">=</span> <span class="st">"~/data/metadata.sqlite"</span>,</span>
+<span>  lake_path <span class="op">=</span> <span class="st">"~/data/parquet_files"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p><strong>Key considerations:</strong></p>
 <ul>
@@ -196,6 +200,7 @@ generates:</p>
 <span></span>
 <span><span class="co"># Install ducklake extension</span></span>
 <span><span class="fu"><a href="../reference/install_ducklake.html">install_ducklake</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Installed <span style="color: #0000BB;">ducklake</span> extension.</span></span>
 <span></span>
 <span><span class="co"># Create and populate a DuckLake</span></span>
 <span><span class="fu"><a href="../reference/attach_ducklake.html">attach_ducklake</a></span><span class="op">(</span></span>
@@ -209,9 +214,9 @@ generates:</p>
 <span>  author <span class="op">=</span> <span class="st">"Demo User"</span>,</span>
 <span>  commit_message <span class="op">=</span> <span class="st">"Initial load"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; Transaction started</span></span>
-<span><span class="co">#&gt; Transaction committed</span></span>
-<span><span class="co">#&gt; Snapshot metadata updated</span></span>
+<span><span class="co">#&gt; Transaction started.</span></span>
+<span><span class="co">#&gt; Transaction committed.</span></span>
+<span><span class="co">#&gt; Snapshot metadata updated.</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/with_transaction.html">with_transaction</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -220,9 +225,9 @@ generates:</p>
 <span>  author <span class="op">=</span> <span class="st">"Demo User"</span>,</span>
 <span>  commit_message <span class="op">=</span> <span class="st">"Add hp_per_cyl metric"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; Transaction started</span></span>
-<span><span class="co">#&gt; Transaction committed</span></span>
-<span><span class="co">#&gt; Snapshot metadata updated</span></span>
+<span><span class="co">#&gt; Transaction started.</span></span>
+<span><span class="co">#&gt; Transaction committed.</span></span>
+<span><span class="co">#&gt; Snapshot metadata updated.</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/with_transaction.html">with_transaction</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -231,23 +236,23 @@ generates:</p>
 <span>  author <span class="op">=</span> <span class="st">"Demo User"</span>,</span>
 <span>  commit_message <span class="op">=</span> <span class="st">"Add adjusted MPG for 4-cylinder cars"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; Transaction started</span></span>
-<span><span class="co">#&gt; Transaction committed</span></span>
-<span><span class="co">#&gt; Snapshot metadata updated</span></span></code></pre></div>
+<span><span class="co">#&gt; Transaction started.</span></span>
+<span><span class="co">#&gt; Transaction committed.</span></span>
+<span><span class="co">#&gt; Snapshot metadata updated.</span></span></code></pre></div>
 <div class="section level3">
 <h3 id="catalog-files">Catalog Files<a class="anchor" aria-label="anchor" href="#catalog-files"></a>
 </h3>
 <p>The catalog is a single database file containing all metadata:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://fs.r-lib.org/reference/dir_tree.html" class="external-link">dir_tree</a></span><span class="op">(</span><span class="va">lake_dir</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #0000BB; font-weight: bold;">/tmp/RtmpY4o8rb/storage_backups_vignette/storage_demo</span></span></span>
+<span><span class="co">#&gt; <span style="color: #0000BB; font-weight: bold;">/tmp/RtmpP4EWRu/storage_backups_vignette/storage_demo</span></span></span>
 <span><span class="co">#&gt; ├── demo_lake.ducklake</span></span>
 <span><span class="co">#&gt; ├── demo_lake.ducklake.wal</span></span>
 <span><span class="co">#&gt; └── <span style="color: #0000BB; font-weight: bold;">main</span></span></span>
 <span><span class="co">#&gt;     └── <span style="color: #0000BB; font-weight: bold;">cars</span></span></span>
-<span><span class="co">#&gt;         ├── ducklake-019c4446-cd59-7c85-9621-ed0cb76d34a3.parquet</span></span>
-<span><span class="co">#&gt;         ├── ducklake-019c4446-ce3c-7a33-9c21-a15ed1de2dfb.parquet</span></span>
-<span><span class="co">#&gt;         └── ducklake-019c4446-ce8c-7120-ab58-bc4351e1a2f2.parquet</span></span></code></pre></div>
+<span><span class="co">#&gt;         ├── ducklake-019d8d38-9e12-7c8a-86c1-9fb1965a7fee.parquet</span></span>
+<span><span class="co">#&gt;         ├── ducklake-019d8d38-9f06-7525-b663-1a5d74a0736c.parquet</span></span>
+<span><span class="co">#&gt;         └── ducklake-019d8d38-9fdc-7621-acd9-85f016d0907b.parquet</span></span></code></pre></div>
 <p>The catalog files (<code>demo_lake.ducklake</code> and
 <code>.wal</code>) contain all metadata about tables, snapshots, and
 transactions.</p>
@@ -262,11 +267,11 @@ directory:</p>
 <span><span class="va">main_dir</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">lake_dir</span>, <span class="st">"main"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://fs.r-lib.org/reference/dir_tree.html" class="external-link">dir_tree</a></span><span class="op">(</span><span class="va">main_dir</span>, recurse <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #0000BB; font-weight: bold;">/tmp/RtmpY4o8rb/storage_backups_vignette/storage_demo/main</span></span></span>
+<span><span class="co">#&gt; <span style="color: #0000BB; font-weight: bold;">/tmp/RtmpP4EWRu/storage_backups_vignette/storage_demo/main</span></span></span>
 <span><span class="co">#&gt; └── <span style="color: #0000BB; font-weight: bold;">cars</span></span></span>
-<span><span class="co">#&gt;     ├── ducklake-019c4446-cd59-7c85-9621-ed0cb76d34a3.parquet</span></span>
-<span><span class="co">#&gt;     ├── ducklake-019c4446-ce3c-7a33-9c21-a15ed1de2dfb.parquet</span></span>
-<span><span class="co">#&gt;     └── ducklake-019c4446-ce8c-7120-ab58-bc4351e1a2f2.parquet</span></span>
+<span><span class="co">#&gt;     ├── ducklake-019d8d38-9e12-7c8a-86c1-9fb1965a7fee.parquet</span></span>
+<span><span class="co">#&gt;     ├── ducklake-019d8d38-9f06-7525-b663-1a5d74a0736c.parquet</span></span>
+<span><span class="co">#&gt;     └── ducklake-019d8d38-9fdc-7621-acd9-85f016d0907b.parquet</span></span>
 <span>  </span>
 <span><span class="co"># Get details about parquet files</span></span>
 <span><span class="va">parquet_files</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://fs.r-lib.org/reference/dir_ls.html" class="external-link">dir_ls</a></span><span class="op">(</span><span class="va">main_dir</span>, recurse <span class="op">=</span> <span class="cn">TRUE</span>, regexp <span class="op">=</span> <span class="st">"\\.parquet$"</span><span class="op">)</span></span>
@@ -275,9 +280,9 @@ directory:</p>
 <span>              <span class="fu"><a href="https://fs.r-lib.org/reference/path_file.html" class="external-link">path_file</a></span><span class="op">(</span><span class="va">f</span><span class="op">)</span>, </span>
 <span>              <span class="fu"><a href="https://rdrr.io/r/base/file.info.html" class="external-link">file.size</a></span><span class="op">(</span><span class="va">f</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="op">}</span></span>
-<span><span class="co">#&gt;   ducklake-019c4446-cd59-7c85-9621-ed0cb76d34a3.parquet (2271 bytes)</span></span>
-<span><span class="co">#&gt;   ducklake-019c4446-ce3c-7a33-9c21-a15ed1de2dfb.parquet (2462 bytes)</span></span>
-<span><span class="co">#&gt;   ducklake-019c4446-ce8c-7120-ab58-bc4351e1a2f2.parquet (2682 bytes)</span></span></code></pre></div>
+<span><span class="co">#&gt;   ducklake-019d8d38-9e12-7c8a-86c1-9fb1965a7fee.parquet (2307 bytes)</span></span>
+<span><span class="co">#&gt;   ducklake-019d8d38-9f06-7525-b663-1a5d74a0736c.parquet (2501 bytes)</span></span>
+<span><span class="co">#&gt;   ducklake-019d8d38-9fdc-7621-acd9-85f016d0907b.parquet (2724 bytes)</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="understanding-file-organization">Understanding File Organization<a class="anchor" aria-label="anchor" href="#understanding-file-organization"></a>
@@ -330,13 +335,13 @@ files. Regular backups are essential.</p>
 <span></span>
 <span><span class="co"># Verify the backup was created</span></span>
 <span><span class="fu"><a href="https://fs.r-lib.org/reference/dir_tree.html" class="external-link">dir_tree</a></span><span class="op">(</span><span class="va">backup_dir</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #0000BB; font-weight: bold;">/tmp/RtmpY4o8rb/storage_backups_vignette/storage_demo/backups</span></span></span>
+<span><span class="co">#&gt; <span style="color: #0000BB; font-weight: bold;">/tmp/RtmpP4EWRu/storage_backups_vignette/storage_demo/backups</span></span></span>
 <span><span class="co">#&gt; ├── demo_lake.ducklake</span></span>
 <span><span class="co">#&gt; └── <span style="color: #0000BB; font-weight: bold;">main</span></span></span>
 <span><span class="co">#&gt;     └── <span style="color: #0000BB; font-weight: bold;">cars</span></span></span>
-<span><span class="co">#&gt;         ├── ducklake-019c4446-cd59-7c85-9621-ed0cb76d34a3.parquet</span></span>
-<span><span class="co">#&gt;         ├── ducklake-019c4446-ce3c-7a33-9c21-a15ed1de2dfb.parquet</span></span>
-<span><span class="co">#&gt;         └── ducklake-019c4446-ce8c-7120-ab58-bc4351e1a2f2.parquet</span></span>
+<span><span class="co">#&gt;         ├── ducklake-019d8d38-9e12-7c8a-86c1-9fb1965a7fee.parquet</span></span>
+<span><span class="co">#&gt;         ├── ducklake-019d8d38-9f06-7525-b663-1a5d74a0736c.parquet</span></span>
+<span><span class="co">#&gt;         └── ducklake-019d8d38-9fdc-7621-acd9-85f016d0907b.parquet</span></span>
 <span></span>
 <span><span class="co"># To use the backup, detach the current lake and attach to the backup</span></span>
 <span><span class="co"># First detach the original</span></span>
@@ -351,9 +356,9 @@ files. Regular backups are essential.</p>
 <span><span class="co"># Verify you're working with the backup</span></span>
 <span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 2           1 2026-02-09 21:20:16              1</span></span>
-<span><span class="co">#&gt; 3           2 2026-02-09 21:20:16              2</span></span>
-<span><span class="co">#&gt; 4           3 2026-02-09 21:20:16              3</span></span>
+<span><span class="co">#&gt; 2           1 2026-04-14 18:19:51              1</span></span>
+<span><span class="co">#&gt; 3           2 2026-04-14 18:19:51              2</span></span>
+<span><span class="co">#&gt; 4           3 2026-04-14 18:19:51              3</span></span>
 <span><span class="co">#&gt;                                                                 changes</span></span>
 <span><span class="co">#&gt; 2                    tables_created, tables_inserted_into, main.cars, 1</span></span>
 <span><span class="co">#&gt; 3 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2</span></span>
@@ -409,13 +414,14 @@ Backup and DR service - Object versioning with soft deletes</p>
 <code class="sourceCode R"><span><span class="co"># Original</span></span>
 <span><span class="fu"><a href="../reference/attach_ducklake.html">attach_ducklake</a></span><span class="op">(</span></span>
 <span>  ducklake_name <span class="op">=</span> <span class="st">"prod_lake"</span>,</span>
-<span>  data_path <span class="op">=</span> <span class="st">"s3://original-bucket/data"</span></span>
+<span>  lake_path <span class="op">=</span> <span class="st">"s3://original-bucket/data"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># After recovery from replicated bucket</span></span>
 <span><span class="fu"><a href="../reference/attach_ducklake.html">attach_ducklake</a></span><span class="op">(</span></span>
 <span>  ducklake_name <span class="op">=</span> <span class="st">"prod_lake"</span>,</span>
-<span>  data_path <span class="op">=</span> <span class="st">"s3://backup-bucket/data"</span></span>
+<span>  lake_path <span class="op">=</span> <span class="st">"s3://backup-bucket/data"</span>,</span>
+<span>  override_data_path <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 </div>
 </div>
@@ -505,13 +511,14 @@ function for creating timestamped backups:</p>
 <span>  lake_path <span class="op">=</span> <span class="va">lake_dir</span>,</span>
 <span>  backup_path <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">lake_dir</span>, <span class="st">"backups"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; Catalog backed up successfully</span></span>
-<span><span class="co">#&gt; Data files backed up successfully</span></span>
-<span><span class="co">#&gt; Backup completed: /tmp/RtmpY4o8rb/storage_backups_vignette/storage_demo/backups/backup_20260209_212017</span></span>
+<span><span class="co">#&gt; Catalog backed up successfully.</span></span>
+<span><span class="co">#&gt; Data files backed up successfully.</span></span>
+<span><span class="co">#&gt; Backup completed:</span></span>
+<span><span class="co">#&gt; <span style="color: #0000BB;">/tmp/RtmpP4EWRu/storage_backups_vignette/storage_demo/backups/backup_20260414_181952</span></span></span>
 <span></span>
 <span><span class="co"># The function returns the backup directory path</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">backup_dir</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "/tmp/RtmpY4o8rb/storage_backups_vignette/storage_demo/backups/backup_20260209_212017"</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "/tmp/RtmpP4EWRu/storage_backups_vignette/storage_demo/backups/backup_20260414_181952"</span></span></code></pre></div>
 <p>The <code><a href="../reference/backup_ducklake.html">backup_ducklake()</a></code> function: - Creates a timestamped
 backup directory - Copies the catalog database file - Copies all data
 files from the main/ directory - Returns the backup directory path for

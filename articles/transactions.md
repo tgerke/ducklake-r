@@ -43,16 +43,16 @@ with_transaction(
   author = "Tutorial",
   commit_message = "Initial load of mtcars dataset"
 )
-#> Transaction started
-#> Transaction committed
-#> Snapshot metadata updated
+#> Transaction started.
+#> Transaction committed.
+#> Snapshot metadata updated.
 
 # View the data
 get_ducklake_table("cars") |>
   select(mpg, cyl, hp, wt) |>
   head()
 #> # Source:   SQL [?? x 4]
-#> # Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/Rtmpqu9CWA/duckplyr/duckplyr21712fe6b7f6.duckdb]
+#> # Database: DuckDB 1.5.2 [unknown@Linux 6.17.0-1010-azure:R 4.5.3//tmp/RtmpondQKZ/duckplyr/duckplyr20e5352d60d9.duckdb]
 #>     mpg   cyl    hp    wt
 #>   <dbl> <dbl> <dbl> <dbl>
 #> 1  21       6   110  2.62
@@ -94,16 +94,16 @@ with_transaction(
   author = "Data Team",
   commit_message = "Add kilometers per liter column"
 )
-#> Transaction started
-#> Transaction committed
-#> Snapshot metadata updated
+#> Transaction started.
+#> Transaction committed.
+#> Snapshot metadata updated.
 
 # Verify the change
 get_ducklake_table("cars") |>
   select(mpg, kpl) |>
   head()
 #> # Source:   SQL [?? x 2]
-#> # Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/Rtmpqu9CWA/duckplyr/duckplyr21712fe6b7f6.duckdb]
+#> # Database: DuckDB 1.5.2 [unknown@Linux 6.17.0-1010-azure:R 4.5.3//tmp/RtmpondQKZ/duckplyr/duckplyr20e5352d60d9.duckdb]
 #>     mpg   kpl
 #>   <dbl> <dbl>
 #> 1  21    8.93
@@ -143,16 +143,16 @@ with_transaction({
     ) |>
     create_table("cars_summary")
 }, author = "Data Team", commit_message = "Add efficiency ratings and summary table")
-#> Transaction started
-#> Transaction committed
-#> Snapshot metadata updated
+#> Transaction started.
+#> Transaction committed.
+#> Snapshot metadata updated.
 
 # View results
 get_ducklake_table("cars") |>
   select(mpg, cyl, efficiency) |>
   head()
 #> # Source:   SQL [?? x 3]
-#> # Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/Rtmpqu9CWA/duckplyr/duckplyr21712fe6b7f6.duckdb]
+#> # Database: DuckDB 1.5.2 [unknown@Linux 6.17.0-1010-azure:R 4.5.3//tmp/RtmpondQKZ/duckplyr/duckplyr20e5352d60d9.duckdb]
 #>     mpg   cyl efficiency
 #>   <dbl> <dbl> <chr>     
 #> 1  21       6 medium    
@@ -194,8 +194,8 @@ tryCatch(
     message("Transaction automatically rolled back: ", e$message)
   }
 )
-#> Transaction started
-#> Transaction rolled back
+#> Transaction started.
+#> Transaction rolled back.
 #> Transaction automatically rolled back: Transaction rolled back due to error: Simulated error - something went wrong!
 
 # Verify that test_column was NOT added (transaction was rolled back)
@@ -208,13 +208,13 @@ get_ducklake_table("cars") |>
 # View all versioned changes
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 2           1 2026-02-09 21:20:27              1
-#> 3           2 2026-02-09 21:20:27              2
-#> 4           3 2026-02-09 21:20:27              3
-#>                                                                                       changes
-#> 2                                          tables_created, tables_inserted_into, main.cars, 1
-#> 3                       tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2
-#> 4 tables_created, tables_dropped, tables_inserted_into, main.cars, main.cars_summary, 2, 3, 4
+#> 2           1 2026-04-14 18:20:02              1
+#> 3           2 2026-04-14 18:20:02              2
+#> 4           3 2026-04-14 18:20:02              3
+#>                                                                                                       changes
+#> 2                                                          tables_created, tables_inserted_into, main.cars, 1
+#> 3                                       tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2
+#> 4 tables_created, tables_dropped, tables_inserted_into, inlined_insert, main.cars, main.cars_summary, 2, 4, 3
 #>      author                           commit_message commit_extra_info
 #> 2  Tutorial           Initial load of mtcars dataset              <NA>
 #> 3 Data Team          Add kilometers per liter column              <NA>
@@ -241,7 +241,7 @@ boundaries, DuckLake provides manual transaction functions.
 ``` r
 # Start a transaction
 begin_transaction()
-#> Transaction started
+#> Transaction started.
 
 # Make changes
 get_ducklake_table("cars") |>
@@ -254,8 +254,8 @@ commit_transaction(
   author = "Data Team",
   commit_message = "Add weight in kg for 4-cylinder cars"
 )
-#> Transaction committed
-#> Snapshot metadata updated
+#> Transaction committed.
+#> Snapshot metadata updated.
 
 # Verify changes
 get_ducklake_table("cars") |>
@@ -263,7 +263,7 @@ get_ducklake_table("cars") |>
   select(wt, weight_kg) |>
   head()
 #> # Source:   SQL [?? x 2]
-#> # Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/Rtmpqu9CWA/duckplyr/duckplyr21712fe6b7f6.duckdb]
+#> # Database: DuckDB 1.5.2 [unknown@Linux 6.17.0-1010-azure:R 4.5.3//tmp/RtmpondQKZ/duckplyr/duckplyr20e5352d60d9.duckdb]
 #>      wt weight_kg
 #>   <dbl>     <dbl>
 #> 1  2.32     1052.
@@ -282,7 +282,7 @@ commit:
 ``` r
 # Start a transaction
 begin_transaction()
-#> Transaction started
+#> Transaction started.
 
 # Make a test change
 get_ducklake_table("cars") |>
@@ -308,7 +308,7 @@ print(test_result)
 
 # Decide to rollback
 rollback_transaction()
-#> Transaction rolled back
+#> Transaction rolled back.
 
 # Verify the change was NOT applied
 "test_flag" %in% colnames(get_ducklake_table("cars"))
@@ -317,15 +317,15 @@ rollback_transaction()
 # View all versioned changes
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 2           1 2026-02-09 21:20:27              1
-#> 3           2 2026-02-09 21:20:27              2
-#> 4           3 2026-02-09 21:20:27              3
-#> 5           4 2026-02-09 21:20:28              4
-#>                                                                                       changes
-#> 2                                          tables_created, tables_inserted_into, main.cars, 1
-#> 3                       tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2
-#> 4 tables_created, tables_dropped, tables_inserted_into, main.cars, main.cars_summary, 2, 3, 4
-#> 5                       tables_created, tables_dropped, tables_inserted_into, main.cars, 4, 5
+#> 2           1 2026-04-14 18:20:02              1
+#> 3           2 2026-04-14 18:20:02              2
+#> 4           3 2026-04-14 18:20:02              3
+#> 5           4 2026-04-14 18:20:03              4
+#>                                                                                                       changes
+#> 2                                                          tables_created, tables_inserted_into, main.cars, 1
+#> 3                                       tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2
+#> 4 tables_created, tables_dropped, tables_inserted_into, inlined_insert, main.cars, main.cars_summary, 2, 4, 3
+#> 5                                       tables_created, tables_dropped, tables_inserted_into, main.cars, 4, 5
 #>      author                           commit_message commit_extra_info
 #> 2  Tutorial           Initial load of mtcars dataset              <NA>
 #> 3 Data Team          Add kilometers per liter column              <NA>
@@ -340,7 +340,7 @@ With manual transactions, you can also set metadata after committing:
 ``` r
 # Start transaction
 begin_transaction()
-#> Transaction started
+#> Transaction started.
 
 # Make changes
 get_ducklake_table("cars") |>
@@ -349,7 +349,7 @@ get_ducklake_table("cars") |>
 
 # Commit
 commit_transaction()
-#> Transaction committed
+#> Transaction committed.
 
 # Add metadata separately
 set_snapshot_metadata(
@@ -357,16 +357,16 @@ set_snapshot_metadata(
   author = "Performance Team",
   commit_message = "Add horsepower per liter metric"
 )
-#> Warning in value[[3L]](cond): Could not update snapshot metadata: Binder Error: Catalog "__ducklake_metadata_my_ducklake" does not exist!
-#> ℹ Context: rapi_prepare
-#> ℹ Error type: BINDER
+#> Warning: Could not update snapshot metadata: Binder Error: Catalog
+#> "__ducklake_metadata_my_ducklake" does not exist! ℹ Context: rapi_prepare ℹ
+#> Error type: BINDER
 
 # Verify
 get_ducklake_table("cars") |>
   select(hp, cyl, hp_per_liter) |>
   head()
 #> # Source:   SQL [?? x 3]
-#> # Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/Rtmpqu9CWA/duckplyr/duckplyr21712fe6b7f6.duckdb]
+#> # Database: DuckDB 1.5.2 [unknown@Linux 6.17.0-1010-azure:R 4.5.3//tmp/RtmpondQKZ/duckplyr/duckplyr20e5352d60d9.duckdb]
 #>      hp   cyl hp_per_liter
 #>   <dbl> <dbl>        <dbl>
 #> 1    93     4         46.5
@@ -388,11 +388,11 @@ list_table_snapshots("cars") |>
   select(snapshot_id, snapshot_time, author, commit_message) |>
   tail(5)
 #>   snapshot_id       snapshot_time    author
-#> 2           1 2026-02-09 21:20:27  Tutorial
-#> 3           2 2026-02-09 21:20:27 Data Team
-#> 4           3 2026-02-09 21:20:27 Data Team
-#> 5           4 2026-02-09 21:20:28 Data Team
-#> 6           5 2026-02-09 21:20:28      <NA>
+#> 2           1 2026-04-14 18:20:02  Tutorial
+#> 3           2 2026-04-14 18:20:02 Data Team
+#> 4           3 2026-04-14 18:20:02 Data Team
+#> 5           4 2026-04-14 18:20:03 Data Team
+#> 6           5 2026-04-14 18:20:03      <NA>
 #>                             commit_message
 #> 2           Initial load of mtcars dataset
 #> 3          Add kilometers per liter column

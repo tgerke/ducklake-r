@@ -1,8 +1,9 @@
-# Create a complete DuckLake backup
+# Create a DuckLake backup
 
-Creates a timestamped backup of both the catalog database and data
-files. The backup includes the complete state of the DuckLake at the
-time of backup, allowing for point-in-time recovery.
+Creates a timestamped backup of the Parquet data files and, for
+file-based backends (DuckDB, SQLite), the catalog database file. For
+PostgreSQL/MySQL backends only data files are copied; use `pg_dump` /
+`mysqldump` for the catalog.
 
 ## Usage
 
@@ -18,7 +19,8 @@ backup_ducklake(ducklake_name, lake_path, backup_path)
 
 - lake_path:
 
-  Path to the DuckLake directory containing the catalog file
+  Path to the DuckLake directory containing the data files (and catalog
+  file for DuckDB/SQLite backends)
 
 - backup_path:
 
@@ -31,13 +33,9 @@ Invisibly returns the path to the created backup directory
 
 ## Details
 
-The function creates a complete backup by:
-
-1.  Creating a timestamped backup directory
-
-2.  Copying the catalog database file (.ducklake)
-
-3.  Copying all data files from the main/ directory
+For file-based backends the DuckLake is temporarily detached during
+backup to release file locks and ensure a consistent copy. It is
+automatically re-attached afterwards.
 
 **Important notes:**
 
@@ -74,8 +72,8 @@ backup_dir <- backup_ducklake(
   backup_path = file.path(lake_dir, "backups")
 )
 
-# To restore from backup:
+# Restore (override_data_path needed when location differs):
 # detach_ducklake("my_lake")
-# attach_ducklake("my_lake", lake_path = backup_dir)
+# attach_ducklake("my_lake", lake_path = backup_dir, override_data_path = TRUE)
 } # }
 ```

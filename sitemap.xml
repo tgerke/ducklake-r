@@ -15,11 +15,14 @@
 <url><loc>https://tgerke.github.io/ducklake-r/reference/attach_ducklake.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/backup_ducklake.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/begin_transaction.html</loc></url>
+<url><loc>https://tgerke.github.io/ducklake-r/reference/build_attach_sql.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/commit_transaction.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/create_table.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/detach_ducklake.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/ducklake_exec.html</loc></url>
+<url><loc>https://tgerke.github.io/ducklake-r/reference/ensure_extensions.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/extract_assignments_from_sql.html</loc></url>
+<url><loc>https://tgerke.github.io/ducklake-r/reference/get_ducklake_backend.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/get_ducklake_connection.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/get_ducklake_table.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/get_ducklake_table_asof.html</loc></url>
@@ -34,9 +37,9 @@
 <url><loc>https://tgerke.github.io/ducklake-r/reference/rows_delete.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/rows_insert.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/rows_update.html</loc></url>
-<url><loc>https://tgerke.github.io/ducklake-r/reference/set_ducklake_connection.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/set_snapshot_metadata.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/show_ducklake_query.html</loc></url>
+<url><loc>https://tgerke.github.io/ducklake-r/reference/shutdown_and_reset_singleton.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/with_transaction.html</loc></url>
 </urlset>
 

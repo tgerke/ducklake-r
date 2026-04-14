@@ -21,6 +21,7 @@ library(dplyr)
 
 # Setup for examples
 install_ducklake()
+#> Installed ducklake extension.
 attach_ducklake("modifying_tables_lake", lake_path = vignette_temp_dir)
 
 # Load a sample dataset
@@ -29,9 +30,9 @@ with_transaction(
   author = "Data Engineer",
   commit_message = "Initial car data load"
 )
-#> Transaction started
-#> Transaction committed
-#> Snapshot metadata updated
+#> Transaction started.
+#> Transaction committed.
+#> Snapshot metadata updated.
 ```
 
 ## Best Practices for Table Modifications
@@ -110,15 +111,15 @@ with_transaction(
   author = "Data Engineer",
   commit_message = "Update MPG for 4-cylinder vehicles"
 )
-#> Transaction started
-#> Transaction committed
-#> Snapshot metadata updated
+#> Transaction started.
+#> Transaction committed.
+#> Snapshot metadata updated.
 
 # Check version history - should show the new snapshot
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 2           1 2026-02-09 21:20:13              1
-#> 3           2 2026-02-09 21:20:13              2
+#> 2           1 2026-04-14 18:19:47              1
+#> 3           2 2026-04-14 18:19:47              2
 #>                                                                 changes
 #> 2                    tables_created, tables_inserted_into, main.cars, 1
 #> 3 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2
@@ -142,16 +143,16 @@ with_transaction(
   author = "Data Engineer",
   commit_message = "Add HP per cylinder and performance flag"
 )
-#> Transaction started
-#> Transaction committed
-#> Snapshot metadata updated
+#> Transaction started.
+#> Transaction committed.
+#> Snapshot metadata updated.
 
 # Verify new columns exist
 get_ducklake_table("cars") |>
   filter(hp > 200) |>
   select(hp, cyl, hp_per_cyl, high_performance)
 #> # Source:   SQL [?? x 4]
-#> # Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpbWY5Xv/duckplyr/duckplyr201f43fe70c8.duckdb]
+#> # Database: DuckDB 1.5.2 [unknown@Linux 6.17.0-1010-azure:R 4.5.3//tmp/RtmpOT0cWo/duckplyr/duckplyr1fa574008580.duckdb]
 #>      hp   cyl hp_per_cyl high_performance
 #>   <dbl> <dbl>      <dbl> <chr>           
 #> 1   245     8       30.6 Y               
@@ -174,14 +175,14 @@ with_transaction(
   author = "Data Engineer",
   commit_message = "Filter to V8 engines only"
 )
-#> Transaction started
-#> Transaction committed
-#> Snapshot metadata updated
+#> Transaction started.
+#> Transaction committed.
+#> Snapshot metadata updated.
 
 # Show the filtered table
 get_ducklake_table("cars")
 #> # Source:   table<cars> [?? x 13]
-#> # Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpbWY5Xv/duckplyr/duckplyr201f43fe70c8.duckdb]
+#> # Database: DuckDB 1.5.2 [unknown@Linux 6.17.0-1010-azure:R 4.5.3//tmp/RtmpOT0cWo/duckplyr/duckplyr1fa574008580.duckdb]
 #>      mpg   cyl  disp    hp  drat    wt  qsec    vs    am  gear  carb hp_per_cyl
 #>    <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>      <dbl>
 #>  1  18.7     8  360    175  3.15  3.44  17.0     0     0     3     2       21.9
@@ -203,10 +204,10 @@ get_ducklake_table("cars")
 # View version history - old versions still accessible via time travel
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 2           1 2026-02-09 21:20:13              1
-#> 3           2 2026-02-09 21:20:13              2
-#> 4           3 2026-02-09 21:20:13              3
-#> 5           4 2026-02-09 21:20:13              4
+#> 2           1 2026-04-14 18:19:47              1
+#> 3           2 2026-04-14 18:19:47              2
+#> 4           3 2026-04-14 18:19:47              3
+#> 5           4 2026-04-14 18:19:48              4
 #>                                                                 changes
 #> 2                    tables_created, tables_inserted_into, main.cars, 1
 #> 3 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2
@@ -229,10 +230,10 @@ current <- get_ducklake_table("cars") |> collect()
 snapshots <- list_table_snapshots("cars")
 snapshots
 #>   snapshot_id       snapshot_time schema_version
-#> 2           1 2026-02-09 21:20:13              1
-#> 3           2 2026-02-09 21:20:13              2
-#> 4           3 2026-02-09 21:20:13              3
-#> 5           4 2026-02-09 21:20:13              4
+#> 2           1 2026-04-14 18:19:47              1
+#> 3           2 2026-04-14 18:19:47              2
+#> 4           3 2026-04-14 18:19:47              3
+#> 5           4 2026-04-14 18:19:48              4
 #>                                                                 changes
 #> 2                    tables_created, tables_inserted_into, main.cars, 1
 #> 3 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2

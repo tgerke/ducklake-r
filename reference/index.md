@@ -12,8 +12,8 @@ Initialize and manage DuckLake connections
   : Detach from a ducklake
 - [`get_ducklake_connection()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_connection.md)
   : Get the current DuckLake connection
-- [`set_ducklake_connection()`](https://tgerke.github.io/ducklake-r/reference/set_ducklake_connection.md)
-  : Set the DuckLake connection
+- [`get_ducklake_backend()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_backend.md)
+  : Get the current catalog backend type
 
 ## Table Operations
 
@@ -88,4 +88,4 @@ Access metadata and snapshots
 Backup and restore operations
 
 - [`backup_ducklake()`](https://tgerke.github.io/ducklake-r/reference/backup_ducklake.md)
-  : Create a complete DuckLake backup
+  : Create a DuckLake backup

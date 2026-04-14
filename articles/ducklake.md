@@ -30,6 +30,26 @@ attach_ducklake("my_lake", lake_path = vignette_temp_dir)
 attach_ducklake("existing_lake", lake_path = "/path/to/data_lake")
 ```
 
+### Use an alternative catalog backend
+
+``` r
+# PostgreSQL catalog for multi-client access
+attach_ducklake(
+  "shared_lake",
+  backend = "postgres",
+  catalog_connection_string = "dbname=ducklake_catalog host=localhost",
+  lake_path = "/shared/lake/data/"
+)
+
+# SQLite catalog for lightweight local multi-client setups
+attach_ducklake(
+  "team_lake",
+  backend = "sqlite",
+  catalog_connection_string = "metadata.sqlite",
+  lake_path = "data_files/"
+)
+```
+
 ### Detach from a data lake
 
 ``` r
@@ -47,9 +67,9 @@ with_transaction(
   author = "Data Engineer",
   commit_message = "Initial car data load"
 )
-#> Transaction started
-#> Transaction committed
-#> Snapshot metadata updated
+#> Transaction started.
+#> Transaction committed.
+#> Snapshot metadata updated.
 ```
 
 ### Update an existing table
@@ -63,9 +83,9 @@ with_transaction(
   author = "Data Engineer",
   commit_message = "Add km/L metric to cars table"
 )
-#> Transaction started
-#> Transaction committed
-#> Snapshot metadata updated
+#> Transaction started.
+#> Transaction committed.
+#> Snapshot metadata updated.
 ```
 
 ### Load data from a CSV file
@@ -81,9 +101,9 @@ with_transaction(
   author = "Data Engineer",
   commit_message = "Load iris sample from CSV"
 )
-#> Transaction started
-#> Transaction committed
-#> Snapshot metadata updated
+#> Transaction started.
+#> Transaction committed.
+#> Snapshot metadata updated.
 ```
 
 ### Load data from a URL
@@ -107,9 +127,9 @@ with_transaction(
   author = "Data Analyst",
   commit_message = "Load filtered car data"
 )
-#> Transaction started
-#> Transaction committed
-#> Snapshot metadata updated
+#> Transaction started.
+#> Transaction committed.
+#> Snapshot metadata updated.
 ```
 
 ### List all tables in the lake
@@ -121,7 +141,7 @@ get_ducklake_table("duckdb_tables") |>
   select(table_name) |>
   collect() |>
   print(n = Inf)
-#> # A tibble: 25 × 1
+#> # A tibble: 35 × 1
 #>    table_name                           
 #>    <chr>                                
 #>  1 ducklake_column                      
@@ -132,23 +152,33 @@ get_ducklake_table("duckdb_tables") |>
 #>  6 ducklake_files_scheduled_for_deletion
 #>  7 ducklake_file_column_stats           
 #>  8 ducklake_file_partition_value        
-#>  9 ducklake_inlined_data_tables         
-#> 10 ducklake_metadata                    
-#> 11 ducklake_name_mapping                
-#> 12 ducklake_partition_column            
-#> 13 ducklake_partition_info              
-#> 14 ducklake_schema                      
-#> 15 ducklake_schema_versions             
-#> 16 ducklake_snapshot                    
-#> 17 ducklake_snapshot_changes            
-#> 18 ducklake_table                       
-#> 19 ducklake_table_column_stats          
-#> 20 ducklake_table_stats                 
-#> 21 ducklake_tag                         
-#> 22 ducklake_view                        
-#> 23 efficient_cars                       
-#> 24 iris_sample                          
-#> 25 cars
+#>  9 ducklake_file_variant_stats          
+#> 10 ducklake_inlined_data_1_1            
+#> 11 ducklake_inlined_data_2_2            
+#> 12 ducklake_inlined_data_3_3            
+#> 13 ducklake_inlined_data_4_4            
+#> 14 ducklake_inlined_data_tables         
+#> 15 ducklake_macro                       
+#> 16 ducklake_macro_impl                  
+#> 17 ducklake_macro_parameters            
+#> 18 ducklake_metadata                    
+#> 19 ducklake_name_mapping                
+#> 20 ducklake_partition_column            
+#> 21 ducklake_partition_info              
+#> 22 ducklake_schema                      
+#> 23 ducklake_schema_versions             
+#> 24 ducklake_snapshot                    
+#> 25 ducklake_snapshot_changes            
+#> 26 ducklake_sort_expression             
+#> 27 ducklake_sort_info                   
+#> 28 ducklake_table                       
+#> 29 ducklake_table_column_stats          
+#> 30 ducklake_table_stats                 
+#> 31 ducklake_tag                         
+#> 32 ducklake_view                        
+#> 33 efficient_cars                       
+#> 34 iris_sample                          
+#> 35 cars
 ```
 
 ## Reading data recipes
@@ -165,7 +195,7 @@ cars_data |>
   select(mpg, cyl, hp) |>
   head(3)
 #> # Source:   SQL [?? x 3]
-#> # Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpCz68LV/duckplyr/duckplyr1fb377b95736.duckdb]
+#> # Database: DuckDB 1.5.2 [unknown@Linux 6.17.0-1010-azure:R 4.5.3//tmp/RtmpIJyFGU/duckplyr/duckplyr1f4542d3c615.duckdb]
 #>     mpg   cyl    hp
 #>   <dbl> <dbl> <dbl>
 #> 1  21       6   110
@@ -193,8 +223,8 @@ head(cars_df, 3)
 # See all snapshots for the cars table
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 2           1 2026-02-09 21:20:08              1
-#> 3           2 2026-02-09 21:20:08              2
+#> 2           1 2026-04-14 18:19:42              1
+#> 3           2 2026-04-14 18:19:42              2
 #>                                                                 changes
 #> 2                    tables_created, tables_inserted_into, main.cars, 1
 #> 3 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2
@@ -231,9 +261,9 @@ with_transaction(
   author = "Data Engineer",
   commit_message = "Add horsepower per cylinder metric"
 )
-#> Transaction started
-#> Transaction committed
-#> Snapshot metadata updated
+#> Transaction started.
+#> Transaction committed.
+#> Snapshot metadata updated.
 ```
 
 Note: For most use cases, use
@@ -252,7 +282,7 @@ get_ducklake_table("duckdb_tables") |>
   filter(schema_name == "main") |>
   select(table_name) |>
   collect()
-#> # A tibble: 25 × 1
+#> # A tibble: 36 × 1
 #>    table_name                           
 #>    <chr>                                
 #>  1 ducklake_column                      
@@ -263,9 +293,9 @@ get_ducklake_table("duckdb_tables") |>
 #>  6 ducklake_files_scheduled_for_deletion
 #>  7 ducklake_file_column_stats           
 #>  8 ducklake_file_partition_value        
-#>  9 ducklake_inlined_data_tables         
-#> 10 ducklake_metadata                    
-#> # ℹ 15 more rows
+#>  9 ducklake_file_variant_stats          
+#> 10 ducklake_inlined_data_1_1            
+#> # ℹ 26 more rows
 ```
 
 ### View all snapshots
@@ -273,12 +303,12 @@ get_ducklake_table("duckdb_tables") |>
 ``` r
 list_table_snapshots()
 #>   snapshot_id       snapshot_time schema_version
-#> 1           0 2026-02-09 21:20:07              0
-#> 2           1 2026-02-09 21:20:08              1
-#> 3           2 2026-02-09 21:20:08              2
-#> 4           3 2026-02-09 21:20:08              3
-#> 5           4 2026-02-09 21:20:08              4
-#> 6           5 2026-02-09 21:20:09              5
+#> 1           0 2026-04-14 18:19:42              0
+#> 2           1 2026-04-14 18:19:42              1
+#> 3           2 2026-04-14 18:19:42              2
+#> 4           3 2026-04-14 18:19:43              3
+#> 5           4 2026-04-14 18:19:43              4
+#> 6           5 2026-04-14 18:19:43              5
 #>                                                                 changes
 #> 1                                                 schemas_created, main
 #> 2                    tables_created, tables_inserted_into, main.cars, 1
@@ -386,7 +416,7 @@ get_ducklake_table("cars") |>
   mutate(kpl = mpg * 0.425144) |>
   head(3)
 #> # Source:   SQL [?? x 13]
-#> # Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpCz68LV/duckplyr/duckplyr1fb377b95736.duckdb]
+#> # Database: DuckDB 1.5.2 [unknown@Linux 6.17.0-1010-azure:R 4.5.3//tmp/RtmpIJyFGU/duckplyr/duckplyr1f4542d3c615.duckdb]
 #>     mpg   cyl  disp    hp  drat    wt  qsec    vs    am  gear  carb   kpl
 #>   <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>
 #> 1  21       6   160   110  3.9   2.62  16.5     0     1     4     4  8.93
@@ -403,7 +433,7 @@ get_ducklake_table("cars") |>
   select(mpg, cyl, hp) |>
   filter(mpg > 25)
 #> # Source:   SQL [?? x 3]
-#> # Database: DuckDB 1.4.4 [unknown@Linux 6.11.0-1018-azure:R 4.5.2//tmp/RtmpCz68LV/duckplyr/duckplyr1fb377b95736.duckdb]
+#> # Database: DuckDB 1.5.2 [unknown@Linux 6.17.0-1010-azure:R 4.5.3//tmp/RtmpIJyFGU/duckplyr/duckplyr1f4542d3c615.duckdb]
 #>     mpg   cyl    hp
 #>   <dbl> <dbl> <dbl>
 #> 1  32.4     4    66

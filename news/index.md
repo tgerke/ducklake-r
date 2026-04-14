@@ -1,5 +1,63 @@
 # Changelog
 
+## ducklake 0.2.0
+
+### Multi-Backend Catalog Support
+
+DuckLake now supports PostgreSQL, SQLite, and MySQL as catalog backends
+in addition to DuckDB
+([\#15](https://github.com/tgerke/ducklake-r/issues/15),
+[@stefanlinner](https://github.com/stefanlinner)). This aligns with the
+[DuckLake 1.0
+specification](https://ducklake.select/docs/stable/specification/introduction)
+and enables concurrent multi-client access when using PostgreSQL or
+SQLite.
+
+#### New Features
+
+- [`attach_ducklake()`](https://tgerke.github.io/ducklake-r/reference/attach_ducklake.md)
+  gains `backend`, `catalog_connection_string`, `read_only`, and
+  `override_data_path` parameters for multi-backend support.
+- [`install_ducklake()`](https://tgerke.github.io/ducklake-r/reference/install_ducklake.md)
+  gains a `backend` parameter to pre-install backend extensions (e.g.,
+  `install_ducklake(backend = "postgres")`).
+- New
+  [`get_ducklake_backend()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_backend.md)
+  returns the active catalog backend type.
+- [`detach_ducklake()`](https://tgerke.github.io/ducklake-r/reference/detach_ducklake.md)
+  gains a `shutdown` parameter. By default it now performs a soft detach
+  (SQL `DETACH` + `USE memory;`) instead of shutting down the
+  connection, allowing backend switching within a session.
+- [`backup_ducklake()`](https://tgerke.github.io/ducklake-r/reference/backup_ducklake.md)
+  is now backend-aware: file-based backends (DuckDB, SQLite) get
+  catalog + data copied; PostgreSQL/MySQL get data only with guidance to
+  use `pg_dump`/`mysqldump`. Also fixes a pre-existing bug where catalog
+  backups were silently 0 bytes due to DuckDB holding file locks during
+  [`file.copy()`](https://rdrr.io/r/base/files.html).
+
+#### Breaking Changes
+
+- [`attach_ducklake()`](https://tgerke.github.io/ducklake-r/reference/attach_ducklake.md)
+  now **requires** `lake_path` (previously optional).
+- `set_ducklake_connection()` has been removed. The package now
+  exclusively uses duckplyr’s singleton DuckDB connection.
+- [`detach_ducklake()`](https://tgerke.github.io/ducklake-r/reference/detach_ducklake.md)
+  no longer shuts down the DuckDB connection by default. Pass
+  `shutdown = TRUE` for the previous behaviour.
+
+#### Internal
+
+- Schema qualifier logic updated throughout
+  ([`get_metadata_table()`](https://tgerke.github.io/ducklake-r/reference/get_metadata_table.md),
+  `time_travel.R`, `transactions.R`) to handle PostgreSQL/MySQL backends
+  that don’t use the `.main.` schema prefix.
+- New internal helpers:
+  [`build_attach_sql()`](https://tgerke.github.io/ducklake-r/reference/build_attach_sql.md),
+  [`ensure_extensions()`](https://tgerke.github.io/ducklake-r/reference/ensure_extensions.md),
+  [`shutdown_and_reset_singleton()`](https://tgerke.github.io/ducklake-r/reference/shutdown_and_reset_singleton.md).
+
+------------------------------------------------------------------------
+
 ## ducklake 0.1.0
 
 Initial release of ducklake, an R package for versioned data lake
@@ -62,9 +120,8 @@ infrastructure built on DuckDB and DuckLake.
   Initialize data lake connections
 - [`detach_ducklake()`](https://tgerke.github.io/ducklake-r/reference/detach_ducklake.md) -
   Clean up connections
-- [`get_ducklake_connection()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_connection.md),
-  [`set_ducklake_connection()`](https://tgerke.github.io/ducklake-r/reference/set_ducklake_connection.md) -
-  Manage active connections
+- [`get_ducklake_connection()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_connection.md) -
+  Retrieve the active DuckDB connection
 
 #### Query Execution
 
