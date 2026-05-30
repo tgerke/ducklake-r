@@ -1,3 +1,24 @@
+# ducklake (development version)
+
+## Quack remote protocol support
+
+Added support for Quack, DuckDB's client-server protocol, which became a core
+extension in DuckDB 1.5.3. A DuckLake served by one DuckDB instance can now be
+queried and modified by other R sessions over the network. For concurrent access
+this is a lighter-weight option than a PostgreSQL or SQLite catalog, since the
+whole setup stays inside DuckDB and DuckLake.
+
+### New Features
+
+* `attach_quack()` connects to a remote Quack server and attaches it as a catalog in the current session.
+* `detach_quack()` disconnects from a remote Quack server.
+* `install_quack()` installs the Quack DuckDB extension.
+* `quack_query()` runs a one-off query against a remote Quack server and returns a data.frame.
+* `quack_serve()` serves the current session, including an attached DuckLake, to other clients over Quack.
+* `quack_stop()` stops a running Quack server.
+
+---
+
 # ducklake 0.2.0
 
 ## Multi-Backend Catalog Support
