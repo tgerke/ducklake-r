@@ -209,6 +209,9 @@ detailed vignettes:
 - [Time
   Travel](https://tgerke.github.io/ducklake-r/articles/time-travel.html) -
   Query historical data
+- [Quack Remote
+  Access](https://tgerke.github.io/ducklake-r/articles/quack-remote-access.html) -
+  Share a DuckLake over the network with the Quack protocol
 
 ## Key features
 
@@ -218,6 +221,9 @@ detailed vignettes:
   or MySQL as the catalog database — enables concurrent multi-client
   access with PostgreSQL or SQLite ([DuckLake 1.0
   spec](https://ducklake.select/docs/stable/specification/introduction))
+- **Remote access over Quack**: Serve a DuckLake to other R sessions over
+  the network and let several people read and write it at once, using
+  DuckDB's Quack protocol (requires DuckDB 1.5.3 or newer)
 - **Lightweight snapshots**: Create unlimited snapshots without frequent
   compacting steps
 - **Medallion architecture**: Bronze/silver/gold layers for data lineage
