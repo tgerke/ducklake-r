@@ -81,3 +81,58 @@ test_that("attach_quack requires a uri", {
 test_that("quack_query requires a single query string", {
   expect_snapshot(error = TRUE, quack_query("quack:localhost", c("a", "b")))
 })
+
+# --- Live round trip (needs a DuckDB >= 1.5.3 engine; skipped otherwise) ---
+
+test_that("quack_serve and quack_query complete a live round trip", {
+  skip_on_cran()
+  skip_if_not_installed("duckdb")
+  skip_if_not_installed("dplyr")
+
+  engine <- DBI::dbGetQuery(get_ducklake_connection(), "SELECT version() AS v")$v
+  skip_if_not(
+    ducklake:::quack_version_supported(engine),
+    "DuckDB engine is older than 1.5.3"
+  )
+
+  temp_dir <- tempfile("quack_live")
+  dir.create(temp_dir, showWarnings = FALSE, recursive = TRUE)
+  uri <- "quack:localhost:19494"
+  token <- "test_secret"
+
+  served <- tryCatch(
+    {
+      attach_ducklake("quack_live_lake", lake_path = temp_dir)
+      with_transaction(
+        create_table(data.frame(id = 1:3, grp = c("a", "a", "b")), "t")
+      )
+      quack_serve(uri, token = token)
+      TRUE
+    },
+    error = function(e) FALSE
+  )
+  skip_if_not(served, "Could not start a local Quack server")
+
+  tryCatch(
+    {
+      n <- quack_query(
+        uri,
+        "SELECT count(*) AS n FROM quack_live_lake.t",
+        token = token
+      )
+      expect_equal(as.numeric(n$n), 3)
+
+      filtered <- quack_query(
+        uri,
+        "SELECT id FROM quack_live_lake.t WHERE grp = 'b'",
+        token = token
+      )
+      expect_equal(as.numeric(filtered$id), 3)
+    },
+    finally = {
+      try(quack_stop(uri), silent = TRUE)
+      try(detach_ducklake("quack_live_lake", shutdown = TRUE), silent = TRUE)
+      unlink(temp_dir, recursive = TRUE)
+    }
+  )
+})
