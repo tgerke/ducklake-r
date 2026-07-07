@@ -189,12 +189,20 @@ The catalog is the most critical component—it maps snapshots to data files. Re
 
 #### Simple File Copy
 
-For local databases, the simplest backup is a file copy:
+For local databases, the simplest backup is a file copy. One rule matters:
+**release the file locks first**. DuckDB holds the catalog file open while a
+lake is attached, and copying a live catalog produces a corrupt (or, on
+Windows, unreadable) backup. Detach with `shutdown = TRUE`, copy, then
+re-attach — or skip the manual steps entirely and use `backup_ducklake()`,
+which does exactly this dance for you:
 
 ```{r backup-catalog-simple}
 # Create backup directory
 backup_dir <- file.path(lake_dir, "backups")
 dir.create(backup_dir, showWarnings = FALSE)
+
+# Release file locks before copying the catalog
+detach_ducklake("demo_lake", shutdown = TRUE)
 
 # Copy the catalog file to create a backup
 file.copy(
@@ -211,13 +219,9 @@ dir_copy(
 # Verify the backup was created
 dir_tree(backup_dir)
 
-# To use the backup, detach the current lake and attach to the backup
-# First detach the original
-detach_ducklake("demo_lake")
-
-# Attach to the backup location. override_data_path is needed because the
-# catalog remembers the original data location, which the backup no longer
-# matches.
+# To work with the backup, attach it. override_data_path is needed because
+# the catalog remembers the original data location, which the backup no
+# longer matches.
 attach_ducklake(
   ducklake_name = "demo_lake",
   lake_path = backup_dir,

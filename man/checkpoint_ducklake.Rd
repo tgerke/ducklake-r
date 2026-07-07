@@ -26,6 +26,14 @@ file cleanup.
 Run checkpoints periodically (e.g., after a batch of streaming inserts) to
 consolidate inlined data and keep query performance optimal.
 }
+\note{
+On Windows with a DuckDB-file catalog, the file-cleanup step of
+\code{CHECKPOINT} can fail because Windows does not allow the catalog file to
+be opened a second time while the lake is attached (a current DuckDB
+limitation). \code{\link[=flush_inlined_data]{flush_inlined_data()}} is unaffected; on Windows, prefer it
+for routine use and run full checkpoints from a fresh session, or use a
+PostgreSQL/SQLite catalog.
+}
 \examples{
 \dontrun{
 # Run all maintenance

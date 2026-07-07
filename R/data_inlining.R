@@ -330,6 +330,13 @@ flush_inlined_data <- function(ducklake_name = NULL,
 #' Run checkpoints periodically (e.g., after a batch of streaming inserts) to
 #' consolidate inlined data and keep query performance optimal.
 #'
+#' @note On Windows with a DuckDB-file catalog, the file-cleanup step of
+#'   `CHECKPOINT` can fail because Windows does not allow the catalog file to
+#'   be opened a second time while the lake is attached (a current DuckDB
+#'   limitation). [flush_inlined_data()] is unaffected; on Windows, prefer it
+#'   for routine use and run full checkpoints from a fresh session, or use a
+#'   PostgreSQL/SQLite catalog.
+#'
 #' @returns Invisibly returns `NULL`.
 #' @family data inlining
 #' @family maintenance
