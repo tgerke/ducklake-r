@@ -180,7 +180,7 @@ get_ducklake_table("dm") |>
   select(USUBJID, AGE, SEX, RACE, ARM) |> 
   head()
 #> # A query:  ?? x 5
-#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpFb8Lm0/duckplyr/duckplyr1d871e84212a.duckdb]
+#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpxQpQ9x/ducklake/ducklake1dfe529e8b8a.duckdb]
 #>   USUBJID       AGE SEX   RACE  ARM                 
 #>   <chr>       <dbl> <chr> <chr> <chr>               
 #> 1 01-701-1015    63 F     WHITE Placebo             
@@ -368,11 +368,11 @@ metadata.
 list_table_snapshots() |>
   head(5)
 #>   snapshot_id       snapshot_time schema_version
-#> 1           0 2026-07-07 19:59:40              0
-#> 2           1 2026-07-07 19:59:40              1
-#> 3           2 2026-07-07 19:59:40              2
-#> 4           3 2026-07-07 19:59:41              3
-#> 5           4 2026-07-07 19:59:41              4
+#> 1           0 2026-07-07 23:16:37              0
+#> 2           1 2026-07-07 23:16:38              1
+#> 3           2 2026-07-07 23:16:38              2
+#> 4           3 2026-07-07 23:16:38              3
+#> 5           4 2026-07-07 23:16:38              4
 #>                                                    changes  author
 #> 1                                    schemas_created, main    <NA>
 #> 2     tables_created, tables_inserted_into, main.dm_raw, 1 T Gerke
@@ -389,14 +389,14 @@ list_table_snapshots() |>
 # Filter snapshots for specific tables
 list_table_snapshots("dm_raw")
 #>   snapshot_id       snapshot_time schema_version
-#> 2           1 2026-07-07 19:59:40              1
+#> 2           1 2026-07-07 23:16:38              1
 #>                                                changes  author
 #> 2 tables_created, tables_inserted_into, main.dm_raw, 1 T Gerke
 #>         commit_message commit_extra_info
 #> 2 Add raw demographics              <NA>
 list_table_snapshots("dm")
 #>   snapshot_id       snapshot_time schema_version
-#> 3           2 2026-07-07 19:59:40              2
+#> 3           2 2026-07-07 23:16:38              2
 #>                                            changes  author
 #> 3 tables_created, tables_inserted_into, main.dm, 2 T Gerke
 #>            commit_message commit_extra_info
@@ -563,7 +563,7 @@ get_ducklake_table("adsl") |>
   select(USUBJID, AGE, AGEGR1, TRT01P, TRTSDT, TRTEDT, SAFFL) |>
   head(10)
 #> # A query:  ?? x 7
-#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpFb8Lm0/duckplyr/duckplyr1d871e84212a.duckdb]
+#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpxQpQ9x/ducklake/ducklake1dfe529e8b8a.duckdb]
 #>    USUBJID       AGE AGEGR1 TRT01P               TRTSDT     TRTEDT     SAFFL
 #>    <chr>       <dbl> <chr>  <chr>                <date>     <date>     <chr>
 #>  1 01-701-1015    63 18-64  Placebo              2014-01-02 2014-07-02 Y    
@@ -642,7 +642,7 @@ get_ducklake_table("adae") |>
   select(USUBJID, AEDECOD, ASTDT, AESEV, TRTEMFL) |>
   head(10)
 #> # A query:  ?? x 5
-#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpFb8Lm0/duckplyr/duckplyr1d871e84212a.duckdb]
+#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpxQpQ9x/ducklake/ducklake1dfe529e8b8a.duckdb]
 #>    USUBJID     AEDECOD                              ASTDT      AESEV    TRTEMFL
 #>    <chr>       <chr>                                <date>     <chr>    <chr>  
 #>  1 01-701-1015 APPLICATION SITE ERYTHEMA            2014-01-03 MILD     Y      
@@ -746,7 +746,7 @@ get_ducklake_table("adpc") |>
   select(USUBJID, ADT, PCTPT, AVAL, PARAM) |>
   head(10)
 #> # A query:  ?? x 5
-#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpFb8Lm0/duckplyr/duckplyr1d871e84212a.duckdb]
+#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpxQpQ9x/ducklake/ducklake1dfe529e8b8a.duckdb]
 #>    USUBJID     ADT        PCTPT             AVAL PARAM                   
 #>    <chr>       <date>     <chr>            <dbl> <chr>                   
 #>  1 01-701-1015 2014-01-01 Pre-dose         0     Xanomeline Concentration
@@ -800,7 +800,7 @@ with_transaction(
 
 get_ducklake_table("regulatory_documents")
 #> # A query:  ?? x 5
-#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpFb8Lm0/duckplyr/duckplyr1d871e84212a.duckdb]
+#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpxQpQ9x/ducklake/ducklake1dfe529e8b8a.duckdb]
 #>   doc_type   doc_version content                        created_date description
 #>   <chr>      <chr>       <chr>                          <date>       <chr>      
 #> 1 define.xml 1.0         "<?xml version=\"1.0\" encodi… 2026-07-07   Dataset an…
@@ -968,13 +968,13 @@ adsl_tbl |>
 #>    <chr>       <dbl> <chr>                <dbl>      <dbl>
 #>  1 01-701-1302    61 Xanomeline High Dose    23       3105
 #>  2 01-717-1004    80 Xanomeline Low Dose     19       3078
-#>  3 01-709-1029    82 Xanomeline High Dose    16       3024
+#>  3 01-718-1427    74 Xanomeline High Dose    16       2160
 #>  4 01-704-1266    82 Xanomeline High Dose    16       2160
-#>  5 01-718-1427    74 Xanomeline High Dose    16       2160
+#>  5 01-709-1029    82 Xanomeline High Dose    16       3024
 #>  6 01-701-1192    80 Xanomeline Low Dose     15       2430
 #>  7 01-701-1275    61 Xanomeline High Dose    15       2025
-#>  8 01-709-1309    65 Xanomeline High Dose    15       2835
-#>  9 01-713-1179    64 Placebo                 15          0
+#>  8 01-713-1179    64 Placebo                 15          0
+#>  9 01-709-1309    65 Xanomeline High Dose    15       2835
 #> 10 01-711-1143    76 Xanomeline Low Dose     14       1512
 ```
 
@@ -987,7 +987,7 @@ clinical trials:
 
 # 1. Single source of truth - all datasets in one repository
 # List all tables in the data lake
-DBI::dbListTables(duckplyr:::get_default_duckdb_connection())
+DBI::dbListTables(get_ducklake_connection())
 #>  [1] "adae"                 "adpc"                 "adsl"                
 #>  [4] "ae"                   "ae_raw"               "dm"                  
 #>  [7] "dm_raw"               "ds"                   "ds_raw"              
@@ -1001,19 +1001,19 @@ get_ducklake_table("ae") |>
   filter(AESEV == "SEVERE") |>
   distinct(USUBJID)
 #> # A query:  ?? x 1
-#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpFb8Lm0/duckplyr/duckplyr1d871e84212a.duckdb]
+#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpxQpQ9x/ducklake/ducklake1dfe529e8b8a.duckdb]
 #>    USUBJID    
 #>    <chr>      
-#>  1 01-701-1211
-#>  2 01-704-1135
-#>  3 01-708-1019
-#>  4 01-708-1178
-#>  5 01-709-1259
-#>  6 01-711-1143
-#>  7 01-716-1103
-#>  8 01-704-1008
-#>  9 01-704-1445
-#> 10 01-710-1070
+#>  1 01-703-1086
+#>  2 01-703-1119
+#>  3 01-706-1049
+#>  4 01-708-1428
+#>  5 01-703-1175
+#>  6 01-705-1393
+#>  7 01-708-1272
+#>  8 01-709-1007
+#>  9 01-710-1077
+#> 10 01-710-1154
 #> # ℹ more rows
 
 # 3. Aggregations performed at database level
@@ -1026,16 +1026,16 @@ get_ducklake_table("adae") |>
     .groups = "drop"
   )
 #> # A query:  ?? x 4
-#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpFb8Lm0/duckplyr/duckplyr1d871e84212a.duckdb]
+#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpxQpQ9x/ducklake/ducklake1dfe529e8b8a.duckdb]
 #>   TRT01A               AESEV    n_events n_subjects
 #>   <chr>                <chr>       <dbl>      <dbl>
-#> 1 Placebo              MODERATE       65         25
-#> 2 Xanomeline Low Dose  SEVERE         25         16
-#> 3 Placebo              MILD          210         58
-#> 4 Xanomeline High Dose SEVERE         10          8
-#> 5 Xanomeline High Dose MILD          287         65
-#> 6 Xanomeline Low Dose  MODERATE      170         58
-#> 7 Placebo              SEVERE          6          5
+#> 1 Placebo              MILD          210         58
+#> 2 Xanomeline High Dose SEVERE         10          8
+#> 3 Xanomeline High Dose MILD          287         65
+#> 4 Xanomeline Low Dose  MODERATE      170         58
+#> 5 Placebo              SEVERE          6          5
+#> 6 Placebo              MODERATE       65         25
+#> 7 Xanomeline Low Dose  SEVERE         25         16
 #> 8 Xanomeline Low Dose  MILD          232         64
 #> 9 Xanomeline High Dose MODERATE      115         46
 
@@ -1060,7 +1060,7 @@ ae_sdtm |>
     adam_term = adae_term
   )
 #> # A query:  ?? x 5
-#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpFb8Lm0/duckplyr/duckplyr1d871e84212a.duckdb]
+#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpxQpQ9x/ducklake/ducklake1dfe529e8b8a.duckdb]
 #> # ℹ 5 variables: USUBJID <chr>, sdtm_start_date <chr>, adam_start_date <date>,
 #> #   sdtm_term <chr>, adam_term <chr>
 # Note: This returns 0 rows with clean pharmaversesdtm data,
@@ -1074,7 +1074,7 @@ Let’s explore how our datasets are connected:
 ``` r
 
 # List all tables in the data lake
-DBI::dbListTables(duckplyr:::get_default_duckdb_connection())
+DBI::dbListTables(get_ducklake_connection())
 #>  [1] "adae"                 "adpc"                 "adsl"                
 #>  [4] "ae"                   "ae_raw"               "dm"                  
 #>  [7] "dm_raw"               "ds"                   "ds_raw"              
@@ -1093,13 +1093,13 @@ purrr::map_dfr(metadata_tables, ~{
 }) |>
   select(table, snapshot_id, snapshot_time, changes)
 #>   table snapshot_id       snapshot_time
-#> 1    dm           2 2026-07-07 19:59:40
-#> 2    ex           8 2026-07-07 19:59:41
-#> 3    ae          10 2026-07-07 19:59:41
-#> 4    pc          14 2026-07-07 19:59:42
-#> 5  adsl          15 2026-07-07 19:59:42
-#> 6  adae          16 2026-07-07 19:59:43
-#> 7  adpc          17 2026-07-07 19:59:43
+#> 1    dm           2 2026-07-07 23:16:38
+#> 2    ex           8 2026-07-07 23:16:38
+#> 3    ae          10 2026-07-07 23:16:39
+#> 4    pc          14 2026-07-07 23:16:39
+#> 5  adsl          15 2026-07-07 23:16:40
+#> 6  adae          16 2026-07-07 23:16:41
+#> 7  adpc          17 2026-07-07 23:16:42
 #>                                               changes
 #> 1    tables_created, tables_inserted_into, main.dm, 2
 #> 2    tables_created, tables_inserted_into, main.ex, 8
@@ -1159,8 +1159,8 @@ with_transaction(
 # View version history - should now show 2 snapshots
 list_table_snapshots("adsl")
 #>    snapshot_id       snapshot_time schema_version
-#> 16          15 2026-07-07 19:59:42             15
-#> 22          21 2026-07-07 19:59:44             21
+#> 16          15 2026-07-07 23:16:40             15
+#> 22          21 2026-07-07 23:16:43             21
 #>                                                                    changes
 #> 16                     tables_created, tables_inserted_into, main.adsl, 15
 #> 22 tables_created, tables_dropped, tables_inserted_into, main.adsl, 15, 21
@@ -1176,7 +1176,7 @@ get_ducklake_table("adsl") |>
   select(USUBJID, AGE, AGE65FL, AGECAT) |>
   head(5)
 #> # A query:  ?? x 4
-#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpFb8Lm0/duckplyr/duckplyr1d871e84212a.duckdb]
+#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpxQpQ9x/ducklake/ducklake1dfe529e8b8a.duckdb]
 #>   USUBJID       AGE AGE65FL AGECAT
 #>   <chr>       <dbl> <chr>   <chr> 
 #> 1 01-701-1015    63 N       <65   
@@ -1292,11 +1292,11 @@ with_transaction(
 snapshots <- list_table_snapshots("adsl")
 snapshots  # Shows all iterations with snapshot metadata
 #>    snapshot_id       snapshot_time schema_version
-#> 16          15 2026-07-07 19:59:42             15
-#> 22          21 2026-07-07 19:59:44             21
-#> 23          22 2026-07-07 19:59:44             22
-#> 24          23 2026-07-07 19:59:44             23
-#> 25          24 2026-07-07 19:59:44             24
+#> 16          15 2026-07-07 23:16:40             15
+#> 22          21 2026-07-07 23:16:43             21
+#> 23          22 2026-07-07 23:16:43             22
+#> 24          23 2026-07-07 23:16:44             23
+#> 25          24 2026-07-07 23:16:44             24
 #>                                                                    changes
 #> 16                     tables_created, tables_inserted_into, main.adsl, 15
 #> 22 tables_created, tables_dropped, tables_inserted_into, main.adsl, 15, 21
@@ -1372,11 +1372,11 @@ adsl_current <- get_ducklake_table("adsl")
 versions <- list_table_snapshots("adsl")
 print(versions)
 #>    snapshot_id       snapshot_time schema_version
-#> 16          15 2026-07-07 19:59:42             15
-#> 22          21 2026-07-07 19:59:44             21
-#> 23          22 2026-07-07 19:59:44             22
-#> 24          23 2026-07-07 19:59:44             23
-#> 25          24 2026-07-07 19:59:44             24
+#> 16          15 2026-07-07 23:16:40             15
+#> 22          21 2026-07-07 23:16:43             21
+#> 23          22 2026-07-07 23:16:43             22
+#> 24          23 2026-07-07 23:16:44             23
+#> 25          24 2026-07-07 23:16:44             24
 #>                                                                    changes
 #> 16                     tables_created, tables_inserted_into, main.adsl, 15
 #> 22 tables_created, tables_dropped, tables_inserted_into, main.adsl, 15, 21
@@ -1523,7 +1523,7 @@ get_ducklake_table("adae") |>
   filter(USUBJID == "01-701-1015", AESEQ == 1) |>
   select(USUBJID, AEDECOD, AESEV)
 #> # A query:  ?? x 3
-#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpFb8Lm0/duckplyr/duckplyr1d871e84212a.duckdb]
+#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpxQpQ9x/ducklake/ducklake1dfe529e8b8a.duckdb]
 #>   USUBJID     AEDECOD                   AESEV 
 #>   <chr>       <chr>                     <chr> 
 #> 1 01-701-1015 APPLICATION SITE ERYTHEMA SEVERE
@@ -1540,7 +1540,7 @@ get_ducklake_table("adsl") |>
   count(EOSSTT, TRT01P) |>
   arrange(TRT01P, EOSSTT)
 #> # A query:    ?? x 3
-#> # Database:   DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpFb8Lm0/duckplyr/duckplyr1d871e84212a.duckdb]
+#> # Database:   DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpxQpQ9x/ducklake/ducklake1dfe529e8b8a.duckdb]
 #> # Ordered by: TRT01P, EOSSTT
 #>   EOSSTT    TRT01P                   n
 #>   <chr>     <chr>                <dbl>
@@ -1555,7 +1555,7 @@ get_ducklake_table("adae") |>
   count(TRT01A, AESEV) |>
   arrange(TRT01A, AESEV)
 #> # A query:    ?? x 3
-#> # Database:   DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpFb8Lm0/duckplyr/duckplyr1d871e84212a.duckdb]
+#> # Database:   DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpxQpQ9x/ducklake/ducklake1dfe529e8b8a.duckdb]
 #> # Ordered by: TRT01A, AESEV
 #>   TRT01A               AESEV        n
 #>   <chr>                <chr>    <dbl>
@@ -1580,7 +1580,7 @@ get_ducklake_table("adpc") |>
   ) |>
   arrange(NFRLT)
 #> # A query:    ?? x 4
-#> # Database:   DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpFb8Lm0/duckplyr/duckplyr1d871e84212a.duckdb]
+#> # Database:   DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpxQpQ9x/ducklake/ducklake1dfe529e8b8a.duckdb]
 #> # Ordered by: NFRLT
 #>    NFRLT     n mean_conc  sd_conc
 #>    <dbl> <dbl>     <dbl>    <dbl>
@@ -1614,7 +1614,7 @@ get_ducklake_table("adae") |>
   count(AGEGR1, TRT01A.x) |>
   arrange(AGEGR1, TRT01A.x)
 #> # A query:    ?? x 3
-#> # Database:   DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpFb8Lm0/duckplyr/duckplyr1d871e84212a.duckdb]
+#> # Database:   DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpxQpQ9x/ducklake/ducklake1dfe529e8b8a.duckdb]
 #> # Ordered by: AGEGR1, TRT01A.x
 #>   AGEGR1 TRT01A.x                 n
 #>   <chr>  <chr>                <dbl>
@@ -1636,12 +1636,12 @@ For regulatory submissions, the complete audit trail is essential:
 audit_report <- list_table_snapshots("adsl")
 audit_report
 #>    snapshot_id       snapshot_time schema_version
-#> 16          15 2026-07-07 19:59:42             15
-#> 22          21 2026-07-07 19:59:44             21
-#> 23          22 2026-07-07 19:59:44             22
-#> 24          23 2026-07-07 19:59:44             23
-#> 25          24 2026-07-07 19:59:44             24
-#> 26          25 2026-07-07 19:59:45             25
+#> 16          15 2026-07-07 23:16:40             15
+#> 22          21 2026-07-07 23:16:43             21
+#> 23          22 2026-07-07 23:16:43             22
+#> 24          23 2026-07-07 23:16:44             23
+#> 25          24 2026-07-07 23:16:44             24
+#> 26          25 2026-07-07 23:16:45             25
 #>                                                                                       changes
 #> 16                                        tables_created, tables_inserted_into, main.adsl, 15
 #> 22                    tables_created, tables_dropped, tables_inserted_into, main.adsl, 15, 21
@@ -1672,12 +1672,12 @@ adsl_table_meta
 #> # A tibble: 6 × 8
 #>   table_id table_uuid     begin_snapshot end_snapshot schema_id table_name path 
 #>      <dbl> <chr>                   <dbl>        <dbl>     <dbl> <chr>      <chr>
-#> 1       15 019f3e2a-3aca…             15           21         0 adsl       adsl/
-#> 2       21 019f3e2a-41d2…             21           22         0 adsl       adsl/
-#> 3       22 019f3e2a-4274…             22           23         0 adsl       adsl/
-#> 4       23 019f3e2a-42fb…             23           24         0 adsl       adsl/
-#> 5       24 019f3e2a-4367…             24           25         0 adsl       adsl/
-#> 6       26 019f3e2a-457f…             25           NA         0 adsl       adsl/
+#> 1       15 019f3ede-8f16…             15           21         0 adsl       adsl/
+#> 2       21 019f3ede-9a85…             21           22         0 adsl       adsl/
+#> 3       22 019f3ede-9b71…             22           23         0 adsl       adsl/
+#> 4       23 019f3ede-9c20…             23           24         0 adsl       adsl/
+#> 5       24 019f3ede-9ce1…             24           25         0 adsl       adsl/
+#> 6       26 019f3ede-a041…             25           NA         0 adsl       adsl/
 #> # ℹ 1 more variable: path_is_relative <lgl>
 
 # Export audit information
@@ -1688,12 +1688,12 @@ audit_export <- audit_report |>
   )
 audit_export
 #>    snapshot_id       snapshot_time schema_version
-#> 16          15 2026-07-07 19:59:42             15
-#> 22          21 2026-07-07 19:59:44             21
-#> 23          22 2026-07-07 19:59:44             22
-#> 24          23 2026-07-07 19:59:44             23
-#> 25          24 2026-07-07 19:59:44             24
-#> 26          25 2026-07-07 19:59:45             25
+#> 16          15 2026-07-07 23:16:40             15
+#> 22          21 2026-07-07 23:16:43             21
+#> 23          22 2026-07-07 23:16:43             22
+#> 24          23 2026-07-07 23:16:44             23
+#> 25          24 2026-07-07 23:16:44             24
+#> 26          25 2026-07-07 23:16:45             25
 #>                                                                                       changes
 #> 16                                        tables_created, tables_inserted_into, main.adsl, 15
 #> 22                    tables_created, tables_dropped, tables_inserted_into, main.adsl, 15, 21

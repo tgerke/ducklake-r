@@ -25,6 +25,15 @@ On Windows the `postgres` and `mysql` extensions are not available
 [`attach_ducklake()`](https://tgerke.github.io/ducklake-r/reference/attach_ducklake.md)
 for details.
 
+## See also
+
+Other connection management:
+[`attach_ducklake()`](https://tgerke.github.io/ducklake-r/reference/attach_ducklake.md),
+[`detach_ducklake()`](https://tgerke.github.io/ducklake-r/reference/detach_ducklake.md),
+[`get_ducklake_backend()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_backend.md),
+[`get_ducklake_connection()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_connection.md),
+[`set_ducklake_connection()`](https://tgerke.github.io/ducklake-r/reference/set_ducklake_connection.md)
+
 ## Examples
 
 ``` r

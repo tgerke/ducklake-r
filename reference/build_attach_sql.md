@@ -12,7 +12,8 @@ build_attach_sql(
   catalog_connection_string,
   read_only,
   override_data_path = FALSE,
-  data_inlining_row_limit = NULL
+  data_inlining_row_limit = NULL,
+  encrypted = FALSE
 )
 ```
 
@@ -45,6 +46,10 @@ build_attach_sql(
 - data_inlining_row_limit:
 
   Optional integer for DATA_INLINING_ROW_LIMIT
+
+- encrypted:
+
+  Whether to add ENCRYPTED TRUE
 
 ## Value
 

@@ -63,6 +63,15 @@ to ensure proper versioning.
 
 - Making targeted corrections to specific rows
 
+## See also
+
+Other table operations:
+[`create_table()`](https://tgerke.github.io/ducklake-r/reference/create_table.md),
+[`ducklake_exec()`](https://tgerke.github.io/ducklake-r/reference/ducklake_exec.md),
+[`get_ducklake_table()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_table.md),
+[`get_metadata_table()`](https://tgerke.github.io/ducklake-r/reference/get_metadata_table.md),
+[`show_ducklake_query()`](https://tgerke.github.io/ducklake-r/reference/show_ducklake_query.md)
+
 ## Examples
 
 ``` r

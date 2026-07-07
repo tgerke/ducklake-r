@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ducklake</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -115,20 +115,50 @@ for reproducible workflows.</p>
 <span><span class="co">#&gt; Transaction started.</span></span>
 <span><span class="co">#&gt; Transaction committed.</span></span></code></pre></div>
 <div class="section level2">
-<h2 id="best-practices-for-table-modifications">Best Practices for Table Modifications<a class="anchor" aria-label="anchor" href="#best-practices-for-table-modifications"></a>
+<h2 id="choosing-a-modification-approach">Choosing a Modification Approach<a class="anchor" aria-label="anchor" href="#choosing-a-modification-approach"></a>
 </h2>
-<p>For data workflows requiring audit trails and reproducibility,
-ducklake offers versioning functions that preserve complete history of
-all changes.</p>
+<p>Good news first: <strong>every committed change to a DuckLake table
+creates a snapshot</strong>. Whether you use <code><a href="../reference/rows_insert.html">rows_insert()</a></code>,
+<code><a href="../reference/replace_table.html">replace_table()</a></code>, or raw SQL, DuckLake records what changed
+and you can time-travel back to any earlier state. (Earlier versions of
+this vignette said the <code>rows_*</code> functions skip versioning –
+that is not true in DuckLake v1.0.) The choice between the two styles is
+about <em>what kind of change</em> you are making, not about whether it
+is audited.</p>
 <div class="section level3">
-<h3 id="recommended-replace_table-with-transactions">Recommended: <code>replace_table()</code> with transactions<a class="anchor" aria-label="anchor" href="#recommended-replace_table-with-transactions"></a>
+<h3 id="for-incremental-changes-the-rows_-functions">For incremental changes: the <code>rows_*</code> functions<a class="anchor" aria-label="anchor" href="#for-incremental-changes-the-rows_-functions"></a>
 </h3>
-<p><strong>Use <code><a href="../reference/replace_table.html">replace_table()</a></code> wrapped in
-<code><a href="../reference/with_transaction.html">with_transaction()</a></code> for all table
-modifications:</strong></p>
+<p>Use <code><a href="../reference/rows_insert.html">rows_insert()</a></code>, <code><a href="../reference/rows_update.html">rows_update()</a></code>, and
+<code><a href="../reference/rows_delete.html">rows_delete()</a></code> when you are appending records, correcting
+specific values, or removing specific rows:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Modify and replace - creates versioned snapshot</span></span>
-<span><span class="fu"><a href="../reference/with_transaction.html">with_transaction</a></span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="co"># Each of these is one SQL statement and one new snapshot</span></span>
+<span><span class="fu"><a href="../reference/rows_insert.html">rows_insert</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"my_table"</span><span class="op">)</span>, <span class="va">new_data</span>, by <span class="op">=</span> <span class="st">"id"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/rows_update.html">rows_update</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"my_table"</span><span class="op">)</span>, <span class="va">corrections</span>, by <span class="op">=</span> <span class="st">"id"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/rows_delete.html">rows_delete</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"my_table"</span><span class="op">)</span>, <span class="va">obsolete_ids</span>, by <span class="op">=</span> <span class="st">"id"</span><span class="op">)</span></span></code></pre></div>
+<p><strong>Why they shine for incremental work:</strong></p>
+<ul>
+<li>
+<strong>Efficient</strong> - the change runs inside DuckDB as a
+single statement; the rest of the table is never read into R or
+rewritten</li>
+<li>
+<strong>Streaming-friendly</strong> - small changes benefit from
+DuckLake’s <a href="data-inlining.html">data inlining</a>, landing in
+the catalog instead of spawning tiny Parquet files</li>
+<li>
+<strong>Still versioned</strong> - each call produces a snapshot you
+can time-travel to</li>
+</ul>
+</div>
+<div class="section level3">
+<h3 id="for-structural-or-bulk-changes-replace_table">For structural or bulk changes: <code>replace_table()</code><a class="anchor" aria-label="anchor" href="#for-structural-or-bulk-changes-replace_table"></a>
+</h3>
+<p>Use <code><a href="../reference/replace_table.html">replace_table()</a></code> when the <em>shape</em> of the table
+changes – adding or removing columns – or when a transformation touches
+most rows anyway:</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/with_transaction.html">with_transaction</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"my_table"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">status</span> <span class="op">==</span> <span class="st">"active"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>processed <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -136,43 +166,26 @@ modifications:</strong></p>
 <span>  author <span class="op">=</span> <span class="st">"Your Name"</span>,</span>
 <span>  commit_message <span class="op">=</span> <span class="st">"Mark active records as processed"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p><strong>Why this approach?</strong></p>
-<ul>
-<li>
-<strong>Creates snapshots</strong> - Every change is versioned and
-can be time-traveled back to</li>
-<li>
-<strong>Maintains audit trail</strong> - Complete history of what
-changed, when, and by whom</li>
-<li>
-<strong>Enables reproducibility</strong> - Recreate analyses from
-any point in time</li>
-<li>
-<strong>Supports regulatory compliance</strong> - Meets 21 CFR Part
-11 requirements for GxP work</li>
-<li>
-<strong>Works with dplyr</strong> - Natural pipeline syntax with
-<code><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter()</a></code>, <code><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate()</a></code>, <code><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select()</a></code>,
-etc.</li>
-</ul>
+<p><code><a href="../reference/replace_table.html">replace_table()</a></code> collects the transformed data into R and
+rewrites the table, which is exactly right for schema changes but
+wasteful for touching three rows in a million-row table.</p>
 </div>
 <div class="section level3">
-<h3 id="alternative-rows_-functions-no-versioning">Alternative: <code>rows_*</code> functions (⚠️ No versioning)<a class="anchor" aria-label="anchor" href="#alternative-rows_-functions-no-versioning"></a>
+<h3 id="group-related-changes-with-with_transaction">Group related changes with <code>with_transaction()</code><a class="anchor" aria-label="anchor" href="#group-related-changes-with-with_transaction"></a>
 </h3>
-<p>The <code>rows_*</code> functions provide dplyr-style operations but
-<strong>do not create snapshots or audit trails</strong>:</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># These modify tables in-place WITHOUT creating snapshots</span></span>
-<span><span class="fu"><a href="../reference/rows_update.html">rows_update</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"my_table"</span><span class="op">)</span>, <span class="va">updates</span>, by <span class="op">=</span> <span class="st">"id"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/rows_insert.html">rows_insert</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"my_table"</span><span class="op">)</span>, <span class="va">new_data</span>, by <span class="op">=</span> <span class="st">"id"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/rows_delete.html">rows_delete</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"my_table"</span><span class="op">)</span>, <span class="va">to_delete</span>, by <span class="op">=</span> <span class="st">"id"</span><span class="op">)</span></span></code></pre></div>
-<p><strong>⚠️ Use only when:</strong> - Working in non-GxP environments
-where audit trails are not required - You explicitly want to avoid
-creating new versions</p>
-<p><strong>For most workflows, especially those requiring
-reproducibility or regulatory compliance, prefer
-<code><a href="../reference/replace_table.html">replace_table()</a></code> to maintain complete data
-lineage.</strong></p>
+<p>Whichever style you use, wrap <em>related</em> modifications in
+<code><a href="../reference/with_transaction.html">with_transaction()</a></code>. All changes inside the transaction
+become <strong>one</strong> snapshot, and you can attach an author and
+commit message for the audit trail – valuable in any setting and
+essential for GxP/21 CFR Part 11 work:</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/with_transaction.html">with_transaction</a></span><span class="op">(</span><span class="op">{</span></span>
+<span>  <span class="fu"><a href="../reference/rows_insert.html">rows_insert</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"my_table"</span><span class="op">)</span>, <span class="va">march_batch</span>, by <span class="op">=</span> <span class="st">"id"</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="../reference/rows_delete.html">rows_delete</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"my_table"</span><span class="op">)</span>, <span class="va">recalled_units</span>, by <span class="op">=</span> <span class="st">"id"</span><span class="op">)</span></span>
+<span><span class="op">}</span>,</span>
+<span>  author <span class="op">=</span> <span class="st">"Data Team"</span>,</span>
+<span>  commit_message <span class="op">=</span> <span class="st">"March intake; remove recalled units"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
@@ -181,7 +194,7 @@ lineage.</strong></p>
 <div class="section level3">
 <h3 id="updating-specific-rows-with-replace_table">Updating specific rows with <code>replace_table()</code><a class="anchor" aria-label="anchor" href="#updating-specific-rows-with-replace_table"></a>
 </h3>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Update mpg values for specific cars (4-cylinder cars get a 5% efficiency boost)</span></span>
 <span><span class="fu"><a href="../reference/with_transaction.html">with_transaction</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -198,8 +211,8 @@ lineage.</strong></p>
 <span><span class="co"># Check version history - should show the new snapshot</span></span>
 <span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 2           1 2026-07-07 19:59:58              1</span></span>
-<span><span class="co">#&gt; 3           2 2026-07-07 19:59:58              2</span></span>
+<span><span class="co">#&gt; 2           1 2026-07-07 23:17:01              1</span></span>
+<span><span class="co">#&gt; 3           2 2026-07-07 23:17:01              2</span></span>
 <span><span class="co">#&gt;                                                                 changes</span></span>
 <span><span class="co">#&gt; 2                    tables_created, tables_inserted_into, main.cars, 1</span></span>
 <span><span class="co">#&gt; 3 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2</span></span>
@@ -210,7 +223,7 @@ lineage.</strong></p>
 <div class="section level3">
 <h3 id="adding-derived-columns">Adding derived columns<a class="anchor" aria-label="anchor" href="#adding-derived-columns"></a>
 </h3>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Add new derived columns to existing table</span></span>
 <span><span class="fu"><a href="../reference/with_transaction.html">with_transaction</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -231,7 +244,7 @@ lineage.</strong></p>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">hp</span> <span class="op">&gt;</span> <span class="fl">200</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">hp</span>, <span class="va">cyl</span>, <span class="va">hp_per_cyl</span>, <span class="va">high_performance</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A query:  ?? x 4</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpSCsEaJ/duckplyr/duckplyr1eac743b972d.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpB8In0W/ducklake/ducklake1f2958ae6671.duckdb]</span></span></span>
 <span><span class="co">#&gt;      hp   cyl hp_per_cyl high_performance</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>   245     8       30.6 Y               </span></span>
@@ -245,7 +258,7 @@ lineage.</strong></p>
 <div class="section level3">
 <h3 id="filtering-rows-with-replace_table">Filtering rows with <code>replace_table()</code><a class="anchor" aria-label="anchor" href="#filtering-rows-with-replace_table"></a>
 </h3>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Keep only specific rows - creates a versioned snapshot</span></span>
 <span><span class="fu"><a href="../reference/with_transaction.html">with_transaction</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -260,7 +273,7 @@ lineage.</strong></p>
 <span><span class="co"># Show the filtered table</span></span>
 <span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A query:  ?? x 13</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpSCsEaJ/duckplyr/duckplyr1eac743b972d.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpB8In0W/ducklake/ducklake1f2958ae6671.duckdb]</span></span></span>
 <span><span class="co">#&gt;      mpg   cyl  disp    hp  drat    wt  qsec    vs    am  gear  carb hp_per_cyl</span></span>
 <span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span>  18.7     8  360    175  3.15  3.44  17.0     0     0     3     2       21.9</span></span>
@@ -282,10 +295,10 @@ lineage.</strong></p>
 <span><span class="co"># View version history - old versions still accessible via time travel</span></span>
 <span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 2           1 2026-07-07 19:59:58              1</span></span>
-<span><span class="co">#&gt; 3           2 2026-07-07 19:59:58              2</span></span>
-<span><span class="co">#&gt; 4           3 2026-07-07 19:59:59              3</span></span>
-<span><span class="co">#&gt; 5           4 2026-07-07 19:59:59              4</span></span>
+<span><span class="co">#&gt; 2           1 2026-07-07 23:17:01              1</span></span>
+<span><span class="co">#&gt; 3           2 2026-07-07 23:17:01              2</span></span>
+<span><span class="co">#&gt; 4           3 2026-07-07 23:17:02              3</span></span>
+<span><span class="co">#&gt; 5           4 2026-07-07 23:17:02              4</span></span>
 <span><span class="co">#&gt;                                                                 changes</span></span>
 <span><span class="co">#&gt; 2                    tables_created, tables_inserted_into, main.cars, 1</span></span>
 <span><span class="co">#&gt; 3 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2</span></span>
@@ -300,7 +313,7 @@ lineage.</strong></p>
 <div class="section level3">
 <h3 id="time-travel-accessing-previous-versions">Time Travel: Accessing Previous Versions<a class="anchor" aria-label="anchor" href="#time-travel-accessing-previous-versions"></a>
 </h3>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Get the current version</span></span>
 <span><span class="va">current</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/compute.html" class="external-link">collect</a></span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
@@ -308,10 +321,10 @@ lineage.</strong></p>
 <span><span class="va">snapshots</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span></span>
 <span><span class="va">snapshots</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 2           1 2026-07-07 19:59:58              1</span></span>
-<span><span class="co">#&gt; 3           2 2026-07-07 19:59:58              2</span></span>
-<span><span class="co">#&gt; 4           3 2026-07-07 19:59:59              3</span></span>
-<span><span class="co">#&gt; 5           4 2026-07-07 19:59:59              4</span></span>
+<span><span class="co">#&gt; 2           1 2026-07-07 23:17:01              1</span></span>
+<span><span class="co">#&gt; 3           2 2026-07-07 23:17:01              2</span></span>
+<span><span class="co">#&gt; 4           3 2026-07-07 23:17:02              3</span></span>
+<span><span class="co">#&gt; 5           4 2026-07-07 23:17:02              4</span></span>
 <span><span class="co">#&gt;                                                                 changes</span></span>
 <span><span class="co">#&gt; 2                    tables_created, tables_inserted_into, main.cars, 1</span></span>
 <span><span class="co">#&gt; 3 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2</span></span>

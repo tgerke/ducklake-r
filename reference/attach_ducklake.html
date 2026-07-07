@@ -11,7 +11,7 @@ an existing one. The lake can be detached with detach_ducklake()."><meta propert
 
     <a class="navbar-brand me-2" href="../index.html">ducklake</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -69,7 +69,8 @@ an existing one. The lake can be detached with <code><a href="detach_ducklake.ht
 <span>  catalog_connection_string <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  read_only <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  override_data_path <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  data_inlining_row_limit <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  data_inlining_row_limit <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  encrypted <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -126,6 +127,17 @@ Parquet files. The default (when <code>NULL</code>) uses the DuckLake default of
 rows. Set to <code>0</code> to disable inlining for this connection. This setting is
 not persisted; use <code><a href="set_inlining_row_limit.html">set_inlining_row_limit()</a></code> for persistent overrides.</p></dd>
 
+
+<dt id="arg-encrypted">encrypted<a class="anchor" aria-label="anchor" href="#arg-encrypted"></a></dt>
+<dd><p>If <code>TRUE</code>, DuckLake encrypts the Parquet data files it
+writes. Encryption keys are stored in the catalog database, so anyone
+with access to the catalog can read the data – protect the catalog
+accordingly. Only applies when the lake is first created; an existing
+lake keeps the setting it was created with. The httpfs extension is
+loaded automatically: on some platforms (notably Windows) DuckDB's
+built-in crypto module is read-only and httpfs provides the writer.
+Default <code>FALSE</code>.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -156,7 +168,13 @@ See <a href="https://github.com/duckdb/duckdb/issues/7892" class="external-link"
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="detach_ducklake.html">detach_ducklake()</a></code>, <code><a href="install_ducklake.html">install_ducklake()</a></code></p></div>
+    <div class="dont-index"><p><code><a href="detach_ducklake.html">detach_ducklake()</a></code>, <code><a href="install_ducklake.html">install_ducklake()</a></code></p>
+<p>Other connection management:
+<code><a href="detach_ducklake.html">detach_ducklake()</a></code>,
+<code><a href="get_ducklake_backend.html">get_ducklake_backend()</a></code>,
+<code><a href="get_ducklake_connection.html">get_ducklake_connection()</a></code>,
+<code><a href="install_ducklake.html">install_ducklake()</a></code>,
+<code><a href="set_ducklake_connection.html">set_ducklake_connection()</a></code></p></div>
     </div>
 
     <div class="section level2">
@@ -195,6 +213,9 @@ See <a href="https://github.com/duckdb/duckdb/issues/7892" class="external-link"
 <span class="r-in"><span>  lake_path <span class="op">=</span> <span class="st">"~/data/streaming"</span>,</span></span>
 <span class="r-in"><span>  data_inlining_row_limit <span class="op">=</span> <span class="fl">100</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Encrypted Parquet files (keys live in the catalog)</span></span></span>
+<span class="r-in"><span><span class="fu">attach_ducklake</span><span class="op">(</span><span class="st">"secure_lake"</span>, lake_path <span class="op">=</span> <span class="st">"~/data/secure"</span>, encrypted <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 </code></pre></div>
     </div>

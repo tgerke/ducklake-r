@@ -11,7 +11,7 @@ files."><meta property="og:image" content="https://tgerke.github.io/ducklake-r/l
 
     <a class="navbar-brand me-2" href="../index.html">ducklake</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -87,8 +87,24 @@ file cleanup.</p>
 consolidate inlined data and keep query performance optimal.</p>
     </div>
     <div class="section level2">
+    <h2 id="note">Note<a class="anchor" aria-label="anchor" href="#note"></a></h2>
+    <p>On Windows with a DuckDB-file catalog, the file-cleanup step of
+<code>CHECKPOINT</code> can fail because Windows does not allow the catalog file to
+be opened a second time while the lake is attached (a current DuckDB
+limitation). <code><a href="flush_inlined_data.html">flush_inlined_data()</a></code> is unaffected; on Windows, prefer it
+for routine use and run full checkpoints from a fresh session, or use a
+PostgreSQL/SQLite catalog.</p>
+    </div>
+    <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="flush_inlined_data.html">flush_inlined_data()</a></code>, <code><a href="set_inlining_row_limit.html">set_inlining_row_limit()</a></code></p></div>
+    <div class="dont-index"><p><code><a href="flush_inlined_data.html">flush_inlined_data()</a></code>, <code><a href="set_inlining_row_limit.html">set_inlining_row_limit()</a></code></p>
+<p>Other data inlining:
+<code><a href="flush_inlined_data.html">flush_inlined_data()</a></code>,
+<code><a href="get_inlining_row_limit.html">get_inlining_row_limit()</a></code>,
+<code><a href="set_inlining_row_limit.html">set_inlining_row_limit()</a></code></p>
+<p>Other maintenance:
+<code><a href="backup_ducklake.html">backup_ducklake()</a></code>,
+<code><a href="flush_inlined_data.html">flush_inlined_data()</a></code></p></div>
     </div>
 
     <div class="section level2">

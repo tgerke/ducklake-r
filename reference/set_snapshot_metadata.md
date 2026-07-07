@@ -53,6 +53,14 @@ or
 [`with_transaction()`](https://tgerke.github.io/ducklake-r/reference/with_transaction.md)
 instead.
 
+## See also
+
+Other transactions:
+[`begin_transaction()`](https://tgerke.github.io/ducklake-r/reference/begin_transaction.md),
+[`commit_transaction()`](https://tgerke.github.io/ducklake-r/reference/commit_transaction.md),
+[`rollback_transaction()`](https://tgerke.github.io/ducklake-r/reference/rollback_transaction.md),
+[`with_transaction()`](https://tgerke.github.io/ducklake-r/reference/with_transaction.md)
+
 ## Examples
 
 ``` r

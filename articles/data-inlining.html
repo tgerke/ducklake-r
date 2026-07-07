@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ducklake</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -311,6 +311,13 @@ sequence—flush, compaction, snapshot expiration, and file cleanup:</p>
 <p>Run checkpoints periodically (e.g., after a batch of streaming
 inserts) to keep query performance optimal and consolidate inlined
 data.</p>
+<p>Note for Windows users: with a DuckDB-file catalog, the file-cleanup
+step of <code>CHECKPOINT</code> can fail because Windows does not allow
+the catalog file to be opened a second time while the lake is attached
+(a current DuckDB limitation). <code><a href="../reference/flush_inlined_data.html">flush_inlined_data()</a></code> is
+unaffected; on Windows, prefer it for routine use and run full
+checkpoints from a fresh session, or use a PostgreSQL/SQLite
+catalog.</p>
 </div>
 <div class="section level2">
 <h2 id="time-travel-with-inlined-data">Time travel with inlined data<a class="anchor" aria-label="anchor" href="#time-travel-with-inlined-data"></a>
@@ -323,9 +330,9 @@ write:</p>
 <span><span class="va">snapshots</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"readings"</span><span class="op">)</span></span>
 <span><span class="va">snapshots</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 2           1 2026-07-07 19:59:51              1</span></span>
-<span><span class="co">#&gt; 3           2 2026-07-07 19:59:52              2</span></span>
-<span><span class="co">#&gt; 4           3 2026-07-07 19:59:52              3</span></span>
+<span><span class="co">#&gt; 2           1 2026-07-07 23:16:52              1</span></span>
+<span><span class="co">#&gt; 3           2 2026-07-07 23:16:52              2</span></span>
+<span><span class="co">#&gt; 4           3 2026-07-07 23:16:52              3</span></span>
 <span><span class="co">#&gt;                                                               changes</span></span>
 <span><span class="co">#&gt; 2                    tables_created, inlined_insert, main.readings, 1</span></span>
 <span><span class="co">#&gt; 3 tables_created, tables_dropped, inlined_insert, main.readings, 1, 2</span></span>

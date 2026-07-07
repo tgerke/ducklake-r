@@ -49,6 +49,13 @@ The server `uri`, invisibly.
 [`quack_stop()`](https://tgerke.github.io/ducklake-r/reference/quack_stop.md),
 [`attach_quack()`](https://tgerke.github.io/ducklake-r/reference/attach_quack.md)
 
+Other quack:
+[`attach_quack()`](https://tgerke.github.io/ducklake-r/reference/attach_quack.md),
+[`detach_quack()`](https://tgerke.github.io/ducklake-r/reference/detach_quack.md),
+[`install_quack()`](https://tgerke.github.io/ducklake-r/reference/install_quack.md),
+[`quack_query()`](https://tgerke.github.io/ducklake-r/reference/quack_query.md),
+[`quack_stop()`](https://tgerke.github.io/ducklake-r/reference/quack_stop.md)
+
 ## Examples
 
 ``` r

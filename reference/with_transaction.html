@@ -13,7 +13,7 @@ and commit_transaction()."><meta property="og:image" content="https://tgerke.git
 
     <a class="navbar-brand me-2" href="../index.html">ducklake</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -111,6 +111,14 @@ Can be a single statement or a <code>{...}</code> block containing multiple stat
 <li><p>On error: automatically rolls back the transaction and re-throws the error</p></li>
 </ul><p>This pattern is similar to <code>withr::with_*()</code> functions and provides
 better safety guarantees than manually managing transactions.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
+    <div class="dont-index"><p>Other transactions:
+<code><a href="begin_transaction.html">begin_transaction()</a></code>,
+<code><a href="commit_transaction.html">commit_transaction()</a></code>,
+<code><a href="rollback_transaction.html">rollback_transaction()</a></code>,
+<code><a href="set_snapshot_metadata.html">set_snapshot_metadata()</a></code></p></div>
     </div>
 
     <div class="section level2">

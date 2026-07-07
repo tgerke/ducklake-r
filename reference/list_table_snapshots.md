@@ -37,6 +37,13 @@ historical versions are available for time-travel queries.
 Note: The exact format and availability of this information depends on
 the table format (Delta Lake, Iceberg, etc.).
 
+## See also
+
+Other time travel:
+[`get_ducklake_table_asof()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_table_asof.md),
+[`get_ducklake_table_version()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_table_version.md),
+[`restore_table_version()`](https://tgerke.github.io/ducklake-r/reference/restore_table_version.md)
+
 ## Examples
 
 ``` r

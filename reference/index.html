@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ducklake</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -84,14 +84,21 @@
           <code><a href="get_ducklake_connection.html">get_ducklake_connection()</a></code>
 
         </dt>
-        <dd>Get the current DuckLake connection</dd>
+        <dd>Get the DuckDB connection used by ducklake</dd>
+
+        <dt>
+
+          <code><a href="set_ducklake_connection.html">set_ducklake_connection()</a></code>
+
+        </dt>
+        <dd>Use your own DuckDB connection with ducklake</dd>
 
         <dt>
 
           <code><a href="get_ducklake_backend.html">get_ducklake_backend()</a></code>
 
         </dt>
-        <dd>Get the current catalog backend type</dd>
+        <dd>Get the catalog backend type of an attached lake</dd>
       </dl></div><div class="section level2">
       <h2 id="table-operations">Table Operations<a class="anchor" aria-label="anchor" href="#table-operations"></a></h2>
 
@@ -175,13 +182,6 @@
 
         </dt>
         <dd>Show the SQL that would be executed by ducklake operations</dd>
-
-        <dt>
-
-          <code><a href="extract_assignments_from_sql.html">extract_assignments_from_sql()</a></code>
-
-        </dt>
-        <dd>Extract column assignments from SQL SELECT statement</dd>
       </dl></div><div class="section level2">
       <h2 id="transactions">Transactions<a class="anchor" aria-label="anchor" href="#transactions"></a></h2>
 

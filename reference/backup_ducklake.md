@@ -49,6 +49,12 @@ automatically re-attached afterwards.
 - For production systems, schedule backups using `{cronR}` or
   `{taskscheduleR}`.
 
+## See also
+
+Other maintenance:
+[`checkpoint_ducklake()`](https://tgerke.github.io/ducklake-r/reference/checkpoint_ducklake.md),
+[`flush_inlined_data()`](https://tgerke.github.io/ducklake-r/reference/flush_inlined_data.md)
+
 ## Examples
 
 ``` r

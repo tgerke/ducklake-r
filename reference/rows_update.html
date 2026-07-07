@@ -9,7 +9,7 @@ since DuckLake is designed for in-place modifications."><meta property="og:image
 
     <a class="navbar-brand me-2" href="../index.html">ducklake</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -95,7 +95,7 @@ since DuckLake is designed for in-place modifications.</p>
 
 
 <dt id="arg-unmatched">unmatched<a class="anchor" aria-label="anchor" href="#arg-unmatched"></a></dt>
-<dd><p>How to handle unmatched rows (default "error")</p></dd>
+<dd><p>How to handle unmatched rows (default "ignore")</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
@@ -105,6 +105,31 @@ since DuckLake is designed for in-place modifications.</p>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>The updated table</p>
+    </div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+
+<div class="section">
+<h3 id="when-to-use-rows-vs-replace-table-">When to use <code>rows_*()</code> vs <code><a href="replace_table.html">replace_table()</a></code><a class="anchor" aria-label="anchor" href="#when-to-use-rows-vs-replace-table-"></a></h3>
+
+
+<p>Use the <code>rows_*()</code> functions for <strong>targeted, incremental changes</strong>: appending
+a batch of new records, correcting a handful of values, or removing specific
+rows. Each call is a single SQL statement against the existing table – no
+data leaves the database, and with data inlining enabled (DuckLake's default)
+small changes land in the catalog without creating tiny Parquet files.</p>
+<p>Use <code><a href="replace_table.html">replace_table()</a></code> for <strong>structural or bulk changes</strong>: adding or removing
+columns, or transformations that touch most rows. It collects the transformed
+data into R and rewrites the table, which is simpler for schema changes but
+heavier for small edits.</p>
+</div>
+
+    </div>
+    <div class="section level2">
+    <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
+    <div class="dont-index"><p>Other row operations:
+<code><a href="rows_delete.html">rows_delete()</a></code>,
+<code><a href="rows_insert.html">rows_insert()</a></code></p></div>
     </div>
 
     <div class="section level2">

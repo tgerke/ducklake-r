@@ -11,9 +11,11 @@ Initialize and manage DuckLake connections
 - [`detach_ducklake()`](https://tgerke.github.io/ducklake-r/reference/detach_ducklake.md)
   : Detach from a ducklake
 - [`get_ducklake_connection()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_connection.md)
-  : Get the current DuckLake connection
+  : Get the DuckDB connection used by ducklake
+- [`set_ducklake_connection()`](https://tgerke.github.io/ducklake-r/reference/set_ducklake_connection.md)
+  : Use your own DuckDB connection with ducklake
 - [`get_ducklake_backend()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_backend.md)
-  : Get the current catalog backend type
+  : Get the catalog backend type of an attached lake
 
 ## Table Operations
 
@@ -45,8 +47,6 @@ Execute and preview SQL queries
   : Execute DuckLake operations from dplyr queries
 - [`show_ducklake_query()`](https://tgerke.github.io/ducklake-r/reference/show_ducklake_query.md)
   : Show the SQL that would be executed by ducklake operations
-- [`extract_assignments_from_sql()`](https://tgerke.github.io/ducklake-r/reference/extract_assignments_from_sql.md)
-  : Extract column assignments from SQL SELECT statement
 
 ## Transactions
 

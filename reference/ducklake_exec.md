@@ -25,7 +25,7 @@ ducklake_exec(.data, table_name = NULL, .quiet = TRUE)
 
 ## Value
 
-The result from duckplyr::db_exec()
+The result from db_execute()
 
 ## Details
 
@@ -38,6 +38,15 @@ verbs:
 - Queries with mutate() generate UPDATE operations
 
 - Other queries generate INSERT operations
+
+## See also
+
+Other table operations:
+[`create_table()`](https://tgerke.github.io/ducklake-r/reference/create_table.md),
+[`get_ducklake_table()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_table.md),
+[`get_metadata_table()`](https://tgerke.github.io/ducklake-r/reference/get_metadata_table.md),
+[`replace_table()`](https://tgerke.github.io/ducklake-r/reference/replace_table.md),
+[`show_ducklake_query()`](https://tgerke.github.io/ducklake-r/reference/show_ducklake_query.md)
 
 ## Examples
 

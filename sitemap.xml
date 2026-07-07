@@ -54,10 +54,10 @@
 <url><loc>https://tgerke.github.io/ducklake-r/reference/rows_delete.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/rows_insert.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/rows_update.html</loc></url>
+<url><loc>https://tgerke.github.io/ducklake-r/reference/set_ducklake_connection.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/set_inlining_row_limit.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/set_snapshot_metadata.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/show_ducklake_query.html</loc></url>
-<url><loc>https://tgerke.github.io/ducklake-r/reference/shutdown_and_reset_singleton.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/with_transaction.html</loc></url>
 </urlset>
 

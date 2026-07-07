@@ -35,23 +35,55 @@ with_transaction(
 #> Transaction committed.
 ```
 
-## Best Practices for Table Modifications
+## Choosing a Modification Approach
 
-For data workflows requiring audit trails and reproducibility, ducklake
-offers versioning functions that preserve complete history of all
-changes.
+Good news first: **every committed change to a DuckLake table creates a
+snapshot**. Whether you use
+[`rows_insert()`](https://tgerke.github.io/ducklake-r/reference/rows_insert.md),
+[`replace_table()`](https://tgerke.github.io/ducklake-r/reference/replace_table.md),
+or raw SQL, DuckLake records what changed and you can time-travel back
+to any earlier state. (Earlier versions of this vignette said the
+`rows_*` functions skip versioning – that is not true in DuckLake v1.0.)
+The choice between the two styles is about *what kind of change* you are
+making, not about whether it is audited.
 
-### Recommended: `replace_table()` with transactions
+### For incremental changes: the `rows_*` functions
 
-**Use
-[`replace_table()`](https://tgerke.github.io/ducklake-r/reference/replace_table.md)
-wrapped in
-[`with_transaction()`](https://tgerke.github.io/ducklake-r/reference/with_transaction.md)
-for all table modifications:**
+Use
+[`rows_insert()`](https://tgerke.github.io/ducklake-r/reference/rows_insert.md),
+[`rows_update()`](https://tgerke.github.io/ducklake-r/reference/rows_update.md),
+and
+[`rows_delete()`](https://tgerke.github.io/ducklake-r/reference/rows_delete.md)
+when you are appending records, correcting specific values, or removing
+specific rows:
 
 ``` r
 
-# Modify and replace - creates versioned snapshot
+# Each of these is one SQL statement and one new snapshot
+rows_insert(get_ducklake_table("my_table"), new_data, by = "id")
+rows_update(get_ducklake_table("my_table"), corrections, by = "id")
+rows_delete(get_ducklake_table("my_table"), obsolete_ids, by = "id")
+```
+
+**Why they shine for incremental work:**
+
+- **Efficient** - the change runs inside DuckDB as a single statement;
+  the rest of the table is never read into R or rewritten
+- **Streaming-friendly** - small changes benefit from DuckLake’s [data
+  inlining](https://tgerke.github.io/ducklake-r/articles/data-inlining.md),
+  landing in the catalog instead of spawning tiny Parquet files
+- **Still versioned** - each call produces a snapshot you can
+  time-travel to
+
+### For structural or bulk changes: `replace_table()`
+
+Use
+[`replace_table()`](https://tgerke.github.io/ducklake-r/reference/replace_table.md)
+when the *shape* of the table changes – adding or removing columns – or
+when a transformation touches most rows anyway:
+
+``` r
+
 with_transaction(
   get_ducklake_table("my_table") |>
     filter(status == "active") |>
@@ -62,41 +94,29 @@ with_transaction(
 )
 ```
 
-**Why this approach?**
+[`replace_table()`](https://tgerke.github.io/ducklake-r/reference/replace_table.md)
+collects the transformed data into R and rewrites the table, which is
+exactly right for schema changes but wasteful for touching three rows in
+a million-row table.
 
-- **Creates snapshots** - Every change is versioned and can be
-  time-traveled back to
-- **Maintains audit trail** - Complete history of what changed, when,
-  and by whom
-- **Enables reproducibility** - Recreate analyses from any point in time
-- **Supports regulatory compliance** - Meets 21 CFR Part 11 requirements
-  for GxP work
-- **Works with dplyr** - Natural pipeline syntax with
-  [`filter()`](https://dplyr.tidyverse.org/reference/filter.html),
-  [`mutate()`](https://dplyr.tidyverse.org/reference/mutate.html),
-  [`select()`](https://dplyr.tidyverse.org/reference/select.html), etc.
+### Group related changes with `with_transaction()`
 
-### Alternative: `rows_*` functions (⚠️ No versioning)
-
-The `rows_*` functions provide dplyr-style operations but **do not
-create snapshots or audit trails**:
+Whichever style you use, wrap *related* modifications in
+[`with_transaction()`](https://tgerke.github.io/ducklake-r/reference/with_transaction.md).
+All changes inside the transaction become **one** snapshot, and you can
+attach an author and commit message for the audit trail – valuable in
+any setting and essential for GxP/21 CFR Part 11 work:
 
 ``` r
 
-# These modify tables in-place WITHOUT creating snapshots
-rows_update(get_ducklake_table("my_table"), updates, by = "id")
-rows_insert(get_ducklake_table("my_table"), new_data, by = "id")
-rows_delete(get_ducklake_table("my_table"), to_delete, by = "id")
+with_transaction({
+  rows_insert(get_ducklake_table("my_table"), march_batch, by = "id")
+  rows_delete(get_ducklake_table("my_table"), recalled_units, by = "id")
+},
+  author = "Data Team",
+  commit_message = "March intake; remove recalled units"
+)
 ```
-
-**⚠️ Use only when:** - Working in non-GxP environments where audit
-trails are not required - You explicitly want to avoid creating new
-versions
-
-**For most workflows, especially those requiring reproducibility or
-regulatory compliance, prefer
-[`replace_table()`](https://tgerke.github.io/ducklake-r/reference/replace_table.md)
-to maintain complete data lineage.**
 
 ## Examples
 
@@ -120,8 +140,8 @@ with_transaction(
 # Check version history - should show the new snapshot
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 2           1 2026-07-07 19:59:58              1
-#> 3           2 2026-07-07 19:59:58              2
+#> 2           1 2026-07-07 23:17:01              1
+#> 3           2 2026-07-07 23:17:01              2
 #>                                                                 changes
 #> 2                    tables_created, tables_inserted_into, main.cars, 1
 #> 3 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2
@@ -154,7 +174,7 @@ get_ducklake_table("cars") |>
   filter(hp > 200) |>
   select(hp, cyl, hp_per_cyl, high_performance)
 #> # A query:  ?? x 4
-#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpSCsEaJ/duckplyr/duckplyr1eac743b972d.duckdb]
+#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpB8In0W/ducklake/ducklake1f2958ae6671.duckdb]
 #>      hp   cyl hp_per_cyl high_performance
 #>   <dbl> <dbl>      <dbl> <chr>           
 #> 1   245     8       30.6 Y               
@@ -184,7 +204,7 @@ with_transaction(
 # Show the filtered table
 get_ducklake_table("cars")
 #> # A query:  ?? x 13
-#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpSCsEaJ/duckplyr/duckplyr1eac743b972d.duckdb]
+#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpB8In0W/ducklake/ducklake1f2958ae6671.duckdb]
 #>      mpg   cyl  disp    hp  drat    wt  qsec    vs    am  gear  carb hp_per_cyl
 #>    <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>      <dbl>
 #>  1  18.7     8  360    175  3.15  3.44  17.0     0     0     3     2       21.9
@@ -206,10 +226,10 @@ get_ducklake_table("cars")
 # View version history - old versions still accessible via time travel
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 2           1 2026-07-07 19:59:58              1
-#> 3           2 2026-07-07 19:59:58              2
-#> 4           3 2026-07-07 19:59:59              3
-#> 5           4 2026-07-07 19:59:59              4
+#> 2           1 2026-07-07 23:17:01              1
+#> 3           2 2026-07-07 23:17:01              2
+#> 4           3 2026-07-07 23:17:02              3
+#> 5           4 2026-07-07 23:17:02              4
 #>                                                                 changes
 #> 2                    tables_created, tables_inserted_into, main.cars, 1
 #> 3 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2
@@ -233,10 +253,10 @@ current <- get_ducklake_table("cars") |> collect()
 snapshots <- list_table_snapshots("cars")
 snapshots
 #>   snapshot_id       snapshot_time schema_version
-#> 2           1 2026-07-07 19:59:58              1
-#> 3           2 2026-07-07 19:59:58              2
-#> 4           3 2026-07-07 19:59:59              3
-#> 5           4 2026-07-07 19:59:59              4
+#> 2           1 2026-07-07 23:17:01              1
+#> 3           2 2026-07-07 23:17:01              2
+#> 4           3 2026-07-07 23:17:02              3
+#> 5           4 2026-07-07 23:17:02              4
 #>                                                                 changes
 #> 2                    tables_created, tables_inserted_into, main.cars, 1
 #> 3 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2

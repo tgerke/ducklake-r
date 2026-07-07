@@ -65,6 +65,14 @@ transactions:
 This pattern is similar to `withr::with_*()` functions and provides
 better safety guarantees than manually managing transactions.
 
+## See also
+
+Other transactions:
+[`begin_transaction()`](https://tgerke.github.io/ducklake-r/reference/begin_transaction.md),
+[`commit_transaction()`](https://tgerke.github.io/ducklake-r/reference/commit_transaction.md),
+[`rollback_transaction()`](https://tgerke.github.io/ducklake-r/reference/rollback_transaction.md),
+[`set_snapshot_metadata()`](https://tgerke.github.io/ducklake-r/reference/set_snapshot_metadata.md)
+
 ## Examples
 
 ``` r

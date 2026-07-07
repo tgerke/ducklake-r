@@ -11,7 +11,7 @@ file locks."><meta property="og:image" content="https://tgerke.github.io/ducklak
 
     <a class="navbar-brand me-2" href="../index.html">ducklake</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -74,9 +74,20 @@ file locks.</p>
 
 
 <dt id="arg-shutdown">shutdown<a class="anchor" aria-label="anchor" href="#arg-shutdown"></a></dt>
-<dd><p>If <code>TRUE</code>, shut down the DuckDB connection after detaching.</p></dd>
+<dd><p>If <code>TRUE</code>, shut down the DuckDB connection after detaching.
+Only applies to the connection ducklake created itself; a connection
+registered with <code><a href="set_ducklake_connection.html">set_ducklake_connection()</a></code> is never closed for you.</p></dd>
 
 </dl></div>
+    <div class="section level2">
+    <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
+    <div class="dont-index"><p>Other connection management:
+<code><a href="attach_ducklake.html">attach_ducklake()</a></code>,
+<code><a href="get_ducklake_backend.html">get_ducklake_backend()</a></code>,
+<code><a href="get_ducklake_connection.html">get_ducklake_connection()</a></code>,
+<code><a href="install_ducklake.html">install_ducklake()</a></code>,
+<code><a href="set_ducklake_connection.html">set_ducklake_connection()</a></code></p></div>
+    </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>

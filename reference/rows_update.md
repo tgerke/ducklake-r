@@ -41,7 +41,7 @@ rows_update(
 
 - unmatched:
 
-  How to handle unmatched rows (default "error")
+  How to handle unmatched rows (default "ignore")
 
 - ...:
 
@@ -50,6 +50,30 @@ rows_update(
 ## Value
 
 The updated table
+
+## Details
+
+### When to use `rows_*()` vs [`replace_table()`](https://tgerke.github.io/ducklake-r/reference/replace_table.md)
+
+Use the `rows_*()` functions for **targeted, incremental changes**:
+appending a batch of new records, correcting a handful of values, or
+removing specific rows. Each call is a single SQL statement against the
+existing table – no data leaves the database, and with data inlining
+enabled (DuckLake's default) small changes land in the catalog without
+creating tiny Parquet files.
+
+Use
+[`replace_table()`](https://tgerke.github.io/ducklake-r/reference/replace_table.md)
+for **structural or bulk changes**: adding or removing columns, or
+transformations that touch most rows. It collects the transformed data
+into R and rewrites the table, which is simpler for schema changes but
+heavier for small edits.
+
+## See also
+
+Other row operations:
+[`rows_delete()`](https://tgerke.github.io/ducklake-r/reference/rows_delete.md),
+[`rows_insert()`](https://tgerke.github.io/ducklake-r/reference/rows_insert.md)
 
 ## Examples
 

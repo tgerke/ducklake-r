@@ -56,6 +56,13 @@ need to add a small time buffer (e.g., +1 second) to ensure the snapshot
 is found. This is because the time-travel query looks for snapshots
 created at or before the specified timestamp.
 
+## See also
+
+Other time travel:
+[`get_ducklake_table_version()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_table_version.md),
+[`list_table_snapshots()`](https://tgerke.github.io/ducklake-r/reference/list_table_snapshots.md),
+[`restore_table_version()`](https://tgerke.github.io/ducklake-r/reference/restore_table_version.md)
+
 ## Examples
 
 ``` r

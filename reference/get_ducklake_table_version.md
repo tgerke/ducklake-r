@@ -44,6 +44,13 @@ snapshot identifier.
 Use `list_table_snapshots(table_name)` to see all available snapshots
 and their IDs.
 
+## See also
+
+Other time travel:
+[`get_ducklake_table_asof()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_table_asof.md),
+[`list_table_snapshots()`](https://tgerke.github.io/ducklake-r/reference/list_table_snapshots.md),
+[`restore_table_version()`](https://tgerke.github.io/ducklake-r/reference/restore_table_version.md)
+
 ## Examples
 
 ``` r

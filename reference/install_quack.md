@@ -23,6 +23,13 @@ install_quack(load = TRUE)
 [`attach_quack()`](https://tgerke.github.io/ducklake-r/reference/attach_quack.md),
 [`quack_serve()`](https://tgerke.github.io/ducklake-r/reference/quack_serve.md)
 
+Other quack:
+[`attach_quack()`](https://tgerke.github.io/ducklake-r/reference/attach_quack.md),
+[`detach_quack()`](https://tgerke.github.io/ducklake-r/reference/detach_quack.md),
+[`quack_query()`](https://tgerke.github.io/ducklake-r/reference/quack_query.md),
+[`quack_serve()`](https://tgerke.github.io/ducklake-r/reference/quack_serve.md),
+[`quack_stop()`](https://tgerke.github.io/ducklake-r/reference/quack_stop.md)
+
 ## Examples
 
 ``` r

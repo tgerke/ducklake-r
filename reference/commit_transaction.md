@@ -49,6 +49,14 @@ will be set using `CALL ducklake.set_commit_message()` within the
 transaction before the `COMMIT` statement, as required by the DuckLake
 v1.0 specification.
 
+## See also
+
+Other transactions:
+[`begin_transaction()`](https://tgerke.github.io/ducklake-r/reference/begin_transaction.md),
+[`rollback_transaction()`](https://tgerke.github.io/ducklake-r/reference/rollback_transaction.md),
+[`set_snapshot_metadata()`](https://tgerke.github.io/ducklake-r/reference/set_snapshot_metadata.md),
+[`with_transaction()`](https://tgerke.github.io/ducklake-r/reference/with_transaction.md)
+
 ## Examples
 
 ``` r

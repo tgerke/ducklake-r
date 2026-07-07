@@ -16,7 +16,8 @@ attach_ducklake(
   catalog_connection_string = NULL,
   read_only = FALSE,
   override_data_path = FALSE,
-  data_inlining_row_limit = NULL
+  data_inlining_row_limit = NULL,
+  encrypted = FALSE
 )
 ```
 
@@ -77,6 +78,17 @@ attach_ducklake(
   [`set_inlining_row_limit()`](https://tgerke.github.io/ducklake-r/reference/set_inlining_row_limit.md)
   for persistent overrides.
 
+- encrypted:
+
+  If `TRUE`, DuckLake encrypts the Parquet data files it writes.
+  Encryption keys are stored in the catalog database, so anyone with
+  access to the catalog can read the data – protect the catalog
+  accordingly. Only applies when the lake is first created; an existing
+  lake keeps the setting it was created with. The httpfs extension is
+  loaded automatically: on some platforms (notably Windows) DuckDB's
+  built-in crypto module is read-only and httpfs provides the writer.
+  Default `FALSE`.
+
 ## Details
 
 By default DuckDB is used as the catalog database. Alternative backends
@@ -111,6 +123,13 @@ backends. See <https://github.com/duckdb/duckdb/issues/7892>.
 
 [`detach_ducklake()`](https://tgerke.github.io/ducklake-r/reference/detach_ducklake.md),
 [`install_ducklake()`](https://tgerke.github.io/ducklake-r/reference/install_ducklake.md)
+
+Other connection management:
+[`detach_ducklake()`](https://tgerke.github.io/ducklake-r/reference/detach_ducklake.md),
+[`get_ducklake_backend()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_backend.md),
+[`get_ducklake_connection()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_connection.md),
+[`install_ducklake()`](https://tgerke.github.io/ducklake-r/reference/install_ducklake.md),
+[`set_ducklake_connection()`](https://tgerke.github.io/ducklake-r/reference/set_ducklake_connection.md)
 
 ## Examples
 
@@ -149,5 +168,8 @@ attach_ducklake(
   lake_path = "~/data/streaming",
   data_inlining_row_limit = 100
 )
+
+# Encrypted Parquet files (keys live in the catalog)
+attach_ducklake("secure_lake", lake_path = "~/data/secure", encrypted = TRUE)
 } # }
 ```

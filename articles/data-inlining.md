@@ -263,6 +263,14 @@ checkpoint_ducklake()
 Run checkpoints periodically (e.g., after a batch of streaming inserts)
 to keep query performance optimal and consolidate inlined data.
 
+Note for Windows users: with a DuckDB-file catalog, the file-cleanup
+step of `CHECKPOINT` can fail because Windows does not allow the catalog
+file to be opened a second time while the lake is attached (a current
+DuckDB limitation).
+[`flush_inlined_data()`](https://tgerke.github.io/ducklake-r/reference/flush_inlined_data.md)
+is unaffected; on Windows, prefer it for routine use and run full
+checkpoints from a fresh session, or use a PostgreSQL/SQLite catalog.
+
 ## Time travel with inlined data
 
 Inlined data fully supports DuckLake’s time-travel capabilities. Each
@@ -274,9 +282,9 @@ inlined insert or delete creates a snapshot, just like a regular write:
 snapshots <- list_table_snapshots("readings")
 snapshots
 #>   snapshot_id       snapshot_time schema_version
-#> 2           1 2026-07-07 19:59:51              1
-#> 3           2 2026-07-07 19:59:52              2
-#> 4           3 2026-07-07 19:59:52              3
+#> 2           1 2026-07-07 23:16:52              1
+#> 3           2 2026-07-07 23:16:52              2
+#> 4           3 2026-07-07 23:16:52              3
 #>                                                               changes
 #> 2                    tables_created, inlined_insert, main.readings, 1
 #> 3 tables_created, tables_dropped, inlined_insert, main.readings, 1, 2

@@ -25,6 +25,15 @@ show_ducklake_query(.data, table_name = NULL)
 
 The first argument, invisibly (following show_query convention)
 
+## See also
+
+Other table operations:
+[`create_table()`](https://tgerke.github.io/ducklake-r/reference/create_table.md),
+[`ducklake_exec()`](https://tgerke.github.io/ducklake-r/reference/ducklake_exec.md),
+[`get_ducklake_table()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_table.md),
+[`get_metadata_table()`](https://tgerke.github.io/ducklake-r/reference/get_metadata_table.md),
+[`replace_table()`](https://tgerke.github.io/ducklake-r/reference/replace_table.md)
+
 ## Examples
 
 ``` r

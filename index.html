@@ -16,9 +16,9 @@
 <script src="deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="ducklake: Interact with DuckLake from R">
-<meta name="description" content="R package that complements duckdb and duckplyr packages to support  the new DuckLake ecosystem.
+<meta name="description" content="A tidyverse-friendly R interface to DuckLake, the DuckDB lakehouse format: versioned tables, time travel, transactions, and remote access.
 ">
-<meta property="og:description" content="R package that complements duckdb and duckplyr packages to support  the new DuckLake ecosystem.
+<meta property="og:description" content="A tidyverse-friendly R interface to DuckLake, the DuckDB lakehouse format: versioned tables, time travel, transactions, and remote access.
 ">
 <meta property="og:image" content="https://tgerke.github.io/ducklake-r/logo.png">
 </head>
@@ -30,7 +30,7 @@
 
     <a class="navbar-brand me-2" href="index.html">ducklake</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -118,6 +118,8 @@
 <p>Install the development version of ducklake with:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">pak</span><span class="fu">::</span><span class="fu"><a href="https://pak.r-lib.org/reference/pak.html" class="external-link">pak</a></span><span class="op">(</span><span class="st">"tgerke/ducklake-r"</span><span class="op">)</span></span></code></pre></div>
+<p>ducklake requires the <a href="https://r.duckdb.org" class="external-link">duckdb</a> R package version 1.5.1 or newer (DuckDB engine 1.5.1+, matching the stable <a href="https://ducklake.select/docs/stable/specification/introduction" class="external-link">DuckLake v1.0 specification</a>). The Quack remote-access features need DuckDB 1.5.3 or newer, available on CRAN since duckdb 1.5.4.</p>
+<p>ducklake manages its own DuckDB connection, so there is nothing to set up: just <code><a href="reference/attach_ducklake.html">attach_ducklake()</a></code> and go. If you prefer to supply your own connection (for example, one shared with other DBI-based tools), register it with <code><a href="reference/set_ducklake_connection.html">set_ducklake_connection()</a></code>.</p>
 </div>
 <div class="section level2">
 <h2 id="quick-example-layered-data-workflow">Quick example: Layered data workflow<a class="anchor" aria-label="anchor" href="#quick-example-layered-data-workflow"></a>
@@ -177,7 +179,7 @@
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">mpg</span>, <span class="va">cyl</span>, <span class="va">efficiency</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">3</span><span class="op">)</span></span>
 <span><span class="co">#&gt; # Source:   SQL [?? x 3]</span></span>
-<span><span class="co">#&gt; # Database: DuckDB 1.5.4 [root@Darwin 23.4.0:R 4.5.2//private/var/folders/fw/0d9nr9951q57f0d5l6qc1j200000gn/T/RtmpHvOZHl/duckplyr/duckplyrab661768df02.duckdb]</span></span>
+<span><span class="co">#&gt; # Database: DuckDB 1.5.4 [root@Darwin 23.4.0:R 4.5.2//private/var/folders/fw/0d9nr9951q57f0d5l6qc1j200000gn/T/RtmpOZ3EaB/ducklake/ducklakee2a34a963752.duckdb]</span></span>
 <span><span class="co">#&gt;     mpg cyl   efficiency</span></span>
 <span><span class="co">#&gt;   &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt;     </span></span>
 <span><span class="co">#&gt; 1  21   6.0   Medium    </span></span>
@@ -187,11 +189,11 @@
 <span><span class="co"># View complete audit trail across all layers with author and commit messages</span></span>
 <span><span class="fu"><a href="reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 1           0 2026-07-07 19:56:22              0</span></span>
-<span><span class="co">#&gt; 2           1 2026-07-07 19:56:22              1</span></span>
-<span><span class="co">#&gt; 3           2 2026-07-07 19:56:22              2</span></span>
-<span><span class="co">#&gt; 4           3 2026-07-07 19:56:22              3</span></span>
-<span><span class="co">#&gt; 5           4 2026-07-07 19:56:22              4</span></span>
+<span><span class="co">#&gt; 1           0 2026-07-07 20:30:18              0</span></span>
+<span><span class="co">#&gt; 2           1 2026-07-07 20:30:18              1</span></span>
+<span><span class="co">#&gt; 3           2 2026-07-07 20:30:18              2</span></span>
+<span><span class="co">#&gt; 4           3 2026-07-07 20:30:18              3</span></span>
+<span><span class="co">#&gt; 5           4 2026-07-07 20:30:18              4</span></span>
 <span><span class="co">#&gt;                                                                           changes</span></span>
 <span><span class="co">#&gt; 1                                                           schemas_created, main</span></span>
 <span><span class="co">#&gt; 2                      tables_created, tables_inserted_into, main.vehicles_raw, 1</span></span>
@@ -216,7 +218,7 @@
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">mpg</span>, <span class="va">cyl</span>, <span class="va">gear</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">3</span><span class="op">)</span></span>
 <span><span class="co">#&gt; # Source:   SQL [?? x 3]</span></span>
-<span><span class="co">#&gt; # Database: DuckDB 1.5.4 [root@Darwin 23.4.0:R 4.5.2//private/var/folders/fw/0d9nr9951q57f0d5l6qc1j200000gn/T/RtmpHvOZHl/duckplyr/duckplyrab661768df02.duckdb]</span></span>
+<span><span class="co">#&gt; # Database: DuckDB 1.5.4 [root@Darwin 23.4.0:R 4.5.2//private/var/folders/fw/0d9nr9951q57f0d5l6qc1j200000gn/T/RtmpOZ3EaB/ducklake/ducklakee2a34a963752.duckdb]</span></span>
 <span><span class="co">#&gt;     mpg cyl    gear</span></span>
 <span><span class="co">#&gt;   &lt;dbl&gt; &lt;chr&gt; &lt;dbl&gt;</span></span>
 <span><span class="co">#&gt; 1  21   6.0       4</span></span>
@@ -258,15 +260,20 @@
 <p>Check out the <a href="https://tgerke.github.io/ducklake-r/">pkgdown site</a> for detailed vignettes:</p>
 <ul>
 <li>
-<a href="https://tgerke.github.io/ducklake-r/articles/clinical-trial-datalake.html">Clinical Trial Data Lake</a> - <strong>Start here</strong>: Complete workflow from SDTM to ADaM with regulatory artifacts</li>
+<a href="https://tgerke.github.io/ducklake-r/articles/ducklake.html">Getting Started</a> - Quick recipes for common operations</li>
 <li>
-<a href="https://tgerke.github.io/ducklake-r/articles/ducklake.html">Cookbook</a> - Quick recipes for common operations</li>
+<a href="https://tgerke.github.io/ducklake-r/articles/clinical-trial-datalake.html">Clinical Trial Data Lake</a> - Complete workflow from SDTM to ADaM with regulatory artifacts</li>
 <li>
-<a href="https://tgerke.github.io/ducklake-r/articles/modifying-tables.html">Modifying Tables</a> - Two approaches for table modifications</li>
+<a href="https://tgerke.github.io/ducklake-r/articles/modifying-tables.html">Modifying Tables</a> - Choosing between <code>rows_*</code> and <code><a href="reference/replace_table.html">replace_table()</a></code>
+</li>
+<li>
+<a href="https://tgerke.github.io/ducklake-r/articles/data-inlining.html">Data Inlining</a> - Streaming-friendly small writes</li>
 <li>
 <a href="https://tgerke.github.io/ducklake-r/articles/transactions.html">Transactions</a> - ACID transaction support</li>
 <li>
-<a href="https://tgerke.github.io/ducklake-r/articles/time-travel.html">Time Travel</a> - Query historical data</li>
+<a href="https://tgerke.github.io/ducklake-r/articles/time-travel.html">Time Travel</a> - Query and restore historical data</li>
+<li>
+<a href="https://tgerke.github.io/ducklake-r/articles/storage-and-backups.html">Storage and Backups</a> - Back up and recover your lake</li>
 <li>
 <a href="https://tgerke.github.io/ducklake-r/articles/quack-remote-access.html">Quack Remote Access</a> - Share a DuckLake over the network with the Quack protocol</li>
 </ul>
@@ -296,11 +303,14 @@
 <li>
 <strong>Tidyverse interface</strong>: Familiar dplyr syntax for data manipulation</li>
 <li>
-<strong>Two complementary approaches</strong>: <code>rows_*</code> functions for data.frames and pipeline functions for dplyr workflows</li>
+<strong>Encryption</strong>: Opt-in Parquet encryption with <code>attach_ducklake(encrypted = TRUE)</code>
+</li>
+<li>
+<strong>Two complementary approaches</strong>: <code>rows_*</code> functions for incremental changes and <code><a href="reference/replace_table.html">replace_table()</a></code> pipelines for structural ones — both fully versioned</li>
 <li>
 <strong>Complete audit trails</strong>: Who changed what, when, and why—suitable for regulated industries</li>
 <li>
-<strong>Seamless integration</strong>: Works with duckdb, duckplyr, and the broader R ecosystem</li>
+<strong>Seamless integration</strong>: Works with duckdb, DBI, dbplyr, and the broader tidyverse ecosystem</li>
 </ul>
 </div>
 </div>

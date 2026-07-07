@@ -1,7 +1,11 @@
 # Restore a table to a previous version
 
-Restores a table to a specific version or timestamp, reverting any
-changes made after that point.
+Rolls a table back to the state it had at an earlier snapshot or point
+in time, by recreating it from a time-travel read of itself. History is
+preserved: the restore is recorded as a **new** snapshot (with a commit
+message noting the restore), so nothing is rewritten or lost and you can
+still time-travel to any snapshot, including those after the restore
+point.
 
 ## Usage
 
@@ -22,7 +26,8 @@ restore_table_version(
 
 - version:
 
-  Optional version number to restore to
+  Optional snapshot id to restore to (see
+  [`list_table_snapshots()`](https://tgerke.github.io/ducklake-r/reference/list_table_snapshots.md))
 
 - timestamp:
 
@@ -39,17 +44,29 @@ Invisibly returns TRUE on success
 
 ## Details
 
-This function restores a table to a previous state. You must specify
-either `version` or `timestamp`, but not both.
+You must specify either `version` or `timestamp`, but not both.
 
-WARNING: This operation modifies the table and cannot be easily undone.
-Consider using within a transaction or backing up your data first.
+Under the hood this runs
+`CREATE OR REPLACE TABLE t AS SELECT * FROM t AT (VERSION => n)` inside
+a transaction. Because the restore creates a new snapshot, it is itself
+reversible with another `restore_table_version()` call.
+
+## See also
+
+[`get_ducklake_table_version()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_table_version.md),
+[`get_ducklake_table_asof()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_table_asof.md),
+[`list_table_snapshots()`](https://tgerke.github.io/ducklake-r/reference/list_table_snapshots.md)
+
+Other time travel:
+[`get_ducklake_table_asof()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_table_asof.md),
+[`get_ducklake_table_version()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_table_version.md),
+[`list_table_snapshots()`](https://tgerke.github.io/ducklake-r/reference/list_table_snapshots.md)
 
 ## Examples
 
 ``` r
 if (FALSE) { # \dontrun{
-# Restore to version 5
+# Restore to snapshot 5
 restore_table_version("my_table", version = 5)
 
 # Restore to a specific timestamp

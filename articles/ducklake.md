@@ -171,7 +171,7 @@ cars_data |>
   select(mpg, cyl, hp) |>
   head(3)
 #> # A query:  ?? x 3
-#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpvMZ6Uj/duckplyr/duckplyr1e4e76422ef1.duckdb]
+#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/Rtmpvt7Fos/ducklake/ducklake1ec92443f72c.duckdb]
 #>     mpg   cyl    hp
 #>   <dbl> <dbl> <dbl>
 #> 1  21       6   110
@@ -201,8 +201,8 @@ head(cars_df, 3)
 # See all snapshots for the cars table
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 2           1 2026-07-07 19:59:55              1
-#> 3           2 2026-07-07 19:59:55              2
+#> 2           1 2026-07-07 23:16:56              1
+#> 3           2 2026-07-07 23:16:56              2
 #>                                                                 changes
 #> 2                    tables_created, tables_inserted_into, main.cars, 1
 #> 3 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2
@@ -246,12 +246,17 @@ with_transaction(
 #> Transaction committed.
 ```
 
-Note: For most use cases, use
+Note: Use
 [`replace_table()`](https://tgerke.github.io/ducklake-r/reference/replace_table.md)
-to update tables. This creates clean snapshots and maintains full
-versioning. Advanced row-level operations (`rows_update`, `rows_insert`,
-`rows_delete`) are available when you need granular control, but they do
-not create versioned snapshots.
+for structural changes (adding or removing columns) and the row-level
+operations
+([`rows_update()`](https://tgerke.github.io/ducklake-r/reference/rows_update.md),
+[`rows_insert()`](https://tgerke.github.io/ducklake-r/reference/rows_insert.md),
+[`rows_delete()`](https://tgerke.github.io/ducklake-r/reference/rows_delete.md))
+for targeted, incremental changes. Both are fully versioned – every
+committed change creates a snapshot you can time-travel back to. See
+[`vignette("modifying-tables")`](https://tgerke.github.io/ducklake-r/articles/modifying-tables.md)
+for guidance on choosing between them.
 
 ## Metadata and versioning recipes
 
@@ -277,12 +282,12 @@ get_ducklake_table("duckdb_tables") |>
 
 list_table_snapshots()
 #>   snapshot_id       snapshot_time schema_version
-#> 1           0 2026-07-07 19:59:55              0
-#> 2           1 2026-07-07 19:59:55              1
-#> 3           2 2026-07-07 19:59:55              2
-#> 4           3 2026-07-07 19:59:55              3
-#> 5           4 2026-07-07 19:59:55              4
-#> 6           5 2026-07-07 19:59:56              5
+#> 1           0 2026-07-07 23:16:56              0
+#> 2           1 2026-07-07 23:16:56              1
+#> 3           2 2026-07-07 23:16:56              2
+#> 4           3 2026-07-07 23:16:56              3
+#> 5           4 2026-07-07 23:16:57              4
+#> 6           5 2026-07-07 23:16:57              5
 #>                                                                 changes
 #> 1                                                 schemas_created, main
 #> 2                    tables_created, tables_inserted_into, main.cars, 1
@@ -397,7 +402,7 @@ get_ducklake_table("cars") |>
   mutate(kpl = mpg * 0.425144) |>
   head(3)
 #> # A query:  ?? x 13
-#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpvMZ6Uj/duckplyr/duckplyr1e4e76422ef1.duckdb]
+#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/Rtmpvt7Fos/ducklake/ducklake1ec92443f72c.duckdb]
 #>     mpg   cyl  disp    hp  drat    wt  qsec    vs    am  gear  carb   kpl
 #>   <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>
 #> 1  21       6   160   110  3.9   2.62  16.5     0     1     4     4  8.93
@@ -415,7 +420,7 @@ get_ducklake_table("cars") |>
   select(mpg, cyl, hp) |>
   filter(mpg > 25)
 #> # A query:  ?? x 3
-#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpvMZ6Uj/duckplyr/duckplyr1e4e76422ef1.duckdb]
+#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/Rtmpvt7Fos/ducklake/ducklake1ec92443f72c.duckdb]
 #>     mpg   cyl    hp
 #>   <dbl> <dbl> <dbl>
 #> 1  32.4     4    66
