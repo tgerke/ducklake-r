@@ -29,11 +29,12 @@ metadata (author, commit message, and extra info) to the snapshot.
 }
 \details{
 This function commits all changes made since \code{begin_transaction()} was called,
-making them permanent in the database. DuckLake automatically tracks changes
-in the \code{ducklake_snapshot_changes} metadata table.
+making them permanent in the database.
 
 If \code{author}, \code{commit_message}, or \code{commit_extra_info} are provided,
-they will be automatically added to the snapshot metadata after committing.
+they will be set using \code{CALL ducklake.set_commit_message()} within the
+transaction before the \code{COMMIT} statement, as required by the DuckLake
+v1.0 specification.
 }
 \examples{
 \dontrun{

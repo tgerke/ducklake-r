@@ -1,6 +1,6 @@
 Package: ducklake
 Title: Interact with DuckLake from R
-Version: 0.2.0
+Version: 0.3.0
 Authors@R: c(
     person("Travis", "Gerke", , "tgerke@mail.harvard.edu", role = c("aut", "cre")),
     person("Stefan", "Linner", role = "ctb"))
@@ -15,7 +15,7 @@ Imports:
     cli,
     DBI,
     dplyr,
-    duckdb,
+    duckdb (>= 1.5.1),
     duckplyr
 Suggests: 
     admiral,

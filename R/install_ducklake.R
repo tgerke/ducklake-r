@@ -21,12 +21,16 @@
 #' install_ducklake(backend = c("postgres", "sqlite", "mysql"))
 #' }
 install_ducklake <- function(backend = NULL) {
-  # check that duckdb version is at least 1.3.0
+  # DuckLake v1.0 officially ships with DuckDB 1.5.2, but the ducklake extension
+  # is compatible with engine >= 1.5.1 (the version bundled in duckdb R pkg 1.5.1).
+  # SELECT version() returns the DuckDB engine version, not the R package version.
   conn <- get_ducklake_connection()
   duckdb_version <- DBI::dbGetQuery(conn, "SELECT version()")[1, 1]
-  duckdb_version_numeric <- as.integer(gsub("\\.", "", sub("^v", "", duckdb_version)))
-  if (duckdb_version_numeric < 130) {
-    cli::cli_abort("duckdb must be version 1.3.0 or higher")
+  duckdb_version_parsed <- numeric_version(sub("^v", "", duckdb_version))
+  if (duckdb_version_parsed < "1.5.1") {
+    cli::cli_abort(
+      "DuckLake v1.0 requires DuckDB version 1.5.1 or higher (found {duckdb_version})."
+    )
   }
 
   # the long messages thrown on load for duckplyr are suppressed here

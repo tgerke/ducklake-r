@@ -32,6 +32,8 @@ navbar:
         href: articles/modifying-tables.html
       - text: -------
       - text: Advanced Features
+      - text: Data Inlining
+        href: articles/data-inlining.html
       - text: Working with Transactions
         href: articles/transactions.html
       - text: Time Travel Queries
@@ -92,6 +94,14 @@ reference:
     - get_metadata_table
     - set_snapshot_metadata
     
+  - title: "Data Inlining"
+    desc: "Configure and manage data inlining for streaming workloads"
+    contents:
+    - set_inlining_row_limit
+    - get_inlining_row_limit
+    - flush_inlined_data
+    - checkpoint_ducklake
+
   - title: "Backup and Maintenance"
     desc: "Backup and restore operations"
     contents:

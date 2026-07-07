@@ -25,6 +25,12 @@
 #' @param read_only Attach in read-only mode (default `FALSE`).
 #' @param override_data_path Override the stored DATA_PATH in the catalog
 #'   (default `FALSE`). Needed when restoring a backup to a different location.
+#' @param data_inlining_row_limit Optional integer. Sets the per-connection
+#'   data inlining row limit. Inserts or deletes affecting fewer rows than
+#'   this threshold are stored directly in the catalog instead of writing
+#'   Parquet files. The default (when `NULL`) uses the DuckLake default of 10
+#'   rows. Set to `0` to disable inlining for this connection. This setting is
+#'   not persisted; use [set_inlining_row_limit()] for persistent overrides.
 #'
 #' @details
 #' For credential management with PostgreSQL or MySQL, consider DuckDB's
@@ -83,12 +89,20 @@
 #'   catalog_connection_string = "db=ducklake_catalog host=localhost",
 #'   lake_path = "data_files/"
 #' )
+#'
+#' # Custom inlining threshold for streaming workload
+#' attach_ducklake(
+#'   "streaming_lake",
+#'   lake_path = "~/data/streaming",
+#'   data_inlining_row_limit = 100
+#' )
 #' }
 attach_ducklake <- function(ducklake_name, lake_path,
                              backend = c("duckdb", "postgres", "sqlite", "mysql"),
                              catalog_connection_string = NULL,
                              read_only = FALSE,
-                             override_data_path = FALSE) {
+                             override_data_path = FALSE,
+                             data_inlining_row_limit = NULL) {
   backend <- match.arg(backend)
   
   if (missing(lake_path) || is.null(lake_path)) {
@@ -138,7 +152,8 @@ attach_ducklake <- function(ducklake_name, lake_path,
   # Build and run the ATTACH command
   attach_sql <- build_attach_sql(ducklake_name, lake_path, backend,
                                   catalog_connection_string, read_only,
-                                  override_data_path)
+                                  override_data_path,
+                                  data_inlining_row_limit)
   duckplyr::db_exec(attach_sql)
   duckplyr::db_exec(sprintf("USE %s;", ducklake_name))
   
@@ -182,12 +197,14 @@ ensure_extensions <- function(backend) {
 #' @param catalog_connection_string Backend-specific connection string
 #' @param read_only Whether to attach in read-only mode
 #' @param override_data_path Whether to add OVERRIDE_DATA_PATH TRUE
+#' @param data_inlining_row_limit Optional integer for DATA_INLINING_ROW_LIMIT
 #'
 #' @returns A SQL ATTACH statement string
 #' @keywords internal
 build_attach_sql <- function(ducklake_name, lake_path, backend,
                               catalog_connection_string, read_only,
-                              override_data_path = FALSE) {
+                              override_data_path = FALSE,
+                              data_inlining_row_limit = NULL) {
   connection_string <- switch(backend,
     duckdb = {
       ducklake_path <- file.path(lake_path, paste0(ducklake_name, ".ducklake"))
@@ -210,6 +227,10 @@ build_attach_sql <- function(ducklake_name, lake_path, backend,
 
   if (override_data_path) {
     options <- c(options, "OVERRIDE_DATA_PATH TRUE")
+  }
+
+  if (!is.null(data_inlining_row_limit)) {
+    options <- c(options, sprintf("DATA_INLINING_ROW_LIMIT %d", as.integer(data_inlining_row_limit)))
   }
   
   if (length(options) > 0) {

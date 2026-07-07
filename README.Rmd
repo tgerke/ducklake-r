@@ -58,7 +58,7 @@ pak::pak("tgerke/ducklake-r")
 library(ducklake)
 library(dplyr)
 
-# Install the ducklake extension (requires DuckDB v1.3.0 or higher)
+# Install the ducklake extension (requires duckdb R package >= 1.5.1)
 install_ducklake()
 
 # Create a data lake in a temporary directory

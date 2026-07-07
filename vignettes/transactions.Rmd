@@ -8,9 +8,14 @@ vignette: >
 ---
 
 ```{r, include = FALSE}
+# Skip if the duckdb R package is too old to support the ducklake v1.0 extension
+duckdb_version_ok <- tryCatch({
+  packageVersion("duckdb") >= "1.5.1"
+}, error = function(e) FALSE)
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>"
+  comment = "#>",
+  eval = duckdb_version_ok
 )
 # Use a unique temp directory for this vignette to avoid conflicts during R CMD check
 vignette_temp_dir <- file.path(tempdir(), "transactions_vignette")
@@ -221,34 +226,43 @@ rollback_transaction()
 list_table_snapshots("cars")
 ```
 
-### Setting Metadata Separately
+### Snapshot Metadata: At Commit Time vs After the Fact
 
-With manual transactions, you can also set metadata after committing:
+DuckLake supports two ways to attach metadata (author, commit message, and optional extra info) to a snapshot.
 
-```{r manual-metadata}
-# Start transaction
+**At commit time (recommended)**: Pass `author`, `commit_message`, and/or `commit_extra_info` to `commit_transaction()` or `with_transaction()`. This uses the DuckLake v1.0 `set_commit_message()` API to record metadata as part of the transaction itself, before the commit is finalized.
+
+```{r metadata-at-commit}
+# Metadata set at commit time (preferred approach)
 begin_transaction()
 
-# Make changes
 get_ducklake_table("cars") |>
   mutate(hp_per_liter = hp / (cyl * 0.5)) |>
   replace_table("cars")
 
-# Commit
-commit_transaction()
-
-# Add metadata separately
-set_snapshot_metadata(
-  ducklake_name = "my_ducklake",
+commit_transaction(
   author = "Performance Team",
-  commit_message = "Add horsepower per liter metric"
+  commit_message = "Add horsepower per liter metric",
+  commit_extra_info = '{"ticket": "DATA-123"}'
 )
 
-# Verify
 get_ducklake_table("cars") |>
   select(hp, cyl, hp_per_liter) |>
   head()
 ```
+
+**After the fact**: Use `set_snapshot_metadata()` to retroactively update the metadata on the most recent snapshot. This directly updates the `ducklake_snapshot_changes` metadata table.
+
+```{r metadata-after-fact}
+# Retrospectively update metadata on the last snapshot
+set_snapshot_metadata(
+  ducklake_name = "transactions_lake",
+  author = "Performance Team (reviewed)",
+  commit_message = "Add horsepower per liter metric (approved)"
+)
+```
+
+Both approaches result in the same metadata fields being populated — the choice is about workflow. Use at-commit-time metadata for automated pipelines where metadata is known upfront. Use after-the-fact metadata for interactive workflows where you want to annotate a snapshot after reviewing the results.
 
 ## Viewing Transaction History
 
@@ -267,7 +281,7 @@ list_table_snapshots("cars") |>
 |---------|---------------------|----------------------------------|
 | **Ease of use** | ✅ Simple, one function | ❌ Requires multiple function calls |
 | **Error handling** | ✅ Automatic rollback | ❌ Must handle manually |
-| **Metadata** | ✅ Inline with transaction | ⚠️ Requires separate call or parameter |
+| **Metadata** | ✅ Inline with transaction | ✅ Inline via parameter, or retroactive via `set_snapshot_metadata()` |
 | **Safety** | ✅ Can't forget to commit | ❌ Risk of open transactions |
 | **Use case** | Most production workflows | Interactive/conditional workflows |
 | **Code clarity** | ✅ Clear transaction scope | ⚠️ Scope can be unclear |
@@ -282,14 +296,14 @@ list_table_snapshots("cars") |>
 
 ## Key Concepts Summary
 
-- **`with_transaction(expr, author, commit_message)`**: Modern, automatic transaction handling (recommended)
+- **`with_transaction(expr, author, commit_message, commit_extra_info)`**: Modern, automatic transaction handling (recommended)
 - **`begin_transaction()`**: Start a manual transaction
-- **`commit_transaction(author, commit_message)`**: Apply changes from a manual transaction
+- **`commit_transaction(author, commit_message, commit_extra_info)`**: Apply changes from a manual transaction, with optional metadata set at commit time via the DuckLake v1.0 API
 - **`rollback_transaction()`**: Discard changes from a manual transaction
-- **`set_snapshot_metadata()`**: Add metadata to snapshots after committing
+- **`set_snapshot_metadata()`**: Retroactively update metadata on the most recent snapshot
 
 Transactions ensure data integrity and provide complete audit trails for all changes in your DuckLake.
 
 ```{r cleanup, include=FALSE}
-detach_ducklake("my_ducklake")
+detach_ducklake("transactions_lake")
 ```

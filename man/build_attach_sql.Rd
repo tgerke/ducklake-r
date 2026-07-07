@@ -10,7 +10,8 @@ build_attach_sql(
   backend,
   catalog_connection_string,
   read_only,
-  override_data_path = FALSE
+  override_data_path = FALSE,
+  data_inlining_row_limit = NULL
 )
 }
 \arguments{
@@ -25,6 +26,8 @@ build_attach_sql(
 \item{read_only}{Whether to attach in read-only mode}
 
 \item{override_data_path}{Whether to add OVERRIDE_DATA_PATH TRUE}
+
+\item{data_inlining_row_limit}{Optional integer for DATA_INLINING_ROW_LIMIT}
 }
 \value{
 A SQL ATTACH statement string

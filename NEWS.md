@@ -1,3 +1,23 @@
+# ducklake 0.3.0
+
+## DuckLake v1.0 Specification Alignment
+
+This release aligns the package with the
+[DuckLake v1.0 stable specification](https://ducklake.select/docs/stable/specification/introduction),
+which requires DuckDB v1.5.2+ (compatible with duckdb R package >= 1.5.1).
+
+### Breaking Changes
+
+* DuckDB version requirement bumped from 1.3.0 to **1.5.1** (duckdb R package)
+  / **1.5.2** (DuckDB engine/CLI) to match DuckLake v1.0.
+  `install_ducklake()` now enforces this at the engine level.
+
+* `commit_transaction()` and `with_transaction()` now use the official
+  `CALL ducklake.set_commit_message()` API to set commit metadata
+  **within** the transaction before `COMMIT`, consistent with the v1.0
+  specification. `set_snapshot_metadata()` retroactively updates the
+  `ducklake_snapshot_changes` metadata table directly.
+
 # ducklake 0.2.0
 
 ## Multi-Backend Catalog Support

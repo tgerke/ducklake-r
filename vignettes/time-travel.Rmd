@@ -8,9 +8,14 @@ vignette: >
 ---
 
 ```{r, include = FALSE}
+# Skip if the duckdb R package is too old to support the ducklake v1.0 extension
+duckdb_version_ok <- tryCatch({
+  packageVersion("duckdb") >= "1.5.1"
+}, error = function(e) FALSE)
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>"
+  comment = "#>",
+  eval = duckdb_version_ok
 )
 # Use a unique temp directory for this vignette to avoid conflicts during R CMD check
 vignette_temp_dir <- file.path(tempdir(), "time_travel_vignette")

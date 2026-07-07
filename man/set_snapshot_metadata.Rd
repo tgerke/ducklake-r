@@ -27,13 +27,15 @@ set_snapshot_metadata(
 Invisibly returns TRUE on success
 }
 \description{
-Updates the author, commit message, and/or extra info for the most recent
-snapshot in a DuckLake catalog.
+Sets the author, commit message, and/or extra info for the most recent
+snapshot in a DuckLake catalog by updating the \code{ducklake_snapshot_changes}
+metadata table directly.
 }
 \details{
-This function updates the metadata columns in the \code{ducklake_snapshot_changes}
-table for the most recent snapshot. Call this after \code{commit_transaction()}
-to add audit information to your commits.
+This function retroactively updates metadata on the most recent snapshot.
+To set metadata at commit time, use the \code{author}, \code{commit_message},
+and \code{commit_extra_info} arguments in \code{commit_transaction()} or
+\code{with_transaction()} instead.
 }
 \examples{
 \dontrun{
@@ -41,7 +43,7 @@ begin_transaction()
 # ... make changes ...
 commit_transaction()
 
-# Add metadata to the snapshot
+# Add metadata to the snapshot after the fact
 set_snapshot_metadata(
   ducklake_name = "my_ducklake",
   author = "Data Team",

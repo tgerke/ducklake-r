@@ -9,12 +9,16 @@ vignette: >
 
 ```{r, include = FALSE}
 # Skip this vignette if optional packages are not available
+# or if the duckdb R package is too old to support the ducklake v1.0 extension
 has_deps <- requireNamespace("pharmaversesdtm", quietly = TRUE) &&
   requireNamespace("admiral", quietly = TRUE)
+duckdb_version_ok <- tryCatch({
+  packageVersion("duckdb") >= "1.5.1"
+}, error = function(e) FALSE)
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
-  eval = has_deps
+  eval = has_deps && duckdb_version_ok
 )
 # Use a unique temp directory for this vignette to avoid conflicts during R CMD check
 vignette_temp_dir <- file.path(tempdir(), "clinical_trial_vignette")
@@ -1151,6 +1155,32 @@ audit_export <- audit_report |>
 audit_export
 ```
 
+## Data Inlining and Regulatory Archival
+
+DuckLake v1.0 enables **data inlining** by default: small modifications
+(inserts, deletes, updates affecting fewer than 10 rows) are stored directly in
+the catalog database rather than writing individual Parquet files. This is a
+pure storage optimisation — it does not affect ACID compliance, versioning, time
+travel, or the audit trail. Clinical trial batch loads (full SDTM/ADaM domains)
+exceed the threshold and go directly to Parquet as usual.
+
+Inlining benefits clinical workflows in a specific way: when a statistical
+programmer corrects a single subject's flag or updates a derived variable for a
+handful of records, the change is captured atomically in the catalog without
+creating a proliferation of tiny Parquet files.
+
+Before archival or regulatory submission, flush all inlined data to Parquet so
+the data path contains a fully self-describing, portable set of files:
+
+```{r pre-archival-checkpoint, eval = FALSE}
+# Materialise any inlined data to Parquet before archival
+checkpoint_ducklake()
+```
+
+This ensures that the archived lake can be read by any Parquet-capable tool, and
+aligns with ICH E6(R2) and 21 CFR Part 11 expectations for long-term data
+retention. For more details see `vignette("data-inlining")`.
+
 ## Cleanup
 
 When you're done, you can detach from the data lake:
@@ -1188,6 +1218,7 @@ By using ducklake for clinical trial data, you ensure:
 For more information on specific features:
 
 - `vignette("ducklake")` - Getting started guide
+- `vignette("data-inlining")` - Data inlining and storage optimisation
 - `vignette("time-travel")` - Time travel and version control
 - `vignette("transactions")` - Transaction management
 
