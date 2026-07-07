@@ -1,5 +1,36 @@
 # Changelog
 
+## ducklake (development version)
+
+### Quack remote protocol support
+
+Added support for Quack, DuckDB’s client-server protocol, which became a
+core extension in DuckDB 1.5.3
+([\#20](https://github.com/tgerke/ducklake-r/issues/20),
+[@JavOrraca](https://github.com/JavOrraca)). A DuckLake served by one
+DuckDB instance can now be queried and modified by other R sessions over
+the network. For concurrent access this is a lighter-weight option than
+a PostgreSQL or SQLite catalog, since the whole setup stays inside
+DuckDB and DuckLake.
+
+#### New Features
+
+- [`attach_quack()`](https://tgerke.github.io/ducklake-r/reference/attach_quack.md)
+  connects to a remote Quack server and attaches it as a catalog in the
+  current session.
+- [`detach_quack()`](https://tgerke.github.io/ducklake-r/reference/detach_quack.md)
+  disconnects from a remote Quack server.
+- [`install_quack()`](https://tgerke.github.io/ducklake-r/reference/install_quack.md)
+  installs the Quack DuckDB extension.
+- [`quack_query()`](https://tgerke.github.io/ducklake-r/reference/quack_query.md)
+  runs a one-off query against a remote Quack server and returns a
+  data.frame.
+- [`quack_serve()`](https://tgerke.github.io/ducklake-r/reference/quack_serve.md)
+  serves the current session, including an attached DuckLake, to other
+  clients over Quack.
+- [`quack_stop()`](https://tgerke.github.io/ducklake-r/reference/quack_stop.md)
+  stops a running Quack server.
+
 ## ducklake 0.3.0
 
 ### DuckLake v1.0 Specification Alignment
@@ -24,9 +55,7 @@ which requires DuckDB v1.5.2+ (compatible with duckdb R package \>=
   with the v1.0 specification.
   [`set_snapshot_metadata()`](https://tgerke.github.io/ducklake-r/reference/set_snapshot_metadata.md)
   retroactively updates the `ducklake_snapshot_changes` metadata table
-  directly.
-
-## ducklake 0.2.0
+  directly. \# ducklake 0.2.0
 
 ### Multi-Backend Catalog Support
 

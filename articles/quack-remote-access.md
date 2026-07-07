@@ -1,0 +1,254 @@
+# Quack Remote Access
+
+``` r
+
+library(ducklake)
+library(dplyr)
+```
+
+## Introduction
+
+Most of the time a DuckLake lives in one place and one person works with
+it. But data analysis is usually a team activity: a few statisticians
+share the same study data, an analytics group works from one set of
+cleaned tables, several people review the same numbers before a
+deliverable goes out. The usual answer is to copy files around (a CSV
+here, an XPT there) and hope everyone is looking at the same version.
+
+[Quack](https://duckdb.org/quack/) offers a different answer. It is a
+protocol, shipped as a core DuckDB extension in DuckDB 1.5.3, that lets
+one DuckDB instance act as a server while other DuckDB instances connect
+to it as clients. A DuckLake held by the server can then be read and
+updated by other R sessions over the network, with the same snapshots
+and time travel you get locally. Several people can write at the same
+time without locking each other out.
+
+This vignette shows the two halves of that picture: connecting to a lake
+someone else is serving, and serving a lake of your own. The audience
+here is the everyday R user, so the examples stay close to ordinary
+analysis work and do not assume any server administration experience.
+
+The code below is shown with its expected output but is not run when the
+vignette is built, because Quack needs a live server and a recent
+DuckDB. To follow along you need the `duckdb` R package at version 1.5.3
+or newer:
+
+``` r
+
+packageVersion("duckdb")
+#> [1] '1.5.3'
+```
+
+## Installing the extension
+
+Quack is a core extension, so DuckDB loads it automatically the first
+time it is used. On a machine that has no internet access at query time
+you can install it ahead of time:
+
+``` r
+
+install_quack()
+#> Installed quack extension.
+#> Loaded quack extension.
+```
+
+## Connecting to a shared lake
+
+This is the common case. A colleague, or a shared workstation, runs a
+Quack server that holds the team’s DuckLake. You connect to it from your
+own R session and pull the data you need.
+
+[`quack_query()`](https://tgerke.github.io/ducklake-r/reference/quack_query.md)
+sends a single SQL query to the server and returns the result as a data
+frame. The lake is named by its catalog on the server, which is the name
+it was attached under (here, `trial`):
+
+``` r
+
+adsl <- quack_query(
+  "quack:trial-server.example.org",
+  "SELECT * FROM trial.adsl",
+  token = "super_secret"
+)
+
+adsl
+#>   USUBJID SAFFL AGE
+#> 1  01-001     Y  45
+#> 2  01-002     N  52
+```
+
+The address starts with `quack:`. A bare host name works too and the
+scheme is added for you. The default port is 9494; include a different
+one as `quack:host:port`. The `token` is whatever password the server
+was started with.
+
+Once a query comes back you have an ordinary data frame, so the rest of
+your analysis is the dplyr and base R you already use:
+
+``` r
+
+adsl |>
+  group_by(SAFFL) |>
+  summarise(n = n(), mean_age = mean(AGE))
+#> # A tibble: 2 x 3
+#>   SAFFL     n mean_age
+#>   <chr> <int>    <dbl>
+#> 1 N         1       52
+#> 2 Y         1       45
+```
+
+For large tables it is faster to let the server do the filtering and
+summarising and send back only what you need, rather than pulling every
+row across the network:
+
+``` r
+
+quack_query(
+  "quack:trial-server.example.org",
+  "SELECT USUBJID, AGE FROM trial.adsl WHERE SAFFL = 'Y' AND AGE >= 18",
+  token = "super_secret"
+)
+#>   USUBJID AGE
+#> 1  01-001  45
+```
+
+Because Quack supports concurrent writers, you can also add data to the
+shared lake. The query runs on the server, so it refers to the lake by
+its catalog name and returns the number of rows affected:
+
+``` r
+
+quack_query(
+  "quack:trial-server.example.org",
+  "INSERT INTO trial.adsl VALUES ('01-099', 'Y', 70)",
+  token = "super_secret"
+)
+#>   Count
+#> 1     1
+```
+
+### Connecting to a plain database
+
+If the server is sharing a regular DuckDB database rather than a
+DuckLake, you can attach it as a catalog and work with it through the
+familiar
+[`get_ducklake_table()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_table.md)
+and dplyr path.
+[`attach_quack()`](https://tgerke.github.io/ducklake-r/reference/attach_quack.md)
+gives the remote a local name; its tables are then reached as
+`name.table`:
+
+``` r
+
+attach_quack("warehouse", "quack:data.example.org", token = "super_secret")
+
+get_ducklake_table("warehouse.sales") |>
+  filter(region == "EMEA") |>
+  collect()
+
+detach_quack("warehouse")
+```
+
+A served DuckLake is a separate catalog on the server, not part of its
+default database, so its tables are not exposed this way. Reach a served
+DuckLake with
+[`quack_query()`](https://tgerke.github.io/ducklake-r/reference/quack_query.md)
+and the lake’s catalog name, as in the previous section.
+
+## Serving a lake of your own
+
+The other half of the picture is publishing a lake so others can connect
+to it. Say you have built a small medallion lake and a few colleagues
+want to read from it. You attach the lake as usual, then start a server.
+
+``` r
+
+attach_ducklake("trial", lake_path = "~/lakes/trial")
+
+with_transaction(
+  create_table(mtcars, "vehicles"),
+  author = "You",
+  commit_message = "Seed the shared lake"
+)
+```
+
+``` r
+
+install_quack()
+quack_serve(token = "super_secret")
+#> Quack server listening on "quack:localhost".
+```
+
+The server runs in the background of the DuckDB instance, so your R
+session stays free for other work. Anyone who can reach the address can
+now connect with the client code from the previous section, pointing at
+your machine and using the same token.
+
+Choose the address to match who should reach the server.
+`"quack:localhost"` (the default) stays on your own machine, which is
+useful for trying things out. To accept connections from other machines,
+listen on a host name or address they can route to.
+
+When you are finished, stop the server:
+
+``` r
+
+quack_stop()
+#> Quack server on "quack:localhost" stopped.
+```
+
+### A note on access
+
+A token is the only thing standing between your data and anyone who can
+reach the server. Pick a strong one. If you start a server without a
+token,
+[`quack_serve()`](https://tgerke.github.io/ducklake-r/reference/quack_serve.md)
+warns you, because an open server lets any client that can reach it read
+and write the lake. On an untrusted network, put the server behind TLS
+or a reverse proxy rather than exposing it directly. The DuckDB [Quack
+documentation](https://duckdb.org/docs/current/quack/overview) covers
+these deployment options.
+
+## Quack or a shared catalog?
+
+ducklake already supports PostgreSQL and SQLite catalogs for concurrent
+access (see
+[`?attach_ducklake`](https://tgerke.github.io/ducklake-r/reference/attach_ducklake.md)
+and the package NEWS). Quack covers a similar need from a different
+angle, and the right choice depends on where your data lives and who can
+reach it.
+
+|  | Shared catalog (PostgreSQL or SQLite) | Quack |
+|----|----|----|
+| What clients connect to | The catalog database and the Parquet storage directly | One DuckDB server |
+| Storage access each client needs | Read and write access to the same data path | None; only the server touches the files |
+| Extra service to run | A PostgreSQL server (SQLite needs none) | A DuckDB server process |
+| Good fit when | Everyone can mount the same shared storage | The data sits on one machine and you want to share access to it |
+
+A common pattern is to use both: a PostgreSQL catalog so the lake itself
+supports many writers, and a Quack server in front so analysts who
+cannot mount the storage can still connect.
+
+## Caveats
+
+Quack is in beta. The DuckDB team expects to settle the protocol,
+function names, and default settings before a stable release in DuckDB
+2.0, so pin your versions if you depend on it in a pipeline. It needs
+DuckDB 1.5.3 or newer on both the server and the client; ducklake’s
+Quack functions check this and stop with a clear message on older
+engines. For very high write volumes a purpose built database is still
+the better tool, but for sharing a study lake across a small team Quack
+is a light way to get everyone onto the same versioned data.
+
+## Learn more
+
+- [Quack overview](https://duckdb.org/docs/current/quack/overview), the
+  DuckDB documentation.
+- [`?quack_serve`](https://tgerke.github.io/ducklake-r/reference/quack_serve.md),
+  [`?attach_quack`](https://tgerke.github.io/ducklake-r/reference/attach_quack.md),
+  and
+  [`?quack_query`](https://tgerke.github.io/ducklake-r/reference/quack_query.md)
+  for the function reference.
+- The [Storage and Backup
+  Management](https://tgerke.github.io/ducklake-r/articles/storage-and-backups.md)
+  vignette for how a DuckLake is laid out on disk.

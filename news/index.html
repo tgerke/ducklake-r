@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ducklake</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -32,6 +32,7 @@
     <li><a class="dropdown-item" href="../articles/transactions.html">Working with Transactions</a></li>
     <li><a class="dropdown-item" href="../articles/time-travel.html">Time Travel Queries</a></li>
     <li><a class="dropdown-item" href="../articles/storage-and-backups.html">Storage and Backup Management</a></li>
+    <li><a class="dropdown-item" href="../articles/quack-remote-access.html">Quack Remote Access</a></li>
   </ul></li>
 <li class="active nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -49,6 +50,28 @@
     </div>
 
     <div class="section level2">
+<h2 class="pkg-version" data-toc-text="development version" id="ducklake-development-version">ducklake (development version)<a class="anchor" aria-label="anchor" href="#ducklake-development-version"></a></h2>
+<div class="section level3">
+<h3 id="quack-remote-protocol-support-development-version">Quack remote protocol support<a class="anchor" aria-label="anchor" href="#quack-remote-protocol-support-development-version"></a></h3>
+<p>Added support for Quack, DuckDB’s client-server protocol, which became a core extension in DuckDB 1.5.3 (<a href="https://github.com/tgerke/ducklake-r/issues/20" class="external-link">#20</a>, <a href="https://github.com/JavOrraca" class="external-link">@JavOrraca</a>). A DuckLake served by one DuckDB instance can now be queried and modified by other R sessions over the network. For concurrent access this is a lighter-weight option than a PostgreSQL or SQLite catalog, since the whole setup stays inside DuckDB and DuckLake.</p>
+<div class="section level4">
+<h4 id="new-features-development-version">New Features<a class="anchor" aria-label="anchor" href="#new-features-development-version"></a></h4>
+<ul><li>
+<code><a href="../reference/attach_quack.html">attach_quack()</a></code> connects to a remote Quack server and attaches it as a catalog in the current session.</li>
+<li>
+<code><a href="../reference/detach_quack.html">detach_quack()</a></code> disconnects from a remote Quack server.</li>
+<li>
+<code><a href="../reference/install_quack.html">install_quack()</a></code> installs the Quack DuckDB extension.</li>
+<li>
+<code><a href="../reference/quack_query.html">quack_query()</a></code> runs a one-off query against a remote Quack server and returns a data.frame.</li>
+<li>
+<code><a href="../reference/quack_serve.html">quack_serve()</a></code> serves the current session, including an attached DuckLake, to other clients over Quack.</li>
+<li>
+<code><a href="../reference/quack_stop.html">quack_stop()</a></code> stops a running Quack server.</li>
+</ul></div>
+</div>
+</div>
+    <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.3.0" id="ducklake-030">ducklake 0.3.0<a class="anchor" aria-label="anchor" href="#ducklake-030"></a></h2>
 <div class="section level3">
 <h3 id="ducklake-v10-specification-alignment-0-3-0">DuckLake v1.0 Specification Alignment<a class="anchor" aria-label="anchor" href="#ducklake-v10-specification-alignment-0-3-0"></a></h3>
@@ -56,17 +79,14 @@
 <div class="section level4">
 <h4 id="breaking-changes-0-3-0">Breaking Changes<a class="anchor" aria-label="anchor" href="#breaking-changes-0-3-0"></a></h4>
 <ul><li><p>DuckDB version requirement bumped from 1.3.0 to <strong>1.5.1</strong> (duckdb R package) / <strong>1.5.2</strong> (DuckDB engine/CLI) to match DuckLake v1.0. <code><a href="../reference/install_ducklake.html">install_ducklake()</a></code> now enforces this at the engine level.</p></li>
-<li><p><code><a href="../reference/commit_transaction.html">commit_transaction()</a></code> and <code><a href="../reference/with_transaction.html">with_transaction()</a></code> now use the official <code>CALL ducklake.set_commit_message()</code> API to set commit metadata <strong>within</strong> the transaction before <code>COMMIT</code>, consistent with the v1.0 specification. <code><a href="../reference/set_snapshot_metadata.html">set_snapshot_metadata()</a></code> retroactively updates the <code>ducklake_snapshot_changes</code> metadata table directly.</p></li>
+<li><p><code><a href="../reference/commit_transaction.html">commit_transaction()</a></code> and <code><a href="../reference/with_transaction.html">with_transaction()</a></code> now use the official <code>CALL ducklake.set_commit_message()</code> API to set commit metadata <strong>within</strong> the transaction before <code>COMMIT</code>, consistent with the v1.0 specification. <code><a href="../reference/set_snapshot_metadata.html">set_snapshot_metadata()</a></code> retroactively updates the <code>ducklake_snapshot_changes</code> metadata table directly. # ducklake 0.2.0</p></li>
 </ul></div>
 </div>
-</div>
-    <div class="section level2">
-<h2 class="pkg-version" data-toc-text="0.2.0" id="ducklake-020">ducklake 0.2.0<a class="anchor" aria-label="anchor" href="#ducklake-020"></a></h2>
 <div class="section level3">
-<h3 id="multi-backend-catalog-support-0-2-0">Multi-Backend Catalog Support<a class="anchor" aria-label="anchor" href="#multi-backend-catalog-support-0-2-0"></a></h3>
+<h3 id="multi-backend-catalog-support-0-3-0">Multi-Backend Catalog Support<a class="anchor" aria-label="anchor" href="#multi-backend-catalog-support-0-3-0"></a></h3>
 <p>DuckLake now supports PostgreSQL, SQLite, and MySQL as catalog backends in addition to DuckDB (<a href="https://github.com/tgerke/ducklake-r/issues/15" class="external-link">#15</a>, <a href="https://github.com/stefanlinner" class="external-link">@stefanlinner</a>). This aligns with the <a href="https://ducklake.select/docs/stable/specification/introduction" class="external-link">DuckLake 1.0 specification</a> and enables concurrent multi-client access when using PostgreSQL or SQLite.</p>
 <div class="section level4">
-<h4 id="new-features-0-2-0">New Features<a class="anchor" aria-label="anchor" href="#new-features-0-2-0"></a></h4>
+<h4 id="new-features-0-3-0">New Features<a class="anchor" aria-label="anchor" href="#new-features-0-3-0"></a></h4>
 <ul><li>
 <code><a href="../reference/attach_ducklake.html">attach_ducklake()</a></code> gains <code>backend</code>, <code>catalog_connection_string</code>, <code>read_only</code>, and <code>override_data_path</code> parameters for multi-backend support.</li>
 <li>
@@ -78,7 +98,7 @@
 <code><a href="../reference/backup_ducklake.html">backup_ducklake()</a></code> is now backend-aware: file-based backends (DuckDB, SQLite) get catalog + data copied; PostgreSQL/MySQL get data only with guidance to use <code>pg_dump</code>/<code>mysqldump</code>. Also fixes a pre-existing bug where catalog backups were silently 0 bytes due to DuckDB holding file locks during <code><a href="https://rdrr.io/r/base/files.html" class="external-link">file.copy()</a></code>.</li>
 </ul></div>
 <div class="section level4">
-<h4 id="breaking-changes-0-2-0">Breaking Changes<a class="anchor" aria-label="anchor" href="#breaking-changes-0-2-0"></a></h4>
+<h4 id="breaking-changes-0-3-0-1">Breaking Changes<a class="anchor" aria-label="anchor" href="#breaking-changes-0-3-0-1"></a></h4>
 <ul><li>
 <code><a href="../reference/attach_ducklake.html">attach_ducklake()</a></code> now <strong>requires</strong> <code>lake_path</code> (previously optional).</li>
 <li>
@@ -87,7 +107,7 @@
 <code><a href="../reference/detach_ducklake.html">detach_ducklake()</a></code> no longer shuts down the DuckDB connection by default. Pass <code>shutdown = TRUE</code> for the previous behaviour.</li>
 </ul></div>
 <div class="section level4">
-<h4 id="internal-0-2-0">Internal<a class="anchor" aria-label="anchor" href="#internal-0-2-0"></a></h4>
+<h4 id="internal-0-3-0">Internal<a class="anchor" aria-label="anchor" href="#internal-0-3-0"></a></h4>
 <ul><li>Schema qualifier logic updated throughout (<code><a href="../reference/get_metadata_table.html">get_metadata_table()</a></code>, <code>time_travel.R</code>, <code>transactions.R</code>) to handle PostgreSQL/MySQL backends that don’t use the <code>.main.</code> schema prefix.</li>
 <li>New internal helpers: <code><a href="../reference/build_attach_sql.html">build_attach_sql()</a></code>, <code><a href="../reference/ensure_extensions.html">ensure_extensions()</a></code>, <code><a href="../reference/shutdown_and_reset_singleton.html">shutdown_and_reset_singleton()</a></code>.</li>
 </ul><hr></div>

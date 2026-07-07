@@ -149,14 +149,14 @@ The catalog is a single database file containing all metadata:
 ``` r
 
 dir_tree(lake_dir)
-#> /tmp/RtmpHQBQOn/storage_backups_vignette/storage_demo
+#> /tmp/RtmpKTIZjo/storage_backups_vignette/storage_demo
 #> ├── demo_lake.ducklake
 #> ├── demo_lake.ducklake.wal
 #> └── main
 #>     └── cars
-#>         ├── ducklake-019f3e27-e7d2-7c37-8218-e6746c581f2a.parquet
-#>         ├── ducklake-019f3e27-e8b3-7a4e-9804-4de87c1f1f11.parquet
-#>         └── ducklake-019f3e27-e9a9-7e6d-9211-28d74fd04381.parquet
+#>         ├── ducklake-019f3e2a-8a67-7f90-8d45-f9391895a821.parquet
+#>         ├── ducklake-019f3e2a-8b05-7909-9c69-66500263d18d.parquet
+#>         └── ducklake-019f3e2a-8bc5-744b-8a54-270da46344bf.parquet
 ```
 
 The catalog files (`demo_lake.ducklake` and `.wal`) contain all metadata
@@ -172,11 +172,11 @@ Data files are stored in Parquet format in a structured directory:
 main_dir <- file.path(lake_dir, "main")
 
 dir_tree(main_dir, recurse = 2)
-#> /tmp/RtmpHQBQOn/storage_backups_vignette/storage_demo/main
+#> /tmp/RtmpKTIZjo/storage_backups_vignette/storage_demo/main
 #> └── cars
-#>     ├── ducklake-019f3e27-e7d2-7c37-8218-e6746c581f2a.parquet
-#>     ├── ducklake-019f3e27-e8b3-7a4e-9804-4de87c1f1f11.parquet
-#>     └── ducklake-019f3e27-e9a9-7e6d-9211-28d74fd04381.parquet
+#>     ├── ducklake-019f3e2a-8a67-7f90-8d45-f9391895a821.parquet
+#>     ├── ducklake-019f3e2a-8b05-7909-9c69-66500263d18d.parquet
+#>     └── ducklake-019f3e2a-8bc5-744b-8a54-270da46344bf.parquet
   
 # Get details about parquet files
 parquet_files <- dir_ls(main_dir, recurse = TRUE, regexp = "\\.parquet$")
@@ -185,9 +185,9 @@ for (f in parquet_files) {
               path_file(f), 
               file.size(f)))
 }
-#>   ducklake-019f3e27-e7d2-7c37-8218-e6746c581f2a.parquet (2307 bytes)
-#>   ducklake-019f3e27-e8b3-7a4e-9804-4de87c1f1f11.parquet (2501 bytes)
-#>   ducklake-019f3e27-e9a9-7e6d-9211-28d74fd04381.parquet (2724 bytes)
+#>   ducklake-019f3e2a-8a67-7f90-8d45-f9391895a821.parquet (2307 bytes)
+#>   ducklake-019f3e2a-8b05-7909-9c69-66500263d18d.parquet (2501 bytes)
+#>   ducklake-019f3e2a-8bc5-744b-8a54-270da46344bf.parquet (2724 bytes)
 ```
 
 ### Understanding File Organization
@@ -243,13 +243,13 @@ dir_copy(
 
 # Verify the backup was created
 dir_tree(backup_dir)
-#> /tmp/RtmpHQBQOn/storage_backups_vignette/storage_demo/backups
+#> /tmp/RtmpKTIZjo/storage_backups_vignette/storage_demo/backups
 #> ├── demo_lake.ducklake
 #> └── main
 #>     └── cars
-#>         ├── ducklake-019f3e27-e7d2-7c37-8218-e6746c581f2a.parquet
-#>         ├── ducklake-019f3e27-e8b3-7a4e-9804-4de87c1f1f11.parquet
-#>         └── ducklake-019f3e27-e9a9-7e6d-9211-28d74fd04381.parquet
+#>         ├── ducklake-019f3e2a-8a67-7f90-8d45-f9391895a821.parquet
+#>         ├── ducklake-019f3e2a-8b05-7909-9c69-66500263d18d.parquet
+#>         └── ducklake-019f3e2a-8bc5-744b-8a54-270da46344bf.parquet
 
 # To use the backup, detach the current lake and attach to the backup
 # First detach the original
@@ -264,9 +264,9 @@ attach_ducklake(
 # Verify you're working with the backup
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 2           1 2026-07-07 19:57:10              1
-#> 3           2 2026-07-07 19:57:10              2
-#> 4           3 2026-07-07 19:57:10              3
+#> 2           1 2026-07-07 20:00:03              1
+#> 3           2 2026-07-07 20:00:03              2
+#> 4           3 2026-07-07 20:00:03              3
 #>                                                                 changes
 #> 2                    tables_created, tables_inserted_into, main.cars, 1
 #> 3 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2
@@ -430,11 +430,11 @@ backup_dir <- backup_ducklake(
 #> Catalog backed up successfully.
 #> Data files backed up successfully.
 #> Backup completed:
-#> /tmp/RtmpHQBQOn/storage_backups_vignette/storage_demo/backups/backup_20260707_195711
+#> /tmp/RtmpKTIZjo/storage_backups_vignette/storage_demo/backups/backup_20260707_200004
 
 # The function returns the backup directory path
 print(backup_dir)
-#> [1] "/tmp/RtmpHQBQOn/storage_backups_vignette/storage_demo/backups/backup_20260707_195711"
+#> [1] "/tmp/RtmpKTIZjo/storage_backups_vignette/storage_demo/backups/backup_20260707_200004"
 ```
 
 The

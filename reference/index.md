@@ -102,3 +102,20 @@ Backup and restore operations
 
 - [`backup_ducklake()`](https://tgerke.github.io/ducklake-r/reference/backup_ducklake.md)
   : Create a DuckLake backup
+
+## Quack remote access
+
+Connect to and serve DuckLake over the Quack protocol
+
+- [`install_quack()`](https://tgerke.github.io/ducklake-r/reference/install_quack.md)
+  : Install the Quack extension
+- [`attach_quack()`](https://tgerke.github.io/ducklake-r/reference/attach_quack.md)
+  : Connect to a remote Quack server
+- [`detach_quack()`](https://tgerke.github.io/ducklake-r/reference/detach_quack.md)
+  : Disconnect from a remote Quack server
+- [`quack_query()`](https://tgerke.github.io/ducklake-r/reference/quack_query.md)
+  : Run a one-off query against a remote Quack server
+- [`quack_serve()`](https://tgerke.github.io/ducklake-r/reference/quack_serve.md)
+  : Serve the current session over Quack
+- [`quack_stop()`](https://tgerke.github.io/ducklake-r/reference/quack_stop.md)
+  : Stop a Quack server
