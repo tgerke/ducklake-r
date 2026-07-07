@@ -36,7 +36,7 @@ begin_transaction <- function(conn = NULL) {
   if (is.null(conn)) {
     conn <- get_ducklake_connection()
   }
-  
+
   DBI::dbExecute(conn, "BEGIN TRANSACTION;")
   cli::cli_inform("Transaction started.")
   invisible(TRUE)
@@ -70,7 +70,7 @@ begin_transaction <- function(conn = NULL) {
 #' begin_transaction()
 #' # ... make changes ...
 #' commit_transaction()
-#' 
+#'
 #' # Commit with metadata
 #' begin_transaction()
 #' create_table(mtcars, "cars")
@@ -79,20 +79,26 @@ begin_transaction <- function(conn = NULL) {
 #'   commit_message = "Add cars dataset"
 #' )
 #' }
-commit_transaction <- function(conn = NULL, author = NULL, commit_message = NULL,
-                                commit_extra_info = NULL) {
+commit_transaction <- function(
+  conn = NULL,
+  author = NULL,
+  commit_message = NULL,
+  commit_extra_info = NULL
+) {
   if (is.null(conn)) {
     conn <- get_ducklake_connection()
   }
-  
+
   # In DuckLake v1.0, commit metadata must be set within the transaction
   # using CALL set_commit_message() before COMMIT
-  if (!is.null(author) || !is.null(commit_message) || !is.null(commit_extra_info)) {
+  if (
+    !is.null(author) || !is.null(commit_message) || !is.null(commit_extra_info)
+  ) {
     current_db <- tryCatch(
       DBI::dbGetQuery(conn, "SELECT current_database() as db")$db,
       error = function(e) NULL
     )
-    
+
     if (!is.null(current_db) && current_db != "") {
       # Build the CALL set_commit_message() statement
       # Signature: CALL ducklake.set_commit_message(author, message, extra_info => '...')
@@ -106,20 +112,25 @@ commit_transaction <- function(conn = NULL, author = NULL, commit_message = NULL
       } else {
         "NULL"
       }
-      
+
       if (!is.null(commit_extra_info)) {
         extra_sql <- sprintf("'%s'", gsub("'", "''", commit_extra_info))
         call_sql <- sprintf(
           "CALL %s.set_commit_message(%s, %s, extra_info => %s)",
-          current_db, author_sql, message_sql, extra_sql
+          current_db,
+          author_sql,
+          message_sql,
+          extra_sql
         )
       } else {
         call_sql <- sprintf(
           "CALL %s.set_commit_message(%s, %s)",
-          current_db, author_sql, message_sql
+          current_db,
+          author_sql,
+          message_sql
         )
       }
-      
+
       tryCatch(
         DBI::dbExecute(conn, call_sql),
         error = function(e) {
@@ -130,10 +141,10 @@ commit_transaction <- function(conn = NULL, author = NULL, commit_message = NULL
       cli::cli_warn("Could not determine ducklake name; metadata not set.")
     }
   }
-  
+
   DBI::dbExecute(conn, "COMMIT;")
   cli::cli_inform("Transaction committed.")
-  
+
   invisible(TRUE)
 }
 
@@ -163,7 +174,7 @@ commit_transaction <- function(conn = NULL, author = NULL, commit_message = NULL
 #' begin_transaction()
 #' # ... make changes ...
 #' commit_transaction()
-#' 
+#'
 #' # Add metadata to the snapshot after the fact
 #' set_snapshot_metadata(
 #'   ducklake_name = "my_ducklake",
@@ -171,54 +182,69 @@ commit_transaction <- function(conn = NULL, author = NULL, commit_message = NULL
 #'   commit_message = "Updated station names for clarity"
 #' )
 #' }
-set_snapshot_metadata <- function(ducklake_name, author = NULL, commit_message = NULL,
-                                   commit_extra_info = NULL, conn = NULL) {
+set_snapshot_metadata <- function(
+  ducklake_name,
+  author = NULL,
+  commit_message = NULL,
+  commit_extra_info = NULL,
+  conn = NULL
+) {
   if (is.null(conn)) {
     conn <- get_ducklake_connection()
   }
-  
-  if (is.null(author) && is.null(commit_message) && is.null(commit_extra_info)) {
+
+  if (
+    is.null(author) && is.null(commit_message) && is.null(commit_extra_info)
+  ) {
     cli::cli_warn("No metadata provided to set.")
     return(invisible(FALSE))
   }
-  
-  # Build SET clauses for the UPDATE
-  set_clauses <- c()
+
+  # Build parameterized SET clause to prevent SQL injection
+  set_parts <- character()
+  params <- list()
   if (!is.null(author)) {
-    set_clauses <- c(set_clauses,
-      sprintf("author = '%s'", gsub("'", "''", author)))
+    set_parts <- c(set_parts, "author = ?")
+    params <- c(params, list(author))
   }
   if (!is.null(commit_message)) {
-    set_clauses <- c(set_clauses,
-      sprintf("commit_message = '%s'", gsub("'", "''", commit_message)))
+    set_parts <- c(set_parts, "commit_message = ?")
+    params <- c(params, list(commit_message))
   }
   if (!is.null(commit_extra_info)) {
-    set_clauses <- c(set_clauses,
-      sprintf("commit_extra_info = '%s'", gsub("'", "''", commit_extra_info)))
+    set_parts <- c(set_parts, "commit_extra_info = ?")
+    params <- c(params, list(commit_extra_info))
   }
-  
-  # Qualify the metadata table name based on backend
+
+  # Qualify metadata table names based on backend
   backend <- get_ducklake_backend()
   meta_db <- paste0("__ducklake_metadata_", ducklake_name)
   if (backend %in% c("postgres", "mysql")) {
-    tbl_ref <- sprintf("\"%s\".ducklake_snapshot_changes", meta_db)
+    changes_ref <- sprintf("\"%s\".ducklake_snapshot_changes", meta_db)
+    snapshot_ref <- sprintf("\"%s\".ducklake_snapshot", meta_db)
   } else {
-    tbl_ref <- sprintf("\"%s\".main.ducklake_snapshot_changes", meta_db)
+    changes_ref <- sprintf("\"%s\".main.ducklake_snapshot_changes", meta_db)
+    snapshot_ref <- sprintf("\"%s\".main.ducklake_snapshot", meta_db)
   }
-  
+
   update_sql <- sprintf(
     "UPDATE %s SET %s WHERE snapshot_id = (SELECT MAX(snapshot_id) FROM %s)",
-    tbl_ref, paste(set_clauses, collapse = ", "), tbl_ref
+    changes_ref,
+    paste(set_parts, collapse = ", "),
+    snapshot_ref
   )
-  
-  tryCatch({
-    DBI::dbExecute(conn, update_sql)
-    cli::cli_inform("Snapshot metadata updated.")
-    invisible(TRUE)
-  }, error = function(e) {
-    cli::cli_warn("Could not update snapshot metadata: {e$message}")
-    invisible(FALSE)
-  })
+
+  tryCatch(
+    {
+      DBI::dbExecute(conn, update_sql, params = params)
+      cli::cli_inform("Snapshot metadata updated.")
+      invisible(TRUE)
+    },
+    error = function(e) {
+      cli::cli_warn("Could not update snapshot metadata: {e$message}")
+      invisible(FALSE)
+    }
+  )
 }
 
 #' Execute code within a transaction
@@ -283,27 +309,38 @@ set_snapshot_metadata <- function(ducklake_name, author = NULL, commit_message =
 #'   error = function(e) message("Transaction was rolled back: ", e$message)
 #' )
 #' }
-with_transaction <- function(expr, author = NULL, commit_message = NULL,
-                             commit_extra_info = NULL, conn = NULL) {
+with_transaction <- function(
+  expr,
+  author = NULL,
+  commit_message = NULL,
+  commit_extra_info = NULL,
+  conn = NULL
+) {
   if (is.null(conn)) {
     conn <- get_ducklake_connection()
   }
-  
+
   begin_transaction(conn = conn)
-  
-  tryCatch({
-    result <- force(expr)
-    commit_transaction(
-      conn = conn,
-      author = author,
-      commit_message = commit_message,
-      commit_extra_info = commit_extra_info
-    )
-    invisible(result)
-  }, error = function(e) {
-    rollback_transaction(conn = conn)
-    cli::cli_abort("Transaction rolled back due to error: {e$message}", call = NULL)
-  })
+
+  tryCatch(
+    {
+      result <- force(expr)
+      commit_transaction(
+        conn = conn,
+        author = author,
+        commit_message = commit_message,
+        commit_extra_info = commit_extra_info
+      )
+      invisible(result)
+    },
+    error = function(e) {
+      rollback_transaction(conn = conn)
+      cli::cli_abort(
+        "Transaction rolled back due to error: {e$message}",
+        call = NULL
+      )
+    }
+  )
 }
 
 #' Rollback a transaction
@@ -331,7 +368,7 @@ rollback_transaction <- function(conn = NULL) {
   if (is.null(conn)) {
     conn <- get_ducklake_connection()
   }
-  
+
   DBI::dbExecute(conn, "ROLLBACK;")
   cli::cli_inform("Transaction rolled back.")
   invisible(TRUE)

@@ -13,8 +13,7 @@ vignette: >
 has_deps <- requireNamespace("pharmaversesdtm", quietly = TRUE) &&
   requireNamespace("admiral", quietly = TRUE)
 duckdb_version_ok <- tryCatch({
-  v <- as.integer(gsub("\\.", "", sub("^v", "", packageVersion("duckdb"))))
-  v >= 151
+  packageVersion("duckdb") >= "1.5.1"
 }, error = function(e) FALSE)
 knitr::opts_chunk$set(
   collapse = TRUE,
