@@ -40,7 +40,10 @@ create_table <- function(data_source, table_name) {
     duckdb::duckdb_register(get_ducklake_connection(), temp_view_name, data_source)
     
     # Create the table from the temporary view
-    db_execute(sprintf("CREATE TABLE %s AS SELECT * FROM %s;", table_name, temp_view_name))
+    db_execute(sprintf(
+      "CREATE TABLE %s AS SELECT * FROM %s;",
+      quote_ident(table_name), quote_ident(temp_view_name)
+    ))
     
     # Unregister the temporary view
     duckdb::duckdb_unregister(get_ducklake_connection(), temp_view_name)
@@ -60,7 +63,10 @@ create_table <- function(data_source, table_name) {
   
   # Handle file paths and URLs
   if (is.character(data_source)) {
-    db_execute(sprintf("CREATE TABLE %s AS FROM '%s';", table_name, data_source))
+    db_execute(sprintf(
+      "CREATE TABLE %s AS FROM %s;",
+      quote_ident(table_name), quote_sql(data_source)
+    ))
   } else {
     cli::cli_abort("{.arg data_source} must be a character string (file path or URL) or a data.frame.")
   }

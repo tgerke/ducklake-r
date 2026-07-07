@@ -11,7 +11,8 @@ build_attach_sql(
   catalog_connection_string,
   read_only,
   override_data_path = FALSE,
-  data_inlining_row_limit = NULL
+  data_inlining_row_limit = NULL,
+  encrypted = FALSE
 )
 }
 \arguments{
@@ -28,6 +29,8 @@ build_attach_sql(
 \item{override_data_path}{Whether to add OVERRIDE_DATA_PATH TRUE}
 
 \item{data_inlining_row_limit}{Optional integer for DATA_INLINING_ROW_LIMIT}
+
+\item{encrypted}{Whether to add ENCRYPTED TRUE}
 }
 \value{
 A SQL ATTACH statement string

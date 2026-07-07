@@ -27,6 +27,17 @@ rows_update <- function(x, y, by = NULL, copy = TRUE, in_place = TRUE, unmatched
   dplyr::rows_update(x = x, y = y, by = by, copy = copy, in_place = in_place, unmatched = unmatched, ...)
 }
 
+#' @exportS3Method dplyr::rows_update
+rows_update.tbl_ducklake <- function(x, y, by = NULL, ...,
+                                     unmatched = "ignore",
+                                     copy = TRUE, in_place = TRUE) {
+  class(x) <- setdiff(class(x), "tbl_ducklake")
+  dplyr::rows_update(
+    x = x, y = y, by = by, ...,
+    unmatched = unmatched, copy = copy, in_place = in_place
+  )
+}
+
 #' Insert rows into a DuckLake table
 #'
 #' A wrapper around dplyr::rows_insert() with in_place = TRUE as the default,
@@ -55,6 +66,17 @@ rows_insert <- function(x, y, by = NULL, copy = TRUE, in_place = TRUE, conflict 
   dplyr::rows_insert(x = x, y = y, by = by, copy = copy, in_place = in_place, conflict = conflict, ...)
 }
 
+#' @exportS3Method dplyr::rows_insert
+rows_insert.tbl_ducklake <- function(x, y, by = NULL, ...,
+                                     conflict = "ignore",
+                                     copy = TRUE, in_place = TRUE) {
+  class(x) <- setdiff(class(x), "tbl_ducklake")
+  dplyr::rows_insert(
+    x = x, y = y, by = by, ...,
+    conflict = conflict, copy = copy, in_place = in_place
+  )
+}
+
 #' Delete rows from a DuckLake table
 #'
 #' A wrapper around dplyr::rows_delete() with in_place = TRUE as the default,
@@ -81,4 +103,15 @@ rows_insert <- function(x, y, by = NULL, copy = TRUE, in_place = TRUE, conflict 
 #' }
 rows_delete <- function(x, y, by = NULL, copy = TRUE, in_place = TRUE, unmatched = "ignore", ...) {
   dplyr::rows_delete(x = x, y = y, by = by, copy = copy, in_place = in_place, unmatched = unmatched, ...)
+}
+
+#' @exportS3Method dplyr::rows_delete
+rows_delete.tbl_ducklake <- function(x, y, by = NULL, ...,
+                                     unmatched = "ignore",
+                                     copy = TRUE, in_place = TRUE) {
+  class(x) <- setdiff(class(x), "tbl_ducklake")
+  dplyr::rows_delete(
+    x = x, y = y, by = by, ...,
+    unmatched = unmatched, copy = copy, in_place = in_place
+  )
 }

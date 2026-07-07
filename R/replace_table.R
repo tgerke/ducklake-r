@@ -67,7 +67,7 @@ replace_table <- function(.data, table_name, .quiet = TRUE) {
   
   # Drop the existing table
   if (!.quiet) cat("Dropping existing table...\n")
-  drop_sql <- sprintf("DROP TABLE IF EXISTS %s", table_name)
+  drop_sql <- sprintf("DROP TABLE IF EXISTS %s", quote_ident(table_name))
   db_execute(drop_sql)
   
   # Create the new table

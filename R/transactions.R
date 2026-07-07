@@ -99,7 +99,10 @@ commit_transaction <- function(
       error = function(e) NULL
     )
 
-    if (!is.null(current_db) && current_db != "") {
+    db_ok <- !is.null(current_db) && current_db != "" &&
+      grepl("^[A-Za-z_][A-Za-z0-9_]*$", current_db)
+
+    if (db_ok) {
       # Build the CALL set_commit_message() statement
       # Signature: CALL ducklake.set_commit_message(author, message, extra_info => '...')
       author_sql <- if (!is.null(author)) {
@@ -138,7 +141,7 @@ commit_transaction <- function(
         }
       )
     } else {
-      cli::cli_warn("Could not determine ducklake name; metadata not set.")
+      cli::cli_warn("Could not determine a usable ducklake name; metadata not set.")
     }
   }
 

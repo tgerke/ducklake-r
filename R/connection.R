@@ -85,7 +85,30 @@ set_ducklake_connection <- function(conn) {
 
   .ducklake_env$conn <- conn
   .ducklake_env$conn_owned <- FALSE
+  .ducklake_env$home_db <- tryCatch(
+    DBI::dbGetQuery(conn, "SELECT current_database() AS db")$db,
+    error = function(e) NULL
+  )
   invisible(conn)
+}
+
+#' Switch the session back to the connection's own catalog
+#'
+#' Detaching the currently `USE`d database is a DuckDB error, so callers must
+#' switch away first. Note the previous implementation ran `USE memory;`,
+#' which silently fails on file-backed connections -- the default catalog is
+#' named after the database file, not `memory`.
+#'
+#' @noRd
+use_home_database <- function(conn) {
+  home <- .ducklake_env$home_db
+  if (is.null(home) || !nzchar(home)) {
+    return(invisible(FALSE))
+  }
+  tryCatch({
+    DBI::dbExecute(conn, sprintf("USE %s;", quote_ident(home, conn)))
+    invisible(TRUE)
+  }, error = function(e) invisible(FALSE))
 }
 
 #' Create the package-owned DuckDB connection
@@ -104,15 +127,25 @@ create_ducklake_connection <- function() {
   conn <- DBI::dbConnect(duckdb::duckdb(dbdir = dbdir))
   DBI::dbExecute(conn, sprintf("PRAGMA temp_directory='%s'", dbroot))
 
+  # Remember the connection's own catalog so detach_ducklake() can switch
+  # back to it ("USE memory" only works for in-memory connections)
+  .ducklake_env$home_db <- tryCatch(
+    DBI::dbGetQuery(conn, "SELECT current_database() AS db")$db,
+    error = function(e) NULL
+  )
+
   if (!isTRUE(.ducklake_env$finalizer_registered)) {
     reg.finalizer(
       .ducklake_env,
       function(e) {
         if (!is.null(e$conn) && isTRUE(e$conn_owned)) {
-          tryCatch(
-            DBI::dbDisconnect(e$conn, shutdown = TRUE),
-            error = function(err) NULL
-          )
+          still_open <- tryCatch(DBI::dbIsValid(e$conn), error = function(err) FALSE)
+          if (still_open) {
+            tryCatch(
+              suppressWarnings(DBI::dbDisconnect(e$conn, shutdown = TRUE)),
+              error = function(err) NULL
+            )
+          }
         }
       },
       onexit = TRUE
@@ -163,14 +196,69 @@ close_ducklake_connection <- function(warn_not_owned = TRUE) {
   invisible(TRUE)
 }
 
-#' Get the current catalog backend type
+#' Record an attached lake's backend and connection string
+#'
+#' Attached lakes are tracked per name so that sessions with several lakes
+#' attached at once (possibly on different backends) resolve backend-specific
+#' behaviour correctly.
+#'
+#' @noRd
+register_lake <- function(ducklake_name, backend, catalog_connection_string = NULL) {
+  if (is.null(.ducklake_env$lakes)) {
+    .ducklake_env$lakes <- list()
+  }
+  .ducklake_env$lakes[[ducklake_name]] <- list(
+    backend = backend,
+    catalog_connection_string = catalog_connection_string
+  )
+  invisible(NULL)
+}
+
+#' Forget a lake's registry entry (all entries when name is NULL)
+#' @noRd
+unregister_lake <- function(ducklake_name = NULL) {
+  if (is.null(ducklake_name)) {
+    .ducklake_env$lakes <- list()
+  } else {
+    .ducklake_env$lakes[[ducklake_name]] <- NULL
+  }
+  invisible(NULL)
+}
+
+#' Get the catalog backend type of an attached lake
+#'
+#' @param ducklake_name Name of the lake to look up. When `NULL` (the
+#'   default), the lake the session is currently `USE`ing is looked up.
 #'
 #' @returns One of `"duckdb"`, `"postgres"`, `"sqlite"`, or `"mysql"`.
-#'   Defaults to `"duckdb"` when no backend has been set.
+#'   Defaults to `"duckdb"` when the lake is unknown.
 #' @export
-get_ducklake_backend <- function() {
-  backend <- .ducklake_env$backend
-  if (is.null(backend)) "duckdb" else backend
+get_ducklake_backend <- function(ducklake_name = NULL) {
+  lakes <- .ducklake_env$lakes
+  if (is.null(lakes) || length(lakes) == 0) {
+    return("duckdb")
+  }
+
+  if (is.null(ducklake_name)) {
+    conn <- .ducklake_env$conn
+    if (!is.null(conn)) {
+      ducklake_name <- tryCatch(
+        DBI::dbGetQuery(conn, "SELECT current_database() AS db")$db,
+        error = function(e) NULL
+      )
+    }
+  }
+
+  entry <- if (!is.null(ducklake_name)) lakes[[ducklake_name]] else NULL
+  if (!is.null(entry)) {
+    return(entry$backend)
+  }
+
+  # Unknown name: fall back to the single registered lake if unambiguous
+  if (length(lakes) == 1) {
+    return(lakes[[1]]$backend)
+  }
+  "duckdb"
 }
 
 #' Detach from a ducklake
@@ -204,18 +292,21 @@ detach_ducklake <- function(ducklake_name = NULL, shutdown = FALSE) {
 
   if (is_valid) {
     if (!is.null(ducklake_name)) {
-      tryCatch({
-        # Detach the user-facing database and its metadata catalog
-        DBI::dbExecute(conn, sprintf("DETACH %s;", ducklake_name))
-        metadata_name <- sprintf("__ducklake_metadata_%s", ducklake_name)
-        DBI::dbExecute(conn, sprintf("DETACH %s;", metadata_name))
-      }, error = function(e) {
-        # Ignore errors if database is not attached
-      })
+      # DuckDB refuses to DETACH the database currently in use, so switch
+      # back to the connection's own catalog first
+      use_home_database(conn)
 
-      # Switch back to in-memory so subsequent queries don't target
-      # the detached lake
-      tryCatch(DBI::dbExecute(conn, "USE memory;"), error = function(e) NULL)
+      # Detach the user-facing database and its metadata catalog,
+      # tolerating either one already being gone
+      tryCatch(
+        DBI::dbExecute(conn, sprintf("DETACH %s;", quote_ident(ducklake_name, conn))),
+        error = function(e) NULL
+      )
+      metadata_name <- sprintf("__ducklake_metadata_%s", ducklake_name)
+      tryCatch(
+        DBI::dbExecute(conn, sprintf("DETACH %s;", quote_ident(metadata_name, conn))),
+        error = function(e) NULL
+      )
     }
 
     if (shutdown) {
@@ -223,8 +314,8 @@ detach_ducklake <- function(ducklake_name = NULL, shutdown = FALSE) {
     }
   }
 
-  .ducklake_env$backend <- NULL
-  .ducklake_env$catalog_connection_string <- NULL
+  # A full shutdown detaches everything; otherwise only forget this lake
+  unregister_lake(if (shutdown) NULL else ducklake_name)
 
   invisible(NULL)
 }

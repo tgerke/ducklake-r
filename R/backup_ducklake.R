@@ -64,7 +64,7 @@ backup_ducklake <- function(ducklake_name, lake_path, backup_path) {
     cli::cli_abort("{.arg lake_path} does not exist: {.path {lake_path}}")
   }
 
-  backend <- get_ducklake_backend()
+  backend <- get_ducklake_backend(ducklake_name)
 
   # Create backup directory with timestamp
   timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S")
@@ -76,7 +76,7 @@ backup_ducklake <- function(ducklake_name, lake_path, backup_path) {
     catalog_file <- if (backend == "duckdb") {
       file.path(lake_path, paste0(ducklake_name, ".ducklake"))
     } else {
-      .ducklake_env$catalog_connection_string
+      .ducklake_env$lakes[[ducklake_name]]$catalog_connection_string
     }
 
     if (!is.null(catalog_file) && file.exists(catalog_file)) {
@@ -117,16 +117,26 @@ backup_ducklake <- function(ducklake_name, lake_path, backup_path) {
     ))
   }
 
-  # Backup data directory
-  main_dir <- file.path(lake_path, "main")
-  if (dir.exists(main_dir)) {
-    fs::dir_copy(
-      path = main_dir,
-      new_path = file.path(backup_dir, "main")
-    )
-    cli::cli_inform("Data files backed up successfully.")
+  # Backup the data directories. DuckLake creates one directory per schema
+  # (usually just "main", but any additional schemas live alongside it), so
+  # enumerate rather than assume. The backup destination is excluded in case
+  # it lives inside the lake path.
+  data_dirs <- list.dirs(lake_path, recursive = FALSE)
+  norm_backup <- normalizePath(backup_dir, mustWork = FALSE)
+  is_backup_dest <- vapply(
+    data_dirs,
+    function(d) startsWith(norm_backup, normalizePath(d, mustWork = FALSE)),
+    logical(1)
+  )
+  data_dirs <- data_dirs[!is_backup_dest]
+
+  if (length(data_dirs) > 0) {
+    for (d in data_dirs) {
+      fs::dir_copy(path = d, new_path = file.path(backup_dir, basename(d)))
+    }
+    cli::cli_inform("Data files backed up successfully ({length(data_dirs)} director{?y/ies}).")
   } else {
-    cli::cli_warn("Data directory not found: {.path {main_dir}}")
+    cli::cli_warn("No data directories found in {.path {lake_path}}.")
   }
 
   cli::cli_inform("Backup completed: {.path {backup_dir}}")

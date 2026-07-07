@@ -215,10 +215,13 @@ dir_tree(backup_dir)
 # First detach the original
 detach_ducklake("demo_lake")
 
-# Attach to the backup location
+# Attach to the backup location. override_data_path is needed because the
+# catalog remembers the original data location, which the backup no longer
+# matches.
 attach_ducklake(
   ducklake_name = "demo_lake",
-  lake_path = backup_dir
+  lake_path = backup_dir,
+  override_data_path = TRUE
 )
 
 # Verify you're working with the backup

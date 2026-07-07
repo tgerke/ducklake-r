@@ -1,5 +1,44 @@
 # ducklake (development version)
 
+## Production hardening
+
+### New Features
+
+* `attach_ducklake()` gains an `encrypted` argument: pass `encrypted = TRUE`
+  to have DuckLake encrypt the Parquet files it writes (#18). Note that the
+  encryption keys are stored in the catalog database, so protect the catalog.
+* `restore_table_version()` now works. It previously generated a
+  `RESTORE TABLE` statement that does not exist in DuckLake and failed on
+  every call. It now recreates the table from a time-travel read inside a
+  transaction, recording the restore as a new snapshot so history is
+  preserved.
+* `get_ducklake_backend()` gains a `ducklake_name` argument and tracks each
+  attached lake separately, so sessions with several lakes on different
+  catalog backends resolve backend-specific behaviour correctly.
+
+### Bug Fixes
+
+* `detach_ducklake()` now actually detaches. Previously the `DETACH` ran
+  while the lake was still the session's current database, which DuckDB
+  refuses, and the error was silently swallowed -- the lake stayed attached.
+  The session now switches back to the connection's own catalog first.
+  Relatedly, restoring a backup to a new location requires
+  `override_data_path = TRUE` (as documented); the storage vignette example
+  has been corrected.
+* Table names, lake names, and file paths are now quoted or validated before
+  being interpolated into SQL (`DBI::dbQuoteIdentifier()` and friends), so
+  names with spaces or quotes no longer produce malformed statements.
+* `rows_insert()`, `rows_update()`, and `rows_delete()` now also dispatch as
+  S3 methods on tables returned by `get_ducklake_table()`. Previously, if
+  dplyr was loaded *after* ducklake, dplyr's generics masked ducklake's
+  wrappers and calls failed with `conflict = "error"` complaints; load order
+  no longer matters.
+* `backup_ducklake()` backs up every schema directory, not just `main`.
+* The internal dplyr-to-SQL translation in `ducklake_exec()` no longer uses
+  `sink()` (which could leak diverted output on error), and now refuses
+  queries with subqueries or multiple `WHERE` clauses instead of generating
+  incorrect SQL.
+
 ## Connection management is now self-contained
 
 ducklake now creates and manages its own DuckDB connection instead of

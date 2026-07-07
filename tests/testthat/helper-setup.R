@@ -16,7 +16,11 @@ create_temp_ducklake <- function() {
   dir.create(temp_dir, showWarnings = FALSE, recursive = TRUE)
   
   # Use simple name without special characters that might cause issues
-  ducklake_name <- paste0("testlake_", format(Sys.time(), "%Y%m%d%H%M%S"))
+  ducklake_name <- paste0(
+    "testlake_",
+    format(Sys.time(), "%Y%m%d%H%M%S"), "_",
+    sample.int(.Machine$integer.max, 1)
+  )
   
   # Attach the ducklake - this creates the DuckLake catalog
   attach_ducklake(ducklake_name, lake_path = temp_dir)

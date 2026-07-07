@@ -31,6 +31,11 @@
 #'   Parquet files. The default (when `NULL`) uses the DuckLake default of 10
 #'   rows. Set to `0` to disable inlining for this connection. This setting is
 #'   not persisted; use [set_inlining_row_limit()] for persistent overrides.
+#' @param encrypted If `TRUE`, DuckLake encrypts the Parquet data files it
+#'   writes. Encryption keys are stored in the catalog database, so anyone
+#'   with access to the catalog can read the data -- protect the catalog
+#'   accordingly. Only applies when the lake is first created; an existing
+#'   lake keeps the setting it was created with. Default `FALSE`.
 #'
 #' @details
 #' For credential management with PostgreSQL or MySQL, consider DuckDB's
@@ -96,15 +101,20 @@
 #'   lake_path = "~/data/streaming",
 #'   data_inlining_row_limit = 100
 #' )
+#'
+#' # Encrypted Parquet files (keys live in the catalog)
+#' attach_ducklake("secure_lake", lake_path = "~/data/secure", encrypted = TRUE)
 #' }
 attach_ducklake <- function(ducklake_name, lake_path,
                              backend = c("duckdb", "postgres", "sqlite", "mysql"),
                              catalog_connection_string = NULL,
                              read_only = FALSE,
                              override_data_path = FALSE,
-                             data_inlining_row_limit = NULL) {
+                             data_inlining_row_limit = NULL,
+                             encrypted = FALSE) {
   backend <- match.arg(backend)
-  
+  check_identifier(ducklake_name)
+
   if (missing(lake_path) || is.null(lake_path)) {
     cli::cli_abort(c(
       "A {.arg lake_path} is required.",
@@ -131,32 +141,33 @@ attach_ducklake <- function(ducklake_name, lake_path,
   }
   
   conn <- get_ducklake_connection()
-  .ducklake_env$backend <- backend
-  .ducklake_env$catalog_connection_string <- catalog_connection_string
-  
+
   # Check if this ducklake is already attached to avoid conflicts
   # Query the list of attached databases
   attached <- tryCatch({
     DBI::dbGetQuery(conn, "SELECT database_name FROM duckdb_databases();")$database_name
   }, error = function(e) character(0))
-  
+
   if (ducklake_name %in% attached) {
     # Already attached - just switch to it
-    db_execute(sprintf("USE %s;", ducklake_name))
+    db_execute(sprintf("USE %s;", quote_ident(ducklake_name, conn)))
+    register_lake(ducklake_name, backend, catalog_connection_string)
     return(invisible(NULL))
   }
-  
+
   # Load required extensions (ducklake + backend-specific)
   ensure_extensions(backend)
-  
+
   # Build and run the ATTACH command
   attach_sql <- build_attach_sql(ducklake_name, lake_path, backend,
                                   catalog_connection_string, read_only,
                                   override_data_path,
-                                  data_inlining_row_limit)
+                                  data_inlining_row_limit,
+                                  encrypted)
   db_execute(attach_sql)
-  db_execute(sprintf("USE %s;", ducklake_name))
-  
+  db_execute(sprintf("USE %s;", quote_ident(ducklake_name, conn)))
+  register_lake(ducklake_name, backend, catalog_connection_string)
+
   invisible(NULL)
 }
 
@@ -198,13 +209,15 @@ ensure_extensions <- function(backend) {
 #' @param read_only Whether to attach in read-only mode
 #' @param override_data_path Whether to add OVERRIDE_DATA_PATH TRUE
 #' @param data_inlining_row_limit Optional integer for DATA_INLINING_ROW_LIMIT
+#' @param encrypted Whether to add ENCRYPTED TRUE
 #'
 #' @returns A SQL ATTACH statement string
 #' @keywords internal
 build_attach_sql <- function(ducklake_name, lake_path, backend,
                               catalog_connection_string, read_only,
                               override_data_path = FALSE,
-                              data_inlining_row_limit = NULL) {
+                              data_inlining_row_limit = NULL,
+                              encrypted = FALSE) {
   connection_string <- switch(backend,
     duckdb = {
       ducklake_path <- file.path(lake_path, paste0(ducklake_name, ".ducklake"))
@@ -232,7 +245,11 @@ build_attach_sql <- function(ducklake_name, lake_path, backend,
   if (!is.null(data_inlining_row_limit)) {
     options <- c(options, sprintf("DATA_INLINING_ROW_LIMIT %d", as.integer(data_inlining_row_limit)))
   }
-  
+
+  if (encrypted) {
+    options <- c(options, "ENCRYPTED TRUE")
+  }
+
   if (length(options) > 0) {
     options_str <- paste(options, collapse = ", ")
     sprintf("ATTACH '%s' AS %s (%s);", connection_string, ducklake_name, options_str)

@@ -8,6 +8,9 @@
 get_ducklake_table <- function(tbl_name) {
   tbl <- dplyr::tbl(get_ducklake_connection(), tbl_name)
   attr(tbl, "ducklake_table_name") <- tbl_name
+  # Subclass so dplyr::rows_insert()/rows_update()/rows_delete() dispatch to
+  # the DuckLake-appropriate defaults regardless of package load order
+  class(tbl) <- c("tbl_ducklake", class(tbl))
   return(tbl)
 }
 

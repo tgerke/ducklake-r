@@ -85,6 +85,7 @@ set_inlining_row_limit <- function(limit,
         )
       }
     }
+    check_identifier(ducklake_name)
 
     if (!is.null(table_name) && !is.null(schema_name)) {
       call_sql <- sprintf(
@@ -172,6 +173,7 @@ get_inlining_row_limit <- function(table_name = NULL,
       )
     }
   }
+  check_identifier(ducklake_name)
 
   if (!is.null(table_name) && !is.null(schema_name)) {
     scope_filter <- sprintf("scope = 'TABLE' AND scope_entry = '%s.%s'",
@@ -263,6 +265,7 @@ flush_inlined_data <- function(ducklake_name = NULL,
       )
     }
   }
+  check_identifier(ducklake_name)
 
   # Build the CALL statement
   if (!is.null(table_name) && !is.null(schema_name)) {
@@ -350,6 +353,7 @@ checkpoint_ducklake <- function(ducklake_name = NULL) {
       )
     }
   }
+  check_identifier(ducklake_name)
 
   DBI::dbExecute(conn, sprintf("CHECKPOINT %s;", ducklake_name))
   cli::cli_inform("Checkpoint completed for {.val {ducklake_name}}.")

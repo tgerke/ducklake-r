@@ -131,12 +131,13 @@ detach_quack <- function(quack_name = NULL) {
   }
 
   if (!is.null(quack_name)) {
+    # Switch off the remote catalog first: DuckDB cannot DETACH the
+    # database currently in use
+    use_home_database(conn)
     tryCatch(
-      DBI::dbExecute(conn, sprintf("DETACH %s;", quack_name)),
+      DBI::dbExecute(conn, sprintf("DETACH %s;", quote_ident(quack_name, conn))),
       error = function(e) NULL
     )
-    # Switch back to in-memory so later queries do not target the detached server
-    tryCatch(DBI::dbExecute(conn, "USE memory;"), error = function(e) NULL)
   }
 
   invisible(NULL)
@@ -358,6 +359,7 @@ build_quack_uri <- function(uri) {
 #' @returns A SQL ATTACH statement string.
 #' @keywords internal
 build_quack_attach_sql <- function(quack_name, uri, token = NULL, disable_ssl = FALSE) {
+  check_identifier(quack_name, arg = "quack_name")
   uri <- build_quack_uri(uri)
 
   options <- "TYPE quack"
@@ -372,13 +374,3 @@ build_quack_attach_sql <- function(quack_name, uri, token = NULL, disable_ssl = 
   sprintf("ATTACH %s AS %s (%s);", quote_sql(uri), quack_name, options_str)
 }
 
-#' Quote a value as a SQL string literal
-#'
-#' Wraps `x` in single quotes and doubles any embedded single quotes.
-#'
-#' @param x A length-one character vector.
-#' @returns A quoted SQL string literal.
-#' @keywords internal
-quote_sql <- function(x) {
-  sprintf("'%s'", gsub("'", "''", x))
-}

@@ -45,85 +45,76 @@
 update_table <- function(.data, table_name, .quiet = FALSE) {
 
   if (!.quiet) {
-    cat("=== DEBUG: update_table called ===\n")
-    cat("Query class:", class(.data), "\n")
-    cat("Target table:", table_name, "\n")
+    cli::cli_inform("Translating dplyr query into an in-place statement for {.val {table_name}}.")
   }
 
   tryCatch({
-    if (!.quiet) cat("=== DEBUG: Getting SQL directly ===\n")
+    # Render the dplyr query to SQL (no sink()/tempfile indirection)
+    combined_sql <- as.character(dbplyr::remote_query(.data))
+    combined_sql <- gsub("\\s+", " ", trimws(combined_sql))
 
-    # Get the SQL
-    temp_file <- tempfile()
-    sink(temp_file)
-    dplyr::show_query(.data)
-    sink()
-
-    temp_sql <- readLines(temp_file)
-    unlink(temp_file)
-
-    if (!.quiet) cat("Raw SQL lines:", length(temp_sql), "\n")
-
-    if (length(temp_sql) == 0) {
-      stop("No SQL content extracted")
+    if (!nzchar(combined_sql)) {
+      cli::cli_abort("No SQL could be rendered from {.arg .data}.")
     }
 
-    combined_sql <- paste(temp_sql, collapse = " ")
-    combined_sql <- gsub("<SQL>", "", combined_sql)
-    combined_sql <- gsub("^\\s*", "", combined_sql)
-    combined_sql <- gsub("\\s*$", "", combined_sql)
-    combined_sql <- gsub("\\s+", " ", combined_sql)
+    if (!.quiet) cli::cli_inform("Rendered SQL: {.code {combined_sql}}")
 
-    if (!.quiet) cat("Cleaned SQL:", combined_sql, "\n")
+    # This regex surgery only works on a simple single-SELECT query.
+    # Refuse anything with subqueries or multiple WHERE clauses rather than
+    # silently generating wrong SQL.
+    n_where <- length(gregexpr("\\bWHERE\\b", combined_sql)[[1]])
+    if (grepl("\\bWHERE\\b", combined_sql) && n_where > 1) {
+      cli::cli_abort(c(
+        "The dplyr query is too complex for an in-place update ({n_where} WHERE clauses found).",
+        "i" = "Use {.fn replace_table} for complex transformations, or {.fn ducklake_exec} with explicit SQL."
+      ))
+    }
+    if (grepl("\\(\\s*SELECT\\b", combined_sql, ignore.case = TRUE)) {
+      cli::cli_abort(c(
+        "The dplyr query contains a subquery, which in-place updates do not support.",
+        "i" = "Use {.fn replace_table} for complex transformations, or {.fn ducklake_exec} with explicit SQL."
+      ))
+    }
 
     # Determine operation type
-    has_where <- grepl("WHERE", combined_sql)
+    has_where <- grepl("\\bWHERE\\b", combined_sql)
     has_case_when <- grepl("CASE WHEN", combined_sql)
     has_select_star <- grepl("SELECT\\s+[^,]*\\*", combined_sql)
 
-    if (!.quiet) {
-      cat("SQL analysis - has_where:", has_where, "has_case_when:", has_case_when,
-          "has_select_star:", has_select_star, "\n")
-    }
-
     # Operation detection
-    if (has_where && has_select_star) {
+    if (has_where && !has_case_when) {
       operation_type <- "delete"
     } else if (has_case_when) {
       operation_type <- "update"
-    } else if (has_where && !has_select_star) {
-      operation_type <- "delete"
     } else {
       operation_type <- "insert"
     }
 
-    if (!.quiet) cat("Operation type:", operation_type, "\n")
+    if (!.quiet) cli::cli_inform("Operation type: {.val {operation_type}}")
+
+    quoted_table <- quote_ident(table_name)
 
     # Generate SQL
     if (operation_type == "delete") {
-      where_part <- gsub(".*WHERE\\s+(.+)", "\\1", combined_sql)
-      if (!.quiet) cat("Extracted WHERE part:", where_part, "\n")
-
-      result_sql <- sprintf("DELETE FROM %s WHERE NOT (%s)", table_name, where_part)
+      where_part <- sub("^.*?\\bWHERE\\b\\s+", "", combined_sql)
+      result_sql <- sprintf("DELETE FROM %s WHERE NOT (%s)", quoted_table, where_part)
     } else if (operation_type == "update") {
       assignments <- extract_assignments_from_sql(combined_sql)
-      if (!.quiet) cat("Extracted assignments:", assignments, "\n")
-
-      result_sql <- sprintf("UPDATE %s SET %s", table_name, assignments)
+      result_sql <- sprintf("UPDATE %s SET %s", quoted_table, assignments)
 
       if (has_where) {
-        where_part <- gsub(".*WHERE\\s+(.+)", "\\1", combined_sql)
+        where_part <- sub("^.*?\\bWHERE\\b\\s+", "", combined_sql)
         result_sql <- paste(result_sql, "WHERE", where_part)
       }
     } else {
-      result_sql <- sprintf("INSERT INTO %s %s", table_name, combined_sql)
+      result_sql <- sprintf("INSERT INTO %s %s", quoted_table, combined_sql)
     }
 
-    if (!.quiet) cat("Generated SQL:", result_sql, "\n")
-    
+    if (!.quiet) cli::cli_inform("Generated SQL: {.code {result_sql}}")
+
     # Execute the generated SQL directly
-    result <- db_execute(result_sql)
-    
+    db_execute(result_sql)
+
     # Return invisibly for potential chaining
     invisible(result_sql)
 
