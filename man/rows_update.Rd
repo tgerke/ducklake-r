@@ -25,7 +25,7 @@ rows_update(
 
 \item{in_place}{Whether to modify the table in place (default TRUE for DuckLake)}
 
-\item{unmatched}{How to handle unmatched rows (default "error")}
+\item{unmatched}{How to handle unmatched rows (default "ignore")}
 
 \item{...}{Additional arguments passed to dplyr::rows_update()}
 }
@@ -35,6 +35,21 @@ The updated table
 \description{
 A wrapper around dplyr::rows_update() with in_place = TRUE as the default,
 since DuckLake is designed for in-place modifications.
+}
+\details{
+\subsection{When to use \verb{rows_*()} vs \code{\link[=replace_table]{replace_table()}}}{
+
+Use the \verb{rows_*()} functions for \strong{targeted, incremental changes}: appending
+a batch of new records, correcting a handful of values, or removing specific
+rows. Each call is a single SQL statement against the existing table -- no
+data leaves the database, and with data inlining enabled (DuckLake's default)
+small changes land in the catalog without creating tiny Parquet files.
+
+Use \code{\link[=replace_table]{replace_table()}} for \strong{structural or bulk changes}: adding or removing
+columns, or transformations that touch most rows. It collects the transformed
+data into R and rewrites the table, which is simpler for schema changes but
+heavier for small edits.
+}
 }
 \examples{
 \dontrun{
@@ -46,3 +61,9 @@ rows_update(
 )
 }
 }
+\seealso{
+Other row operations:
+\code{\link[=rows_delete]{rows_delete()}},
+\code{\link[=rows_insert]{rows_insert()}}
+}
+\concept{row operations}

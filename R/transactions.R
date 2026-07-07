@@ -6,6 +6,7 @@
 #' @param conn Optional DuckDB connection object. If not provided, uses the default ducklake connection.
 #'
 #' @returns Invisibly returns TRUE on success
+#' @family transactions
 #' @export
 #'
 #' @details
@@ -53,6 +54,7 @@ begin_transaction <- function(conn = NULL) {
 #' @param commit_extra_info Optional extra information about the commit
 #'
 #' @returns Invisibly returns TRUE on success
+#' @family transactions
 #' @export
 #'
 #' @details
@@ -164,6 +166,7 @@ commit_transaction <- function(
 #' @param conn Optional DuckDB connection object. If not provided, uses the default ducklake connection.
 #'
 #' @returns Invisibly returns TRUE on success
+#' @family transactions
 #' @export
 #'
 #' @details
@@ -265,6 +268,7 @@ set_snapshot_metadata <- function(
 #' @param conn Optional DuckDB connection object. If not provided, uses the default ducklake connection.
 #'
 #' @returns Invisibly returns the result of the expression
+#' @family transactions
 #' @export
 #'
 #' @details
@@ -354,6 +358,7 @@ with_transaction <- function(
 #' @param conn Optional DuckDB connection object. If not provided, uses the default ducklake connection.
 #'
 #' @returns Invisibly returns TRUE on success
+#' @family transactions
 #' @export
 #'
 #' @details

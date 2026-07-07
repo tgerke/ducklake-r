@@ -27,3 +27,12 @@ install_ducklake(backend = "postgres")
 install_ducklake(backend = c("postgres", "sqlite", "mysql"))
 }
 }
+\seealso{
+Other connection management:
+\code{\link[=attach_ducklake]{attach_ducklake()}},
+\code{\link[=detach_ducklake]{detach_ducklake()}},
+\code{\link[=get_ducklake_backend]{get_ducklake_backend()}},
+\code{\link[=get_ducklake_connection]{get_ducklake_connection()}},
+\code{\link[=set_ducklake_connection]{set_ducklake_connection()}}
+}
+\concept{connection management}

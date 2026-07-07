@@ -7,11 +7,39 @@
 get_ducklake_table(tbl_name)
 }
 \arguments{
-\item{tbl_name}{Character string, name of the table to retrieve}
+\item{tbl_name}{Character string, name of the table to retrieve.}
 }
 \value{
-A DuckLake table of class \code{tbl_duckdb_connection} with the table name stored as an attribute
+A lazy table (class \code{tbl_ducklake}) that works with dplyr verbs.
+The table name is stored in the \code{ducklake_table_name} attribute.
 }
 \description{
-Get a DuckLake table
+Returns a lazy reference to a table in the attached DuckLake. Like
+\code{\link[dplyr:tbl]{dplyr::tbl()}}, nothing is read until you \code{collect()}: build up your
+\code{filter()}/\code{mutate()}/\code{summarise()} pipeline first and DuckDB executes it
+as a single query, only pulling the rows you asked for into R.
 }
+\examples{
+\dontrun{
+attach_ducklake("my_lake", lake_path = "~/data/lake")
+create_table(mtcars, "cars")
+
+# Query lazily with dplyr, then collect
+get_ducklake_table("cars") |>
+  dplyr::filter(cyl > 4) |>
+  dplyr::summarise(avg_mpg = mean(mpg), .by = cyl) |>
+  dplyr::collect()
+}
+}
+\seealso{
+\code{\link[=create_table]{create_table()}} to create tables, \code{\link[=get_ducklake_table_asof]{get_ducklake_table_asof()}}
+and \code{\link[=get_ducklake_table_version]{get_ducklake_table_version()}} for time-travel reads.
+
+Other table operations:
+\code{\link[=create_table]{create_table()}},
+\code{\link[=ducklake_exec]{ducklake_exec()}},
+\code{\link[=get_metadata_table]{get_metadata_table()}},
+\code{\link[=replace_table]{replace_table()}},
+\code{\link[=show_ducklake_query]{show_ducklake_query()}}
+}
+\concept{table operations}

@@ -33,3 +33,10 @@ table format (Delta Lake, Iceberg, etc.).
 list_table_snapshots("my_table")
 }
 }
+\seealso{
+Other time travel:
+\code{\link[=get_ducklake_table_asof]{get_ducklake_table_asof()}},
+\code{\link[=get_ducklake_table_version]{get_ducklake_table_version()}},
+\code{\link[=restore_table_version]{restore_table_version()}}
+}
+\concept{time travel}

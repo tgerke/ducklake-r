@@ -21,4 +21,12 @@ detach_quack("team")
 }
 \seealso{
 \code{\link[=attach_quack]{attach_quack()}}
+
+Other quack:
+\code{\link[=attach_quack]{attach_quack()}},
+\code{\link[=install_quack]{install_quack()}},
+\code{\link[=quack_query]{quack_query()}},
+\code{\link[=quack_serve]{quack_serve()}},
+\code{\link[=quack_stop]{quack_stop()}}
 }
+\concept{quack}

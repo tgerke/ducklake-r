@@ -16,6 +16,7 @@
 #' @param load If `TRUE` (the default), load the extension after installing it.
 #'
 #' @returns NULL
+#' @family quack
 #' @export
 #'
 #' @seealso [attach_quack()], [quack_serve()]
@@ -60,6 +61,7 @@ install_quack <- function(load = TRUE) {
 #'   Only appropriate on a trusted network.
 #'
 #' @returns NULL
+#' @family quack
 #' @export
 #'
 #' @seealso [detach_quack()], [quack_query()], [quack_serve()]
@@ -114,6 +116,7 @@ attach_quack <- function(quack_name, uri, token = NULL, disable_ssl = FALSE) {
 #'   detached.
 #'
 #' @returns NULL
+#' @family quack
 #' @export
 #'
 #' @seealso [attach_quack()]
@@ -156,6 +159,7 @@ detach_quack <- function(quack_name = NULL) {
 #' @param disable_ssl Connect over plain HTTP instead of HTTPS (default `FALSE`).
 #'
 #' @returns A data.frame with the query result.
+#' @family quack
 #' @export
 #'
 #' @seealso [attach_quack()]
@@ -208,6 +212,7 @@ quack_query <- function(uri, query, token = NULL, disable_ssl = FALSE) {
 #'   Only appropriate on a trusted network.
 #'
 #' @returns The server `uri`, invisibly.
+#' @family quack
 #' @export
 #'
 #' @seealso [quack_stop()], [attach_quack()]
@@ -257,6 +262,7 @@ quack_serve <- function(uri = "quack:localhost", token = NULL,
 #' @param uri Address the server is listening on (default `"quack:localhost"`).
 #'
 #' @returns `TRUE`, invisibly.
+#' @family quack
 #' @export
 #'
 #' @seealso [quack_serve()]

@@ -11,21 +11,21 @@
 #' @details
 #' This function performs in-place UPDATE operations on existing columns.
 #' **Important limitations:**
-#' 
+#'
 #' - **Cannot add or remove columns** - Only modifies values in existing columns
-#' - **Does not create snapshots** - UPDATE operations modify in-place without creating 
-#'   snapshots, even when wrapped in transactions. Only CREATE operations trigger snapshots.
 #' - **All columns must exist** - Any column referenced in mutate() must already exist in the table
-#' 
+#' - **Simple queries only** - Subqueries and multi-WHERE queries are refused
+#'
+#' Like all committed DuckLake changes, the UPDATE/DELETE/INSERT this
+#' generates is recorded as a snapshot and can be time-traveled to.
+#'
 #' Use `replace_table()` if you need to:
 #' - Add new derived columns
 #' - Remove columns
-#' - Create a new versioned snapshot
-#' 
+#'
 #' Use `update_table()` when:
 #' - Making targeted value corrections to existing columns
-#' - Performance is critical and versioning is not needed
-#' - Updating specific rows with filter()
+#' - Updating specific rows with filter(), without rewriting the table
 #'
 #' @examples
 #' \dontrun{

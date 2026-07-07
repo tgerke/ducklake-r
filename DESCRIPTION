@@ -6,7 +6,12 @@ Authors@R: c(
     person("Stefan", "Linner", role = "ctb"),
     person("Javier", "Orraca-Deatcu", role = "ctb")
   )
-Description: Some features of the new DuckLake ecosystem are not readily available from the existing duckdb and duckplyr packages. This package seeks to fill that gap.
+Description: A tidyverse-friendly interface to DuckLake, the DuckDB
+    lakehouse format. Attach versioned data lakes from R and work with
+    them using familiar dplyr verbs, with support for ACID transactions,
+    time travel queries, snapshot audit trails, data inlining, encrypted
+    storage, multiple catalog backends (DuckDB, PostgreSQL, SQLite,
+    MySQL), and remote access over DuckDB's Quack protocol.
 License: MIT + file LICENSE
 URL: https://tgerke.github.io/ducklake-r/, https://github.com/tgerke/ducklake-r
 BugReports: https://github.com/tgerke/ducklake-r/issues

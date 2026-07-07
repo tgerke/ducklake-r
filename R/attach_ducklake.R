@@ -62,6 +62,7 @@
 #' See \url{https://github.com/duckdb/duckdb/issues/7892}.
 #'
 #' @returns NULL
+#' @family connection management
 #' @export
 #'
 #' @seealso [detach_ducklake()], [install_ducklake()]

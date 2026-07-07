@@ -17,3 +17,22 @@ Defaults to \code{"duckdb"} when the lake is unknown.
 \description{
 Get the catalog backend type of an attached lake
 }
+\examples{
+\dontrun{
+attach_ducklake("my_lake", lake_path = "~/data/lake")
+get_ducklake_backend()
+#> [1] "duckdb"
+
+# With several lakes attached, look one up by name
+get_ducklake_backend("my_sqlite_lake")
+}
+}
+\seealso{
+Other connection management:
+\code{\link[=attach_ducklake]{attach_ducklake()}},
+\code{\link[=detach_ducklake]{detach_ducklake()}},
+\code{\link[=get_ducklake_connection]{get_ducklake_connection()}},
+\code{\link[=install_ducklake]{install_ducklake()}},
+\code{\link[=set_ducklake_connection]{set_ducklake_connection()}}
+}
+\concept{connection management}

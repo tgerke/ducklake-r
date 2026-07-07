@@ -43,4 +43,12 @@ quack_stop()
 }
 \seealso{
 \code{\link[=quack_stop]{quack_stop()}}, \code{\link[=attach_quack]{attach_quack()}}
+
+Other quack:
+\code{\link[=attach_quack]{attach_quack()}},
+\code{\link[=detach_quack]{detach_quack()}},
+\code{\link[=install_quack]{install_quack()}},
+\code{\link[=quack_query]{quack_query()}},
+\code{\link[=quack_stop]{quack_stop()}}
 }
+\concept{quack}

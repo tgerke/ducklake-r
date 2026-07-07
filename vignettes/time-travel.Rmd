@@ -237,23 +237,25 @@ bind_rows(original, adjusted) |>
 
 ## Restoring Previous Versions
 
-If we need to undo changes, we can restore a table to a previous version by reading that version and replacing the current table:
+If we need to undo changes, `restore_table_version()` rolls a table back to
+an earlier snapshot in one call:
 
 ```{r restore-demo}
-# Let's say we want to go back to version 2 (before adding classifications)
-# We restore by reading version 2 and replacing the current table
-with_transaction(
-  get_ducklake_table_version("cars", version = 2) |>
-    replace_table("cars"),
-  author = "Senior Analyst", 
-  commit_message = "Restore to version 2 (before efficiency classification)"
-)
+# Go back to version 2 (before adding classifications)
+restore_table_version("cars", version = 2)
 
 # Verify the restoration - efficiency_class column should be gone
 get_ducklake_table("cars") |> colnames()
 ```
 
-After restoring, we can see that the efficiency_class column is no longer present. A new snapshot is created for the restoration:
+You can also restore to a point in time with
+`restore_table_version("cars", timestamp = "2026-07-01 09:00:00")`.
+
+Nothing is lost in a restore: the rollback happens *forward*, as a new
+snapshot (with a commit message noting the restore point), so the full
+history — including the states after the restore point — remains available
+for time travel. That also means a restore is itself reversible with another
+`restore_table_version()` call:
 
 ```{r after-restore}
 list_table_snapshots("cars")

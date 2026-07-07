@@ -8,6 +8,7 @@
 #' @param conn Optional DuckDB connection object. If not provided, uses the default ducklake connection.
 #'
 #' @returns A dplyr lazy query object (tbl_lazy) that can be further manipulated with dplyr verbs
+#' @family time travel
 #' @export
 #'
 #' @details
@@ -87,6 +88,7 @@ get_ducklake_table_asof <- function(table_name, timestamp, conn = NULL) {
 #' @param conn Optional DuckDB connection object. If not provided, uses the default ducklake connection.
 #'
 #' @returns A dplyr lazy query object (tbl_lazy) that can be further manipulated with dplyr verbs
+#' @family time travel
 #' @export
 #'
 #' @details
@@ -140,6 +142,7 @@ get_ducklake_table_version <- function(table_name, version, conn = NULL) {
 #' @param conn Optional DuckDB connection object. If not provided, uses the default ducklake connection.
 #'
 #' @returns A data frame with snapshot information (version, timestamp, etc.)
+#' @family time travel
 #' @export
 #'
 #' @details
@@ -218,6 +221,7 @@ list_table_snapshots <- function(table_name = NULL, ducklake_name = NULL, conn =
 #' @param conn Optional DuckDB connection object. If not provided, uses the default ducklake connection.
 #'
 #' @returns Invisibly returns TRUE on success
+#' @family time travel
 #' @export
 #'
 #' @details

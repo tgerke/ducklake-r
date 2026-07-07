@@ -5,6 +5,7 @@
 #' @param .quiet Logical, whether to suppress debug output (default TRUE)
 #'
 #' @returns The result from db_execute()
+#' @family table operations
 #' @export
 #'
 #' @details

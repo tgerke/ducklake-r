@@ -12,6 +12,7 @@
 #'   (MinGW toolchain). See [attach_ducklake()] for details.
 #'
 #' @returns NULL
+#' @family connection management
 #' @export
 #'
 #' @examples

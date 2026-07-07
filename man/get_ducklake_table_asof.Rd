@@ -56,3 +56,10 @@ get_ducklake_table_asof("my_table", snapshots$snapshot_time[2] + 1) |>
   summarise(total = sum(amount))
 }
 }
+\seealso{
+Other time travel:
+\code{\link[=get_ducklake_table_version]{get_ducklake_table_version()}},
+\code{\link[=list_table_snapshots]{list_table_snapshots()}},
+\code{\link[=restore_table_version]{restore_table_version()}}
+}
+\concept{time travel}

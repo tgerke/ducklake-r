@@ -12,6 +12,7 @@
 #'   subdirectory will be created within this path.
 #'
 #' @returns Invisibly returns the path to the created backup directory
+#' @family maintenance
 #' @export
 #'
 #' @details

@@ -8,6 +8,7 @@
 #' @param table_name Name of the new table
 #'
 #' @returns NULL
+#' @family table operations
 #' @export
 #'
 #' @examples

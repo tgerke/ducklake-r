@@ -53,6 +53,17 @@ Install the development version of ducklake with:
 pak::pak("tgerke/ducklake-r")
 ```
 
+ducklake requires the [duckdb](https://r.duckdb.org) R package version
+1.5.1 or newer (DuckDB engine 1.5.1+, matching the stable
+[DuckLake v1.0 specification](https://ducklake.select/docs/stable/specification/introduction)).
+The Quack remote-access features need DuckDB 1.5.3 or newer, available on
+CRAN since duckdb 1.5.4.
+
+ducklake manages its own DuckDB connection, so there is nothing to set up:
+just `attach_ducklake()` and go. If you prefer to supply your own connection
+(for example, one shared with other DBI-based tools), register it with
+`set_ducklake_connection()`.
+
 ## Quick example: Layered data workflow
 
 ```{r example, message=FALSE}
@@ -142,11 +153,13 @@ Each layer is automatically versioned, providing complete data lineage from raw 
 
 Check out the [pkgdown site](https://tgerke.github.io/ducklake-r/) for detailed vignettes:
 
-- [Clinical Trial Data Lake](https://tgerke.github.io/ducklake-r/articles/clinical-trial-datalake.html) - **Start here**: Complete workflow from SDTM to ADaM with regulatory artifacts
-- [Cookbook](https://tgerke.github.io/ducklake-r/articles/ducklake.html) - Quick recipes for common operations
-- [Modifying Tables](https://tgerke.github.io/ducklake-r/articles/modifying-tables.html) - Two approaches for table modifications
+- [Getting Started](https://tgerke.github.io/ducklake-r/articles/ducklake.html) - Quick recipes for common operations
+- [Clinical Trial Data Lake](https://tgerke.github.io/ducklake-r/articles/clinical-trial-datalake.html) - Complete workflow from SDTM to ADaM with regulatory artifacts
+- [Modifying Tables](https://tgerke.github.io/ducklake-r/articles/modifying-tables.html) - Choosing between `rows_*` and `replace_table()`
+- [Data Inlining](https://tgerke.github.io/ducklake-r/articles/data-inlining.html) - Streaming-friendly small writes
 - [Transactions](https://tgerke.github.io/ducklake-r/articles/transactions.html) - ACID transaction support
-- [Time Travel](https://tgerke.github.io/ducklake-r/articles/time-travel.html) - Query historical data
+- [Time Travel](https://tgerke.github.io/ducklake-r/articles/time-travel.html) - Query and restore historical data
+- [Storage and Backups](https://tgerke.github.io/ducklake-r/articles/storage-and-backups.html) - Back up and recover your lake
 - [Quack Remote Access](https://tgerke.github.io/ducklake-r/articles/quack-remote-access.html) - Share a DuckLake over the network with the Quack protocol
 
 ## Key features
@@ -161,6 +174,7 @@ Check out the [pkgdown site](https://tgerke.github.io/ducklake-r/) for detailed 
 - **Performance-oriented**: Uses Parquet columnar storage with statistics for filter pushdown, enabling fast queries on large datasets
 - **Schema evolution**: Adapt table schemas over time as requirements change
 - **Tidyverse interface**: Familiar dplyr syntax for data manipulation
-- **Two complementary approaches**: `rows_*` functions for data.frames and pipeline functions for dplyr workflows
+- **Encryption**: Opt-in Parquet encryption with `attach_ducklake(encrypted = TRUE)`
+- **Two complementary approaches**: `rows_*` functions for incremental changes and `replace_table()` pipelines for structural ones — both fully versioned
 - **Complete audit trails**: Who changed what, when, and why—suitable for regulated industries
 - **Seamless integration**: Works with duckdb, DBI, dbplyr, and the broader tidyverse ecosystem

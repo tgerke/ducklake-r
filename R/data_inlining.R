@@ -36,6 +36,7 @@
 #' data to Parquet when ready.
 #'
 #' @returns Invisibly returns `NULL`.
+#' @family data inlining
 #' @export
 #'
 #' @seealso [get_inlining_row_limit()], [flush_inlined_data()],
@@ -134,6 +135,7 @@ set_inlining_row_limit <- function(limit,
 #'   `NULL`, the current database is used.
 #'
 #' @returns An integer: the effective inlining row limit.
+#' @family data inlining
 #' @export
 #'
 #' @seealso [set_inlining_row_limit()]
@@ -234,6 +236,8 @@ get_inlining_row_limit <- function(table_name = NULL,
 #'
 #' @returns A data frame with columns `schema_name`, `table_name`, and
 #'   `rows_flushed`. Tables with no inlined data are omitted.
+#' @family data inlining
+#' @family maintenance
 #' @export
 #'
 #' @seealso [set_inlining_row_limit()], [checkpoint_ducklake()]
@@ -327,6 +331,8 @@ flush_inlined_data <- function(ducklake_name = NULL,
 #' consolidate inlined data and keep query performance optimal.
 #'
 #' @returns Invisibly returns `NULL`.
+#' @family data inlining
+#' @family maintenance
 #' @export
 #'
 #' @seealso [flush_inlined_data()], [set_inlining_row_limit()]

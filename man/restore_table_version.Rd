@@ -50,4 +50,10 @@ restore_table_version("my_table", timestamp = "2024-01-15 10:00:00")
 \seealso{
 \code{\link[=get_ducklake_table_version]{get_ducklake_table_version()}}, \code{\link[=get_ducklake_table_asof]{get_ducklake_table_asof()}},
 \code{\link[=list_table_snapshots]{list_table_snapshots()}}
+
+Other time travel:
+\code{\link[=get_ducklake_table_asof]{get_ducklake_table_asof()}},
+\code{\link[=get_ducklake_table_version]{get_ducklake_table_version()}},
+\code{\link[=list_table_snapshots]{list_table_snapshots()}}
 }
+\concept{time travel}

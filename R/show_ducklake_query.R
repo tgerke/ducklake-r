@@ -7,6 +7,7 @@
 #' @param table_name The target table name for the operation. If not provided, will be extracted from the table attribute (set by get_ducklake_table())
 #'
 #' @returns The first argument, invisibly (following show_query convention)
+#' @family table operations
 #' @export
 #'
 #' @examples

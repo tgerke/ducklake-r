@@ -66,3 +66,9 @@ backup_dir <- backup_ducklake(
 # attach_ducklake("my_lake", lake_path = backup_dir, override_data_path = TRUE)
 }
 }
+\seealso{
+Other maintenance:
+\code{\link[=checkpoint_ducklake]{checkpoint_ducklake()}},
+\code{\link[=flush_inlined_data]{flush_inlined_data()}}
+}
+\concept{maintenance}

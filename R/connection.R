@@ -16,6 +16,7 @@
 #' session ends.
 #'
 #' @returns A DuckDB connection object (a `duckdb_connection`).
+#' @family connection management
 #' @export
 #'
 #' @examples
@@ -58,6 +59,7 @@ get_ducklake_connection <- function() {
 #' shut down before yours is registered.
 #'
 #' @returns The connection, invisibly.
+#' @family connection management
 #' @export
 #'
 #' @seealso [get_ducklake_connection()]
@@ -232,7 +234,18 @@ unregister_lake <- function(ducklake_name = NULL) {
 #'
 #' @returns One of `"duckdb"`, `"postgres"`, `"sqlite"`, or `"mysql"`.
 #'   Defaults to `"duckdb"` when the lake is unknown.
+#' @family connection management
 #' @export
+#'
+#' @examples
+#' \dontrun{
+#' attach_ducklake("my_lake", lake_path = "~/data/lake")
+#' get_ducklake_backend()
+#' #> [1] "duckdb"
+#'
+#' # With several lakes attached, look one up by name
+#' get_ducklake_backend("my_sqlite_lake")
+#' }
 get_ducklake_backend <- function(ducklake_name = NULL) {
   lakes <- .ducklake_env$lakes
   if (is.null(lakes) || length(lakes) == 0) {
@@ -273,6 +286,7 @@ get_ducklake_backend <- function(ducklake_name = NULL) {
 #'   registered with [set_ducklake_connection()] is never closed for you.
 #'
 #' @returns NULL
+#' @family connection management
 #' @export
 #'
 #' @examples

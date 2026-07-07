@@ -8,10 +8,25 @@
 #' @param by Column(s) to match on
 #' @param copy Whether to copy y to the same source as x (default TRUE)
 #' @param in_place Whether to modify the table in place (default TRUE for DuckLake)
-#' @param unmatched How to handle unmatched rows (default "error")
+#' @param unmatched How to handle unmatched rows (default "ignore")
 #' @param ... Additional arguments passed to dplyr::rows_update()
 #'
+#' @details
+#' ## When to use `rows_*()` vs [replace_table()]
+#'
+#' Use the `rows_*()` functions for **targeted, incremental changes**: appending
+#' a batch of new records, correcting a handful of values, or removing specific
+#' rows. Each call is a single SQL statement against the existing table -- no
+#' data leaves the database, and with data inlining enabled (DuckLake's default)
+#' small changes land in the catalog without creating tiny Parquet files.
+#'
+#' Use [replace_table()] for **structural or bulk changes**: adding or removing
+#' columns, or transformations that touch most rows. It collects the transformed
+#' data into R and rewrites the table, which is simpler for schema changes but
+#' heavier for small edits.
+#'
 #' @returns The updated table
+#' @family row operations
 #' @export
 #'
 #' @examples
@@ -48,10 +63,25 @@ rows_update.tbl_ducklake <- function(x, y, by = NULL, ...,
 #' @param by Column(s) to match on (for conflict detection)
 #' @param copy Whether to copy y to the same source as x (default TRUE)
 #' @param in_place Whether to modify the table in place (default TRUE for DuckLake)
-#' @param conflict How to handle conflicts (default "error")
+#' @param conflict How to handle conflicts (default "ignore")
 #' @param ... Additional arguments passed to dplyr::rows_insert()
 #'
+#' @details
+#' ## When to use `rows_*()` vs [replace_table()]
+#'
+#' Use the `rows_*()` functions for **targeted, incremental changes**: appending
+#' a batch of new records, correcting a handful of values, or removing specific
+#' rows. Each call is a single SQL statement against the existing table -- no
+#' data leaves the database, and with data inlining enabled (DuckLake's default)
+#' small changes land in the catalog without creating tiny Parquet files.
+#'
+#' Use [replace_table()] for **structural or bulk changes**: adding or removing
+#' columns, or transformations that touch most rows. It collects the transformed
+#' data into R and rewrites the table, which is simpler for schema changes but
+#' heavier for small edits.
+#'
 #' @returns The updated table
+#' @family row operations
 #' @export
 #'
 #' @examples
@@ -87,10 +117,25 @@ rows_insert.tbl_ducklake <- function(x, y, by = NULL, ...,
 #' @param by Column(s) to match on
 #' @param copy Whether to copy y to the same source as x (default TRUE)
 #' @param in_place Whether to modify the table in place (default TRUE for DuckLake)
-#' @param unmatched How to handle unmatched rows (default "error")
+#' @param unmatched How to handle unmatched rows (default "ignore")
 #' @param ... Additional arguments passed to dplyr::rows_delete()
 #'
+#' @details
+#' ## When to use `rows_*()` vs [replace_table()]
+#'
+#' Use the `rows_*()` functions for **targeted, incremental changes**: appending
+#' a batch of new records, correcting a handful of values, or removing specific
+#' rows. Each call is a single SQL statement against the existing table -- no
+#' data leaves the database, and with data inlining enabled (DuckLake's default)
+#' small changes land in the catalog without creating tiny Parquet files.
+#'
+#' Use [replace_table()] for **structural or bulk changes**: adding or removing
+#' columns, or transformations that touch most rows. It collects the transformed
+#' data into R and rewrites the table, which is simpler for schema changes but
+#' heavier for small edits.
+#'
 #' @returns The updated table
+#' @family row operations
 #' @export
 #'
 #' @examples

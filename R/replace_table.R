@@ -5,6 +5,7 @@
 #' @param .quiet Logical, whether to suppress messages (default TRUE)
 #'
 #' @returns Invisibly returns NULL
+#' @family table operations
 #' @export
 #'
 #' @details

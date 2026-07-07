@@ -127,4 +127,12 @@ attach_ducklake("secure_lake", lake_path = "~/data/secure", encrypted = TRUE)
 }
 \seealso{
 \code{\link[=detach_ducklake]{detach_ducklake()}}, \code{\link[=install_ducklake]{install_ducklake()}}
+
+Other connection management:
+\code{\link[=detach_ducklake]{detach_ducklake()}},
+\code{\link[=get_ducklake_backend]{get_ducklake_backend()}},
+\code{\link[=get_ducklake_connection]{get_ducklake_connection()}},
+\code{\link[=install_ducklake]{install_ducklake()}},
+\code{\link[=set_ducklake_connection]{set_ducklake_connection()}}
 }
+\concept{connection management}

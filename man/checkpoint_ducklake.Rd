@@ -37,4 +37,15 @@ checkpoint_ducklake("my_lake")
 }
 \seealso{
 \code{\link[=flush_inlined_data]{flush_inlined_data()}}, \code{\link[=set_inlining_row_limit]{set_inlining_row_limit()}}
+
+Other data inlining:
+\code{\link[=flush_inlined_data]{flush_inlined_data()}},
+\code{\link[=get_inlining_row_limit]{get_inlining_row_limit()}},
+\code{\link[=set_inlining_row_limit]{set_inlining_row_limit()}}
+
+Other maintenance:
+\code{\link[=backup_ducklake]{backup_ducklake()}},
+\code{\link[=flush_inlined_data]{flush_inlined_data()}}
 }
+\concept{data inlining}
+\concept{maintenance}
