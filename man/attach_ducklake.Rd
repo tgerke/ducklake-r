@@ -11,7 +11,8 @@ attach_ducklake(
   catalog_connection_string = NULL,
   read_only = FALSE,
   override_data_path = FALSE,
-  data_inlining_row_limit = NULL
+  data_inlining_row_limit = NULL,
+  encrypted = FALSE
 )
 }
 \arguments{
@@ -43,6 +44,15 @@ this threshold are stored directly in the catalog instead of writing
 Parquet files. The default (when \code{NULL}) uses the DuckLake default of 10
 rows. Set to \code{0} to disable inlining for this connection. This setting is
 not persisted; use \code{\link[=set_inlining_row_limit]{set_inlining_row_limit()}} for persistent overrides.}
+
+\item{encrypted}{If \code{TRUE}, DuckLake encrypts the Parquet data files it
+writes. Encryption keys are stored in the catalog database, so anyone
+with access to the catalog can read the data -- protect the catalog
+accordingly. Only applies when the lake is first created; an existing
+lake keeps the setting it was created with. The httpfs extension is
+loaded automatically: on some platforms (notably Windows) DuckDB's
+built-in crypto module is read-only and httpfs provides the writer.
+Default \code{FALSE}.}
 }
 \description{
 Wrapper for the ducklake \href{https://ducklake.select/docs/stable/duckdb/usage/connecting}{ATTACH} command.
@@ -113,8 +123,19 @@ attach_ducklake(
   lake_path = "~/data/streaming",
   data_inlining_row_limit = 100
 )
+
+# Encrypted Parquet files (keys live in the catalog)
+attach_ducklake("secure_lake", lake_path = "~/data/secure", encrypted = TRUE)
 }
 }
 \seealso{
 \code{\link[=detach_ducklake]{detach_ducklake()}}, \code{\link[=install_ducklake]{install_ducklake()}}
+
+Other connection management:
+\code{\link[=detach_ducklake]{detach_ducklake()}},
+\code{\link[=get_ducklake_backend]{get_ducklake_backend()}},
+\code{\link[=get_ducklake_connection]{get_ducklake_connection()}},
+\code{\link[=install_ducklake]{install_ducklake()}},
+\code{\link[=set_ducklake_connection]{set_ducklake_connection()}}
 }
+\concept{connection management}

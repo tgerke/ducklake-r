@@ -782,7 +782,7 @@ This approach provides traditional data warehouse capabilities for clinical tria
 ```{r warehouse-benefits}
 # 1. Single source of truth - all datasets in one repository
 # List all tables in the data lake
-DBI::dbListTables(duckplyr:::get_default_duckdb_connection())
+DBI::dbListTables(get_ducklake_connection())
 
 # 2. Efficient filtering before loading into R
 # Only load subjects with adverse events
@@ -830,7 +830,7 @@ Let's explore how our datasets are connected:
 
 ```{r explore-structure}
 # List all tables in the data lake
-DBI::dbListTables(duckplyr:::get_default_duckdb_connection())
+DBI::dbListTables(get_ducklake_connection())
 
 # View snapshot history for key tables
 metadata_tables <- c("dm", "ex", "ae", "pc", 

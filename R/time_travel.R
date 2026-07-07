@@ -8,6 +8,7 @@
 #' @param conn Optional DuckDB connection object. If not provided, uses the default ducklake connection.
 #'
 #' @returns A dplyr lazy query object (tbl_lazy) that can be further manipulated with dplyr verbs
+#' @family time travel
 #' @export
 #'
 #' @details
@@ -65,8 +66,8 @@ get_ducklake_table_asof <- function(table_name, timestamp, conn = NULL) {
   }
   
   # Use DuckLake's AT (TIMESTAMP => ...) syntax for time travel
-  query <- sprintf("SELECT * FROM %s AT (TIMESTAMP => '%s')", 
-                   table_name, timestamp_str)
+  query <- sprintf("SELECT * FROM %s AT (TIMESTAMP => %s)",
+                   quote_ident(table_name, conn), quote_sql(timestamp_str))
   
   # Return as a dplyr tbl
   result <- dplyr::tbl(conn, dplyr::sql(query))
@@ -87,6 +88,7 @@ get_ducklake_table_asof <- function(table_name, timestamp, conn = NULL) {
 #' @param conn Optional DuckDB connection object. If not provided, uses the default ducklake connection.
 #'
 #' @returns A dplyr lazy query object (tbl_lazy) that can be further manipulated with dplyr verbs
+#' @family time travel
 #' @export
 #'
 #' @details
@@ -113,15 +115,7 @@ get_ducklake_table_version <- function(table_name, version, conn = NULL) {
   if (is.null(conn)) {
     conn <- get_ducklake_connection()
   }
-  
-  # Get current ducklake name
-  tryCatch({
-    current_db <- DBI::dbGetQuery(conn, "SELECT current_database() as db")$db
-    ducklake_name <- current_db
-  }, error = function(e) {
-    cli::cli_abort("Could not determine {.arg ducklake_name}. Make sure a ducklake is attached.")
-  })
-  
+
   # Add schema prefix if not already present.
   # DuckDB and SQLite use the main. schema; PostgreSQL and MySQL do not.
   if (!grepl("\\.", table_name)) {
@@ -130,12 +124,12 @@ get_ducklake_table_version <- function(table_name, version, conn = NULL) {
       table_name <- paste0("main.", table_name)
     }
   }
-  
+
   # Use DuckLake's AT (VERSION => ...) syntax to query a specific snapshot
   # The version parameter should be the snapshot_id from list_table_snapshots()
-  query <- sprintf("SELECT * FROM %s AT (VERSION => %d)", 
-                   table_name, version)
-  
+  query <- sprintf("SELECT * FROM %s AT (VERSION => %d)",
+                   quote_ident(table_name, conn), as.integer(version))
+
   dplyr::tbl(conn, dplyr::sql(query))
 }
 
@@ -148,6 +142,7 @@ get_ducklake_table_version <- function(table_name, version, conn = NULL) {
 #' @param conn Optional DuckDB connection object. If not provided, uses the default ducklake connection.
 #'
 #' @returns A data frame with snapshot information (version, timestamp, etc.)
+#' @family time travel
 #' @export
 #'
 #' @details
@@ -182,7 +177,7 @@ list_table_snapshots <- function(table_name = NULL, ducklake_name = NULL, conn =
   
   # Query snapshots using the DuckLake snapshots() function
   tryCatch({
-    query <- sprintf("SELECT * FROM %s.snapshots()", ducklake_name)
+    query <- sprintf("SELECT * FROM %s.snapshots()", quote_ident(ducklake_name, conn))
     result <- DBI::dbGetQuery(conn, query)
     
     # If table_name is provided, filter the results
@@ -214,27 +209,35 @@ list_table_snapshots <- function(table_name = NULL, ducklake_name = NULL, conn =
 
 #' Restore a table to a previous version
 #'
-#' Restores a table to a specific version or timestamp, reverting any changes
-#' made after that point.
+#' Rolls a table back to the state it had at an earlier snapshot or point in
+#' time, by recreating it from a time-travel read of itself. History is
+#' preserved: the restore is recorded as a **new** snapshot (with a commit
+#' message noting the restore), so nothing is rewritten or lost and you can
+#' still time-travel to any snapshot, including those after the restore point.
 #'
 #' @param table_name The name of the table to restore
-#' @param version Optional version number to restore to
+#' @param version Optional snapshot id to restore to (see [list_table_snapshots()])
 #' @param timestamp Optional timestamp to restore to (POSIXct or character)
 #' @param conn Optional DuckDB connection object. If not provided, uses the default ducklake connection.
 #'
 #' @returns Invisibly returns TRUE on success
+#' @family time travel
 #' @export
 #'
 #' @details
-#' This function restores a table to a previous state. You must specify either
-#' \code{version} or \code{timestamp}, but not both.
+#' You must specify either \code{version} or \code{timestamp}, but not both.
 #'
-#' WARNING: This operation modifies the table and cannot be easily undone.
-#' Consider using within a transaction or backing up your data first.
+#' Under the hood this runs
+#' \code{CREATE OR REPLACE TABLE t AS SELECT * FROM t AT (VERSION => n)}
+#' inside a transaction. Because the restore creates a new snapshot, it is
+#' itself reversible with another \code{restore_table_version()} call.
+#'
+#' @seealso [get_ducklake_table_version()], [get_ducklake_table_asof()],
+#'   [list_table_snapshots()]
 #'
 #' @examples
 #' \dontrun{
-#' # Restore to version 5
+#' # Restore to snapshot 5
 #' restore_table_version("my_table", version = 5)
 #'
 #' # Restore to a specific timestamp
@@ -244,7 +247,7 @@ restore_table_version <- function(table_name, version = NULL, timestamp = NULL, 
   if (is.null(conn)) {
     conn <- get_ducklake_connection()
   }
-  
+
   # Check that exactly one of version or timestamp is provided
   if (is.null(version) && is.null(timestamp)) {
     cli::cli_abort("Must provide either {.arg version} or {.arg timestamp}.")
@@ -252,10 +255,10 @@ restore_table_version <- function(table_name, version = NULL, timestamp = NULL, 
   if (!is.null(version) && !is.null(timestamp)) {
     cli::cli_abort("Cannot provide both {.arg version} and {.arg timestamp}.")
   }
-  
-  # Build the restore query
+
   if (!is.null(version)) {
-    query <- sprintf("RESTORE TABLE %s TO VERSION %d", table_name, as.integer(version))
+    at_clause <- sprintf("VERSION => %d", as.integer(version))
+    restore_point <- sprintf("snapshot %d", as.integer(version))
   } else {
     # Convert timestamp to character if it's POSIXct
     if (inherits(timestamp, "POSIXct")) {
@@ -263,19 +266,29 @@ restore_table_version <- function(table_name, version = NULL, timestamp = NULL, 
     } else {
       timestamp_str <- as.character(timestamp)
     }
-    query <- sprintf("RESTORE TABLE %s TO TIMESTAMP '%s'", table_name, timestamp_str)
+    at_clause <- sprintf("TIMESTAMP => %s", quote_sql(timestamp_str))
+    restore_point <- timestamp_str
   }
-  
-  # Execute the restore
+
+  quoted_table <- quote_ident(table_name, conn)
+  restore_sql <- sprintf(
+    "CREATE OR REPLACE TABLE %s AS SELECT * FROM %s AT (%s)",
+    quoted_table, quoted_table, at_clause
+  )
+
   tryCatch({
-    DBI::dbExecute(conn, query)
-    cli::cli_inform("Table {.val {table_name}} restored successfully.")
+    with_transaction(
+      db_execute(restore_sql, conn = conn),
+      commit_message = sprintf("Restored %s to %s", table_name, restore_point),
+      conn = conn
+    )
+    cli::cli_inform("Table {.val {table_name}} restored to {restore_point} (recorded as a new snapshot).")
     invisible(TRUE)
   }, error = function(e) {
     cli::cli_abort(c(
-      "Failed to restore table.",
+      "Failed to restore table {.val {table_name}}.",
       "x" = e$message,
-      "i" = "RESTORE functionality depends on table format and DuckDB version."
+      "i" = "Check {.code list_table_snapshots(\"{table_name}\")} for available snapshots."
     ))
   })
 }

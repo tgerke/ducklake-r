@@ -1,26 +1,30 @@
 Package: ducklake
 Title: Interact with DuckLake from R
-Version: 0.3.0.9000
+Version: 0.4.0
 Authors@R: c(
     person("Travis", "Gerke", , "tgerke@mail.harvard.edu", role = c("aut", "cre")),
     person("Stefan", "Linner", role = "ctb"),
     person("Javier", "Orraca-Deatcu", role = "ctb")
   )
-Description: Some features of the new DuckLake ecosystem are not readily available from the existing duckdb and duckplyr packages. This package seeks to fill that gap.
+Description: A tidyverse-friendly interface to DuckLake, the DuckDB
+    lakehouse format. Attach versioned data lakes from R and work with
+    them using familiar dplyr verbs, with support for ACID transactions,
+    time travel queries, snapshot audit trails, data inlining, encrypted
+    storage, multiple catalog backends (DuckDB, PostgreSQL, SQLite,
+    MySQL), and remote access over DuckDB's Quack protocol.
 License: MIT + file LICENSE
 URL: https://tgerke.github.io/ducklake-r/, https://github.com/tgerke/ducklake-r
 BugReports: https://github.com/tgerke/ducklake-r/issues
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-Imports: 
+Imports:
     cli,
     DBI,
-    dplyr,
-    duckdb (>= 1.5.1),
-    duckplyr
-Suggests: 
-    admiral,
     dbplyr,
+    dplyr,
+    duckdb (>= 1.5.1)
+Suggests:
+    admiral,
     DiagrammeR,
     fs,
     jsonlite,

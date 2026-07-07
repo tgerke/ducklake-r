@@ -41,3 +41,10 @@ get_ducklake_table_version("my_table", snapshots$snapshot_id[1]) |>
   collect()
 }
 }
+\seealso{
+Other time travel:
+\code{\link[=get_ducklake_table_asof]{get_ducklake_table_asof()}},
+\code{\link[=list_table_snapshots]{list_table_snapshots()}},
+\code{\link[=restore_table_version]{restore_table_version()}}
+}
+\concept{time travel}

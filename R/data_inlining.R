@@ -36,6 +36,7 @@
 #' data to Parquet when ready.
 #'
 #' @returns Invisibly returns `NULL`.
+#' @family data inlining
 #' @export
 #'
 #' @seealso [get_inlining_row_limit()], [flush_inlined_data()],
@@ -85,6 +86,7 @@ set_inlining_row_limit <- function(limit,
         )
       }
     }
+    check_identifier(ducklake_name)
 
     if (!is.null(table_name) && !is.null(schema_name)) {
       call_sql <- sprintf(
@@ -133,6 +135,7 @@ set_inlining_row_limit <- function(limit,
 #'   `NULL`, the current database is used.
 #'
 #' @returns An integer: the effective inlining row limit.
+#' @family data inlining
 #' @export
 #'
 #' @seealso [set_inlining_row_limit()]
@@ -172,6 +175,7 @@ get_inlining_row_limit <- function(table_name = NULL,
       )
     }
   }
+  check_identifier(ducklake_name)
 
   if (!is.null(table_name) && !is.null(schema_name)) {
     scope_filter <- sprintf("scope = 'TABLE' AND scope_entry = '%s.%s'",
@@ -232,6 +236,8 @@ get_inlining_row_limit <- function(table_name = NULL,
 #'
 #' @returns A data frame with columns `schema_name`, `table_name`, and
 #'   `rows_flushed`. Tables with no inlined data are omitted.
+#' @family data inlining
+#' @family maintenance
 #' @export
 #'
 #' @seealso [set_inlining_row_limit()], [checkpoint_ducklake()]
@@ -263,6 +269,7 @@ flush_inlined_data <- function(ducklake_name = NULL,
       )
     }
   }
+  check_identifier(ducklake_name)
 
   # Build the CALL statement
   if (!is.null(table_name) && !is.null(schema_name)) {
@@ -323,7 +330,16 @@ flush_inlined_data <- function(ducklake_name = NULL,
 #' Run checkpoints periodically (e.g., after a batch of streaming inserts) to
 #' consolidate inlined data and keep query performance optimal.
 #'
+#' @note On Windows with a DuckDB-file catalog, the file-cleanup step of
+#'   `CHECKPOINT` can fail because Windows does not allow the catalog file to
+#'   be opened a second time while the lake is attached (a current DuckDB
+#'   limitation). [flush_inlined_data()] is unaffected; on Windows, prefer it
+#'   for routine use and run full checkpoints from a fresh session, or use a
+#'   PostgreSQL/SQLite catalog.
+#'
 #' @returns Invisibly returns `NULL`.
+#' @family data inlining
+#' @family maintenance
 #' @export
 #'
 #' @seealso [flush_inlined_data()], [set_inlining_row_limit()]
@@ -350,6 +366,7 @@ checkpoint_ducklake <- function(ducklake_name = NULL) {
       )
     }
   }
+  check_identifier(ducklake_name)
 
   DBI::dbExecute(conn, sprintf("CHECKPOINT %s;", ducklake_name))
   cli::cli_inform("Checkpoint completed for {.val {ducklake_name}}.")

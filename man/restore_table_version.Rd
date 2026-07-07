@@ -14,7 +14,7 @@ restore_table_version(
 \arguments{
 \item{table_name}{The name of the table to restore}
 
-\item{version}{Optional version number to restore to}
+\item{version}{Optional snapshot id to restore to (see \code{\link[=list_table_snapshots]{list_table_snapshots()}})}
 
 \item{timestamp}{Optional timestamp to restore to (POSIXct or character)}
 
@@ -24,22 +24,36 @@ restore_table_version(
 Invisibly returns TRUE on success
 }
 \description{
-Restores a table to a specific version or timestamp, reverting any changes
-made after that point.
+Rolls a table back to the state it had at an earlier snapshot or point in
+time, by recreating it from a time-travel read of itself. History is
+preserved: the restore is recorded as a \strong{new} snapshot (with a commit
+message noting the restore), so nothing is rewritten or lost and you can
+still time-travel to any snapshot, including those after the restore point.
 }
 \details{
-This function restores a table to a previous state. You must specify either
-\code{version} or \code{timestamp}, but not both.
+You must specify either \code{version} or \code{timestamp}, but not both.
 
-WARNING: This operation modifies the table and cannot be easily undone.
-Consider using within a transaction or backing up your data first.
+Under the hood this runs
+\code{CREATE OR REPLACE TABLE t AS SELECT * FROM t AT (VERSION => n)}
+inside a transaction. Because the restore creates a new snapshot, it is
+itself reversible with another \code{restore_table_version()} call.
 }
 \examples{
 \dontrun{
-# Restore to version 5
+# Restore to snapshot 5
 restore_table_version("my_table", version = 5)
 
 # Restore to a specific timestamp
 restore_table_version("my_table", timestamp = "2024-01-15 10:00:00")
 }
 }
+\seealso{
+\code{\link[=get_ducklake_table_version]{get_ducklake_table_version()}}, \code{\link[=get_ducklake_table_asof]{get_ducklake_table_asof()}},
+\code{\link[=list_table_snapshots]{list_table_snapshots()}}
+
+Other time travel:
+\code{\link[=get_ducklake_table_asof]{get_ducklake_table_asof()}},
+\code{\link[=get_ducklake_table_version]{get_ducklake_table_version()}},
+\code{\link[=list_table_snapshots]{list_table_snapshots()}}
+}
+\concept{time travel}

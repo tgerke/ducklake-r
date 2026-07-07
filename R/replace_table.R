@@ -5,6 +5,7 @@
 #' @param .quiet Logical, whether to suppress messages (default TRUE)
 #'
 #' @returns Invisibly returns NULL
+#' @family table operations
 #' @export
 #'
 #' @details
@@ -67,8 +68,8 @@ replace_table <- function(.data, table_name, .quiet = TRUE) {
   
   # Drop the existing table
   if (!.quiet) cat("Dropping existing table...\n")
-  drop_sql <- sprintf("DROP TABLE IF EXISTS %s", table_name)
-  duckplyr::db_exec(drop_sql)
+  drop_sql <- sprintf("DROP TABLE IF EXISTS %s", quote_ident(table_name))
+  db_execute(drop_sql)
   
   # Create the new table
   if (!.quiet) cat("Creating new table...\n")

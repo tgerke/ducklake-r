@@ -221,12 +221,19 @@ flush_inlined_data(table_name = "readings")
 `checkpoint_ducklake()` runs all maintenance operations in sequence—flush,
 compaction, snapshot expiration, and file cleanup:
 
-```{r checkpoint}
+```{r checkpoint, eval = .Platform$OS.type != "windows"}
 checkpoint_ducklake()
 ```
 
 Run checkpoints periodically (e.g., after a batch of streaming inserts) to
 keep query performance optimal and consolidate inlined data.
+
+Note for Windows users: with a DuckDB-file catalog, the file-cleanup step of
+`CHECKPOINT` can fail because Windows does not allow the catalog file to be
+opened a second time while the lake is attached (a current DuckDB
+limitation). `flush_inlined_data()` is unaffected; on Windows, prefer it for
+routine use and run full checkpoints from a fresh session, or use a
+PostgreSQL/SQLite catalog.
 
 ## Time travel with inlined data
 

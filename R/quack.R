@@ -16,6 +16,7 @@
 #' @param load If `TRUE` (the default), load the extension after installing it.
 #'
 #' @returns NULL
+#' @family quack
 #' @export
 #'
 #' @seealso [attach_quack()], [quack_serve()]
@@ -27,11 +28,11 @@
 install_quack <- function(load = TRUE) {
   check_quack_version()
 
-  suppressMessages(duckplyr::db_exec("INSTALL quack;"))
+  db_execute("INSTALL quack;")
   cli::cli_inform("Installed {.pkg quack} extension.")
 
   if (load) {
-    suppressMessages(duckplyr::db_exec("LOAD quack;"))
+    db_execute("LOAD quack;")
     cli::cli_inform("Loaded {.pkg quack} extension.")
   }
 
@@ -60,6 +61,7 @@ install_quack <- function(load = TRUE) {
 #'   Only appropriate on a trusted network.
 #'
 #' @returns NULL
+#' @family quack
 #' @export
 #'
 #' @seealso [detach_quack()], [quack_query()], [quack_serve()]
@@ -100,7 +102,7 @@ attach_quack <- function(quack_name, uri, token = NULL, disable_ssl = FALSE) {
   }
 
   attach_sql <- build_quack_attach_sql(quack_name, uri, token, disable_ssl)
-  duckplyr::db_exec(attach_sql)
+  db_execute(attach_sql)
 
   invisible(NULL)
 }
@@ -114,6 +116,7 @@ attach_quack <- function(quack_name, uri, token = NULL, disable_ssl = FALSE) {
 #'   detached.
 #'
 #' @returns NULL
+#' @family quack
 #' @export
 #'
 #' @seealso [attach_quack()]
@@ -131,12 +134,13 @@ detach_quack <- function(quack_name = NULL) {
   }
 
   if (!is.null(quack_name)) {
+    # Switch off the remote catalog first: DuckDB cannot DETACH the
+    # database currently in use
+    use_home_database(conn)
     tryCatch(
-      DBI::dbExecute(conn, sprintf("DETACH %s;", quack_name)),
+      DBI::dbExecute(conn, sprintf("DETACH %s;", quote_ident(quack_name, conn))),
       error = function(e) NULL
     )
-    # Switch back to in-memory so later queries do not target the detached server
-    tryCatch(DBI::dbExecute(conn, "USE memory;"), error = function(e) NULL)
   }
 
   invisible(NULL)
@@ -155,6 +159,7 @@ detach_quack <- function(quack_name = NULL) {
 #' @param disable_ssl Connect over plain HTTP instead of HTTPS (default `FALSE`).
 #'
 #' @returns A data.frame with the query result.
+#' @family quack
 #' @export
 #'
 #' @seealso [attach_quack()]
@@ -207,6 +212,7 @@ quack_query <- function(uri, query, token = NULL, disable_ssl = FALSE) {
 #'   Only appropriate on a trusted network.
 #'
 #' @returns The server `uri`, invisibly.
+#' @family quack
 #' @export
 #'
 #' @seealso [quack_stop()], [attach_quack()]
@@ -243,7 +249,7 @@ quack_serve <- function(uri = "quack:localhost", token = NULL,
     args <- c(args, "disable_ssl = true")
   }
 
-  duckplyr::db_exec(sprintf("CALL quack_serve(%s);", paste(args, collapse = ", ")))
+  db_execute(sprintf("CALL quack_serve(%s);", paste(args, collapse = ", ")))
   cli::cli_inform("Quack server listening on {.val {uri}}.")
 
   invisible(uri)
@@ -256,6 +262,7 @@ quack_serve <- function(uri = "quack:localhost", token = NULL,
 #' @param uri Address the server is listening on (default `"quack:localhost"`).
 #'
 #' @returns `TRUE`, invisibly.
+#' @family quack
 #' @export
 #'
 #' @seealso [quack_serve()]
@@ -269,7 +276,7 @@ quack_stop <- function(uri = "quack:localhost") {
   check_quack_version()
   ensure_quack_extension()
 
-  duckplyr::db_exec(sprintf("CALL quack_stop(%s);", quote_sql(uri)))
+  db_execute(sprintf("CALL quack_stop(%s);", quote_sql(uri)))
   cli::cli_inform("Quack server on {.val {uri}} stopped.")
 
   invisible(TRUE)
@@ -316,10 +323,10 @@ quack_version_supported <- function(version) {
 #' @keywords internal
 ensure_quack_extension <- function() {
   tryCatch(
-    duckplyr::db_exec("LOAD quack;"),
+    db_execute("LOAD quack;"),
     error = function(e) {
-      duckplyr::db_exec("INSTALL quack;")
-      duckplyr::db_exec("LOAD quack;")
+      db_execute("INSTALL quack;")
+      db_execute("LOAD quack;")
     }
   )
   invisible(NULL)
@@ -358,6 +365,7 @@ build_quack_uri <- function(uri) {
 #' @returns A SQL ATTACH statement string.
 #' @keywords internal
 build_quack_attach_sql <- function(quack_name, uri, token = NULL, disable_ssl = FALSE) {
+  check_identifier(quack_name, arg = "quack_name")
   uri <- build_quack_uri(uri)
 
   options <- "TYPE quack"
@@ -372,13 +380,3 @@ build_quack_attach_sql <- function(quack_name, uri, token = NULL, disable_ssl = 
   sprintf("ATTACH %s AS %s (%s);", quote_sql(uri), quack_name, options_str)
 }
 
-#' Quote a value as a SQL string literal
-#'
-#' Wraps `x` in single quotes and doubles any embedded single quotes.
-#'
-#' @param x A length-one character vector.
-#' @returns A quoted SQL string literal.
-#' @keywords internal
-quote_sql <- function(x) {
-  sprintf("'%s'", gsub("'", "''", x))
-}

@@ -57,6 +57,17 @@ Install the development version of ducklake with:
 pak::pak("tgerke/ducklake-r")
 ```
 
+ducklake requires the [duckdb](https://r.duckdb.org) R package version
+1.5.1 or newer (DuckDB engine 1.5.1+, matching the stable [DuckLake v1.0
+specification](https://ducklake.select/docs/stable/specification/introduction)).
+The Quack remote-access features need DuckDB 1.5.3 or newer, available
+on CRAN since duckdb 1.5.4.
+
+ducklake manages its own DuckDB connection, so there is nothing to set
+up: just `attach_ducklake()` and go. If you prefer to supply your own
+connection (for example, one shared with other DBI-based tools),
+register it with `set_ducklake_connection()`.
+
 ## Quick example: Layered data workflow
 
 ``` r
@@ -114,7 +125,7 @@ get_ducklake_table("vehicles_analysis") |>
   select(mpg, cyl, efficiency) |>
   head(3)
 #> # Source:   SQL [?? x 3]
-#> # Database: DuckDB 1.5.4 [root@Darwin 23.4.0:R 4.5.2//private/var/folders/fw/0d9nr9951q57f0d5l6qc1j200000gn/T/RtmpHvOZHl/duckplyr/duckplyrab661768df02.duckdb]
+#> # Database: DuckDB 1.5.4 [root@Darwin 23.4.0:R 4.5.2//private/var/folders/fw/0d9nr9951q57f0d5l6qc1j200000gn/T/RtmpOZ3EaB/ducklake/ducklakee2a34a963752.duckdb]
 #>     mpg cyl   efficiency
 #>   <dbl> <chr> <chr>     
 #> 1  21   6.0   Medium    
@@ -124,11 +135,11 @@ get_ducklake_table("vehicles_analysis") |>
 # View complete audit trail across all layers with author and commit messages
 list_table_snapshots()
 #>   snapshot_id       snapshot_time schema_version
-#> 1           0 2026-07-07 19:56:22              0
-#> 2           1 2026-07-07 19:56:22              1
-#> 3           2 2026-07-07 19:56:22              2
-#> 4           3 2026-07-07 19:56:22              3
-#> 5           4 2026-07-07 19:56:22              4
+#> 1           0 2026-07-07 20:30:18              0
+#> 2           1 2026-07-07 20:30:18              1
+#> 3           2 2026-07-07 20:30:18              2
+#> 4           3 2026-07-07 20:30:18              3
+#> 5           4 2026-07-07 20:30:18              4
 #>                                                                           changes
 #> 1                                                           schemas_created, main
 #> 2                      tables_created, tables_inserted_into, main.vehicles_raw, 1
@@ -153,7 +164,7 @@ get_ducklake_table_version("vehicles_clean", version = 2) |>
   select(mpg, cyl, gear) |>
   head(3)
 #> # Source:   SQL [?? x 3]
-#> # Database: DuckDB 1.5.4 [root@Darwin 23.4.0:R 4.5.2//private/var/folders/fw/0d9nr9951q57f0d5l6qc1j200000gn/T/RtmpHvOZHl/duckplyr/duckplyrab661768df02.duckdb]
+#> # Database: DuckDB 1.5.4 [root@Darwin 23.4.0:R 4.5.2//private/var/folders/fw/0d9nr9951q57f0d5l6qc1j200000gn/T/RtmpOZ3EaB/ducklake/ducklakee2a34a963752.duckdb]
 #>     mpg cyl    gear
 #>   <dbl> <chr> <dbl>
 #> 1  21   6.0       4
@@ -195,20 +206,26 @@ enables:
 Check out the [pkgdown site](https://tgerke.github.io/ducklake-r/) for
 detailed vignettes:
 
+- [Getting
+  Started](https://tgerke.github.io/ducklake-r/articles/ducklake.html) -
+  Quick recipes for common operations
 - [Clinical Trial Data
   Lake](https://tgerke.github.io/ducklake-r/articles/clinical-trial-datalake.html) -
-  **Start here**: Complete workflow from SDTM to ADaM with regulatory
-  artifacts
-- [Cookbook](https://tgerke.github.io/ducklake-r/articles/ducklake.html) -
-  Quick recipes for common operations
+  Complete workflow from SDTM to ADaM with regulatory artifacts
 - [Modifying
   Tables](https://tgerke.github.io/ducklake-r/articles/modifying-tables.html) -
-  Two approaches for table modifications
+  Choosing between `rows_*` and `replace_table()`
+- [Data
+  Inlining](https://tgerke.github.io/ducklake-r/articles/data-inlining.html) -
+  Streaming-friendly small writes
 - [Transactions](https://tgerke.github.io/ducklake-r/articles/transactions.html) -
   ACID transaction support
 - [Time
   Travel](https://tgerke.github.io/ducklake-r/articles/time-travel.html) -
-  Query historical data
+  Query and restore historical data
+- [Storage and
+  Backups](https://tgerke.github.io/ducklake-r/articles/storage-and-backups.html) -
+  Back up and recover your lake
 - [Quack Remote
   Access](https://tgerke.github.io/ducklake-r/articles/quack-remote-access.html) -
   Share a DuckLake over the network with the Quack protocol
@@ -238,9 +255,12 @@ detailed vignettes:
 - **Schema evolution**: Adapt table schemas over time as requirements
   change
 - **Tidyverse interface**: Familiar dplyr syntax for data manipulation
-- **Two complementary approaches**: `rows_*` functions for data.frames
-  and pipeline functions for dplyr workflows
+- **Encryption**: Opt-in Parquet encryption with
+  `attach_ducklake(encrypted = TRUE)`
+- **Two complementary approaches**: `rows_*` functions for incremental
+  changes and `replace_table()` pipelines for structural ones — both
+  fully versioned
 - **Complete audit trails**: Who changed what, when, and why—suitable
   for regulated industries
-- **Seamless integration**: Works with duckdb, duckplyr, and the broader
-  R ecosystem
+- **Seamless integration**: Works with duckdb, DBI, dbplyr, and the
+  broader tidyverse ecosystem

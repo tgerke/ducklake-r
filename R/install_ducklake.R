@@ -12,6 +12,7 @@
 #'   (MinGW toolchain). See [attach_ducklake()] for details.
 #'
 #' @returns NULL
+#' @family connection management
 #' @export
 #'
 #' @examples
@@ -26,23 +27,20 @@ install_ducklake <- function(backend = NULL) {
   # SELECT version() returns the DuckDB engine version, not the R package version.
   conn <- get_ducklake_connection()
   duckdb_version <- DBI::dbGetQuery(conn, "SELECT version()")[1, 1]
-  duckdb_version_parsed <- numeric_version(sub("^v", "", duckdb_version))
-  if (duckdb_version_parsed < "1.5.1") {
+  if (!duckdb_version_at_least(duckdb_version, "1.5.1")) {
     cli::cli_abort(
       "DuckLake v1.0 requires DuckDB version 1.5.1 or higher (found {duckdb_version})."
     )
   }
 
-  # the long messages thrown on load for duckplyr are suppressed here
-  # TODO: find a better/more global place to do this, since duckplyr used elsewhere
-  suppressMessages(duckplyr::db_exec("INSTALL ducklake;"))
+  db_execute("INSTALL ducklake;")
   cli::cli_inform("Installed {.pkg ducklake} extension.")
 
   valid_backends <- c("postgres", "sqlite", "mysql")
   if (!is.null(backend)) {
     backend <- match.arg(backend, valid_backends, several.ok = TRUE)
     for (ext in backend) {
-      suppressMessages(duckplyr::db_exec(sprintf("INSTALL %s;", ext)))
+      db_execute(sprintf("INSTALL %s;", ext))
       cli::cli_inform("Installed {.pkg {ext}} extension.")
     }
   }

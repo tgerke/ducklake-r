@@ -50,4 +50,15 @@ flush_inlined_data(schema_name = "staging")
 }
 \seealso{
 \code{\link[=set_inlining_row_limit]{set_inlining_row_limit()}}, \code{\link[=checkpoint_ducklake]{checkpoint_ducklake()}}
+
+Other data inlining:
+\code{\link[=checkpoint_ducklake]{checkpoint_ducklake()}},
+\code{\link[=get_inlining_row_limit]{get_inlining_row_limit()}},
+\code{\link[=set_inlining_row_limit]{set_inlining_row_limit()}}
+
+Other maintenance:
+\code{\link[=backup_ducklake]{backup_ducklake()}},
+\code{\link[=checkpoint_ducklake]{checkpoint_ducklake()}}
 }
+\concept{data inlining}
+\concept{maintenance}

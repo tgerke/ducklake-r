@@ -36,4 +36,10 @@ get_inlining_row_limit(table_name = "readings")
 }
 \seealso{
 \code{\link[=set_inlining_row_limit]{set_inlining_row_limit()}}
+
+Other data inlining:
+\code{\link[=checkpoint_ducklake]{checkpoint_ducklake()}},
+\code{\link[=flush_inlined_data]{flush_inlined_data()}},
+\code{\link[=set_inlining_row_limit]{set_inlining_row_limit()}}
 }
+\concept{data inlining}

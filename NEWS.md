@@ -1,4 +1,8 @@
-# ducklake (development version)
+# ducklake 0.4.0
+
+This release focuses on production hardiness: self-contained connection
+management, working detach/restore, SQL identifier safety, Quack remote
+access, and a documentation overhaul.
 
 ## Quack remote protocol support
 
@@ -8,14 +12,77 @@ instance can now be queried and modified by other R sessions over the network.
 For concurrent access this is a lighter-weight option than a PostgreSQL or
 SQLite catalog, since the whole setup stays inside DuckDB and DuckLake.
 
-### New Features
-
 * `attach_quack()` connects to a remote Quack server and attaches it as a catalog in the current session.
 * `detach_quack()` disconnects from a remote Quack server.
 * `install_quack()` installs the Quack DuckDB extension.
 * `quack_query()` runs a one-off query against a remote Quack server and returns a data.frame.
 * `quack_serve()` serves the current session, including an attached DuckLake, to other clients over Quack.
 * `quack_stop()` stops a running Quack server.
+
+## Production hardening
+
+### New Features
+
+* `attach_ducklake()` gains an `encrypted` argument: pass `encrypted = TRUE`
+  to have DuckLake encrypt the Parquet files it writes (#18). Note that the
+  encryption keys are stored in the catalog database, so protect the catalog.
+  The httpfs extension is loaded automatically for encrypted lakes, since on
+  some platforms (notably Windows) DuckDB's built-in crypto module is
+  read-only.
+* `restore_table_version()` now works. It previously generated a
+  `RESTORE TABLE` statement that does not exist in DuckLake and failed on
+  every call. It now recreates the table from a time-travel read inside a
+  transaction, recording the restore as a new snapshot so history is
+  preserved.
+* `get_ducklake_backend()` gains a `ducklake_name` argument and tracks each
+  attached lake separately, so sessions with several lakes on different
+  catalog backends resolve backend-specific behaviour correctly.
+
+### Bug Fixes
+
+* `detach_ducklake()` now actually detaches. Previously the `DETACH` ran
+  while the lake was still the session's current database, which DuckDB
+  refuses, and the error was silently swallowed -- the lake stayed attached.
+  The session now switches back to the connection's own catalog first.
+  Relatedly, restoring a backup to a new location requires
+  `override_data_path = TRUE` (as documented); the storage vignette example
+  has been corrected.
+* Table names, lake names, and file paths are now quoted or validated before
+  being interpolated into SQL (`DBI::dbQuoteIdentifier()` and friends), so
+  names with spaces or quotes no longer produce malformed statements.
+* `rows_insert()`, `rows_update()`, and `rows_delete()` now also dispatch as
+  S3 methods on tables returned by `get_ducklake_table()`. Previously, if
+  dplyr was loaded *after* ducklake, dplyr's generics masked ducklake's
+  wrappers and calls failed with `conflict = "error"` complaints; load order
+  no longer matters.
+* `backup_ducklake()` backs up every schema directory, not just `main`.
+* `create_table()` now converts factor columns to character (with a message)
+  instead of failing with "unsupported type ENUM" -- DuckLake does not
+  support DuckDB's ENUM type, which is what factors become.
+* The internal dplyr-to-SQL translation in `ducklake_exec()` no longer uses
+  `sink()` (which could leak diverted output on error), and now refuses
+  queries with subqueries or multiple `WHERE` clauses instead of generating
+  incorrect SQL.
+
+## Connection management is now self-contained
+
+ducklake now creates and manages its own DuckDB connection instead of
+reaching into duckplyr's unexported internals. This removes the package's
+last `:::` calls and the duckplyr dependency entirely.
+
+### Breaking Changes
+
+* duckplyr is no longer a dependency. If you relied on ducklake sharing
+  duckplyr's default connection, register a connection explicitly with the
+  new `set_ducklake_connection()`.
+
+### New Features
+
+* `set_ducklake_connection()` (returning by popular demand, now safer):
+  point ducklake at any DuckDB connection you manage — for example one
+  shared with other DBI tools. Connections you supply are never closed by
+  ducklake; only its own automatically created connection is shut down by
+  `detach_ducklake(shutdown = TRUE)` and at session exit.
 
 # ducklake 0.3.0
 
@@ -36,6 +103,7 @@ which requires DuckDB v1.5.2+ (compatible with duckdb R package >= 1.5.1).
   **within** the transaction before `COMMIT`, consistent with the v1.0
   specification. `set_snapshot_metadata()` retroactively updates the
   `ducklake_snapshot_changes` metadata table directly.
+
 # ducklake 0.2.0
 
 ## Multi-Backend Catalog Support

@@ -2,14 +2,37 @@
 % Please edit documentation in R/connection.R
 \name{get_ducklake_backend}
 \alias{get_ducklake_backend}
-\title{Get the current catalog backend type}
+\title{Get the catalog backend type of an attached lake}
 \usage{
-get_ducklake_backend()
+get_ducklake_backend(ducklake_name = NULL)
+}
+\arguments{
+\item{ducklake_name}{Name of the lake to look up. When \code{NULL} (the
+default), the lake the session is currently \code{USE}ing is looked up.}
 }
 \value{
 One of \code{"duckdb"}, \code{"postgres"}, \code{"sqlite"}, or \code{"mysql"}.
-Defaults to \code{"duckdb"} when no backend has been set.
+Defaults to \code{"duckdb"} when the lake is unknown.
 }
 \description{
-Get the current catalog backend type
+Get the catalog backend type of an attached lake
 }
+\examples{
+\dontrun{
+attach_ducklake("my_lake", lake_path = "~/data/lake")
+get_ducklake_backend()
+#> [1] "duckdb"
+
+# With several lakes attached, look one up by name
+get_ducklake_backend("my_sqlite_lake")
+}
+}
+\seealso{
+Other connection management:
+\code{\link[=attach_ducklake]{attach_ducklake()}},
+\code{\link[=detach_ducklake]{detach_ducklake()}},
+\code{\link[=get_ducklake_connection]{get_ducklake_connection()}},
+\code{\link[=install_ducklake]{install_ducklake()}},
+\code{\link[=set_ducklake_connection]{set_ducklake_connection()}}
+}
+\concept{connection management}

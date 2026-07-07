@@ -14,7 +14,7 @@ ducklake_exec(.data, table_name = NULL, .quiet = TRUE)
 \item{.quiet}{Logical, whether to suppress debug output (default TRUE)}
 }
 \value{
-The result from duckplyr::db_exec()
+The result from db_execute()
 }
 \description{
 Execute DuckLake operations from dplyr queries
@@ -47,3 +47,12 @@ tbl(con, "my_table") |>
   ducklake_exec("my_table")
 }
 }
+\seealso{
+Other table operations:
+\code{\link[=create_table]{create_table()}},
+\code{\link[=get_ducklake_table]{get_ducklake_table()}},
+\code{\link[=get_metadata_table]{get_metadata_table()}},
+\code{\link[=replace_table]{replace_table()}},
+\code{\link[=show_ducklake_query]{show_ducklake_query()}}
+}
+\concept{table operations}

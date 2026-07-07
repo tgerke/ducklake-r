@@ -7,13 +7,48 @@
 get_metadata_table(tbl_name, ducklake_name = NULL)
 }
 \arguments{
-\item{tbl_name}{Character string, name of the table to retrieve}
+\item{tbl_name}{Character string, name of the metadata table to retrieve
+(e.g., \code{"ducklake_snapshot"}).}
 
-\item{ducklake_name}{Character string, name of the ducklake database (optional, defaults to current active ducklake)}
+\item{ducklake_name}{Character string, name of the ducklake database
+(optional, defaults to the currently active ducklake).}
 }
 \value{
-A DuckLake table of class \code{tbl_duckdb_connection}
+A lazy table that works with dplyr verbs.
 }
 \description{
-Get a DuckLake metadata table
+DuckLake keeps all of its bookkeeping -- snapshots, table schemas, data
+file locations, and more -- in ordinary tables inside the catalog
+database. This function gives you a lazy reference to any of them, which
+is handy for auditing and for understanding how your lake evolves.
 }
+\details{
+Commonly useful tables include \code{ducklake_snapshot} (one row per
+snapshot), \code{ducklake_table} (registered tables), and \code{ducklake_data_file}
+(the Parquet files backing each table). The full list is in the
+\href{https://ducklake.select/docs/stable/specification/introduction}{DuckLake specification}.
+}
+\examples{
+\dontrun{
+attach_ducklake("my_lake", lake_path = "~/data/lake")
+
+# Every snapshot ever taken
+get_metadata_table("ducklake_snapshot") |> dplyr::collect()
+
+# Which Parquet files back the lake?
+get_metadata_table("ducklake_data_file") |>
+  dplyr::select(data_file_id, path) |>
+  dplyr::collect()
+}
+}
+\seealso{
+\code{\link[=list_table_snapshots]{list_table_snapshots()}} for a friendlier view of snapshot history.
+
+Other table operations:
+\code{\link[=create_table]{create_table()}},
+\code{\link[=ducklake_exec]{ducklake_exec()}},
+\code{\link[=get_ducklake_table]{get_ducklake_table()}},
+\code{\link[=replace_table]{replace_table()}},
+\code{\link[=show_ducklake_query]{show_ducklake_query()}}
+}
+\concept{table operations}

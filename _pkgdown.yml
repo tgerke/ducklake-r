@@ -7,8 +7,8 @@ template:
 home:
   title: "ducklake: Interact with DuckLake from R"
   description: >
-    R package that complements duckdb and duckplyr packages to support 
-    the new DuckLake ecosystem.
+    A tidyverse-friendly R interface to DuckLake, the DuckDB lakehouse
+    format: versioned tables, time travel, transactions, and remote access.
   sidebar:
     structure: [links, license, community, citation, authors, dev]
 
@@ -51,6 +51,7 @@ reference:
     - attach_ducklake
     - detach_ducklake
     - get_ducklake_connection
+    - set_ducklake_connection
     - get_ducklake_backend
     
   - title: "Table Operations"
@@ -72,7 +73,6 @@ reference:
     contents:
     - ducklake_exec
     - show_ducklake_query
-    - extract_assignments_from_sql
     
   - title: "Transactions"
     desc: "ACID transaction support"

@@ -206,7 +206,7 @@ with_transaction(
 )
 ```
 
-Note: For most use cases, use `replace_table()` to update tables. This creates clean snapshots and maintains full versioning. Advanced row-level operations (`rows_update`, `rows_insert`, `rows_delete`) are available when you need granular control, but they do not create versioned snapshots.
+Note: Use `replace_table()` for structural changes (adding or removing columns) and the row-level operations (`rows_update()`, `rows_insert()`, `rows_delete()`) for targeted, incremental changes. Both are fully versioned -- every committed change creates a snapshot you can time-travel back to. See `vignette("modifying-tables")` for guidance on choosing between them.
 
 ## Metadata and versioning recipes
 

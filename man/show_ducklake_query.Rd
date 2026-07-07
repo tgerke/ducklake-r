@@ -26,3 +26,12 @@ get_ducklake_table("my_table") |>
   show_ducklake_query()
 }
 }
+\seealso{
+Other table operations:
+\code{\link[=create_table]{create_table()}},
+\code{\link[=ducklake_exec]{ducklake_exec()}},
+\code{\link[=get_ducklake_table]{get_ducklake_table()}},
+\code{\link[=get_metadata_table]{get_metadata_table()}},
+\code{\link[=replace_table]{replace_table()}}
+}
+\concept{table operations}

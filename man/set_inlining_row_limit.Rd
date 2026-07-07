@@ -69,4 +69,10 @@ set_inlining_row_limit(0)
 \seealso{
 \code{\link[=get_inlining_row_limit]{get_inlining_row_limit()}}, \code{\link[=flush_inlined_data]{flush_inlined_data()}},
 \code{\link[=checkpoint_ducklake]{checkpoint_ducklake()}}
+
+Other data inlining:
+\code{\link[=checkpoint_ducklake]{checkpoint_ducklake()}},
+\code{\link[=flush_inlined_data]{flush_inlined_data()}},
+\code{\link[=get_inlining_row_limit]{get_inlining_row_limit()}}
 }
+\concept{data inlining}

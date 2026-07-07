@@ -8,6 +8,7 @@
 #' @param table_name Name of the new table
 #'
 #' @returns NULL
+#' @family table operations
 #' @export
 #'
 #' @examples
@@ -35,12 +36,25 @@ create_table <- function(data_source, table_name) {
   
   # Handle data.frame or tibble
   if (is.data.frame(data_source)) {
+    # DuckLake does not support ENUM columns, which is what factors become
+    # in DuckDB -- store them as character instead
+    factor_cols <- vapply(data_source, is.factor, logical(1))
+    if (any(factor_cols)) {
+      data_source[factor_cols] <- lapply(data_source[factor_cols], as.character)
+      cli::cli_inform(
+        "Converted factor column{?s} {.field {names(data_source)[factor_cols]}} to character (DuckLake does not support ENUM columns)."
+      )
+    }
+
     # Register the data.frame as a temporary view in DuckDB
     temp_view_name <- paste0("__temp_view_", gsub("[^a-zA-Z0-9]", "_", table_name))
     duckdb::duckdb_register(get_ducklake_connection(), temp_view_name, data_source)
     
     # Create the table from the temporary view
-    duckplyr::db_exec(sprintf("CREATE TABLE %s AS SELECT * FROM %s;", table_name, temp_view_name))
+    db_execute(sprintf(
+      "CREATE TABLE %s AS SELECT * FROM %s;",
+      quote_ident(table_name), quote_ident(temp_view_name)
+    ))
     
     # Unregister the temporary view
     duckdb::duckdb_unregister(get_ducklake_connection(), temp_view_name)
@@ -51,16 +65,19 @@ create_table <- function(data_source, table_name) {
   # If data_source is a URL, ensure httpfs extension is installed and loaded
   if (is.character(data_source) && grepl("^https?://", data_source)) {
     tryCatch({
-      duckplyr::db_exec("LOAD httpfs;")
+      db_execute("LOAD httpfs;")
     }, error = function(e) {
-      duckplyr::db_exec("INSTALL httpfs;")
-      duckplyr::db_exec("LOAD httpfs;")
+      db_execute("INSTALL httpfs;")
+      db_execute("LOAD httpfs;")
     })
   }
   
   # Handle file paths and URLs
   if (is.character(data_source)) {
-    duckplyr::db_exec(sprintf("CREATE TABLE %s AS FROM '%s';", table_name, data_source))
+    db_execute(sprintf(
+      "CREATE TABLE %s AS FROM %s;",
+      quote_ident(table_name), quote_sql(data_source)
+    ))
   } else {
     cli::cli_abort("{.arg data_source} must be a character string (file path or URL) or a data.frame.")
   }
