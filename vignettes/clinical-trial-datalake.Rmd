@@ -307,7 +307,7 @@ list_table_snapshots("dm")
 
 This demonstrates that:
 
-1. **Every table creation is versioned** - Both bronze (`dm_raw`) and silver (`dm`) layers have version 1.0
+1. **Every table creation is versioned** - Both the bronze (`dm_raw`) and silver (`dm`) layers have their own snapshot
 2. **Metadata is captured** - Each snapshot includes timestamp and table information
 3. **Time travel works** - We can retrieve any specific version using `get_ducklake_table_version()`
 4. **Audit trail exists** - Complete history is maintained for regulatory compliance
@@ -892,32 +892,35 @@ get_ducklake_table("adsl") |>
   head(5)
 ```
 
-#### Best Practice: Use replace_table() for All Modifications
+#### Best Practice: Choose the Right Modification Tool
 
-For clinical trial data workflows, **always use `replace_table()` wrapped in `with_transaction()`** to ensure complete audit trails and regulatory compliance.
+Every committed change to a DuckLake table creates a versioned snapshot, so
+the audit trail is complete whichever function you use. The choice is about
+the *kind* of change (see `vignette("modifying-tables")` for the full
+guidance):
 
-**Why replace_table() is essential for GxP work:**
-
-- ✅ **Creates versioned snapshots** - Every change is recorded and can be time-traveled back to
-- ✅ **Complete audit trails** - Records what changed, when, and by whom
-- ✅ **Regulatory compliance** - Meets 21 CFR Part 11 and ICH GCP requirements
-- ✅ **Data lineage** - Proves data integrity for regulatory inspections
-- ✅ **Schema flexibility** - Add/remove columns or modify values with the same approach
-- ✅ **Natural dplyr interface** - `get_ducklake_table(name) |> mutate(...) |> replace_table(name)`
-
-**For all modifications in clinical trials**, use this pattern:
+- **Structural changes** (adding or removing derived variables, reshaping a
+  dataset): use `replace_table()` wrapped in `with_transaction()`, as in the
+  example above.
+- **Targeted corrections** (fixing a flag for one subject, appending a
+  handful of records): use `rows_update()`, `rows_insert()`, or
+  `rows_delete()`. The change runs as a single SQL statement without
+  rewriting the rest of the table, and small changesets benefit from
+  DuckLake's data inlining.
 
 ```r
-# Correcting a specific value - creates auditable snapshot
+# Targeted correction: fix one subject's safety flag with rows_update()
 with_transaction(
-  get_ducklake_table("adsl") |>
-    mutate(SAFFL = if_else(USUBJID == "01-701-1015", "N", SAFFL)) |>
-    replace_table("adsl"),
+  rows_update(
+    get_ducklake_table("adsl"),
+    data.frame(USUBJID = "01-701-1015", SAFFL = "N"),
+    by = "USUBJID"
+  ),
   author = "T Gerke",
-  commit_message = "Correct safety flag"
+  commit_message = "Correct safety flag for 01-701-1015"
 )
 
-# Adding new derived columns - creates auditable snapshot
+# Structural change: add a derived column with replace_table()
 with_transaction(
   get_ducklake_table("adsl") |>
     mutate(AGE65FL = if_else(AGE >= 65, "Y", "N")) |>
@@ -927,7 +930,9 @@ with_transaction(
 )
 ```
 
-Both operations create snapshots you can time-travel back to and include in your regulatory audit trail.
+Both operations create snapshots you can time-travel back to and include in
+your regulatory audit trail, with the author and commit message recorded by
+`with_transaction()` -- the pattern to keep for GxP/21 CFR Part 11 work.
 
 #### Iterative Development with Full Audit Trail
 

@@ -8,6 +8,8 @@ restore_table_version(
   table_name,
   version = NULL,
   timestamp = NULL,
+  author = NULL,
+  commit_message = NULL,
   conn = NULL
 )
 }
@@ -17,6 +19,13 @@ restore_table_version(
 \item{version}{Optional snapshot id to restore to (see \code{\link[=list_table_snapshots]{list_table_snapshots()}})}
 
 \item{timestamp}{Optional timestamp to restore to (POSIXct or character)}
+
+\item{author}{Optional author to record on the restore snapshot, for the
+audit trail}
+
+\item{commit_message}{Optional commit message for the restore snapshot.
+Defaults to a message noting the restore point (e.g.
+\code{"Restored my_table to snapshot 5"}).}
 
 \item{conn}{Optional DuckDB connection object. If not provided, uses the default ducklake connection.}
 }
@@ -45,6 +54,14 @@ restore_table_version("my_table", version = 5)
 
 # Restore to a specific timestamp
 restore_table_version("my_table", timestamp = "2024-01-15 10:00:00")
+
+# Record who performed the restore in the audit trail
+restore_table_version(
+  "my_table",
+  version = 5,
+  author = "Data Steward",
+  commit_message = "Roll back erroneous bulk update"
+)
 }
 }
 \seealso{

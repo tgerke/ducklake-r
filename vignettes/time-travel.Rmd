@@ -242,17 +242,19 @@ an earlier snapshot in one call:
 
 ```{r restore-demo}
 # Go back to version 2 (before adding classifications)
-restore_table_version("cars", version = 2)
+restore_table_version("cars", version = 2, author = "Senior Analyst")
 
 # Verify the restoration - efficiency_class column should be gone
 get_ducklake_table("cars") |> colnames()
 ```
 
 You can also restore to a point in time with
-`restore_table_version("cars", timestamp = "2026-07-01 09:00:00")`.
+`restore_table_version("cars", timestamp = "2026-07-01 09:00:00")`, and pass
+a custom `commit_message` if the default ("Restored cars to snapshot 2")
+isn't descriptive enough for your audit trail.
 
 Nothing is lost in a restore: the rollback happens *forward*, as a new
-snapshot (with a commit message noting the restore point), so the full
+snapshot with its own author and commit message, so the full
 history — including the states after the restore point — remains available
 for time travel. That also means a restore is itself reversible with another
 `restore_table_version()` call:

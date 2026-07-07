@@ -12,7 +12,12 @@
 #' This function automatically detects the type of operation based on dplyr verbs:
 #' - Filter-only queries generate DELETE operations (removes rows that DON'T match filter)
 #' - Queries with mutate() generate UPDATE operations
-#' - Other queries generate INSERT operations
+#' - Plain reads from a *different* table generate INSERT operations
+#'   (appending that table's rows into `table_name`)
+#'
+#' A plain read from `table_name` itself is refused, since inserting a
+#' table's own rows back into it would duplicate them. Use
+#' [show_ducklake_query()] to preview the generated SQL without running it.
 #'
 #' @examples
 #' \dontrun{
@@ -49,8 +54,8 @@ ducklake_exec <- function(.data, table_name = NULL, .quiet = TRUE) {
     print(dplyr::show_query(.data))
   }
 
-  # Generate the DuckLake SQL using update_table
-  sql_string <- update_table(.data, table_name, .quiet = TRUE)
+  # Generate (but do not run) the DuckLake SQL; it is executed once below
+  sql_string <- update_table(.data, table_name, .quiet = TRUE, .execute = FALSE)
 
   if (!.quiet) {
     cat("\n=== Translated DuckLake SQL ===\n")

@@ -150,9 +150,6 @@ get_ducklake_table_version <- function(table_name, version, conn = NULL) {
 #' versions and their timestamps. This is useful for understanding what
 #' historical versions are available for time-travel queries.
 #'
-#' Note: The exact format and availability of this information depends on the
-#' table format (Delta Lake, Iceberg, etc.).
-#'
 #' @examples
 #' \dontrun{
 #' # List all snapshots for a table
@@ -182,8 +179,11 @@ list_table_snapshots <- function(table_name = NULL, ducklake_name = NULL, conn =
     
     # If table_name is provided, filter the results
     if (!is.null(table_name) && nrow(result) > 0) {
-      # Filter by checking if table_name appears in changes column
-      # The changes column contains comma-separated values like "tables_created, tables_inserted_into, main.dm_raw, 1"
+      # Filter by checking if the table appears in the changes column.
+      # Snapshots that create a table reference it by name
+      # ("tables_created, tables_inserted_into, main.dm_raw, 1"), but
+      # row-level DML snapshots reference it by numeric table id only
+      # ("inlined_insert, 1"), so match on both.
       # DuckDB and SQLite use main. schema prefix; PostgreSQL and MySQL do not
       backend <- get_ducklake_backend()
       if (backend %in% c("postgres", "mysql")) {
@@ -192,10 +192,34 @@ list_table_snapshots <- function(table_name = NULL, ducklake_name = NULL, conn =
         full_table_name <- paste0("main.", table_name)
       }
       # Use regex with word boundaries to avoid matching "main.dm" when looking for "main.dm_raw"
-      pattern <- paste0("\\b", gsub("\\.", "\\\\.", full_table_name), "\\b")
-      result <- result[grepl(pattern, result$changes), ]
+      patterns <- paste0("\\b", gsub("\\.", "\\\\.", full_table_name), "\\b")
+
+      # Resolve every table id this name has had (replace_table assigns a
+      # new id each time), so id-only DML snapshots are matched too
+      table_ids <- tryCatch({
+        metadata_ref <- if (backend %in% c("postgres", "mysql")) {
+          paste0("__ducklake_metadata_", ducklake_name, ".ducklake_table")
+        } else {
+          paste0("__ducklake_metadata_", ducklake_name, ".main.ducklake_table")
+        }
+        DBI::dbGetQuery(
+          conn,
+          sprintf(
+            "SELECT DISTINCT table_id FROM %s WHERE table_name = ?",
+            quote_ident(metadata_ref, conn)
+          ),
+          params = list(table_name)
+        )$table_id
+      }, error = function(e) integer(0))
+      if (length(table_ids) > 0) {
+        patterns <- c(patterns, paste0("\\b", table_ids, "\\b"))
+      }
+
+      keep <- Reduce(`|`, lapply(patterns, grepl, x = result$changes))
+      result <- result[keep, ]
+      rownames(result) <- NULL
     }
-    
+
     return(result)
   }, error = function(e) {
     cli::cli_warn(c(
@@ -218,6 +242,11 @@ list_table_snapshots <- function(table_name = NULL, ducklake_name = NULL, conn =
 #' @param table_name The name of the table to restore
 #' @param version Optional snapshot id to restore to (see [list_table_snapshots()])
 #' @param timestamp Optional timestamp to restore to (POSIXct or character)
+#' @param author Optional author to record on the restore snapshot, for the
+#'   audit trail
+#' @param commit_message Optional commit message for the restore snapshot.
+#'   Defaults to a message noting the restore point (e.g.
+#'   `"Restored my_table to snapshot 5"`).
 #' @param conn Optional DuckDB connection object. If not provided, uses the default ducklake connection.
 #'
 #' @returns Invisibly returns TRUE on success
@@ -242,8 +271,18 @@ list_table_snapshots <- function(table_name = NULL, ducklake_name = NULL, conn =
 #'
 #' # Restore to a specific timestamp
 #' restore_table_version("my_table", timestamp = "2024-01-15 10:00:00")
+#'
+#' # Record who performed the restore in the audit trail
+#' restore_table_version(
+#'   "my_table",
+#'   version = 5,
+#'   author = "Data Steward",
+#'   commit_message = "Roll back erroneous bulk update"
+#' )
 #' }
-restore_table_version <- function(table_name, version = NULL, timestamp = NULL, conn = NULL) {
+restore_table_version <- function(table_name, version = NULL, timestamp = NULL,
+                                  author = NULL, commit_message = NULL,
+                                  conn = NULL) {
   if (is.null(conn)) {
     conn <- get_ducklake_connection()
   }
@@ -276,10 +315,15 @@ restore_table_version <- function(table_name, version = NULL, timestamp = NULL, 
     quoted_table, quoted_table, at_clause
   )
 
+  if (is.null(commit_message)) {
+    commit_message <- sprintf("Restored %s to %s", table_name, restore_point)
+  }
+
   tryCatch({
     with_transaction(
       db_execute(restore_sql, conn = conn),
-      commit_message = sprintf("Restored %s to %s", table_name, restore_point),
+      author = author,
+      commit_message = commit_message,
       conn = conn
     )
     cli::cli_inform("Table {.val {table_name}} restored to {restore_point} (recorded as a new snapshot).")

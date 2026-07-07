@@ -26,7 +26,7 @@ knitr::opts_knit$set(root.dir = vignette_temp_dir)
 This vignette demonstrates how to modify tables in a DuckLake while maintaining complete version control and audit trails. 
 This is essential for reproducible workflows.
 
-```{r setup}
+```{r setup, message = FALSE}
 library(ducklake)
 library(dplyr)
 
@@ -41,6 +41,12 @@ with_transaction(
   commit_message = "Initial car data load"
 )
 ```
+
+A note before we start: when you load dplyr you may see a message that it
+masks ducklake's `rows_insert()`, `rows_update()`, and `rows_delete()`. That
+is harmless. Tables returned by `get_ducklake_table()` carry a class that
+dispatches to ducklake's DuckLake-aware methods regardless of the order in
+which the packages were loaded.
 
 ## Choosing a Modification Approach
 
@@ -111,6 +117,80 @@ with_transaction({
 ```
 
 ## Examples
+
+### Incremental changes with the `rows_*` functions
+
+Let's see the row-level functions in action on a small fleet table with a
+proper key column:
+
+```{r rows-setup}
+fleet <- data.frame(
+  car_id = 1:3,
+  model = c("Corolla", "Civic", "Model 3"),
+  mileage = c(42000, 38500, 12000)
+)
+
+with_transaction(
+  create_table(fleet, "fleet"),
+  author = "Fleet Manager",
+  commit_message = "Initial fleet inventory"
+)
+```
+
+**Insert** new records by key. The new rows are appended in a single SQL
+statement -- the existing rows are never read into R:
+
+```{r rows-insert}
+new_cars <- data.frame(
+  car_id = 4:5,
+  model = c("Leaf", "Ioniq 5"),
+  mileage = c(500, 120)
+)
+
+rows_insert(get_ducklake_table("fleet"), new_cars, by = "car_id")
+
+get_ducklake_table("fleet") |> collect()
+```
+
+**Update** specific values by key. Only the matched rows change:
+
+```{r rows-update}
+correction <- data.frame(car_id = 2, mileage = 39000)
+
+rows_update(get_ducklake_table("fleet"), correction, by = "car_id")
+
+get_ducklake_table("fleet") |> filter(car_id == 2) |> collect()
+```
+
+**Delete** rows by key:
+
+```{r rows-delete}
+sold <- data.frame(car_id = 1)
+
+rows_delete(get_ducklake_table("fleet"), sold, by = "car_id")
+
+get_ducklake_table("fleet") |> collect()
+```
+
+Each call above created its own snapshot. To record an author and commit
+message -- or to make several row operations land as **one** snapshot -- wrap
+them in `with_transaction()`:
+
+```{r rows-transaction}
+april_arrivals <- data.frame(car_id = 6, model = "ID.4", mileage = 60)
+recalled <- data.frame(car_id = 4)
+
+with_transaction({
+  rows_insert(get_ducklake_table("fleet"), april_arrivals, by = "car_id")
+  rows_delete(get_ducklake_table("fleet"), recalled, by = "car_id")
+},
+  author = "Fleet Manager",
+  commit_message = "April intake; remove recalled Leaf"
+)
+
+# The full history: every change is versioned, wrapped or not
+list_table_snapshots("fleet")
+```
 
 ### Updating specific rows with `replace_table()`
 
@@ -193,5 +273,5 @@ nrow(original_version)
 ```
 
 ```{r cleanup, include=FALSE}
-detach_ducklake("my_ducklake")
+detach_ducklake("modifying_tables_lake")
 ```

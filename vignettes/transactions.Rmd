@@ -178,14 +178,13 @@ begin_transaction()
 
 # Make changes
 get_ducklake_table("cars") |>
-  filter(cyl == 4) |>
   mutate(weight_kg = wt * 453.592) |>
   replace_table("cars")
 
 # Commit the changes with metadata
 commit_transaction(
   author = "Data Team",
-  commit_message = "Add weight in kg for 4-cylinder cars"
+  commit_message = "Add weight in kg"
 )
 
 # Verify changes
