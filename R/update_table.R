@@ -122,7 +122,7 @@ update_table <- function(.data, table_name, .quiet = FALSE) {
     if (!.quiet) cat("Generated SQL:", result_sql, "\n")
     
     # Execute the generated SQL directly
-    result <- duckplyr::db_exec(result_sql)
+    result <- db_execute(result_sql)
     
     # Return invisibly for potential chaining
     invisible(result_sql)

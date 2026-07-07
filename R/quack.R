@@ -27,11 +27,11 @@
 install_quack <- function(load = TRUE) {
   check_quack_version()
 
-  suppressMessages(duckplyr::db_exec("INSTALL quack;"))
+  db_execute("INSTALL quack;")
   cli::cli_inform("Installed {.pkg quack} extension.")
 
   if (load) {
-    suppressMessages(duckplyr::db_exec("LOAD quack;"))
+    db_execute("LOAD quack;")
     cli::cli_inform("Loaded {.pkg quack} extension.")
   }
 
@@ -100,7 +100,7 @@ attach_quack <- function(quack_name, uri, token = NULL, disable_ssl = FALSE) {
   }
 
   attach_sql <- build_quack_attach_sql(quack_name, uri, token, disable_ssl)
-  duckplyr::db_exec(attach_sql)
+  db_execute(attach_sql)
 
   invisible(NULL)
 }
@@ -243,7 +243,7 @@ quack_serve <- function(uri = "quack:localhost", token = NULL,
     args <- c(args, "disable_ssl = true")
   }
 
-  duckplyr::db_exec(sprintf("CALL quack_serve(%s);", paste(args, collapse = ", ")))
+  db_execute(sprintf("CALL quack_serve(%s);", paste(args, collapse = ", ")))
   cli::cli_inform("Quack server listening on {.val {uri}}.")
 
   invisible(uri)
@@ -269,7 +269,7 @@ quack_stop <- function(uri = "quack:localhost") {
   check_quack_version()
   ensure_quack_extension()
 
-  duckplyr::db_exec(sprintf("CALL quack_stop(%s);", quote_sql(uri)))
+  db_execute(sprintf("CALL quack_stop(%s);", quote_sql(uri)))
   cli::cli_inform("Quack server on {.val {uri}} stopped.")
 
   invisible(TRUE)
@@ -316,10 +316,10 @@ quack_version_supported <- function(version) {
 #' @keywords internal
 ensure_quack_extension <- function() {
   tryCatch(
-    duckplyr::db_exec("LOAD quack;"),
+    db_execute("LOAD quack;"),
     error = function(e) {
-      duckplyr::db_exec("INSTALL quack;")
-      duckplyr::db_exec("LOAD quack;")
+      db_execute("INSTALL quack;")
+      db_execute("LOAD quack;")
     }
   )
   invisible(NULL)

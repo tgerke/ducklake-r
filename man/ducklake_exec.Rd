@@ -14,7 +14,7 @@ ducklake_exec(.data, table_name = NULL, .quiet = TRUE)
 \item{.quiet}{Logical, whether to suppress debug output (default TRUE)}
 }
 \value{
-The result from duckplyr::db_exec()
+The result from db_execute()
 }
 \description{
 Execute DuckLake operations from dplyr queries

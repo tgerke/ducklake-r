@@ -4,7 +4,7 @@
 #' @param table_name The target table name for the operation. If not provided, will be extracted from the table attribute (set by get_ducklake_table())
 #' @param .quiet Logical, whether to suppress debug output (default TRUE)
 #'
-#' @returns The result from duckplyr::db_exec()
+#' @returns The result from db_execute()
 #' @export
 #'
 #' @details
@@ -57,7 +57,7 @@ ducklake_exec <- function(.data, table_name = NULL, .quiet = TRUE) {
   }
 
   # Execute and return result
-  result <- duckplyr::db_exec(sql_string)
+  result <- db_execute(sql_string)
 
   if (!.quiet) {
     cat("\nRows affected:", result, "\n")

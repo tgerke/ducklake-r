@@ -12,15 +12,14 @@ URL: https://tgerke.github.io/ducklake-r/, https://github.com/tgerke/ducklake-r
 BugReports: https://github.com/tgerke/ducklake-r/issues
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-Imports: 
+Imports:
     cli,
     DBI,
-    dplyr,
-    duckdb (>= 1.5.1),
-    duckplyr
-Suggests: 
-    admiral,
     dbplyr,
+    dplyr,
+    duckdb (>= 1.5.1)
+Suggests:
+    admiral,
     DiagrammeR,
     fs,
     jsonlite,

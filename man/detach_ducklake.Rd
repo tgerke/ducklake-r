@@ -9,7 +9,9 @@ detach_ducklake(ducklake_name = NULL, shutdown = FALSE)
 \arguments{
 \item{ducklake_name}{Optional name of the ducklake to detach.}
 
-\item{shutdown}{If \code{TRUE}, shut down the DuckDB connection after detaching.}
+\item{shutdown}{If \code{TRUE}, shut down the DuckDB connection after detaching.
+Only applies to the connection ducklake created itself; a connection
+registered with \code{\link[=set_ducklake_connection]{set_ducklake_connection()}} is never closed for you.}
 }
 \description{
 Detaches the DuckLake database but keeps the DuckDB connection alive by

@@ -2,21 +2,29 @@
 % Please edit documentation in R/connection.R
 \name{get_ducklake_connection}
 \alias{get_ducklake_connection}
-\title{Get the current DuckLake connection}
+\title{Get the DuckDB connection used by ducklake}
 \usage{
 get_ducklake_connection()
 }
 \value{
-A DuckDB connection object
+A DuckDB connection object (a \code{duckdb_connection}).
 }
 \description{
-Returns the DuckDB connection used by DuckLake. This is always duckplyr's
-default singleton connection, which provides critical setup (temp directory
-configuration, R function loading, and macro registration).
+Returns the DuckDB connection that all ducklake functions share. The first
+call creates the connection automatically, so you never need to set one up
+yourself. If you want ducklake to use a connection you have created (for
+example, one shared with other tools), register it first with
+\code{\link[=set_ducklake_connection]{set_ducklake_connection()}}.
 }
-\note{
-This function uses \code{duckplyr:::get_default_duckdb_connection()}.
-While this accesses an unexported function, it is necessary for proper
-duckplyr integration. See the duckplyr source for details:
-\url{https://github.com/tidyverse/duckplyr/blob/main/R/relational-duckdb.R}
+\details{
+The automatically created connection is backed by a temporary database file
+(not \verb{:memory:}) with a spill directory configured, so larger-than-memory
+operations work out of the box. It is closed automatically when the R
+session ends.
+}
+\examples{
+\dontrun{
+conn <- get_ducklake_connection()
+DBI::dbGetQuery(conn, "SELECT version()")
+}
 }

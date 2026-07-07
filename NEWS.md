@@ -1,5 +1,25 @@
 # ducklake (development version)
 
+## Connection management is now self-contained
+
+ducklake now creates and manages its own DuckDB connection instead of
+reaching into duckplyr's unexported internals. This removes the package's
+last `:::` calls and the duckplyr dependency entirely.
+
+### Breaking Changes
+
+* duckplyr is no longer a dependency. If you relied on ducklake sharing
+  duckplyr's default connection, register a connection explicitly with the
+  new `set_ducklake_connection()`.
+
+### New Features
+
+* `set_ducklake_connection()` (returning by popular demand, now safer):
+  point ducklake at any DuckDB connection you manage — for example one
+  shared with other DBI tools. Connections you supply are never closed by
+  ducklake; only its own automatically created connection is shut down by
+  `detach_ducklake(shutdown = TRUE)` and at session exit.
+
 ## Quack remote protocol support
 
 Added support for Quack, DuckDB's client-server protocol, which became a core

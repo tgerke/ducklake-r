@@ -163,4 +163,4 @@ Check out the [pkgdown site](https://tgerke.github.io/ducklake-r/) for detailed 
 - **Tidyverse interface**: Familiar dplyr syntax for data manipulation
 - **Two complementary approaches**: `rows_*` functions for data.frames and pipeline functions for dplyr workflows
 - **Complete audit trails**: Who changed what, when, and why—suitable for regulated industries
-- **Seamless integration**: Works with duckdb, duckplyr, and the broader R ecosystem
+- **Seamless integration**: Works with duckdb, DBI, dbplyr, and the broader tidyverse ecosystem
