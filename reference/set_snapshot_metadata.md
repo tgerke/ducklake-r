@@ -1,7 +1,8 @@
 # Set metadata for the most recent snapshot
 
-Updates the author, commit message, and/or extra info for the most
-recent snapshot in a DuckLake catalog.
+Sets the author, commit message, and/or extra info for the most recent
+snapshot in a DuckLake catalog by updating the
+`ducklake_snapshot_changes` metadata table directly.
 
 ## Usage
 
@@ -44,11 +45,13 @@ Invisibly returns TRUE on success
 
 ## Details
 
-This function updates the metadata columns in the
-`ducklake_snapshot_changes` table for the most recent snapshot. Call
-this after
+This function retroactively updates metadata on the most recent
+snapshot. To set metadata at commit time, use the `author`,
+`commit_message`, and `commit_extra_info` arguments in
 [`commit_transaction()`](https://tgerke.github.io/ducklake-r/reference/commit_transaction.md)
-to add audit information to your commits.
+or
+[`with_transaction()`](https://tgerke.github.io/ducklake-r/reference/with_transaction.md)
+instead.
 
 ## Examples
 
@@ -58,7 +61,7 @@ begin_transaction()
 # ... make changes ...
 commit_transaction()
 
-# Add metadata to the snapshot
+# Add metadata to the snapshot after the fact
 set_snapshot_metadata(
   ducklake_name = "my_ducklake",
   author = "Data Team",

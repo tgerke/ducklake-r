@@ -1,6 +1,7 @@
 # Time Travel Queries
 
 ``` r
+
 library(ducklake)
 library(dplyr)
 ```
@@ -27,6 +28,7 @@ We’ll then make several modifications to demonstrate time travel
 functionality.
 
 ``` r
+
 # Install the ducklake extension (required once per system)
 install_ducklake()
 #> Installed ducklake extension.
@@ -45,14 +47,13 @@ with_transaction(
 )
 #> Transaction started.
 #> Transaction committed.
-#> Snapshot metadata updated.
 
 # Verify the table was created
 get_ducklake_table("cars") |>
   select(mpg, cyl, hp, wt) |>
   head()
-#> # Source:   SQL [?? x 4]
-#> # Database: DuckDB 1.5.2 [unknown@Linux 6.17.0-1010-azure:R 4.5.3//tmp/RtmpPFrJ8D/duckplyr/duckplyr1f733f0121f3.duckdb]
+#> # A query:  ?? x 4
+#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpOHLFCU/duckplyr/duckplyr20c45268f538.duckdb]
 #>     mpg   cyl    hp    wt
 #>   <dbl> <dbl> <dbl> <dbl>
 #> 1  21       6   110  2.62
@@ -73,14 +74,15 @@ can explore.
 We already have our initial dataset. Let’s check the current state:
 
 ``` r
+
 get_ducklake_table("cars") |>
   summarise(
     n_cars = n(),
     avg_mpg = mean(mpg, na.rm = TRUE),
     avg_hp = mean(hp, na.rm = TRUE)
   )
-#> # Source:   SQL [?? x 3]
-#> # Database: DuckDB 1.5.2 [unknown@Linux 6.17.0-1010-azure:R 4.5.3//tmp/RtmpPFrJ8D/duckplyr/duckplyr1f733f0121f3.duckdb]
+#> # A query:  ?? x 3
+#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpOHLFCU/duckplyr/duckplyr20c45268f538.duckdb]
 #>   n_cars avg_mpg avg_hp
 #>    <dbl>   <dbl>  <dbl>
 #> 1     32    20.1   147.
@@ -92,6 +94,7 @@ Suppose we discover that fuel efficiency measurements need to be
 adjusted for some vehicles:
 
 ``` r
+
 # Update mpg for high-performance cars (5% reduction)
 with_transaction(
   get_ducklake_table("cars") |>
@@ -102,7 +105,6 @@ with_transaction(
 )
 #> Transaction started.
 #> Transaction committed.
-#> Snapshot metadata updated.
 
 # Check the updated averages
 get_ducklake_table("cars") |>
@@ -111,8 +113,8 @@ get_ducklake_table("cars") |>
     avg_mpg = mean(mpg, na.rm = TRUE),
     avg_hp = mean(hp, na.rm = TRUE)
   )
-#> # Source:   SQL [?? x 3]
-#> # Database: DuckDB 1.5.2 [unknown@Linux 6.17.0-1010-azure:R 4.5.3//tmp/RtmpPFrJ8D/duckplyr/duckplyr1f733f0121f3.duckdb]
+#> # A query:  ?? x 3
+#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpOHLFCU/duckplyr/duckplyr20c45268f538.duckdb]
 #>   n_cars avg_mpg avg_hp
 #>    <dbl>   <dbl>  <dbl>
 #> 1     32    19.9   147.
@@ -124,6 +126,7 @@ Let’s add a new categorical variable to classify cars by fuel
 efficiency:
 
 ``` r
+
 with_transaction(
   get_ducklake_table("cars") |>
     mutate(
@@ -139,14 +142,13 @@ with_transaction(
 )
 #> Transaction started.
 #> Transaction committed.
-#> Snapshot metadata updated.
 
 # View the new classification
 get_ducklake_table("cars") |>
   count(efficiency_class) |>
   arrange(desc(n))
-#> # Source:     SQL [?? x 2]
-#> # Database:   DuckDB 1.5.2 [unknown@Linux 6.17.0-1010-azure:R 4.5.3//tmp/RtmpPFrJ8D/duckplyr/duckplyr1f733f0121f3.duckdb]
+#> # A query:    ?? x 2
+#> # Database:   DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpOHLFCU/duckplyr/duckplyr20c45268f538.duckdb]
 #> # Ordered by: desc(n)
 #>   efficiency_class     n
 #>   <chr>            <dbl>
@@ -161,6 +163,7 @@ Suppose we realize the efficiency classification thresholds were wrong
 and need to be corrected:
 
 ``` r
+
 with_transaction(
   get_ducklake_table("cars") |>
     mutate(
@@ -176,14 +179,13 @@ with_transaction(
 )
 #> Transaction started.
 #> Transaction committed.
-#> Snapshot metadata updated.
 
 # View the corrected classification
 get_ducklake_table("cars") |>
   count(efficiency_class) |>
   arrange(desc(n))
-#> # Source:     SQL [?? x 2]
-#> # Database:   DuckDB 1.5.2 [unknown@Linux 6.17.0-1010-azure:R 4.5.3//tmp/RtmpPFrJ8D/duckplyr/duckplyr1f733f0121f3.duckdb]
+#> # A query:    ?? x 2
+#> # Database:   DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpOHLFCU/duckplyr/duckplyr20c45268f538.duckdb]
 #> # Ordered by: desc(n)
 #>   efficiency_class     n
 #>   <chr>            <dbl>
@@ -200,14 +202,15 @@ functionality.
 ### List all snapshots
 
 ``` r
+
 # View all available versions of the table
 snapshots <- list_table_snapshots("cars")
 snapshots
 #>   snapshot_id       snapshot_time schema_version
-#> 2           1 2026-04-14 18:22:26              1
-#> 3           2 2026-04-14 18:22:27              2
-#> 4           3 2026-04-14 18:22:27              3
-#> 5           4 2026-04-14 18:22:27              4
+#> 2           1 2026-07-07 19:57:17              1
+#> 3           2 2026-07-07 19:57:17              2
+#> 4           3 2026-07-07 19:57:18              3
+#> 5           4 2026-07-07 19:57:18              4
 #>                                                                 changes
 #> 2                    tables_created, tables_inserted_into, main.cars, 1
 #> 3 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2
@@ -225,12 +228,13 @@ snapshots
 Let’s look at version 2, before we added the efficiency classification:
 
 ``` r
+
 # Get version 2 (after MPG adjustment, before classification)
 get_ducklake_table_version("cars", version = 2) |>
   select(mpg, cyl, hp, wt) |>
   head()
-#> # Source:   SQL [?? x 4]
-#> # Database: DuckDB 1.5.2 [unknown@Linux 6.17.0-1010-azure:R 4.5.3//tmp/RtmpPFrJ8D/duckplyr/duckplyr1f733f0121f3.duckdb]
+#> # A query:  ?? x 4
+#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpOHLFCU/duckplyr/duckplyr20c45268f538.duckdb]
 #>     mpg   cyl    hp    wt
 #>   <dbl> <dbl> <dbl> <dbl>
 #> 1  21       6   110  2.62
@@ -246,17 +250,18 @@ get_ducklake_table_version("cars", version = 2) |>
 Compare this with version 3, which has the classification:
 
 ``` r
+
 # Get version 3 (with initial classification)
 get_ducklake_table_version("cars", version = 3) |>
   select(mpg, efficiency_class) |>
   count(efficiency_class)
-#> # Source:   SQL [?? x 2]
-#> # Database: DuckDB 1.5.2 [unknown@Linux 6.17.0-1010-azure:R 4.5.3//tmp/RtmpPFrJ8D/duckplyr/duckplyr1f733f0121f3.duckdb]
+#> # A query:  ?? x 2
+#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpOHLFCU/duckplyr/duckplyr20c45268f538.duckdb]
 #>   efficiency_class     n
 #>   <chr>            <dbl>
-#> 1 High                 6
-#> 2 Medium               8
-#> 3 Low                 18
+#> 1 Medium               8
+#> 2 Low                 18
+#> 3 High                 6
 ```
 
 ### Query data as of a specific timestamp
@@ -264,6 +269,7 @@ get_ducklake_table_version("cars", version = 3) |>
 We can also query data as it existed at any point in time:
 
 ``` r
+
 # Get the timestamp from version 2
 version2_timestamp <- snapshots |>
   filter(schema_version == 2) |>
@@ -275,8 +281,8 @@ get_ducklake_table_asof("cars", version2_timestamp + 1) |>
   summarise(
     avg_mpg = mean(mpg, na.rm = TRUE)
   )
-#> # Source:   SQL [?? x 1]
-#> # Database: DuckDB 1.5.2 [unknown@Linux 6.17.0-1010-azure:R 4.5.3//tmp/RtmpPFrJ8D/duckplyr/duckplyr1f733f0121f3.duckdb]
+#> # A query:  ?? x 1
+#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpOHLFCU/duckplyr/duckplyr20c45268f538.duckdb]
 #>   avg_mpg
 #>     <dbl>
 #> 1    19.9
@@ -288,6 +294,7 @@ One powerful use case is comparing different versions to understand what
 changed:
 
 ``` r
+
 # Get MPG values from version 1 (original) and version 2 (after adjustment)
 original <- get_ducklake_table_version("cars", version = 1) |>
   select(mpg) |>
@@ -320,6 +327,7 @@ If we need to undo changes, we can restore a table to a previous version
 by reading that version and replacing the current table:
 
 ``` r
+
 # Let's say we want to go back to version 2 (before adding classifications)
 # We restore by reading version 2 and replacing the current table
 with_transaction(
@@ -330,7 +338,6 @@ with_transaction(
 )
 #> Transaction started.
 #> Transaction committed.
-#> Snapshot metadata updated.
 
 # Verify the restoration - efficiency_class column should be gone
 get_ducklake_table("cars") |> colnames()
@@ -342,13 +349,14 @@ After restoring, we can see that the efficiency_class column is no
 longer present. A new snapshot is created for the restoration:
 
 ``` r
+
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 2           1 2026-04-14 18:22:26              1
-#> 3           2 2026-04-14 18:22:27              2
-#> 4           3 2026-04-14 18:22:27              3
-#> 5           4 2026-04-14 18:22:27              4
-#> 6           5 2026-04-14 18:22:28              5
+#> 2           1 2026-07-07 19:57:17              1
+#> 3           2 2026-07-07 19:57:17              2
+#> 4           3 2026-07-07 19:57:18              3
+#> 5           4 2026-07-07 19:57:18              4
+#> 6           5 2026-07-07 19:57:19              5
 #>                                                                 changes
 #> 2                    tables_created, tables_inserted_into, main.cars, 1
 #> 3 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2
@@ -396,16 +404,17 @@ changes were made. The
 function provides a complete audit trail:
 
 ``` r
+
 # Get detailed snapshot history with all metadata
 snapshot_history <- list_table_snapshots("cars")
 snapshot_history |>
   select(snapshot_id, snapshot_time, author, commit_message)
 #>   snapshot_id       snapshot_time         author
-#> 2           1 2026-04-14 18:22:26  Data Engineer
-#> 3           2 2026-04-14 18:22:27   Data Analyst
-#> 4           3 2026-04-14 18:22:27   Data Analyst
-#> 5           4 2026-04-14 18:22:27 Senior Analyst
-#> 6           5 2026-04-14 18:22:28 Senior Analyst
+#> 2           1 2026-07-07 19:57:17  Data Engineer
+#> 3           2 2026-07-07 19:57:17   Data Analyst
+#> 4           3 2026-07-07 19:57:18   Data Analyst
+#> 5           4 2026-07-07 19:57:18 Senior Analyst
+#> 6           5 2026-07-07 19:57:19 Senior Analyst
 #>                                            commit_message
 #> 2                          Initial load of mtcars dataset
 #> 3                Adjust MPG for high-performance vehicles
@@ -425,18 +434,19 @@ like:
 You can also access metadata about all tables in the DuckLake:
 
 ``` r
+
 # View metadata for all tables
 all_snapshots <- list_table_snapshots()
 all_snapshots |>
   select(snapshot_id, snapshot_time, changes) |>
   head(10)
 #>   snapshot_id       snapshot_time
-#> 1           0 2026-04-14 18:22:26
-#> 2           1 2026-04-14 18:22:26
-#> 3           2 2026-04-14 18:22:27
-#> 4           3 2026-04-14 18:22:27
-#> 5           4 2026-04-14 18:22:27
-#> 6           5 2026-04-14 18:22:28
+#> 1           0 2026-07-07 19:57:17
+#> 2           1 2026-07-07 19:57:17
+#> 3           2 2026-07-07 19:57:17
+#> 4           3 2026-07-07 19:57:18
+#> 5           4 2026-07-07 19:57:18
+#> 6           5 2026-07-07 19:57:19
 #>                                                                 changes
 #> 1                                                 schemas_created, main
 #> 2                    tables_created, tables_inserted_into, main.cars, 1

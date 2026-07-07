@@ -1,6 +1,7 @@
 # Working with Transactions
 
 ``` r
+
 library(ducklake)
 library(dplyr)
 
@@ -37,6 +38,7 @@ We’ll use the `mtcars` dataset throughout this vignette to demonstrate
 transaction workflows.
 
 ``` r
+
 # Load initial data
 with_transaction(
   create_table(mtcars, "cars"),
@@ -45,14 +47,13 @@ with_transaction(
 )
 #> Transaction started.
 #> Transaction committed.
-#> Snapshot metadata updated.
 
 # View the data
 get_ducklake_table("cars") |>
   select(mpg, cyl, hp, wt) |>
   head()
-#> # Source:   SQL [?? x 4]
-#> # Database: DuckDB 1.5.2 [unknown@Linux 6.17.0-1010-azure:R 4.5.3//tmp/Rtmpe0fJge/duckplyr/duckplyr1fd13ced895c.duckdb]
+#> # A query:  ?? x 4
+#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpHAGi7x/duckplyr/duckplyr2123250c1a61.duckdb]
 #>     mpg   cyl    hp    wt
 #>   <dbl> <dbl> <dbl> <dbl>
 #> 1  21       6   110  2.62
@@ -86,6 +87,7 @@ function provides automatic error handling and cleanup, similar to the
 ### Single Operation with Metadata
 
 ``` r
+
 # Add a new column with automatic metadata tracking
 with_transaction(
   get_ducklake_table("cars") |>
@@ -96,14 +98,13 @@ with_transaction(
 )
 #> Transaction started.
 #> Transaction committed.
-#> Snapshot metadata updated.
 
 # Verify the change
 get_ducklake_table("cars") |>
   select(mpg, kpl) |>
   head()
-#> # Source:   SQL [?? x 2]
-#> # Database: DuckDB 1.5.2 [unknown@Linux 6.17.0-1010-azure:R 4.5.3//tmp/Rtmpe0fJge/duckplyr/duckplyr1fd13ced895c.duckdb]
+#> # A query:  ?? x 2
+#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpHAGi7x/duckplyr/duckplyr2123250c1a61.duckdb]
 #>     mpg   kpl
 #>   <dbl> <dbl>
 #> 1  21    8.93
@@ -120,6 +121,7 @@ You can group multiple operations together by wrapping them in curly
 braces:
 
 ``` r
+
 # Multiple related changes in one atomic transaction
 with_transaction({
   # Add efficiency rating
@@ -145,14 +147,13 @@ with_transaction({
 }, author = "Data Team", commit_message = "Add efficiency ratings and summary table")
 #> Transaction started.
 #> Transaction committed.
-#> Snapshot metadata updated.
 
 # View results
 get_ducklake_table("cars") |>
   select(mpg, cyl, efficiency) |>
   head()
-#> # Source:   SQL [?? x 3]
-#> # Database: DuckDB 1.5.2 [unknown@Linux 6.17.0-1010-azure:R 4.5.3//tmp/Rtmpe0fJge/duckplyr/duckplyr1fd13ced895c.duckdb]
+#> # A query:  ?? x 3
+#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpHAGi7x/duckplyr/duckplyr2123250c1a61.duckdb]
 #>     mpg   cyl efficiency
 #>   <dbl> <dbl> <chr>     
 #> 1  21       6 medium    
@@ -167,9 +168,9 @@ get_ducklake_table("cars_summary") |>
 #> # A tibble: 3 × 4
 #>     cyl avg_mpg avg_hp count
 #>   <dbl>   <dbl>  <dbl> <dbl>
-#> 1     6    19.7  122.      7
-#> 2     8    15.1  209.     14
-#> 3     4    26.7   82.6    11
+#> 1     4    26.7   82.6    11
+#> 2     6    19.7  122.      7
+#> 3     8    15.1  209.     14
 ```
 
 ### Automatic Rollback on Error
@@ -179,6 +180,7 @@ One of the key benefits of
 is automatic error handling:
 
 ``` r
+
 # This transaction will fail and automatically rollback
 tryCatch(
   with_transaction({
@@ -208,9 +210,9 @@ get_ducklake_table("cars") |>
 # View all versioned changes
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 2           1 2026-04-14 18:22:31              1
-#> 3           2 2026-04-14 18:22:31              2
-#> 4           3 2026-04-14 18:22:32              3
+#> 2           1 2026-07-07 19:57:22              1
+#> 3           2 2026-07-07 19:57:22              2
+#> 4           3 2026-07-07 19:57:22              3
 #>                                                                                                       changes
 #> 2                                                          tables_created, tables_inserted_into, main.cars, 1
 #> 3                                       tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2
@@ -239,6 +241,7 @@ boundaries, DuckLake provides manual transaction functions.
 ### Basic Manual Transaction Workflow
 
 ``` r
+
 # Start a transaction
 begin_transaction()
 #> Transaction started.
@@ -255,15 +258,14 @@ commit_transaction(
   commit_message = "Add weight in kg for 4-cylinder cars"
 )
 #> Transaction committed.
-#> Snapshot metadata updated.
 
 # Verify changes
 get_ducklake_table("cars") |>
   filter(cyl == 4) |>
   select(wt, weight_kg) |>
   head()
-#> # Source:   SQL [?? x 2]
-#> # Database: DuckDB 1.5.2 [unknown@Linux 6.17.0-1010-azure:R 4.5.3//tmp/Rtmpe0fJge/duckplyr/duckplyr1fd13ced895c.duckdb]
+#> # A query:  ?? x 2
+#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpHAGi7x/duckplyr/duckplyr2123250c1a61.duckdb]
 #>      wt weight_kg
 #>   <dbl>     <dbl>
 #> 1  2.32     1052.
@@ -280,6 +282,7 @@ Sometimes you may want to inspect data before deciding whether to
 commit:
 
 ``` r
+
 # Start a transaction
 begin_transaction()
 #> Transaction started.
@@ -317,10 +320,10 @@ rollback_transaction()
 # View all versioned changes
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 2           1 2026-04-14 18:22:31              1
-#> 3           2 2026-04-14 18:22:31              2
-#> 4           3 2026-04-14 18:22:32              3
-#> 5           4 2026-04-14 18:22:32              4
+#> 2           1 2026-07-07 19:57:22              1
+#> 3           2 2026-07-07 19:57:22              2
+#> 4           3 2026-07-07 19:57:22              3
+#> 5           4 2026-07-07 19:57:23              4
 #>                                                                                                       changes
 #> 2                                                          tables_created, tables_inserted_into, main.cars, 1
 #> 3                                       tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2
@@ -333,40 +336,42 @@ list_table_snapshots("cars")
 #> 5 Data Team     Add weight in kg for 4-cylinder cars              <NA>
 ```
 
-### Setting Metadata Separately
+### Snapshot Metadata: At Commit Time vs After the Fact
 
-With manual transactions, you can also set metadata after committing:
+DuckLake supports two ways to attach metadata (author, commit message,
+and optional extra info) to a snapshot.
+
+**At commit time (recommended)**: Pass `author`, `commit_message`,
+and/or `commit_extra_info` to
+[`commit_transaction()`](https://tgerke.github.io/ducklake-r/reference/commit_transaction.md)
+or
+[`with_transaction()`](https://tgerke.github.io/ducklake-r/reference/with_transaction.md).
+This uses the DuckLake v1.0 `set_commit_message()` API to record
+metadata as part of the transaction itself, before the commit is
+finalized.
 
 ``` r
-# Start transaction
+
+# Metadata set at commit time (preferred approach)
 begin_transaction()
 #> Transaction started.
 
-# Make changes
 get_ducklake_table("cars") |>
   mutate(hp_per_liter = hp / (cyl * 0.5)) |>
   replace_table("cars")
 
-# Commit
-commit_transaction()
+commit_transaction(
+  author = "Performance Team",
+  commit_message = "Add horsepower per liter metric",
+  commit_extra_info = '{"ticket": "DATA-123"}'
+)
 #> Transaction committed.
 
-# Add metadata separately
-set_snapshot_metadata(
-  ducklake_name = "my_ducklake",
-  author = "Performance Team",
-  commit_message = "Add horsepower per liter metric"
-)
-#> Warning: Could not update snapshot metadata: Binder Error: Catalog
-#> "__ducklake_metadata_my_ducklake" does not exist! ℹ Context: rapi_prepare ℹ
-#> Error type: BINDER
-
-# Verify
 get_ducklake_table("cars") |>
   select(hp, cyl, hp_per_liter) |>
   head()
-#> # Source:   SQL [?? x 3]
-#> # Database: DuckDB 1.5.2 [unknown@Linux 6.17.0-1010-azure:R 4.5.3//tmp/Rtmpe0fJge/duckplyr/duckplyr1fd13ced895c.duckdb]
+#> # A query:  ?? x 3
+#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpHAGi7x/duckplyr/duckplyr2123250c1a61.duckdb]
 #>      hp   cyl hp_per_liter
 #>   <dbl> <dbl>        <dbl>
 #> 1    93     4         46.5
@@ -377,40 +382,63 @@ get_ducklake_table("cars") |>
 #> 6    65     4         32.5
 ```
 
+**After the fact**: Use
+[`set_snapshot_metadata()`](https://tgerke.github.io/ducklake-r/reference/set_snapshot_metadata.md)
+to retroactively update the metadata on the most recent snapshot. This
+directly updates the `ducklake_snapshot_changes` metadata table.
+
+``` r
+
+# Retrospectively update metadata on the last snapshot
+set_snapshot_metadata(
+  ducklake_name = "transactions_lake",
+  author = "Performance Team (reviewed)",
+  commit_message = "Add horsepower per liter metric (approved)"
+)
+#> Snapshot metadata updated.
+```
+
+Both approaches result in the same metadata fields being populated — the
+choice is about workflow. Use at-commit-time metadata for automated
+pipelines where metadata is known upfront. Use after-the-fact metadata
+for interactive workflows where you want to annotate a snapshot after
+reviewing the results.
+
 ## Viewing Transaction History
 
 Regardless of which approach you use, all transactions are tracked with
 complete metadata:
 
 ``` r
+
 # View recent transaction history
 list_table_snapshots("cars") |>
   select(snapshot_id, snapshot_time, author, commit_message) |>
   tail(5)
-#>   snapshot_id       snapshot_time    author
-#> 2           1 2026-04-14 18:22:31  Tutorial
-#> 3           2 2026-04-14 18:22:31 Data Team
-#> 4           3 2026-04-14 18:22:32 Data Team
-#> 5           4 2026-04-14 18:22:32 Data Team
-#> 6           5 2026-04-14 18:22:33      <NA>
-#>                             commit_message
-#> 2           Initial load of mtcars dataset
-#> 3          Add kilometers per liter column
-#> 4 Add efficiency ratings and summary table
-#> 5     Add weight in kg for 4-cylinder cars
-#> 6                                     <NA>
+#>   snapshot_id       snapshot_time                      author
+#> 2           1 2026-07-07 19:57:22                    Tutorial
+#> 3           2 2026-07-07 19:57:22                   Data Team
+#> 4           3 2026-07-07 19:57:22                   Data Team
+#> 5           4 2026-07-07 19:57:23                   Data Team
+#> 6           5 2026-07-07 19:57:23 Performance Team (reviewed)
+#>                               commit_message
+#> 2             Initial load of mtcars dataset
+#> 3            Add kilometers per liter column
+#> 4   Add efficiency ratings and summary table
+#> 5       Add weight in kg for 4-cylinder cars
+#> 6 Add horsepower per liter metric (approved)
 ```
 
 ## Comparison: with_transaction() vs Manual Control
 
-| Feature            | [`with_transaction()`](https://tgerke.github.io/ducklake-r/reference/with_transaction.md) | Manual (`begin/commit/rollback`)       |
-|--------------------|-------------------------------------------------------------------------------------------|----------------------------------------|
-| **Ease of use**    | ✅ Simple, one function                                                                   | ❌ Requires multiple function calls    |
-| **Error handling** | ✅ Automatic rollback                                                                     | ❌ Must handle manually                |
-| **Metadata**       | ✅ Inline with transaction                                                                | ⚠️ Requires separate call or parameter |
-| **Safety**         | ✅ Can’t forget to commit                                                                 | ❌ Risk of open transactions           |
-| **Use case**       | Most production workflows                                                                 | Interactive/conditional workflows      |
-| **Code clarity**   | ✅ Clear transaction scope                                                                | ⚠️ Scope can be unclear                |
+| Feature | [`with_transaction()`](https://tgerke.github.io/ducklake-r/reference/with_transaction.md) | Manual (`begin/commit/rollback`) |
+|----|----|----|
+| **Ease of use** | ✅ Simple, one function | ❌ Requires multiple function calls |
+| **Error handling** | ✅ Automatic rollback | ❌ Must handle manually |
+| **Metadata** | ✅ Inline with transaction | ✅ Inline via parameter, or retroactive via [`set_snapshot_metadata()`](https://tgerke.github.io/ducklake-r/reference/set_snapshot_metadata.md) |
+| **Safety** | ✅ Can’t forget to commit | ❌ Risk of open transactions |
+| **Use case** | Most production workflows | Interactive/conditional workflows |
+| **Code clarity** | ✅ Clear transaction scope | ⚠️ Scope can be unclear |
 
 ## Best Practices
 
@@ -429,16 +457,17 @@ list_table_snapshots("cars") |>
 
 ## Key Concepts Summary
 
-- **`with_transaction(expr, author, commit_message)`**: Modern,
-  automatic transaction handling (recommended)
+- **`with_transaction(expr, author, commit_message, commit_extra_info)`**:
+  Modern, automatic transaction handling (recommended)
 - **[`begin_transaction()`](https://tgerke.github.io/ducklake-r/reference/begin_transaction.md)**:
   Start a manual transaction
-- **`commit_transaction(author, commit_message)`**: Apply changes from a
-  manual transaction
+- **`commit_transaction(author, commit_message, commit_extra_info)`**:
+  Apply changes from a manual transaction, with optional metadata set at
+  commit time via the DuckLake v1.0 API
 - **[`rollback_transaction()`](https://tgerke.github.io/ducklake-r/reference/rollback_transaction.md)**:
   Discard changes from a manual transaction
 - **[`set_snapshot_metadata()`](https://tgerke.github.io/ducklake-r/reference/set_snapshot_metadata.md)**:
-  Add metadata to snapshots after committing
+  Retroactively update metadata on the most recent snapshot
 
 Transactions ensure data integrity and provide complete audit trails for
 all changes in your DuckLake.

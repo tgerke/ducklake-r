@@ -83,6 +83,19 @@ Access metadata and snapshots
 - [`set_snapshot_metadata()`](https://tgerke.github.io/ducklake-r/reference/set_snapshot_metadata.md)
   : Set metadata for the most recent snapshot
 
+## Data Inlining
+
+Configure and manage data inlining for streaming workloads
+
+- [`set_inlining_row_limit()`](https://tgerke.github.io/ducklake-r/reference/set_inlining_row_limit.md)
+  : Set the data inlining row limit
+- [`get_inlining_row_limit()`](https://tgerke.github.io/ducklake-r/reference/get_inlining_row_limit.md)
+  : Get the current data inlining row limit
+- [`flush_inlined_data()`](https://tgerke.github.io/ducklake-r/reference/flush_inlined_data.md)
+  : Flush inlined data to Parquet files
+- [`checkpoint_ducklake()`](https://tgerke.github.io/ducklake-r/reference/checkpoint_ducklake.md)
+  : Run a DuckLake checkpoint
+
 ## Backup and Maintenance
 
 Backup and restore operations

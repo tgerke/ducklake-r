@@ -11,7 +11,8 @@ build_attach_sql(
   backend,
   catalog_connection_string,
   read_only,
-  override_data_path = FALSE
+  override_data_path = FALSE,
+  data_inlining_row_limit = NULL
 )
 ```
 
@@ -40,6 +41,10 @@ build_attach_sql(
 - override_data_path:
 
   Whether to add OVERRIDE_DATA_PATH TRUE
+
+- data_inlining_row_limit:
+
+  Optional integer for DATA_INLINING_ROW_LIMIT
 
 ## Value
 

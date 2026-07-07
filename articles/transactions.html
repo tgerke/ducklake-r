@@ -12,8 +12,8 @@
 <link rel="icon" sizes="any" href="../favicon.ico">
 <link rel="manifest" href="../site.webmanifest">
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Working with Transactions">
 </head>
@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ducklake</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -48,6 +48,7 @@
     <li><a class="dropdown-item" href="../articles/modifying-tables.html">Modifying Tables</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Advanced Features</h6></li>
+    <li><a class="dropdown-item" href="../articles/data-inlining.html">Data Inlining</a></li>
     <li><a class="dropdown-item" href="../articles/transactions.html">Working with Transactions</a></li>
     <li><a class="dropdown-item" href="../articles/time-travel.html">Time Travel Queries</a></li>
     <li><a class="dropdown-item" href="../articles/storage-and-backups.html">Storage and Backup Management</a></li>
@@ -75,7 +76,7 @@
       <img src="../logo.png" class="logo" alt=""><h1>Working with Transactions</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/tgerke/ducklake-r/blob/v0.2.0/vignettes/transactions.Rmd" class="external-link"><code>vignettes/transactions.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/tgerke/ducklake-r/blob/main/vignettes/transactions.Rmd" class="external-link"><code>vignettes/transactions.Rmd</code></a></small>
       <div class="d-none name"><code>transactions.Rmd</code></div>
     </div>
 
@@ -124,14 +125,13 @@ demonstrate transaction workflows.</p>
 <span><span class="op">)</span></span>
 <span><span class="co">#&gt; Transaction started.</span></span>
 <span><span class="co">#&gt; Transaction committed.</span></span>
-<span><span class="co">#&gt; Snapshot metadata updated.</span></span>
 <span></span>
 <span><span class="co"># View the data</span></span>
 <span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">mpg</span>, <span class="va">cyl</span>, <span class="va">hp</span>, <span class="va">wt</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Source:   SQL [?? x 4]</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.5.2 [unknown@Linux 6.17.0-1010-azure:R 4.5.3//tmp/Rtmpe0fJge/duckplyr/duckplyr1fd13ced895c.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A query:  ?? x 4</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpHAGi7x/duckplyr/duckplyr2123250c1a61.duckdb]</span></span></span>
 <span><span class="co">#&gt;     mpg   cyl    hp    wt</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>  21       6   110  2.62</span></span>
@@ -186,14 +186,13 @@ packages like <code>withr</code>
 <span><span class="op">)</span></span>
 <span><span class="co">#&gt; Transaction started.</span></span>
 <span><span class="co">#&gt; Transaction committed.</span></span>
-<span><span class="co">#&gt; Snapshot metadata updated.</span></span>
 <span></span>
 <span><span class="co"># Verify the change</span></span>
 <span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">mpg</span>, <span class="va">kpl</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Source:   SQL [?? x 2]</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.5.2 [unknown@Linux 6.17.0-1010-azure:R 4.5.3//tmp/Rtmpe0fJge/duckplyr/duckplyr1fd13ced895c.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A query:  ?? x 2</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpHAGi7x/duckplyr/duckplyr2123250c1a61.duckdb]</span></span></span>
 <span><span class="co">#&gt;     mpg   kpl</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>  21    8.93</span></span>
@@ -234,14 +233,13 @@ braces:</p>
 <span><span class="op">}</span>, author <span class="op">=</span> <span class="st">"Data Team"</span>, commit_message <span class="op">=</span> <span class="st">"Add efficiency ratings and summary table"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Transaction started.</span></span>
 <span><span class="co">#&gt; Transaction committed.</span></span>
-<span><span class="co">#&gt; Snapshot metadata updated.</span></span>
 <span></span>
 <span><span class="co"># View results</span></span>
 <span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">mpg</span>, <span class="va">cyl</span>, <span class="va">efficiency</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Source:   SQL [?? x 3]</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.5.2 [unknown@Linux 6.17.0-1010-azure:R 4.5.3//tmp/Rtmpe0fJge/duckplyr/duckplyr1fd13ced895c.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A query:  ?? x 3</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpHAGi7x/duckplyr/duckplyr2123250c1a61.duckdb]</span></span></span>
 <span><span class="co">#&gt;     mpg   cyl efficiency</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>  21       6 medium    </span></span>
@@ -256,9 +254,9 @@ braces:</p>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 3 × 4</span></span></span>
 <span><span class="co">#&gt;     cyl avg_mpg avg_hp count</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>     6    19.7  122.      7</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span>     8    15.1  209.     14</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span>     4    26.7   82.6    11</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>     4    26.7   82.6    11</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span>     6    19.7  122.      7</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span>     8    15.1  209.     14</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="automatic-rollback-on-error">Automatic Rollback on Error<a class="anchor" aria-label="anchor" href="#automatic-rollback-on-error"></a>
@@ -295,9 +293,9 @@ automatic error handling:</p>
 <span><span class="co"># View all versioned changes</span></span>
 <span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 2           1 2026-04-14 18:22:31              1</span></span>
-<span><span class="co">#&gt; 3           2 2026-04-14 18:22:31              2</span></span>
-<span><span class="co">#&gt; 4           3 2026-04-14 18:22:32              3</span></span>
+<span><span class="co">#&gt; 2           1 2026-07-07 19:57:22              1</span></span>
+<span><span class="co">#&gt; 3           2 2026-07-07 19:57:22              2</span></span>
+<span><span class="co">#&gt; 4           3 2026-07-07 19:57:22              3</span></span>
 <span><span class="co">#&gt;                                                                                                       changes</span></span>
 <span><span class="co">#&gt; 2                                                          tables_created, tables_inserted_into, main.cars, 1</span></span>
 <span><span class="co">#&gt; 3                                       tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2</span></span>
@@ -352,15 +350,14 @@ systems</li>
 <span>  commit_message <span class="op">=</span> <span class="st">"Add weight in kg for 4-cylinder cars"</span></span>
 <span><span class="op">)</span></span>
 <span><span class="co">#&gt; Transaction committed.</span></span>
-<span><span class="co">#&gt; Snapshot metadata updated.</span></span>
 <span></span>
 <span><span class="co"># Verify changes</span></span>
 <span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">cyl</span> <span class="op">==</span> <span class="fl">4</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">wt</span>, <span class="va">weight_kg</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Source:   SQL [?? x 2]</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.5.2 [unknown@Linux 6.17.0-1010-azure:R 4.5.3//tmp/Rtmpe0fJge/duckplyr/duckplyr1fd13ced895c.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A query:  ?? x 2</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpHAGi7x/duckplyr/duckplyr2123250c1a61.duckdb]</span></span></span>
 <span><span class="co">#&gt;      wt weight_kg</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>  2.32     <span style="text-decoration: underline;">1</span>052.</span></span>
@@ -413,10 +410,10 @@ commit:</p>
 <span><span class="co"># View all versioned changes</span></span>
 <span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 2           1 2026-04-14 18:22:31              1</span></span>
-<span><span class="co">#&gt; 3           2 2026-04-14 18:22:31              2</span></span>
-<span><span class="co">#&gt; 4           3 2026-04-14 18:22:32              3</span></span>
-<span><span class="co">#&gt; 5           4 2026-04-14 18:22:32              4</span></span>
+<span><span class="co">#&gt; 2           1 2026-07-07 19:57:22              1</span></span>
+<span><span class="co">#&gt; 3           2 2026-07-07 19:57:22              2</span></span>
+<span><span class="co">#&gt; 4           3 2026-07-07 19:57:22              3</span></span>
+<span><span class="co">#&gt; 5           4 2026-07-07 19:57:23              4</span></span>
 <span><span class="co">#&gt;                                                                                                       changes</span></span>
 <span><span class="co">#&gt; 2                                                          tables_created, tables_inserted_into, main.cars, 1</span></span>
 <span><span class="co">#&gt; 3                                       tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2</span></span>
@@ -429,40 +426,37 @@ commit:</p>
 <span><span class="co">#&gt; 5 Data Team     Add weight in kg for 4-cylinder cars              &lt;NA&gt;</span></span></code></pre></div>
 </div>
 <div class="section level3">
-<h3 id="setting-metadata-separately">Setting Metadata Separately<a class="anchor" aria-label="anchor" href="#setting-metadata-separately"></a>
+<h3 id="snapshot-metadata-at-commit-time-vs-after-the-fact">Snapshot Metadata: At Commit Time vs After the Fact<a class="anchor" aria-label="anchor" href="#snapshot-metadata-at-commit-time-vs-after-the-fact"></a>
 </h3>
-<p>With manual transactions, you can also set metadata after
-committing:</p>
+<p>DuckLake supports two ways to attach metadata (author, commit
+message, and optional extra info) to a snapshot.</p>
+<p><strong>At commit time (recommended)</strong>: Pass
+<code>author</code>, <code>commit_message</code>, and/or
+<code>commit_extra_info</code> to <code><a href="../reference/commit_transaction.html">commit_transaction()</a></code> or
+<code><a href="../reference/with_transaction.html">with_transaction()</a></code>. This uses the DuckLake v1.0
+<code>set_commit_message()</code> API to record metadata as part of the
+transaction itself, before the commit is finalized.</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Start transaction</span></span>
+<code class="sourceCode R"><span><span class="co"># Metadata set at commit time (preferred approach)</span></span>
 <span><span class="fu"><a href="../reference/begin_transaction.html">begin_transaction</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Transaction started.</span></span>
 <span></span>
-<span><span class="co"># Make changes</span></span>
 <span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>hp_per_liter <span class="op">=</span> <span class="va">hp</span> <span class="op">/</span> <span class="op">(</span><span class="va">cyl</span> <span class="op">*</span> <span class="fl">0.5</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/replace_table.html">replace_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Commit</span></span>
-<span><span class="fu"><a href="../reference/commit_transaction.html">commit_transaction</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/commit_transaction.html">commit_transaction</a></span><span class="op">(</span></span>
+<span>  author <span class="op">=</span> <span class="st">"Performance Team"</span>,</span>
+<span>  commit_message <span class="op">=</span> <span class="st">"Add horsepower per liter metric"</span>,</span>
+<span>  commit_extra_info <span class="op">=</span> <span class="st">'{"ticket": "DATA-123"}'</span></span>
+<span><span class="op">)</span></span>
 <span><span class="co">#&gt; Transaction committed.</span></span>
 <span></span>
-<span><span class="co"># Add metadata separately</span></span>
-<span><span class="fu"><a href="../reference/set_snapshot_metadata.html">set_snapshot_metadata</a></span><span class="op">(</span></span>
-<span>  ducklake_name <span class="op">=</span> <span class="st">"my_ducklake"</span>,</span>
-<span>  author <span class="op">=</span> <span class="st">"Performance Team"</span>,</span>
-<span>  commit_message <span class="op">=</span> <span class="st">"Add horsepower per liter metric"</span></span>
-<span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: Could not update snapshot metadata: Binder Error: Catalog</span></span>
-<span><span class="co">#&gt; "__ducklake_metadata_my_ducklake" does not exist! <span style="color: #0000BB;">ℹ</span> Context: rapi_prepare <span style="color: #0000BB;">ℹ</span></span></span>
-<span><span class="co">#&gt; Error type: BINDER</span></span>
-<span></span>
-<span><span class="co"># Verify</span></span>
 <span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">hp</span>, <span class="va">cyl</span>, <span class="va">hp_per_liter</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Source:   SQL [?? x 3]</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.5.2 [unknown@Linux 6.17.0-1010-azure:R 4.5.3//tmp/Rtmpe0fJge/duckplyr/duckplyr1fd13ced895c.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A query:  ?? x 3</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpHAGi7x/duckplyr/duckplyr2123250c1a61.duckdb]</span></span></span>
 <span><span class="co">#&gt;      hp   cyl hp_per_liter</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>    93     4         46.5</span></span>
@@ -471,6 +465,23 @@ committing:</p>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span>    66     4         33  </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span>    52     4         26  </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span>    65     4         32.5</span></span></code></pre></div>
+<p><strong>After the fact</strong>: Use
+<code><a href="../reference/set_snapshot_metadata.html">set_snapshot_metadata()</a></code> to retroactively update the
+metadata on the most recent snapshot. This directly updates the
+<code>ducklake_snapshot_changes</code> metadata table.</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Retrospectively update metadata on the last snapshot</span></span>
+<span><span class="fu"><a href="../reference/set_snapshot_metadata.html">set_snapshot_metadata</a></span><span class="op">(</span></span>
+<span>  ducklake_name <span class="op">=</span> <span class="st">"transactions_lake"</span>,</span>
+<span>  author <span class="op">=</span> <span class="st">"Performance Team (reviewed)"</span>,</span>
+<span>  commit_message <span class="op">=</span> <span class="st">"Add horsepower per liter metric (approved)"</span></span>
+<span><span class="op">)</span></span>
+<span><span class="co">#&gt; Snapshot metadata updated.</span></span></code></pre></div>
+<p>Both approaches result in the same metadata fields being populated —
+the choice is about workflow. Use at-commit-time metadata for automated
+pipelines where metadata is known upfront. Use after-the-fact metadata
+for interactive workflows where you want to annotate a snapshot after
+reviewing the results.</p>
 </div>
 </div>
 <div class="section level2">
@@ -478,23 +489,23 @@ committing:</p>
 </h2>
 <p>Regardless of which approach you use, all transactions are tracked
 with complete metadata:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># View recent transaction history</span></span>
 <span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">snapshot_id</span>, <span class="va">snapshot_time</span>, <span class="va">author</span>, <span class="va">commit_message</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">tail</a></span><span class="op">(</span><span class="fl">5</span><span class="op">)</span></span>
-<span><span class="co">#&gt;   snapshot_id       snapshot_time    author</span></span>
-<span><span class="co">#&gt; 2           1 2026-04-14 18:22:31  Tutorial</span></span>
-<span><span class="co">#&gt; 3           2 2026-04-14 18:22:31 Data Team</span></span>
-<span><span class="co">#&gt; 4           3 2026-04-14 18:22:32 Data Team</span></span>
-<span><span class="co">#&gt; 5           4 2026-04-14 18:22:32 Data Team</span></span>
-<span><span class="co">#&gt; 6           5 2026-04-14 18:22:33      &lt;NA&gt;</span></span>
-<span><span class="co">#&gt;                             commit_message</span></span>
-<span><span class="co">#&gt; 2           Initial load of mtcars dataset</span></span>
-<span><span class="co">#&gt; 3          Add kilometers per liter column</span></span>
-<span><span class="co">#&gt; 4 Add efficiency ratings and summary table</span></span>
-<span><span class="co">#&gt; 5     Add weight in kg for 4-cylinder cars</span></span>
-<span><span class="co">#&gt; 6                                     &lt;NA&gt;</span></span></code></pre></div>
+<span><span class="co">#&gt;   snapshot_id       snapshot_time                      author</span></span>
+<span><span class="co">#&gt; 2           1 2026-07-07 19:57:22                    Tutorial</span></span>
+<span><span class="co">#&gt; 3           2 2026-07-07 19:57:22                   Data Team</span></span>
+<span><span class="co">#&gt; 4           3 2026-07-07 19:57:22                   Data Team</span></span>
+<span><span class="co">#&gt; 5           4 2026-07-07 19:57:23                   Data Team</span></span>
+<span><span class="co">#&gt; 6           5 2026-07-07 19:57:23 Performance Team (reviewed)</span></span>
+<span><span class="co">#&gt;                               commit_message</span></span>
+<span><span class="co">#&gt; 2             Initial load of mtcars dataset</span></span>
+<span><span class="co">#&gt; 3            Add kilometers per liter column</span></span>
+<span><span class="co">#&gt; 4   Add efficiency ratings and summary table</span></span>
+<span><span class="co">#&gt; 5       Add weight in kg for 4-cylinder cars</span></span>
+<span><span class="co">#&gt; 6 Add horsepower per liter metric (approved)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="comparison-with_transaction-vs-manual-control">Comparison: with_transaction() vs Manual Control<a class="anchor" aria-label="anchor" href="#comparison-with_transaction-vs-manual-control"></a>
@@ -524,7 +535,9 @@ with complete metadata:</p>
 <tr class="odd">
 <td><strong>Metadata</strong></td>
 <td>✅ Inline with transaction</td>
-<td>⚠️ Requires separate call or parameter</td>
+<td>✅ Inline via parameter, or retroactive via
+<code><a href="../reference/set_snapshot_metadata.html">set_snapshot_metadata()</a></code>
+</td>
 </tr>
 <tr class="even">
 <td><strong>Safety</strong></td>
@@ -570,20 +583,21 @@ handling works correctly</li>
 </h2>
 <ul>
 <li>
-<strong><code>with_transaction(expr, author, commit_message)</code></strong>:
+<strong><code>with_transaction(expr, author, commit_message, commit_extra_info)</code></strong>:
 Modern, automatic transaction handling (recommended)</li>
 <li>
 <strong><code><a href="../reference/begin_transaction.html">begin_transaction()</a></code></strong>: Start a manual
 transaction</li>
 <li>
-<strong><code>commit_transaction(author, commit_message)</code></strong>:
-Apply changes from a manual transaction</li>
+<strong><code>commit_transaction(author, commit_message, commit_extra_info)</code></strong>:
+Apply changes from a manual transaction, with optional metadata set at
+commit time via the DuckLake v1.0 API</li>
 <li>
 <strong><code><a href="../reference/rollback_transaction.html">rollback_transaction()</a></code></strong>: Discard
 changes from a manual transaction</li>
 <li>
-<strong><code><a href="../reference/set_snapshot_metadata.html">set_snapshot_metadata()</a></code></strong>: Add metadata
-to snapshots after committing</li>
+<strong><code><a href="../reference/set_snapshot_metadata.html">set_snapshot_metadata()</a></code></strong>: Retroactively
+update metadata on the most recent snapshot</li>
 </ul>
 <p>Transactions ensure data integrity and provide complete audit trails
 for all changes in your DuckLake.</p>

@@ -15,7 +15,8 @@ attach_ducklake(
   backend = c("duckdb", "postgres", "sqlite", "mysql"),
   catalog_connection_string = NULL,
   read_only = FALSE,
-  override_data_path = FALSE
+  override_data_path = FALSE,
+  data_inlining_row_limit = NULL
 )
 ```
 
@@ -64,6 +65,17 @@ attach_ducklake(
 
   Override the stored DATA_PATH in the catalog (default `FALSE`). Needed
   when restoring a backup to a different location.
+
+- data_inlining_row_limit:
+
+  Optional integer. Sets the per-connection data inlining row limit.
+  Inserts or deletes affecting fewer rows than this threshold are stored
+  directly in the catalog instead of writing Parquet files. The default
+  (when `NULL`) uses the DuckLake default of 10 rows. Set to `0` to
+  disable inlining for this connection. This setting is not persisted;
+  use
+  [`set_inlining_row_limit()`](https://tgerke.github.io/ducklake-r/reference/set_inlining_row_limit.md)
+  for persistent overrides.
 
 ## Details
 
@@ -129,6 +141,13 @@ attach_ducklake(
   backend = "mysql",
   catalog_connection_string = "db=ducklake_catalog host=localhost",
   lake_path = "data_files/"
+)
+
+# Custom inlining threshold for streaming workload
+attach_ducklake(
+  "streaming_lake",
+  lake_path = "~/data/streaming",
+  data_inlining_row_limit = 100
 )
 } # }
 ```

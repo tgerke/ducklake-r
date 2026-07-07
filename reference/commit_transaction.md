@@ -42,12 +42,12 @@ Invisibly returns TRUE on success
 
 This function commits all changes made since
 [`begin_transaction()`](https://tgerke.github.io/ducklake-r/reference/begin_transaction.md)
-was called, making them permanent in the database. DuckLake
-automatically tracks changes in the `ducklake_snapshot_changes` metadata
-table.
+was called, making them permanent in the database.
 
 If `author`, `commit_message`, or `commit_extra_info` are provided, they
-will be automatically added to the snapshot metadata after committing.
+will be set using `CALL ducklake.set_commit_message()` within the
+transaction before the `COMMIT` statement, as required by the DuckLake
+v1.0 specification.
 
 ## Examples
 

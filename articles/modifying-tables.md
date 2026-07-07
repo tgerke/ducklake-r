@@ -5,6 +5,7 @@ maintaining complete version control and audit trails. This is essential
 for reproducible workflows.
 
 ``` r
+
 library(ducklake)
 library(dplyr)
 #> 
@@ -32,7 +33,6 @@ with_transaction(
 )
 #> Transaction started.
 #> Transaction committed.
-#> Snapshot metadata updated.
 ```
 
 ## Best Practices for Table Modifications
@@ -50,6 +50,7 @@ wrapped in
 for all table modifications:**
 
 ``` r
+
 # Modify and replace - creates versioned snapshot
 with_transaction(
   get_ducklake_table("my_table") |>
@@ -81,6 +82,7 @@ The `rows_*` functions provide dplyr-style operations but **do not
 create snapshots or audit trails**:
 
 ``` r
+
 # These modify tables in-place WITHOUT creating snapshots
 rows_update(get_ducklake_table("my_table"), updates, by = "id")
 rows_insert(get_ducklake_table("my_table"), new_data, by = "id")
@@ -101,6 +103,7 @@ to maintain complete data lineage.**
 ### Updating specific rows with `replace_table()`
 
 ``` r
+
 # Update mpg values for specific cars (4-cylinder cars get a 5% efficiency boost)
 with_transaction(
   get_ducklake_table("cars") |>
@@ -113,13 +116,12 @@ with_transaction(
 )
 #> Transaction started.
 #> Transaction committed.
-#> Snapshot metadata updated.
 
 # Check version history - should show the new snapshot
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 2           1 2026-04-14 18:22:16              1
-#> 3           2 2026-04-14 18:22:16              2
+#> 2           1 2026-07-07 19:57:06              1
+#> 3           2 2026-07-07 19:57:06              2
 #>                                                                 changes
 #> 2                    tables_created, tables_inserted_into, main.cars, 1
 #> 3 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2
@@ -131,6 +133,7 @@ list_table_snapshots("cars")
 ### Adding derived columns
 
 ``` r
+
 # Add new derived columns to existing table
 with_transaction(
   get_ducklake_table("cars") |>
@@ -145,14 +148,13 @@ with_transaction(
 )
 #> Transaction started.
 #> Transaction committed.
-#> Snapshot metadata updated.
 
 # Verify new columns exist
 get_ducklake_table("cars") |>
   filter(hp > 200) |>
   select(hp, cyl, hp_per_cyl, high_performance)
-#> # Source:   SQL [?? x 4]
-#> # Database: DuckDB 1.5.2 [unknown@Linux 6.17.0-1010-azure:R 4.5.3//tmp/Rtmpm0yZVG/duckplyr/duckplyr1e8f4015c9df.duckdb]
+#> # A query:  ?? x 4
+#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpqgmGfq/duckplyr/duckplyr1fdc19039356.duckdb]
 #>      hp   cyl hp_per_cyl high_performance
 #>   <dbl> <dbl>      <dbl> <chr>           
 #> 1   245     8       30.6 Y               
@@ -167,6 +169,7 @@ get_ducklake_table("cars") |>
 ### Filtering rows with `replace_table()`
 
 ``` r
+
 # Keep only specific rows - creates a versioned snapshot
 with_transaction(
   get_ducklake_table("cars") |>
@@ -177,12 +180,11 @@ with_transaction(
 )
 #> Transaction started.
 #> Transaction committed.
-#> Snapshot metadata updated.
 
 # Show the filtered table
 get_ducklake_table("cars")
-#> # Source:   table<cars> [?? x 13]
-#> # Database: DuckDB 1.5.2 [unknown@Linux 6.17.0-1010-azure:R 4.5.3//tmp/Rtmpm0yZVG/duckplyr/duckplyr1e8f4015c9df.duckdb]
+#> # A query:  ?? x 13
+#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpqgmGfq/duckplyr/duckplyr1fdc19039356.duckdb]
 #>      mpg   cyl  disp    hp  drat    wt  qsec    vs    am  gear  carb hp_per_cyl
 #>    <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>      <dbl>
 #>  1  18.7     8  360    175  3.15  3.44  17.0     0     0     3     2       21.9
@@ -204,10 +206,10 @@ get_ducklake_table("cars")
 # View version history - old versions still accessible via time travel
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 2           1 2026-04-14 18:22:16              1
-#> 3           2 2026-04-14 18:22:16              2
-#> 4           3 2026-04-14 18:22:17              3
-#> 5           4 2026-04-14 18:22:17              4
+#> 2           1 2026-07-07 19:57:06              1
+#> 3           2 2026-07-07 19:57:06              2
+#> 4           3 2026-07-07 19:57:07              3
+#> 5           4 2026-07-07 19:57:07              4
 #>                                                                 changes
 #> 2                    tables_created, tables_inserted_into, main.cars, 1
 #> 3 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2
@@ -223,6 +225,7 @@ list_table_snapshots("cars")
 ### Time Travel: Accessing Previous Versions
 
 ``` r
+
 # Get the current version
 current <- get_ducklake_table("cars") |> collect()
 
@@ -230,10 +233,10 @@ current <- get_ducklake_table("cars") |> collect()
 snapshots <- list_table_snapshots("cars")
 snapshots
 #>   snapshot_id       snapshot_time schema_version
-#> 2           1 2026-04-14 18:22:16              1
-#> 3           2 2026-04-14 18:22:16              2
-#> 4           3 2026-04-14 18:22:17              3
-#> 5           4 2026-04-14 18:22:17              4
+#> 2           1 2026-07-07 19:57:06              1
+#> 3           2 2026-07-07 19:57:06              2
+#> 4           3 2026-07-07 19:57:07              3
+#> 5           4 2026-07-07 19:57:07              4
 #>                                                                 changes
 #> 2                    tables_created, tables_inserted_into, main.cars, 1
 #> 3 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2

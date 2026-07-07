@@ -1,6 +1,7 @@
 # Storage and Backup Management
 
 ``` r
+
 library(ducklake)
 library(dplyr)
 library(fs)
@@ -58,6 +59,7 @@ including:
 Here are how some common storage patterns may look:
 
 ``` r
+
 # Local storage - fastest, but not shared
 attach_ducklake(
   ducklake_name = "local_lake",
@@ -95,6 +97,7 @@ attach_ducklake(
 Let’s create a sample DuckLake and explore what files it generates:
 
 ``` r
+
 # Create a temporary directory for our demo
 lake_dir <- file.path(vignette_temp_dir, "storage_demo")
 dir.create(lake_dir, showWarnings = FALSE, recursive = TRUE)
@@ -117,7 +120,6 @@ with_transaction(
 )
 #> Transaction started.
 #> Transaction committed.
-#> Snapshot metadata updated.
 
 with_transaction(
   get_ducklake_table("cars") |>
@@ -128,7 +130,6 @@ with_transaction(
 )
 #> Transaction started.
 #> Transaction committed.
-#> Snapshot metadata updated.
 
 with_transaction(
   get_ducklake_table("cars") |>
@@ -139,7 +140,6 @@ with_transaction(
 )
 #> Transaction started.
 #> Transaction committed.
-#> Snapshot metadata updated.
 ```
 
 ### Catalog Files
@@ -147,15 +147,16 @@ with_transaction(
 The catalog is a single database file containing all metadata:
 
 ``` r
+
 dir_tree(lake_dir)
-#> /tmp/RtmpzV1nYM/storage_backups_vignette/storage_demo
+#> /tmp/RtmpHQBQOn/storage_backups_vignette/storage_demo
 #> ├── demo_lake.ducklake
 #> ├── demo_lake.ducklake.wal
 #> └── main
 #>     └── cars
-#>         ├── ducklake-019d8d3a-e595-728b-8fe1-19332b9b3e27.parquet
-#>         ├── ducklake-019d8d3a-e684-7189-848c-c894937d60eb.parquet
-#>         └── ducklake-019d8d3a-e752-7c9f-8390-be0b4f64238d.parquet
+#>         ├── ducklake-019f3e27-e7d2-7c37-8218-e6746c581f2a.parquet
+#>         ├── ducklake-019f3e27-e8b3-7a4e-9804-4de87c1f1f11.parquet
+#>         └── ducklake-019f3e27-e9a9-7e6d-9211-28d74fd04381.parquet
 ```
 
 The catalog files (`demo_lake.ducklake` and `.wal`) contain all metadata
@@ -166,15 +167,16 @@ about tables, snapshots, and transactions.
 Data files are stored in Parquet format in a structured directory:
 
 ``` r
+
 # Data files are organized by schema and table
 main_dir <- file.path(lake_dir, "main")
 
 dir_tree(main_dir, recurse = 2)
-#> /tmp/RtmpzV1nYM/storage_backups_vignette/storage_demo/main
+#> /tmp/RtmpHQBQOn/storage_backups_vignette/storage_demo/main
 #> └── cars
-#>     ├── ducklake-019d8d3a-e595-728b-8fe1-19332b9b3e27.parquet
-#>     ├── ducklake-019d8d3a-e684-7189-848c-c894937d60eb.parquet
-#>     └── ducklake-019d8d3a-e752-7c9f-8390-be0b4f64238d.parquet
+#>     ├── ducklake-019f3e27-e7d2-7c37-8218-e6746c581f2a.parquet
+#>     ├── ducklake-019f3e27-e8b3-7a4e-9804-4de87c1f1f11.parquet
+#>     └── ducklake-019f3e27-e9a9-7e6d-9211-28d74fd04381.parquet
   
 # Get details about parquet files
 parquet_files <- dir_ls(main_dir, recurse = TRUE, regexp = "\\.parquet$")
@@ -183,9 +185,9 @@ for (f in parquet_files) {
               path_file(f), 
               file.size(f)))
 }
-#>   ducklake-019d8d3a-e595-728b-8fe1-19332b9b3e27.parquet (2307 bytes)
-#>   ducklake-019d8d3a-e684-7189-848c-c894937d60eb.parquet (2501 bytes)
-#>   ducklake-019d8d3a-e752-7c9f-8390-be0b4f64238d.parquet (2724 bytes)
+#>   ducklake-019f3e27-e7d2-7c37-8218-e6746c581f2a.parquet (2307 bytes)
+#>   ducklake-019f3e27-e8b3-7a4e-9804-4de87c1f1f11.parquet (2501 bytes)
+#>   ducklake-019f3e27-e9a9-7e6d-9211-28d74fd04381.parquet (2724 bytes)
 ```
 
 ### Understanding File Organization
@@ -194,6 +196,7 @@ Each table’s data is organized by schema and table, with each
 transaction creating new Parquet files:
 
 ``` r
+
 # List all snapshots to see the version history
 snapshots <- list_table_snapshots("cars")
 snapshots |>
@@ -220,6 +223,7 @@ files. Regular backups are essential.
 For local databases, the simplest backup is a file copy:
 
 ``` r
+
 # Create backup directory
 backup_dir <- file.path(lake_dir, "backups")
 dir.create(backup_dir, showWarnings = FALSE)
@@ -239,13 +243,13 @@ dir_copy(
 
 # Verify the backup was created
 dir_tree(backup_dir)
-#> /tmp/RtmpzV1nYM/storage_backups_vignette/storage_demo/backups
+#> /tmp/RtmpHQBQOn/storage_backups_vignette/storage_demo/backups
 #> ├── demo_lake.ducklake
 #> └── main
 #>     └── cars
-#>         ├── ducklake-019d8d3a-e595-728b-8fe1-19332b9b3e27.parquet
-#>         ├── ducklake-019d8d3a-e684-7189-848c-c894937d60eb.parquet
-#>         └── ducklake-019d8d3a-e752-7c9f-8390-be0b4f64238d.parquet
+#>         ├── ducklake-019f3e27-e7d2-7c37-8218-e6746c581f2a.parquet
+#>         ├── ducklake-019f3e27-e8b3-7a4e-9804-4de87c1f1f11.parquet
+#>         └── ducklake-019f3e27-e9a9-7e6d-9211-28d74fd04381.parquet
 
 # To use the backup, detach the current lake and attach to the backup
 # First detach the original
@@ -260,9 +264,9 @@ attach_ducklake(
 # Verify you're working with the backup
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 2           1 2026-04-14 18:22:20              1
-#> 3           2 2026-04-14 18:22:20              2
-#> 4           3 2026-04-14 18:22:20              3
+#> 2           1 2026-07-07 19:57:10              1
+#> 3           2 2026-07-07 19:57:10              2
+#> 4           3 2026-07-07 19:57:10              3
 #>                                                                 changes
 #> 2                    tables_created, tables_inserted_into, main.cars, 1
 #> 3 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2
@@ -297,6 +301,7 @@ straightforward.
 #### Local Storage Backup
 
 ``` r
+
 # Use file system tools to copy the entire data directory
 backup_data_dir <- file.path(lake_dir, "backups", "main_backup")
 dir_copy(
@@ -319,6 +324,7 @@ service - Object versioning with soft deletes
 When using cross-bucket replication, update your data path:
 
 ``` r
+
 # Original
 attach_ducklake(
   ducklake_name = "prod_lake",
@@ -340,6 +346,7 @@ attach_ducklake(
 If your catalog is corrupted or lost:
 
 ``` r
+
 # Restore from backup by copying the backup file
 file.copy(
   from = file.path(lake_dir, "backups", 
@@ -360,6 +367,7 @@ list_table_snapshots("cars")
 If data files are lost but the catalog is intact:
 
 ``` r
+
 # Restore data files from backup
 dir_copy(
   path = backup_data_dir,
@@ -381,6 +389,7 @@ When planning backups, coordinate with maintenance operations:
   backing up unnecessary files
 
 ``` r
+
 # Recommended backup sequence
 
 # 1. Run maintenance operations (if needed)
@@ -411,6 +420,7 @@ DuckLake provides a convenient
 function for creating timestamped backups:
 
 ``` r
+
 # Create a complete backup with timestamp
 backup_dir <- backup_ducklake(
   ducklake_name = "demo_lake",
@@ -420,11 +430,11 @@ backup_dir <- backup_ducklake(
 #> Catalog backed up successfully.
 #> Data files backed up successfully.
 #> Backup completed:
-#> /tmp/RtmpzV1nYM/storage_backups_vignette/storage_demo/backups/backup_20260414_182221
+#> /tmp/RtmpHQBQOn/storage_backups_vignette/storage_demo/backups/backup_20260707_195711
 
 # The function returns the backup directory path
 print(backup_dir)
-#> [1] "/tmp/RtmpzV1nYM/storage_backups_vignette/storage_demo/backups/backup_20260414_182221"
+#> [1] "/tmp/RtmpHQBQOn/storage_backups_vignette/storage_demo/backups/backup_20260707_195711"
 ```
 
 The
@@ -436,6 +446,7 @@ the backup directory path for reference
 ## Cleanup
 
 ``` r
+
 # Detach the demo lake
 detach_ducklake("demo_lake")
 

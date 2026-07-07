@@ -4,6 +4,8 @@
 
 - [Clinical Trial Data Lake with
   ducklake](https://tgerke.github.io/ducklake-r/articles/clinical-trial-datalake.md):
+- [Data
+  Inlining](https://tgerke.github.io/ducklake-r/articles/data-inlining.md):
 - [ducklake
   Cookbook](https://tgerke.github.io/ducklake-r/articles/ducklake.md):
 - [Modifying Tables with Version
