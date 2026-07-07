@@ -251,3 +251,19 @@ test_that("backup_ducklake copies every schema directory", {
   expect_true("main" %in% copied)
   expect_true("extra" %in% copied)
 })
+
+test_that("create_table converts factor columns instead of failing on ENUM", {
+  skip_if_not_installed("duckdb")
+  skip_if_not_installed("dplyr")
+
+  lake <- create_temp_ducklake()
+  on.exit(cleanup_temp_ducklake(lake), add = TRUE)
+
+  expect_message(
+    create_table(iris, "flowers"),
+    "Converted factor column"
+  )
+  result <- dplyr::collect(get_ducklake_table("flowers"))
+  expect_equal(nrow(result), 150)
+  expect_type(result$Species, "character")
+})

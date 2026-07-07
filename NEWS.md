@@ -1,4 +1,23 @@
-# ducklake (development version)
+# ducklake 0.4.0
+
+This release focuses on production hardiness: self-contained connection
+management, working detach/restore, SQL identifier safety, Quack remote
+access, and a documentation overhaul.
+
+## Quack remote protocol support
+
+Added support for Quack, DuckDB's client-server protocol, which became a core
+extension in DuckDB 1.5.3 (#20, @JavOrraca). A DuckLake served by one DuckDB
+instance can now be queried and modified by other R sessions over the network.
+For concurrent access this is a lighter-weight option than a PostgreSQL or
+SQLite catalog, since the whole setup stays inside DuckDB and DuckLake.
+
+* `attach_quack()` connects to a remote Quack server and attaches it as a catalog in the current session.
+* `detach_quack()` disconnects from a remote Quack server.
+* `install_quack()` installs the Quack DuckDB extension.
+* `quack_query()` runs a one-off query against a remote Quack server and returns a data.frame.
+* `quack_serve()` serves the current session, including an attached DuckLake, to other clients over Quack.
+* `quack_stop()` stops a running Quack server.
 
 ## Production hardening
 
@@ -34,6 +53,9 @@
   wrappers and calls failed with `conflict = "error"` complaints; load order
   no longer matters.
 * `backup_ducklake()` backs up every schema directory, not just `main`.
+* `create_table()` now converts factor columns to character (with a message)
+  instead of failing with "unsupported type ENUM" -- DuckLake does not
+  support DuckDB's ENUM type, which is what factors become.
 * The internal dplyr-to-SQL translation in `ducklake_exec()` no longer uses
   `sink()` (which could leak diverted output on error), and now refuses
   queries with subqueries or multiple `WHERE` clauses instead of generating
@@ -59,23 +81,6 @@ last `:::` calls and the duckplyr dependency entirely.
   ducklake; only its own automatically created connection is shut down by
   `detach_ducklake(shutdown = TRUE)` and at session exit.
 
-## Quack remote protocol support
-
-Added support for Quack, DuckDB's client-server protocol, which became a core
-extension in DuckDB 1.5.3 (#20, @JavOrraca). A DuckLake served by one DuckDB
-instance can now be queried and modified by other R sessions over the network.
-For concurrent access this is a lighter-weight option than a PostgreSQL or
-SQLite catalog, since the whole setup stays inside DuckDB and DuckLake.
-
-### New Features
-
-* `attach_quack()` connects to a remote Quack server and attaches it as a catalog in the current session.
-* `detach_quack()` disconnects from a remote Quack server.
-* `install_quack()` installs the Quack DuckDB extension.
-* `quack_query()` runs a one-off query against a remote Quack server and returns a data.frame.
-* `quack_serve()` serves the current session, including an attached DuckLake, to other clients over Quack.
-* `quack_stop()` stops a running Quack server.
-
 # ducklake 0.3.0
 
 ## DuckLake v1.0 Specification Alignment
@@ -95,6 +100,7 @@ which requires DuckDB v1.5.2+ (compatible with duckdb R package >= 1.5.1).
   **within** the transaction before `COMMIT`, consistent with the v1.0
   specification. `set_snapshot_metadata()` retroactively updates the
   `ducklake_snapshot_changes` metadata table directly.
+
 # ducklake 0.2.0
 
 ## Multi-Backend Catalog Support

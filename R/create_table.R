@@ -36,6 +36,16 @@ create_table <- function(data_source, table_name) {
   
   # Handle data.frame or tibble
   if (is.data.frame(data_source)) {
+    # DuckLake does not support ENUM columns, which is what factors become
+    # in DuckDB -- store them as character instead
+    factor_cols <- vapply(data_source, is.factor, logical(1))
+    if (any(factor_cols)) {
+      data_source[factor_cols] <- lapply(data_source[factor_cols], as.character)
+      cli::cli_inform(
+        "Converted factor column{?s} {.field {names(data_source)[factor_cols]}} to character (DuckLake does not support ENUM columns)."
+      )
+    }
+
     # Register the data.frame as a temporary view in DuckDB
     temp_view_name <- paste0("__temp_view_", gsub("[^a-zA-Z0-9]", "_", table_name))
     duckdb::duckdb_register(get_ducklake_connection(), temp_view_name, data_source)
