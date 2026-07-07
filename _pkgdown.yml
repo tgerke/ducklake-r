@@ -40,6 +40,8 @@ navbar:
         href: articles/time-travel.html
       - text: Storage and Backup Management
         href: articles/storage-and-backups.html
+      - text: Quack Remote Access
+        href: articles/quack-remote-access.html
 
 reference:
   - title: "Setup and Connection"
@@ -106,3 +108,13 @@ reference:
     desc: "Backup and restore operations"
     contents:
     - backup_ducklake
+
+  - title: "Quack remote access"
+    desc: "Connect to and serve DuckLake over the Quack protocol"
+    contents:
+    - install_quack
+    - attach_quack
+    - detach_quack
+    - quack_query
+    - quack_serve
+    - quack_stop

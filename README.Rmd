@@ -18,6 +18,7 @@ knitr::opts_knit$set(root.dir = tempdir())
 
 <!-- badges: start -->
 [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
+[![R-CMD-check](https://github.com/tgerke/ducklake-r/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/tgerke/ducklake-r/actions/workflows/R-CMD-check.yaml)
 [![pkgdown](https://github.com/tgerke/ducklake-r/workflows/pkgdown/badge.svg)](https://github.com/tgerke/ducklake-r/actions)
 [![codecov](https://codecov.io/gh/tgerke/ducklake-r/branch/main/graph/badge.svg)](https://codecov.io/gh/tgerke/ducklake-r)
 <!-- badges: end -->
@@ -146,11 +147,13 @@ Check out the [pkgdown site](https://tgerke.github.io/ducklake-r/) for detailed 
 - [Modifying Tables](https://tgerke.github.io/ducklake-r/articles/modifying-tables.html) - Two approaches for table modifications
 - [Transactions](https://tgerke.github.io/ducklake-r/articles/transactions.html) - ACID transaction support
 - [Time Travel](https://tgerke.github.io/ducklake-r/articles/time-travel.html) - Query historical data
+- [Quack Remote Access](https://tgerke.github.io/ducklake-r/articles/quack-remote-access.html) - Share a DuckLake over the network with the Quack protocol
 
 ## Key features
 
 - **Versioned data lake**: Every data change automatically tracked with timestamps and metadata
 - **Multi-backend catalogs**: Use DuckDB (default), PostgreSQL, SQLite, or MySQL as the catalog database — enables concurrent multi-client access with PostgreSQL or SQLite ([DuckLake 1.0 spec](https://ducklake.select/docs/stable/specification/introduction))
+- **Remote access over Quack**: Serve a DuckLake to other R sessions over the network and let several people read and write it at once, using DuckDB's Quack protocol (requires DuckDB 1.5.3 or newer)
 - **Lightweight snapshots**: Create unlimited snapshots without frequent compacting steps
 - **Medallion architecture**: Bronze/silver/gold layers for data lineage and quality
 - **ACID transactions**: Atomic updates with concurrent access and transactional guarantees over multi-table operations

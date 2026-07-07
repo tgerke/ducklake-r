@@ -28,7 +28,8 @@
 #' - Updating specific rows with filter()
 #'
 #' @examples
-#' \dontrun{n#' # Correct a specific value (no versioning needed)
+#' \dontrun{
+#' # Correct a specific value (no versioning needed)
 #' get_ducklake_table("adsl") |>
 #'   mutate(SAFFL = if_else(USUBJID == "01-701-1015", "N", SAFFL)) |>
 #'   update_table("adsl")

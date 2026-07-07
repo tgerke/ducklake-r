@@ -7,6 +7,7 @@
 
 [![Lifecycle:
 experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
+[![R-CMD-check](https://github.com/tgerke/ducklake-r/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/tgerke/ducklake-r/actions/workflows/R-CMD-check.yaml)
 [![pkgdown](https://github.com/tgerke/ducklake-r/workflows/pkgdown/badge.svg)](https://github.com/tgerke/ducklake-r/actions)
 [![codecov](https://codecov.io/gh/tgerke/ducklake-r/branch/main/graph/badge.svg)](https://codecov.io/gh/tgerke/ducklake-r)
 <!-- badges: end -->
@@ -113,7 +114,7 @@ get_ducklake_table("vehicles_analysis") |>
   select(mpg, cyl, efficiency) |>
   head(3)
 #> # Source:   SQL [?? x 3]
-#> # Database: DuckDB 1.5.1 [tgerke@Darwin 23.6.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpdGcD7M/duckplyr/duckplyra5c5e1b369d.duckdb]
+#> # Database: DuckDB 1.5.4 [root@Darwin 23.4.0:R 4.5.2//private/var/folders/fw/0d9nr9951q57f0d5l6qc1j200000gn/T/RtmpHvOZHl/duckplyr/duckplyrab661768df02.duckdb]
 #>     mpg cyl   efficiency
 #>   <dbl> <chr> <chr>     
 #> 1  21   6.0   Medium    
@@ -123,11 +124,11 @@ get_ducklake_table("vehicles_analysis") |>
 # View complete audit trail across all layers with author and commit messages
 list_table_snapshots()
 #>   snapshot_id       snapshot_time schema_version
-#> 1           0 2026-04-14 19:30:38              0
-#> 2           1 2026-04-14 19:30:38              1
-#> 3           2 2026-04-14 19:30:39              2
-#> 4           3 2026-04-14 19:30:39              3
-#> 5           4 2026-04-14 19:30:39              4
+#> 1           0 2026-07-07 19:56:22              0
+#> 2           1 2026-07-07 19:56:22              1
+#> 3           2 2026-07-07 19:56:22              2
+#> 4           3 2026-07-07 19:56:22              3
+#> 5           4 2026-07-07 19:56:22              4
 #>                                                                           changes
 #> 1                                                           schemas_created, main
 #> 2                      tables_created, tables_inserted_into, main.vehicles_raw, 1
@@ -152,7 +153,7 @@ get_ducklake_table_version("vehicles_clean", version = 2) |>
   select(mpg, cyl, gear) |>
   head(3)
 #> # Source:   SQL [?? x 3]
-#> # Database: DuckDB 1.5.1 [tgerke@Darwin 23.6.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpdGcD7M/duckplyr/duckplyra5c5e1b369d.duckdb]
+#> # Database: DuckDB 1.5.4 [root@Darwin 23.4.0:R 4.5.2//private/var/folders/fw/0d9nr9951q57f0d5l6qc1j200000gn/T/RtmpHvOZHl/duckplyr/duckplyrab661768df02.duckdb]
 #>     mpg cyl    gear
 #>   <dbl> <chr> <dbl>
 #> 1  21   6.0       4
@@ -208,6 +209,9 @@ detailed vignettes:
 - [Time
   Travel](https://tgerke.github.io/ducklake-r/articles/time-travel.html) -
   Query historical data
+- [Quack Remote
+  Access](https://tgerke.github.io/ducklake-r/articles/quack-remote-access.html) -
+  Share a DuckLake over the network with the Quack protocol
 
 ## Key features
 
@@ -217,6 +221,9 @@ detailed vignettes:
   or MySQL as the catalog database — enables concurrent multi-client
   access with PostgreSQL or SQLite ([DuckLake 1.0
   spec](https://ducklake.select/docs/stable/specification/introduction))
+- **Remote access over Quack**: Serve a DuckLake to other R sessions
+  over the network and let several people read and write it at once,
+  using DuckDB’s Quack protocol (requires DuckDB 1.5.3 or newer)
 - **Lightweight snapshots**: Create unlimited snapshots without frequent
   compacting steps
 - **Medallion architecture**: Bronze/silver/gold layers for data lineage
