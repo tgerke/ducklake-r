@@ -26,6 +26,9 @@ SQLite catalog, since the whole setup stays inside DuckDB and DuckLake.
 * `attach_ducklake()` gains an `encrypted` argument: pass `encrypted = TRUE`
   to have DuckLake encrypt the Parquet files it writes (#18). Note that the
   encryption keys are stored in the catalog database, so protect the catalog.
+  The httpfs extension is loaded automatically for encrypted lakes, since on
+  some platforms (notably Windows) DuckDB's built-in crypto module is
+  read-only.
 * `restore_table_version()` now works. It previously generated a
   `RESTORE TABLE` statement that does not exist in DuckLake and failed on
   every call. It now recreates the table from a time-travel read inside a

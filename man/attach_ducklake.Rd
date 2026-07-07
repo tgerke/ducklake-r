@@ -49,7 +49,10 @@ not persisted; use \code{\link[=set_inlining_row_limit]{set_inlining_row_limit()
 writes. Encryption keys are stored in the catalog database, so anyone
 with access to the catalog can read the data -- protect the catalog
 accordingly. Only applies when the lake is first created; an existing
-lake keeps the setting it was created with. Default \code{FALSE}.}
+lake keeps the setting it was created with. The httpfs extension is
+loaded automatically: on some platforms (notably Windows) DuckDB's
+built-in crypto module is read-only and httpfs provides the writer.
+Default \code{FALSE}.}
 }
 \description{
 Wrapper for the ducklake \href{https://ducklake.select/docs/stable/duckdb/usage/connecting}{ATTACH} command.

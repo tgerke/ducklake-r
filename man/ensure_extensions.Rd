@@ -4,10 +4,15 @@
 \alias{ensure_extensions}
 \title{Install and load required DuckDB extensions for a given backend}
 \usage{
-ensure_extensions(backend)
+ensure_extensions(backend, encrypted = FALSE)
 }
 \arguments{
 \item{backend}{Catalog backend type}
+
+\item{encrypted}{Whether the lake uses encrypted storage. Writing
+encrypted files requires the full crypto module from the httpfs
+extension on platforms where the built-in module is read-only
+(notably Windows).}
 }
 \description{
 Install and load required DuckDB extensions for a given backend

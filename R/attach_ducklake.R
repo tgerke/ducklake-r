@@ -35,7 +35,10 @@
 #'   writes. Encryption keys are stored in the catalog database, so anyone
 #'   with access to the catalog can read the data -- protect the catalog
 #'   accordingly. Only applies when the lake is first created; an existing
-#'   lake keeps the setting it was created with. Default `FALSE`.
+#'   lake keeps the setting it was created with. The httpfs extension is
+#'   loaded automatically: on some platforms (notably Windows) DuckDB's
+#'   built-in crypto module is read-only and httpfs provides the writer.
+#'   Default `FALSE`.
 #'
 #' @details
 #' For credential management with PostgreSQL or MySQL, consider DuckDB's
@@ -156,8 +159,8 @@ attach_ducklake <- function(ducklake_name, lake_path,
     return(invisible(NULL))
   }
 
-  # Load required extensions (ducklake + backend-specific)
-  ensure_extensions(backend)
+  # Load required extensions (ducklake + backend-specific + crypto)
+  ensure_extensions(backend, encrypted = encrypted)
 
   # Build and run the ATTACH command
   attach_sql <- build_attach_sql(ducklake_name, lake_path, backend,
@@ -175,22 +178,42 @@ attach_ducklake <- function(ducklake_name, lake_path,
 #' Install and load required DuckDB extensions for a given backend
 #'
 #' @param backend Catalog backend type
+#' @param encrypted Whether the lake uses encrypted storage. Writing
+#'   encrypted files requires the full crypto module from the httpfs
+#'   extension on platforms where the built-in module is read-only
+#'   (notably Windows).
 #' @keywords internal
-ensure_extensions <- function(backend) {
+ensure_extensions <- function(backend, encrypted = FALSE) {
   tryCatch({
     db_execute("LOAD ducklake;")
   }, error = function(e) {
     db_execute("INSTALL ducklake;")
     db_execute("LOAD ducklake;")
   })
-  
+
+  if (encrypted) {
+    tryCatch({
+      db_execute("LOAD httpfs;")
+    }, error = function(e) {
+      tryCatch({
+        db_execute("INSTALL httpfs;")
+        db_execute("LOAD httpfs;")
+      }, error = function(e2) {
+        cli::cli_warn(c(
+          "Could not load the {.pkg httpfs} extension: {e2$message}",
+          "i" = "Writing encrypted files may fail where DuckDB's built-in crypto module is read-only (e.g., Windows)."
+        ))
+      })
+    })
+  }
+
   ext <- switch(backend,
     postgres = "postgres",
     sqlite = "sqlite",
     mysql = "mysql",
     NULL
   )
-  
+
   if (!is.null(ext)) {
     tryCatch({
       db_execute(sprintf("LOAD %s;", ext))

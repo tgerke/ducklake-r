@@ -284,6 +284,9 @@ test_that("flush_inlined_data can target a specific table", {
 })
 
 test_that("checkpoint_ducklake runs maintenance", {
+  # CHECKPOINT's file-cleanup step cannot reopen a DuckDB-file catalog on
+  # Windows while the lake is attached (see ?checkpoint_ducklake)
+  skip_on_os("windows")
   skip_if_not_installed("duckdb")
   skip_if_not_installed("dplyr")
 
@@ -605,6 +608,9 @@ test_that("flush_inlined_data works with table_name and schema_name", {
 })
 
 test_that("checkpoint_ducklake auto-detects ducklake_name", {
+  # CHECKPOINT's file-cleanup step cannot reopen a DuckDB-file catalog on
+  # Windows while the lake is attached (see ?checkpoint_ducklake)
+  skip_on_os("windows")
   skip_if_not_installed("duckdb")
   skip_if_not_installed("dplyr")
 
