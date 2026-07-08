@@ -1,3 +1,29 @@
+# ducklake (development version)
+
+* The dplyr-to-DuckLake translation behind `ducklake_exec()` and
+  `show_ducklake_query()` is now built from dbplyr's structured query
+  objects (`dbplyr::sql_build()`) instead of pattern-matching rendered SQL
+  text. Classification no longer depends on what the SQL happens to look
+  like, which fixes several latent bugs:
+
+  * A filtered read from *another* table (`get_ducklake_table("staging") |>
+    filter(...) |> ducklake_exec("target")`) was translated into a `DELETE`
+    on the target table; it now appends the matching rows, as intended.
+  * Filter values containing SQL keywords (e.g.
+    `filter(note != "WHERE is it")`) were refused as "too complex"; they
+    now translate fine.
+  * A `mutate()` that adds a new column is refused upfront with a pointer
+    to `replace_table()`, instead of failing with a database binder error.
+
+* `INSERT` translations now list columns explicitly, so appends from
+  another table match columns by name rather than by position, and joined
+  or unioned sources can be appended in one step.
+
+* Pipelines that compile to a subquery over the target table (grouped
+  filters, filtering on a just-mutated column), and clauses with no
+  in-place equivalent (`arrange()`, `head()`, `distinct()`), are detected
+  structurally and refused with a clear message rather than mistranslated.
+
 # ducklake 0.4.0
 
 This release focuses on production hardiness: self-contained connection
