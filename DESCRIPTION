@@ -1,6 +1,6 @@
 Package: ducklake
 Title: Interact with DuckLake from R
-Version: 0.4.0
+Version: 0.4.0.9000
 Authors@R: c(
     person("Travis", "Gerke", , "tgerke@mail.harvard.edu", role = c("aut", "cre")),
     person("Stefan", "Linner", role = "ctb"),
@@ -20,7 +20,7 @@ Roxygen: list(markdown = TRUE)
 Imports:
     cli,
     DBI,
-    dbplyr,
+    dbplyr (>= 2.5.0),
     dplyr,
     duckdb (>= 1.5.1)
 Suggests:

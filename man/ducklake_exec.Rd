@@ -22,14 +22,18 @@ Execute DuckLake operations from dplyr queries
 \details{
 This function automatically detects the type of operation based on dplyr verbs:
 \itemize{
-\item Filter-only queries generate DELETE operations (removes rows that DON'T match filter)
-\item Queries with mutate() generate UPDATE operations
-\item Plain reads from a \emph{different} table generate INSERT operations
-(appending that table's rows into \code{table_name})
+\item Filter-only queries on \code{table_name} generate DELETE operations
+(removes rows that DON'T match filter)
+\item Queries with mutate() on \code{table_name} generate UPDATE operations
+\item Reads from \emph{other} tables generate INSERT operations, appending their
+result into \code{table_name} with columns matched by name; \code{filter()} and
+joins are fine here, since the whole query just feeds the INSERT
 }
 
 A plain read from \code{table_name} itself is refused, since inserting a
-table's own rows back into it would duplicate them. Use
+table's own rows back into it would duplicate them. Pipelines that
+compile to a subquery over \code{table_name} (grouped filters, \code{mutate()}
+followed by \code{filter()}) are also refused rather than mistranslated. Use
 \code{\link[=show_ducklake_query]{show_ducklake_query()}} to preview the generated SQL without running it.
 }
 \examples{

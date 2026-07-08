@@ -10,13 +10,17 @@
 #'
 #' @details
 #' This function automatically detects the type of operation based on dplyr verbs:
-#' - Filter-only queries generate DELETE operations (removes rows that DON'T match filter)
-#' - Queries with mutate() generate UPDATE operations
-#' - Plain reads from a *different* table generate INSERT operations
-#'   (appending that table's rows into `table_name`)
+#' - Filter-only queries on `table_name` generate DELETE operations
+#'   (removes rows that DON'T match filter)
+#' - Queries with mutate() on `table_name` generate UPDATE operations
+#' - Reads from *other* tables generate INSERT operations, appending their
+#'   result into `table_name` with columns matched by name; `filter()` and
+#'   joins are fine here, since the whole query just feeds the INSERT
 #'
 #' A plain read from `table_name` itself is refused, since inserting a
-#' table's own rows back into it would duplicate them. Use
+#' table's own rows back into it would duplicate them. Pipelines that
+#' compile to a subquery over `table_name` (grouped filters, `mutate()`
+#' followed by `filter()`) are also refused rather than mistranslated. Use
 #' [show_ducklake_query()] to preview the generated SQL without running it.
 #'
 #' @examples
