@@ -126,19 +126,39 @@ build_in_place_sql <- function(.data, table_name, .quiet = FALSE) {
       bare_table_name(qry$from$from) == target) {
 
     select <- qry$select
-    nms <- names(select)
-    if (is.null(nms)) nms <- rep("", length(select))
     values <- as.character(select)
+    nms <- names(select)
+    has_names <- !is.null(nms) && any(nzchar(nms))
 
-    # A select entry is an assignment when its SQL is not just the column
-    # itself (quoted or not); unnamed entries are the `table.*` passthrough
-    quoted_nms <- ifelse(
-      nzchar(nms),
-      vapply(nms, function(nm) as.character(DBI::dbQuoteIdentifier(con, nm)), character(1)),
-      ""
+    # dbplyr <= 2.5.x carries output aliases in names(select); dbplyr >=
+    # 2.6.0 renders them into each entry as `expr AS alias`. Normalize both
+    # to (expr, name) pairs, name == "" when the entry has no alias.
+    parsed <- lapply(seq_along(values), function(i) {
+      if (has_names && nzchar(nms[[i]])) {
+        list(expr = values[[i]], name = nms[[i]])
+      } else {
+        split_select_alias(values[[i]])
+      }
+    })
+    entry_exprs <- vapply(parsed, function(p) p$expr, character(1))
+    entry_names <- vapply(parsed, function(p) p$name, character(1))
+
+    # A select entry is an assignment when its SQL is not just the aliased
+    # column itself (quoted or not); `*` entries are the passthrough left
+    # by a mutate() that only adds columns
+    quoted_names <- vapply(
+      entry_names,
+      function(nm) {
+        if (!nzchar(nm)) return("")
+        as.character(DBI::dbQuoteIdentifier(con, nm))
+      },
+      character(1),
+      USE.NAMES = FALSE
     )
-    is_star <- !nzchar(nms)
-    is_assignment <- nzchar(nms) & values != nms & values != quoted_nms
+    is_star <- !nzchar(entry_names) &
+      (entry_exprs == "*" | endsWith(entry_exprs, ".*"))
+    is_assignment <- nzchar(entry_names) &
+      entry_exprs != entry_names & entry_exprs != quoted_names
 
     where <- as.character(qry$where)
 
@@ -176,7 +196,7 @@ build_in_place_sql <- function(.data, table_name, .quiet = FALSE) {
       # mutate() that only adds columns keeps the `table.*` passthrough;
       # an UPDATE cannot add columns
       if (any(is_star)) {
-        new_cols <- nms[is_assignment]
+        new_cols <- entry_names[is_assignment]
         cli::cli_abort(
           c(
             "{.fn mutate} adds new column{?s} {.val {new_cols}}, but an in-place update cannot add columns.",
@@ -188,7 +208,7 @@ build_in_place_sql <- function(.data, table_name, .quiet = FALSE) {
       }
       if (!.quiet) cli::cli_inform("Operation type: {.val update}")
       assignments <- paste0(
-        quoted_nms[is_assignment], " = ", values[is_assignment],
+        quoted_names[is_assignment], " = ", entry_exprs[is_assignment],
         collapse = ", "
       )
       result_sql <- sprintf("UPDATE %s SET %s", quoted_table, assignments)
@@ -283,6 +303,53 @@ find_nested_query_tables <- function(x) {
     return(unlist(lapply(x, find_nested_query_tables), use.names = FALSE))
   }
   character(0)
+}
+
+#' Split a rendered select entry into expression and output alias
+#'
+#' dbplyr >= 2.6.0 renders select-list aliases into the entry itself
+#' (`expr AS alias`). The alias, when present, is the last ` AS ` at
+#' parenthesis depth zero outside any quoted string or identifier, so a
+#' single backwards-anchored scan recovers it; `AS` inside `CAST(x AS
+#' INTEGER)` or inside literals cannot match.
+#'
+#' @param x A single rendered select entry.
+#' @returns A list with `expr` and `name` (`name == ""` when unaliased).
+#' @noRd
+split_select_alias <- function(x) {
+  chars <- strsplit(x, "", fixed = TRUE)[[1]]
+  n <- length(chars)
+  depth <- 0L
+  quote_char <- ""
+  last_as <- -1L
+
+  for (i in seq_len(n)) {
+    ch <- chars[[i]]
+    if (nzchar(quote_char)) {
+      if (ch == quote_char) quote_char <- ""
+    } else if (ch == "'" || ch == '"') {
+      quote_char <- ch
+    } else if (ch == "(") {
+      depth <- depth + 1L
+    } else if (ch == ")") {
+      depth <- depth - 1L
+    } else if (ch == " " && depth == 0L && i + 3L <= n &&
+               chars[[i + 1L]] == "A" && chars[[i + 2L]] == "S" &&
+               chars[[i + 3L]] == " ") {
+      last_as <- i
+    }
+  }
+
+  if (last_as < 0L) {
+    return(list(expr = x, name = ""))
+  }
+
+  expr <- trimws(substr(x, 1L, last_as - 1L))
+  name <- trimws(substr(x, last_as + 4L, nchar(x)))
+  if (nchar(name) >= 2L && startsWith(name, '"') && endsWith(name, '"')) {
+    name <- gsub('""', '"', substr(name, 2L, nchar(name) - 1L), fixed = TRUE)
+  }
+  list(expr = expr, name = name)
 }
 
 #' Reduce a (possibly qualified, possibly quoted) table reference to its
