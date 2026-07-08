@@ -171,7 +171,7 @@ cars_data |>
   select(mpg, cyl, hp) |>
   head(3)
 #> # A query:  ?? x 3
-#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/Rtmpvt7Fos/ducklake/ducklake1ec92443f72c.duckdb]
+#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpInpPh2/ducklake/ducklake1f42797b0b8e.duckdb]
 #>     mpg   cyl    hp
 #>   <dbl> <dbl> <dbl>
 #> 1  21       6   110
@@ -201,30 +201,38 @@ head(cars_df, 3)
 # See all snapshots for the cars table
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 2           1 2026-07-07 23:16:56              1
-#> 3           2 2026-07-07 23:16:56              2
+#> 1           1 2026-07-08 00:37:03              1
+#> 2           2 2026-07-08 00:37:03              2
 #>                                                                 changes
-#> 2                    tables_created, tables_inserted_into, main.cars, 1
-#> 3 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2
+#> 1                    tables_created, tables_inserted_into, main.cars, 1
+#> 2 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2
 #>          author                commit_message commit_extra_info
-#> 2 Data Engineer         Initial car data load              <NA>
-#> 3 Data Engineer Add km/L metric to cars table              <NA>
+#> 1 Data Engineer         Initial car data load              <NA>
+#> 2 Data Engineer Add km/L metric to cars table              <NA>
 ```
 
 ### Read a specific version
 
 ``` r
 
-# Query data as it existed at snapshot 1
+# Query data as it existed at snapshot 1 -- before the kpl column was added
 get_ducklake_table_version("cars", version = 1) |>
-  collect()
+  select(mpg, cyl, hp) |>
+  head(3)
+#> # A query:  ?? x 3
+#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpInpPh2/ducklake/ducklake1f42797b0b8e.duckdb]
+#>     mpg   cyl    hp
+#>   <dbl> <dbl> <dbl>
+#> 1  21       6   110
+#> 2  21       6   110
+#> 3  22.8     4    93
 ```
 
 ### Read data at a specific timestamp
 
 ``` r
 
-# Query data as of a specific time
+# Query data as of a specific time (see list_table_snapshots() for times)
 get_ducklake_table_asof("cars", timestamp = "2024-01-15 10:30:00") |>
   collect()
 ```
@@ -260,34 +268,18 @@ for guidance on choosing between them.
 
 ## Metadata and versioning recipes
 
-### List all tables
-
-``` r
-
-get_ducklake_table("duckdb_tables") |>
-  filter(schema_name == "main") |>
-  select(table_name) |>
-  collect()
-#> # A tibble: 3 × 1
-#>   table_name    
-#>   <chr>         
-#> 1 cars          
-#> 2 efficient_cars
-#> 3 iris_sample
-```
-
 ### View all snapshots
 
 ``` r
 
 list_table_snapshots()
 #>   snapshot_id       snapshot_time schema_version
-#> 1           0 2026-07-07 23:16:56              0
-#> 2           1 2026-07-07 23:16:56              1
-#> 3           2 2026-07-07 23:16:56              2
-#> 4           3 2026-07-07 23:16:56              3
-#> 5           4 2026-07-07 23:16:57              4
-#> 6           5 2026-07-07 23:16:57              5
+#> 1           0 2026-07-08 00:37:03              0
+#> 2           1 2026-07-08 00:37:03              1
+#> 3           2 2026-07-08 00:37:03              2
+#> 4           3 2026-07-08 00:37:04              3
+#> 5           4 2026-07-08 00:37:04              4
+#> 6           5 2026-07-08 00:37:05              5
 #>                                                                 changes
 #> 1                                                 schemas_created, main
 #> 2                    tables_created, tables_inserted_into, main.cars, 1
@@ -315,15 +307,33 @@ list_table_snapshots("cars")
 
 ``` r
 
-# Use time travel to read an old version, then replace the current table
-with_transaction(
-  get_ducklake_table_version("cars", version = 1) |>
-    replace_table("cars"),
-  author = "Data Engineer",
-  commit_message = "Restore to version 1"
+# Roll cars back to snapshot 1. The restore is recorded as a new snapshot,
+# so nothing is lost -- you can still time-travel to any version.
+restore_table_version(
+  "cars",
+  version = 1,
+  author = "Data Engineer"
 )
+#> Transaction started.
+#> Transaction committed.
+#> Table "cars" restored to snapshot 1 (recorded as a new snapshot).
 
 list_table_snapshots("cars")
+#>   snapshot_id       snapshot_time schema_version
+#> 1           1 2026-07-08 00:37:03              1
+#> 2           2 2026-07-08 00:37:03              2
+#> 3           5 2026-07-08 00:37:05              5
+#> 4           6 2026-07-08 00:37:05              6
+#>                                                                 changes
+#> 1                    tables_created, tables_inserted_into, main.cars, 1
+#> 2 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2
+#> 3 tables_created, tables_dropped, tables_inserted_into, main.cars, 2, 5
+#> 4 tables_created, tables_dropped, tables_inserted_into, main.cars, 5, 6
+#>          author                     commit_message commit_extra_info
+#> 1 Data Engineer              Initial car data load              <NA>
+#> 2 Data Engineer      Add km/L metric to cars table              <NA>
+#> 3 Data Engineer Add horsepower per cylinder metric              <NA>
+#> 4 Data Engineer        Restored cars to snapshot 1              <NA>
 ```
 
 ## Transaction recipes
@@ -384,12 +394,37 @@ commit_transaction(
 
 ### Preview query without execution
 
+To see the SQL a *read* pipeline will run, use dplyr’s
+[`show_query()`](https://dplyr.tidyverse.org/reference/explain.html):
+
 ``` r
 
 get_ducklake_table("cars") |>
   filter(mpg > 25) |>
-  mutate(efficient = TRUE) |>
+  select(mpg, cyl, hp) |>
+  show_query()
+#> <SQL>
+#> SELECT mpg, cyl, hp
+#> FROM cars
+#> WHERE (mpg > 25.0)
+```
+
+To preview the SQL an in-place *modification* would run (before
+committing to it with
+[`ducklake_exec()`](https://tgerke.github.io/ducklake-r/reference/ducklake_exec.md)),
+use
+[`show_ducklake_query()`](https://tgerke.github.io/ducklake-r/reference/show_ducklake_query.md):
+
+``` r
+
+get_ducklake_table("cars") |>
+  mutate(mpg = round(mpg)) |>
   show_ducklake_query()
+#> 
+#> === DuckLake SQL Preview ===
+#> 
+#> -- Main operation
+#> UPDATE cars SET mpg = ROUND_EVEN(mpg, CAST(ROUND(0.0, 0) AS INTEGER)) ;
 ```
 
 ### Filter early for performance
@@ -401,14 +436,13 @@ get_ducklake_table("cars") |>
   filter(cyl == 6) |>
   mutate(kpl = mpg * 0.425144) |>
   head(3)
-#> # A query:  ?? x 13
-#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/Rtmpvt7Fos/ducklake/ducklake1ec92443f72c.duckdb]
+#> # A query:  ?? x 12
+#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpInpPh2/ducklake/ducklake1f42797b0b8e.duckdb]
 #>     mpg   cyl  disp    hp  drat    wt  qsec    vs    am  gear  carb   kpl
 #>   <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>
 #> 1  21       6   160   110  3.9   2.62  16.5     0     1     4     4  8.93
 #> 2  21       6   160   110  3.9   2.88  17.0     0     1     4     4  8.93
 #> 3  21.4     6   258   110  3.08  3.22  19.4     1     0     3     1  9.10
-#> # ℹ 1 more variable: hp_per_cyl <dbl>
 ```
 
 ### Use specific columns
@@ -420,7 +454,7 @@ get_ducklake_table("cars") |>
   select(mpg, cyl, hp) |>
   filter(mpg > 25)
 #> # A query:  ?? x 3
-#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/Rtmpvt7Fos/ducklake/ducklake1ec92443f72c.duckdb]
+#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpInpPh2/ducklake/ducklake1f42797b0b8e.duckdb]
 #>     mpg   cyl    hp
 #>   <dbl> <dbl> <dbl>
 #> 1  32.4     4    66

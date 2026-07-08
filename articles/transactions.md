@@ -53,7 +53,7 @@ get_ducklake_table("cars") |>
   select(mpg, cyl, hp, wt) |>
   head()
 #> # A query:  ?? x 4
-#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmplwNiwI/ducklake/ducklake20d273eb93cd.duckdb]
+#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpNsvmQf/ducklake/ducklake21465676c922.duckdb]
 #>     mpg   cyl    hp    wt
 #>   <dbl> <dbl> <dbl> <dbl>
 #> 1  21       6   110  2.62
@@ -104,7 +104,7 @@ get_ducklake_table("cars") |>
   select(mpg, kpl) |>
   head()
 #> # A query:  ?? x 2
-#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmplwNiwI/ducklake/ducklake20d273eb93cd.duckdb]
+#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpNsvmQf/ducklake/ducklake21465676c922.duckdb]
 #>     mpg   kpl
 #>   <dbl> <dbl>
 #> 1  21    8.93
@@ -153,7 +153,7 @@ get_ducklake_table("cars") |>
   select(mpg, cyl, efficiency) |>
   head()
 #> # A query:  ?? x 3
-#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmplwNiwI/ducklake/ducklake20d273eb93cd.duckdb]
+#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpNsvmQf/ducklake/ducklake21465676c922.duckdb]
 #>     mpg   cyl efficiency
 #>   <dbl> <dbl> <chr>     
 #> 1  21       6 medium    
@@ -210,17 +210,17 @@ get_ducklake_table("cars") |>
 # View all versioned changes
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 2           1 2026-07-07 23:17:18              1
-#> 3           2 2026-07-07 23:17:19              2
-#> 4           3 2026-07-07 23:17:19              3
+#> 1           1 2026-07-08 00:37:27              1
+#> 2           2 2026-07-08 00:37:27              2
+#> 3           3 2026-07-08 00:37:27              3
 #>                                                                                                       changes
-#> 2                                                          tables_created, tables_inserted_into, main.cars, 1
-#> 3                                       tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2
-#> 4 tables_created, tables_dropped, tables_inserted_into, inlined_insert, main.cars, main.cars_summary, 2, 4, 3
+#> 1                                                          tables_created, tables_inserted_into, main.cars, 1
+#> 2                                       tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2
+#> 3 tables_created, tables_dropped, tables_inserted_into, inlined_insert, main.cars, main.cars_summary, 2, 4, 3
 #>      author                           commit_message commit_extra_info
-#> 2  Tutorial           Initial load of mtcars dataset              <NA>
-#> 3 Data Team          Add kilometers per liter column              <NA>
-#> 4 Data Team Add efficiency ratings and summary table              <NA>
+#> 1  Tutorial           Initial load of mtcars dataset              <NA>
+#> 2 Data Team          Add kilometers per liter column              <NA>
+#> 3 Data Team Add efficiency ratings and summary table              <NA>
 ```
 
 ## Approach 2: Manual Transaction Control
@@ -248,14 +248,13 @@ begin_transaction()
 
 # Make changes
 get_ducklake_table("cars") |>
-  filter(cyl == 4) |>
   mutate(weight_kg = wt * 453.592) |>
   replace_table("cars")
 
 # Commit the changes with metadata
 commit_transaction(
   author = "Data Team",
-  commit_message = "Add weight in kg for 4-cylinder cars"
+  commit_message = "Add weight in kg"
 )
 #> Transaction committed.
 
@@ -265,7 +264,7 @@ get_ducklake_table("cars") |>
   select(wt, weight_kg) |>
   head()
 #> # A query:  ?? x 2
-#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmplwNiwI/ducklake/ducklake20d273eb93cd.duckdb]
+#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpNsvmQf/ducklake/ducklake21465676c922.duckdb]
 #>      wt weight_kg
 #>   <dbl>     <dbl>
 #> 1  2.32     1052.
@@ -302,12 +301,12 @@ print(test_result)
 #> # A tibble: 6 × 2
 #>     mpg test_flag
 #>   <dbl> <lgl>    
-#> 1  22.8 TRUE     
-#> 2  24.4 TRUE     
+#> 1  21   TRUE     
+#> 2  21   TRUE     
 #> 3  22.8 TRUE     
-#> 4  32.4 TRUE     
-#> 5  30.4 TRUE     
-#> 6  33.9 TRUE
+#> 4  21.4 TRUE     
+#> 5  18.7 TRUE     
+#> 6  18.1 TRUE
 
 # Decide to rollback
 rollback_transaction()
@@ -320,20 +319,20 @@ rollback_transaction()
 # View all versioned changes
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 2           1 2026-07-07 23:17:18              1
-#> 3           2 2026-07-07 23:17:19              2
-#> 4           3 2026-07-07 23:17:19              3
-#> 5           4 2026-07-07 23:17:19              4
+#> 1           1 2026-07-08 00:37:27              1
+#> 2           2 2026-07-08 00:37:27              2
+#> 3           3 2026-07-08 00:37:27              3
+#> 4           4 2026-07-08 00:37:28              4
 #>                                                                                                       changes
-#> 2                                                          tables_created, tables_inserted_into, main.cars, 1
-#> 3                                       tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2
-#> 4 tables_created, tables_dropped, tables_inserted_into, inlined_insert, main.cars, main.cars_summary, 2, 4, 3
-#> 5                                       tables_created, tables_dropped, tables_inserted_into, main.cars, 4, 5
+#> 1                                                          tables_created, tables_inserted_into, main.cars, 1
+#> 2                                       tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2
+#> 3 tables_created, tables_dropped, tables_inserted_into, inlined_insert, main.cars, main.cars_summary, 2, 4, 3
+#> 4                                       tables_created, tables_dropped, tables_inserted_into, main.cars, 4, 5
 #>      author                           commit_message commit_extra_info
-#> 2  Tutorial           Initial load of mtcars dataset              <NA>
-#> 3 Data Team          Add kilometers per liter column              <NA>
-#> 4 Data Team Add efficiency ratings and summary table              <NA>
-#> 5 Data Team     Add weight in kg for 4-cylinder cars              <NA>
+#> 1  Tutorial           Initial load of mtcars dataset              <NA>
+#> 2 Data Team          Add kilometers per liter column              <NA>
+#> 3 Data Team Add efficiency ratings and summary table              <NA>
+#> 4 Data Team                         Add weight in kg              <NA>
 ```
 
 ### Snapshot Metadata: At Commit Time vs After the Fact
@@ -371,15 +370,15 @@ get_ducklake_table("cars") |>
   select(hp, cyl, hp_per_liter) |>
   head()
 #> # A query:  ?? x 3
-#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmplwNiwI/ducklake/ducklake20d273eb93cd.duckdb]
+#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpNsvmQf/ducklake/ducklake21465676c922.duckdb]
 #>      hp   cyl hp_per_liter
 #>   <dbl> <dbl>        <dbl>
-#> 1    93     4         46.5
-#> 2    62     4         31  
-#> 3    95     4         47.5
-#> 4    66     4         33  
-#> 5    52     4         26  
-#> 6    65     4         32.5
+#> 1   110     6         36.7
+#> 2   110     6         36.7
+#> 3    93     4         46.5
+#> 4   110     6         36.7
+#> 5   175     8         43.8
+#> 6   105     6         35
 ```
 
 **After the fact**: Use
@@ -416,17 +415,17 @@ list_table_snapshots("cars") |>
   select(snapshot_id, snapshot_time, author, commit_message) |>
   tail(5)
 #>   snapshot_id       snapshot_time                      author
-#> 2           1 2026-07-07 23:17:18                    Tutorial
-#> 3           2 2026-07-07 23:17:19                   Data Team
-#> 4           3 2026-07-07 23:17:19                   Data Team
-#> 5           4 2026-07-07 23:17:19                   Data Team
-#> 6           5 2026-07-07 23:17:20 Performance Team (reviewed)
+#> 1           1 2026-07-08 00:37:27                    Tutorial
+#> 2           2 2026-07-08 00:37:27                   Data Team
+#> 3           3 2026-07-08 00:37:27                   Data Team
+#> 4           4 2026-07-08 00:37:28                   Data Team
+#> 5           5 2026-07-08 00:37:28 Performance Team (reviewed)
 #>                               commit_message
-#> 2             Initial load of mtcars dataset
-#> 3            Add kilometers per liter column
-#> 4   Add efficiency ratings and summary table
-#> 5       Add weight in kg for 4-cylinder cars
-#> 6 Add horsepower per liter metric (approved)
+#> 1             Initial load of mtcars dataset
+#> 2            Add kilometers per liter column
+#> 3   Add efficiency ratings and summary table
+#> 4                           Add weight in kg
+#> 5 Add horsepower per liter metric (approved)
 ```
 
 ## Comparison: with_transaction() vs Manual Control

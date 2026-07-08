@@ -89,21 +89,9 @@ for reproducible workflows.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://tgerke.github.io/ducklake-r/">ducklake</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Attaching package: 'dplyr'</span></span>
-<span><span class="co">#&gt; The following objects are masked from 'package:ducklake':</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;     rows_delete, rows_insert, rows_update</span></span>
-<span><span class="co">#&gt; The following objects are masked from 'package:stats':</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;     filter, lag</span></span>
-<span><span class="co">#&gt; The following objects are masked from 'package:base':</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;     intersect, setdiff, setequal, union</span></span>
 <span></span>
 <span><span class="co"># Setup for examples</span></span>
 <span><span class="fu"><a href="../reference/install_ducklake.html">install_ducklake</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Installed <span style="color: #0000BB;">ducklake</span> extension.</span></span>
 <span><span class="fu"><a href="../reference/attach_ducklake.html">attach_ducklake</a></span><span class="op">(</span><span class="st">"modifying_tables_lake"</span>, lake_path <span class="op">=</span> <span class="va">vignette_temp_dir</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Load a sample dataset</span></span>
@@ -111,9 +99,13 @@ for reproducible workflows.</p>
 <span>  <span class="fu"><a href="../reference/create_table.html">create_table</a></span><span class="op">(</span><span class="va">mtcars</span>, <span class="st">"cars"</span><span class="op">)</span>,</span>
 <span>  author <span class="op">=</span> <span class="st">"Data Engineer"</span>,</span>
 <span>  commit_message <span class="op">=</span> <span class="st">"Initial car data load"</span></span>
-<span><span class="op">)</span></span>
-<span><span class="co">#&gt; Transaction started.</span></span>
-<span><span class="co">#&gt; Transaction committed.</span></span></code></pre></div>
+<span><span class="op">)</span></span></code></pre></div>
+<p>A note before we start: when you load dplyr you may see a message
+that it masks ducklake’s <code><a href="../reference/rows_insert.html">rows_insert()</a></code>,
+<code><a href="../reference/rows_update.html">rows_update()</a></code>, and <code><a href="../reference/rows_delete.html">rows_delete()</a></code>. That is
+harmless. Tables returned by <code><a href="../reference/get_ducklake_table.html">get_ducklake_table()</a></code> carry a
+class that dispatches to ducklake’s DuckLake-aware methods regardless of
+the order in which the packages were loaded.</p>
 <div class="section level2">
 <h2 id="choosing-a-modification-approach">Choosing a Modification Approach<a class="anchor" aria-label="anchor" href="#choosing-a-modification-approach"></a>
 </h2>
@@ -192,9 +184,113 @@ essential for GxP/21 CFR Part 11 work:</p>
 <h2 id="examples">Examples<a class="anchor" aria-label="anchor" href="#examples"></a>
 </h2>
 <div class="section level3">
+<h3 id="incremental-changes-with-the-rows_-functions">Incremental changes with the <code>rows_*</code> functions<a class="anchor" aria-label="anchor" href="#incremental-changes-with-the-rows_-functions"></a>
+</h3>
+<p>Let’s see the row-level functions in action on a small fleet table
+with a proper key column:</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">fleet</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
+<span>  car_id <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">3</span>,</span>
+<span>  model <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Corolla"</span>, <span class="st">"Civic"</span>, <span class="st">"Model 3"</span><span class="op">)</span>,</span>
+<span>  mileage <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">42000</span>, <span class="fl">38500</span>, <span class="fl">12000</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="../reference/with_transaction.html">with_transaction</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="../reference/create_table.html">create_table</a></span><span class="op">(</span><span class="va">fleet</span>, <span class="st">"fleet"</span><span class="op">)</span>,</span>
+<span>  author <span class="op">=</span> <span class="st">"Fleet Manager"</span>,</span>
+<span>  commit_message <span class="op">=</span> <span class="st">"Initial fleet inventory"</span></span>
+<span><span class="op">)</span></span>
+<span><span class="co">#&gt; Transaction started.</span></span>
+<span><span class="co">#&gt; Transaction committed.</span></span></code></pre></div>
+<p><strong>Insert</strong> new records by key. The new rows are appended
+in a single SQL statement – the existing rows are never read into R:</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">new_cars</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
+<span>  car_id <span class="op">=</span> <span class="fl">4</span><span class="op">:</span><span class="fl">5</span>,</span>
+<span>  model <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Leaf"</span>, <span class="st">"Ioniq 5"</span><span class="op">)</span>,</span>
+<span>  mileage <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">500</span>, <span class="fl">120</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="../reference/rows_insert.html">rows_insert</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"fleet"</span><span class="op">)</span>, <span class="va">new_cars</span>, by <span class="op">=</span> <span class="st">"car_id"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"fleet"</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/compute.html" class="external-link">collect</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 5 × 3</span></span></span>
+<span><span class="co">#&gt;   car_id model   mileage</span></span>
+<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>      1 Corolla   <span style="text-decoration: underline;">42</span>000</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span>      2 Civic     <span style="text-decoration: underline;">38</span>500</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span>      3 Model 3   <span style="text-decoration: underline;">12</span>000</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span>      4 Leaf        500</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span>      5 Ioniq 5     120</span></span></code></pre></div>
+<p><strong>Update</strong> specific values by key. Only the matched rows
+change:</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">correction</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>car_id <span class="op">=</span> <span class="fl">2</span>, mileage <span class="op">=</span> <span class="fl">39000</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="../reference/rows_update.html">rows_update</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"fleet"</span><span class="op">)</span>, <span class="va">correction</span>, by <span class="op">=</span> <span class="st">"car_id"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"fleet"</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">car_id</span> <span class="op">==</span> <span class="fl">2</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/compute.html" class="external-link">collect</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 3</span></span></span>
+<span><span class="co">#&gt;   car_id model mileage</span></span>
+<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>      2 Civic   <span style="text-decoration: underline;">39</span>000</span></span></code></pre></div>
+<p><strong>Delete</strong> rows by key:</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">sold</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>car_id <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="../reference/rows_delete.html">rows_delete</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"fleet"</span><span class="op">)</span>, <span class="va">sold</span>, by <span class="op">=</span> <span class="st">"car_id"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"fleet"</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/compute.html" class="external-link">collect</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 4 × 3</span></span></span>
+<span><span class="co">#&gt;   car_id model   mileage</span></span>
+<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>      2 Civic     <span style="text-decoration: underline;">39</span>000</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span>      3 Model 3   <span style="text-decoration: underline;">12</span>000</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span>      4 Leaf        500</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span>      5 Ioniq 5     120</span></span></code></pre></div>
+<p>Each call above created its own snapshot. To record an author and
+commit message – or to make several row operations land as
+<strong>one</strong> snapshot – wrap them in
+<code><a href="../reference/with_transaction.html">with_transaction()</a></code>:</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">april_arrivals</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>car_id <span class="op">=</span> <span class="fl">6</span>, model <span class="op">=</span> <span class="st">"ID.4"</span>, mileage <span class="op">=</span> <span class="fl">60</span><span class="op">)</span></span>
+<span><span class="va">recalled</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>car_id <span class="op">=</span> <span class="fl">4</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="../reference/with_transaction.html">with_transaction</a></span><span class="op">(</span><span class="op">{</span></span>
+<span>  <span class="fu"><a href="../reference/rows_insert.html">rows_insert</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"fleet"</span><span class="op">)</span>, <span class="va">april_arrivals</span>, by <span class="op">=</span> <span class="st">"car_id"</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="../reference/rows_delete.html">rows_delete</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"fleet"</span><span class="op">)</span>, <span class="va">recalled</span>, by <span class="op">=</span> <span class="st">"car_id"</span><span class="op">)</span></span>
+<span><span class="op">}</span>,</span>
+<span>  author <span class="op">=</span> <span class="st">"Fleet Manager"</span>,</span>
+<span>  commit_message <span class="op">=</span> <span class="st">"April intake; remove recalled Leaf"</span></span>
+<span><span class="op">)</span></span>
+<span><span class="co">#&gt; Transaction started.</span></span>
+<span><span class="co">#&gt; Transaction committed.</span></span>
+<span></span>
+<span><span class="co"># The full history: every change is versioned, wrapped or not</span></span>
+<span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"fleet"</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
+<span><span class="co">#&gt; 1           2 2026-07-08 00:37:08              2</span></span>
+<span><span class="co">#&gt; 2           3 2026-07-08 00:37:09              2</span></span>
+<span><span class="co">#&gt; 3           4 2026-07-08 00:37:09              2</span></span>
+<span><span class="co">#&gt; 4           5 2026-07-08 00:37:09              2</span></span>
+<span><span class="co">#&gt; 5           6 2026-07-08 00:37:09              2</span></span>
+<span><span class="co">#&gt;                                         changes        author</span></span>
+<span><span class="co">#&gt; 1 tables_created, inlined_insert, main.fleet, 2 Fleet Manager</span></span>
+<span><span class="co">#&gt; 2                             inlined_insert, 2          &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 3          inlined_insert, inlined_delete, 2, 2          &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 4                             inlined_delete, 2          &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 5          inlined_insert, inlined_delete, 2, 2 Fleet Manager</span></span>
+<span><span class="co">#&gt;                       commit_message commit_extra_info</span></span>
+<span><span class="co">#&gt; 1            Initial fleet inventory              &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 2                               &lt;NA&gt;              &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 3                               &lt;NA&gt;              &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 4                               &lt;NA&gt;              &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 5 April intake; remove recalled Leaf              &lt;NA&gt;</span></span></code></pre></div>
+</div>
+<div class="section level3">
 <h3 id="updating-specific-rows-with-replace_table">Updating specific rows with <code>replace_table()</code><a class="anchor" aria-label="anchor" href="#updating-specific-rows-with-replace_table"></a>
 </h3>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Update mpg values for specific cars (4-cylinder cars get a 5% efficiency boost)</span></span>
 <span><span class="fu"><a href="../reference/with_transaction.html">with_transaction</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -211,19 +307,19 @@ essential for GxP/21 CFR Part 11 work:</p>
 <span><span class="co"># Check version history - should show the new snapshot</span></span>
 <span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 2           1 2026-07-07 23:17:01              1</span></span>
-<span><span class="co">#&gt; 3           2 2026-07-07 23:17:01              2</span></span>
+<span><span class="co">#&gt; 1           1 2026-07-08 00:37:08              1</span></span>
+<span><span class="co">#&gt; 2           7 2026-07-08 00:37:09              3</span></span>
 <span><span class="co">#&gt;                                                                 changes</span></span>
-<span><span class="co">#&gt; 2                    tables_created, tables_inserted_into, main.cars, 1</span></span>
-<span><span class="co">#&gt; 3 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2</span></span>
+<span><span class="co">#&gt; 1                    tables_created, tables_inserted_into, main.cars, 1</span></span>
+<span><span class="co">#&gt; 2 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 3</span></span>
 <span><span class="co">#&gt;          author                     commit_message commit_extra_info</span></span>
-<span><span class="co">#&gt; 2 Data Engineer              Initial car data load              &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 3 Data Engineer Update MPG for 4-cylinder vehicles              &lt;NA&gt;</span></span></code></pre></div>
+<span><span class="co">#&gt; 1 Data Engineer              Initial car data load              &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 2 Data Engineer Update MPG for 4-cylinder vehicles              &lt;NA&gt;</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="adding-derived-columns">Adding derived columns<a class="anchor" aria-label="anchor" href="#adding-derived-columns"></a>
 </h3>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Add new derived columns to existing table</span></span>
 <span><span class="fu"><a href="../reference/with_transaction.html">with_transaction</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -244,7 +340,7 @@ essential for GxP/21 CFR Part 11 work:</p>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">hp</span> <span class="op">&gt;</span> <span class="fl">200</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">hp</span>, <span class="va">cyl</span>, <span class="va">hp_per_cyl</span>, <span class="va">high_performance</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A query:  ?? x 4</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpB8In0W/ducklake/ducklake1f2958ae6671.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/Rtmpamm444/ducklake/ducklake1fa14cad2111.duckdb]</span></span></span>
 <span><span class="co">#&gt;      hp   cyl hp_per_cyl high_performance</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>   245     8       30.6 Y               </span></span>
@@ -258,7 +354,7 @@ essential for GxP/21 CFR Part 11 work:</p>
 <div class="section level3">
 <h3 id="filtering-rows-with-replace_table">Filtering rows with <code>replace_table()</code><a class="anchor" aria-label="anchor" href="#filtering-rows-with-replace_table"></a>
 </h3>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Keep only specific rows - creates a versioned snapshot</span></span>
 <span><span class="fu"><a href="../reference/with_transaction.html">with_transaction</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -273,7 +369,7 @@ essential for GxP/21 CFR Part 11 work:</p>
 <span><span class="co"># Show the filtered table</span></span>
 <span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A query:  ?? x 13</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpB8In0W/ducklake/ducklake1f2958ae6671.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/Rtmpamm444/ducklake/ducklake1fa14cad2111.duckdb]</span></span></span>
 <span><span class="co">#&gt;      mpg   cyl  disp    hp  drat    wt  qsec    vs    am  gear  carb hp_per_cyl</span></span>
 <span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span>  18.7     8  360    175  3.15  3.44  17.0     0     0     3     2       21.9</span></span>
@@ -295,25 +391,25 @@ essential for GxP/21 CFR Part 11 work:</p>
 <span><span class="co"># View version history - old versions still accessible via time travel</span></span>
 <span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 2           1 2026-07-07 23:17:01              1</span></span>
-<span><span class="co">#&gt; 3           2 2026-07-07 23:17:01              2</span></span>
-<span><span class="co">#&gt; 4           3 2026-07-07 23:17:02              3</span></span>
-<span><span class="co">#&gt; 5           4 2026-07-07 23:17:02              4</span></span>
+<span><span class="co">#&gt; 1           1 2026-07-08 00:37:08              1</span></span>
+<span><span class="co">#&gt; 2           7 2026-07-08 00:37:09              3</span></span>
+<span><span class="co">#&gt; 3           8 2026-07-08 00:37:10              4</span></span>
+<span><span class="co">#&gt; 4           9 2026-07-08 00:37:10              5</span></span>
 <span><span class="co">#&gt;                                                                 changes</span></span>
-<span><span class="co">#&gt; 2                    tables_created, tables_inserted_into, main.cars, 1</span></span>
-<span><span class="co">#&gt; 3 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2</span></span>
-<span><span class="co">#&gt; 4 tables_created, tables_dropped, tables_inserted_into, main.cars, 2, 3</span></span>
-<span><span class="co">#&gt; 5 tables_created, tables_dropped, tables_inserted_into, main.cars, 3, 4</span></span>
+<span><span class="co">#&gt; 1                    tables_created, tables_inserted_into, main.cars, 1</span></span>
+<span><span class="co">#&gt; 2 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 3</span></span>
+<span><span class="co">#&gt; 3 tables_created, tables_dropped, tables_inserted_into, main.cars, 3, 4</span></span>
+<span><span class="co">#&gt; 4 tables_created, tables_dropped, tables_inserted_into, main.cars, 4, 5</span></span>
 <span><span class="co">#&gt;          author                           commit_message commit_extra_info</span></span>
-<span><span class="co">#&gt; 2 Data Engineer                    Initial car data load              &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 3 Data Engineer       Update MPG for 4-cylinder vehicles              &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 4 Data Engineer Add HP per cylinder and performance flag              &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 5 Data Engineer                Filter to V8 engines only              &lt;NA&gt;</span></span></code></pre></div>
+<span><span class="co">#&gt; 1 Data Engineer                    Initial car data load              &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 2 Data Engineer       Update MPG for 4-cylinder vehicles              &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 3 Data Engineer Add HP per cylinder and performance flag              &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 4 Data Engineer                Filter to V8 engines only              &lt;NA&gt;</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="time-travel-accessing-previous-versions">Time Travel: Accessing Previous Versions<a class="anchor" aria-label="anchor" href="#time-travel-accessing-previous-versions"></a>
 </h3>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Get the current version</span></span>
 <span><span class="va">current</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/compute.html" class="external-link">collect</a></span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
@@ -321,20 +417,20 @@ essential for GxP/21 CFR Part 11 work:</p>
 <span><span class="va">snapshots</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span></span>
 <span><span class="va">snapshots</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 2           1 2026-07-07 23:17:01              1</span></span>
-<span><span class="co">#&gt; 3           2 2026-07-07 23:17:01              2</span></span>
-<span><span class="co">#&gt; 4           3 2026-07-07 23:17:02              3</span></span>
-<span><span class="co">#&gt; 5           4 2026-07-07 23:17:02              4</span></span>
+<span><span class="co">#&gt; 1           1 2026-07-08 00:37:08              1</span></span>
+<span><span class="co">#&gt; 2           7 2026-07-08 00:37:09              3</span></span>
+<span><span class="co">#&gt; 3           8 2026-07-08 00:37:10              4</span></span>
+<span><span class="co">#&gt; 4           9 2026-07-08 00:37:10              5</span></span>
 <span><span class="co">#&gt;                                                                 changes</span></span>
-<span><span class="co">#&gt; 2                    tables_created, tables_inserted_into, main.cars, 1</span></span>
-<span><span class="co">#&gt; 3 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2</span></span>
-<span><span class="co">#&gt; 4 tables_created, tables_dropped, tables_inserted_into, main.cars, 2, 3</span></span>
-<span><span class="co">#&gt; 5 tables_created, tables_dropped, tables_inserted_into, main.cars, 3, 4</span></span>
+<span><span class="co">#&gt; 1                    tables_created, tables_inserted_into, main.cars, 1</span></span>
+<span><span class="co">#&gt; 2 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 3</span></span>
+<span><span class="co">#&gt; 3 tables_created, tables_dropped, tables_inserted_into, main.cars, 3, 4</span></span>
+<span><span class="co">#&gt; 4 tables_created, tables_dropped, tables_inserted_into, main.cars, 4, 5</span></span>
 <span><span class="co">#&gt;          author                           commit_message commit_extra_info</span></span>
-<span><span class="co">#&gt; 2 Data Engineer                    Initial car data load              &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 3 Data Engineer       Update MPG for 4-cylinder vehicles              &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 4 Data Engineer Add HP per cylinder and performance flag              &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 5 Data Engineer                Filter to V8 engines only              &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 1 Data Engineer                    Initial car data load              &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 2 Data Engineer       Update MPG for 4-cylinder vehicles              &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 3 Data Engineer Add HP per cylinder and performance flag              &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 4 Data Engineer                Filter to V8 engines only              &lt;NA&gt;</span></span>
 <span></span>
 <span><span class="co"># Access a specific previous version by snapshot_id</span></span>
 <span><span class="va">original_version</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_ducklake_table_version.html">get_ducklake_table_version</a></span><span class="op">(</span></span>

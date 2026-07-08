@@ -46,7 +46,10 @@ it directly in the catalog instead of writing a Parquet file.
 readings <- data.frame(
   sensor_id = 1:3,
   temperature = c(21.5, 22.1, 21.8),
-  ts = as.POSIXct(c("2025-03-27 10:00:00", "2025-03-27 10:00:10", "2025-03-27 10:00:20"))
+  ts = as.POSIXct(
+    c("2025-03-27 10:00:00", "2025-03-27 10:00:10", "2025-03-27 10:00:20"),
+    tz = "UTC"
+  )
 )
 
 with_transaction(
@@ -148,7 +151,7 @@ When a write exceeds the threshold, DuckLake writes directly to Parquet
 large_batch <- data.frame(
   sensor_id = 101:150,
   temperature = rnorm(50, mean = 22, sd = 1),
-  ts = seq(as.POSIXct("2025-03-28 00:00:00"), by = "10 sec", length.out = 50),
+  ts = seq(as.POSIXct("2025-03-28 00:00:00", tz = "UTC"), by = "10 sec", length.out = 50),
   temp_calibrated = rnorm(50, mean = 21.7, sd = 1)
 )
 
@@ -282,17 +285,20 @@ inlined insert or delete creates a snapshot, just like a regular write:
 snapshots <- list_table_snapshots("readings")
 snapshots
 #>   snapshot_id       snapshot_time schema_version
-#> 2           1 2026-07-07 23:16:52              1
-#> 3           2 2026-07-07 23:16:52              2
-#> 4           3 2026-07-07 23:16:52              3
+#> 1           1 2026-07-08 00:36:59              1
+#> 2           2 2026-07-08 00:36:59              2
+#> 3           3 2026-07-08 00:37:00              3
+#> 4           5 2026-07-08 00:37:00              4
 #>                                                               changes
-#> 2                    tables_created, inlined_insert, main.readings, 1
-#> 3 tables_created, tables_dropped, inlined_insert, main.readings, 1, 2
-#> 4 tables_created, tables_dropped, inlined_insert, main.readings, 2, 3
+#> 1                    tables_created, inlined_insert, main.readings, 1
+#> 2 tables_created, tables_dropped, inlined_insert, main.readings, 1, 2
+#> 3 tables_created, tables_dropped, inlined_insert, main.readings, 2, 3
+#> 4                                                  flushed_inlined, 3
 #>        author                 commit_message commit_extra_info
-#> 2 Sensor Team        Initial sensor readings              <NA>
-#> 3 Sensor Team     Add calibrated temperature              <NA>
-#> 4 Sensor Team Remove faulty sensor 2 reading              <NA>
+#> 1 Sensor Team        Initial sensor readings              <NA>
+#> 2 Sensor Team     Add calibrated temperature              <NA>
+#> 3 Sensor Team Remove faulty sensor 2 reading              <NA>
+#> 4        <NA>                           <NA>              <NA>
 ```
 
 ``` r

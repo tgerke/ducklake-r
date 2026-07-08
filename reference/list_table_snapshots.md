@@ -34,9 +34,6 @@ This function queries the snapshot history of a table, showing available
 versions and their timestamps. This is useful for understanding what
 historical versions are available for time-travel queries.
 
-Note: The exact format and availability of this information depends on
-the table format (Delta Lake, Iceberg, etc.).
-
 ## See also
 
 Other time travel:

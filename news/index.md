@@ -49,7 +49,9 @@ DuckDB and DuckLake.
   now works. It previously generated a `RESTORE TABLE` statement that
   does not exist in DuckLake and failed on every call. It now recreates
   the table from a time-travel read inside a transaction, recording the
-  restore as a new snapshot so history is preserved.
+  restore as a new snapshot so history is preserved. It also gains
+  `author` and `commit_message` arguments so the restore snapshot
+  carries full audit-trail metadata.
 - [`get_ducklake_backend()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_backend.md)
   gains a `ducklake_name` argument and tracks each attached lake
   separately, so sessions with several lakes on different catalog
@@ -79,6 +81,20 @@ DuckDB and DuckLake.
   Previously, if dplyr was loaded *after* ducklake, dplyr’s generics
   masked ducklake’s wrappers and calls failed with `conflict = "error"`
   complaints; load order no longer matters.
+- [`rows_insert()`](https://tgerke.github.io/ducklake-r/reference/rows_insert.md),
+  [`rows_update()`](https://tgerke.github.io/ducklake-r/reference/rows_update.md),
+  and
+  [`rows_delete()`](https://tgerke.github.io/ducklake-r/reference/rows_delete.md)
+  now work inside
+  [`with_transaction()`](https://tgerke.github.io/ducklake-r/reference/with_transaction.md),
+  so several row operations can be grouped into a single snapshot with
+  an author and commit message. Previously, passing a local data frame
+  made dbplyr copy it to a temporary table inside its own transaction,
+  which DuckDB rejects when one is already open. Local data frames are
+  now sent as inline queries
+  ([`dbplyr::copy_inline()`](https://dbplyr.tidyverse.org/reference/copy_inline.html)),
+  which is also faster for the small changesets these functions are
+  designed for.
 - [`backup_ducklake()`](https://tgerke.github.io/ducklake-r/reference/backup_ducklake.md)
   backs up every schema directory, not just `main`.
 - [`create_table()`](https://tgerke.github.io/ducklake-r/reference/create_table.md)
@@ -91,6 +107,35 @@ DuckDB and DuckLake.
   could leak diverted output on error), and now refuses queries with
   subqueries or multiple `WHERE` clauses instead of generating incorrect
   SQL.
+- [`ducklake_exec()`](https://tgerke.github.io/ducklake-r/reference/ducklake_exec.md)
+  no longer executes its statement twice. The internal translation step
+  also executed the SQL before
+  [`ducklake_exec()`](https://tgerke.github.io/ducklake-r/reference/ducklake_exec.md)
+  ran it again, so every call created two snapshots and non-idempotent
+  updates (e.g. `v = v + 1`) were applied twice.
+- [`show_ducklake_query()`](https://tgerke.github.io/ducklake-r/reference/show_ducklake_query.md)
+  is now a true preview: it previously *executed* the translated
+  statement against the lake while displaying it.
+- [`ducklake_exec()`](https://tgerke.github.io/ducklake-r/reference/ducklake_exec.md)
+  now translates any
+  [`mutate()`](https://dplyr.tidyverse.org/reference/mutate.html) into
+  an UPDATE, not just those that compile to `CASE WHEN`. Previously a
+  simple transformation like `mutate(v = round(v, 1))` fell through to
+  an INSERT of the table’s own rows, silently duplicating the table.
+  Plain self-reads with nothing to translate are now refused for the
+  same reason, and UPDATE assignments containing commas inside function
+  calls are parsed correctly.
+- `list_table_snapshots(table_name)` no longer misses snapshots created
+  by
+  [`rows_insert()`](https://tgerke.github.io/ducklake-r/reference/rows_insert.md),
+  [`rows_update()`](https://tgerke.github.io/ducklake-r/reference/rows_update.md),
+  and
+  [`rows_delete()`](https://tgerke.github.io/ducklake-r/reference/rows_delete.md).
+  DuckLake records row-level changes against the table’s numeric id
+  rather than its name; the filter now resolves and matches those ids,
+  so the per-table audit trail is complete. Filtered listings also
+  number their rows from 1 instead of leaking the row positions of the
+  unfiltered result.
 
 ### Connection management is now self-contained
 

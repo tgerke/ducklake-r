@@ -149,14 +149,14 @@ The catalog is a single database file containing all metadata:
 ``` r
 
 dir_tree(lake_dir)
-#> /tmp/RtmpUHKKTO/storage_backups_vignette/storage_demo
+#> /tmp/RtmpWGIvrP/storage_backups_vignette/storage_demo
 #> ├── demo_lake.ducklake
 #> ├── demo_lake.ducklake.wal
 #> └── main
 #>     └── cars
-#>         ├── ducklake-019f3ede-f706-7a93-a251-2dcb8db8070e.parquet
-#>         ├── ducklake-019f3ede-f7e5-7fe6-a8f7-a4c1d44c19b1.parquet
-#>         └── ducklake-019f3ede-f877-7431-869e-9b016751ac4e.parquet
+#>         ├── ducklake-019f3f28-5439-7161-be1b-ab8952199fd2.parquet
+#>         ├── ducklake-019f3f28-5516-7462-a1d4-320156196459.parquet
+#>         └── ducklake-019f3f28-5599-792d-bf46-50bbedabec5d.parquet
 ```
 
 The catalog files (`demo_lake.ducklake` and `.wal`) contain all metadata
@@ -172,11 +172,11 @@ Data files are stored in Parquet format in a structured directory:
 main_dir <- file.path(lake_dir, "main")
 
 dir_tree(main_dir, recurse = 2)
-#> /tmp/RtmpUHKKTO/storage_backups_vignette/storage_demo/main
+#> /tmp/RtmpWGIvrP/storage_backups_vignette/storage_demo/main
 #> └── cars
-#>     ├── ducklake-019f3ede-f706-7a93-a251-2dcb8db8070e.parquet
-#>     ├── ducklake-019f3ede-f7e5-7fe6-a8f7-a4c1d44c19b1.parquet
-#>     └── ducklake-019f3ede-f877-7431-869e-9b016751ac4e.parquet
+#>     ├── ducklake-019f3f28-5439-7161-be1b-ab8952199fd2.parquet
+#>     ├── ducklake-019f3f28-5516-7462-a1d4-320156196459.parquet
+#>     └── ducklake-019f3f28-5599-792d-bf46-50bbedabec5d.parquet
   
 # Get details about parquet files
 parquet_files <- dir_ls(main_dir, recurse = TRUE, regexp = "\\.parquet$")
@@ -185,9 +185,9 @@ for (f in parquet_files) {
               path_file(f), 
               file.size(f)))
 }
-#>   ducklake-019f3ede-f706-7a93-a251-2dcb8db8070e.parquet (2307 bytes)
-#>   ducklake-019f3ede-f7e5-7fe6-a8f7-a4c1d44c19b1.parquet (2501 bytes)
-#>   ducklake-019f3ede-f877-7431-869e-9b016751ac4e.parquet (2724 bytes)
+#>   ducklake-019f3f28-5439-7161-be1b-ab8952199fd2.parquet (2307 bytes)
+#>   ducklake-019f3f28-5516-7462-a1d4-320156196459.parquet (2501 bytes)
+#>   ducklake-019f3f28-5599-792d-bf46-50bbedabec5d.parquet (2724 bytes)
 ```
 
 ### Understanding File Organization
@@ -202,9 +202,9 @@ snapshots <- list_table_snapshots("cars")
 snapshots |>
   select(snapshot_id, author, commit_message)
 #>   snapshot_id    author                       commit_message
-#> 2           1 Demo User                         Initial load
-#> 3           2 Demo User                Add hp_per_cyl metric
-#> 4           3 Demo User Add adjusted MPG for 4-cylinder cars
+#> 1           1 Demo User                         Initial load
+#> 2           2 Demo User                Add hp_per_cyl metric
+#> 3           3 Demo User Add adjusted MPG for 4-cylinder cars
 ```
 
 The key insight is that **DuckLake never modifies or deletes existing
@@ -253,13 +253,13 @@ dir_copy(
 
 # Verify the backup was created
 dir_tree(backup_dir)
-#> /tmp/RtmpUHKKTO/storage_backups_vignette/storage_demo/backups
+#> /tmp/RtmpWGIvrP/storage_backups_vignette/storage_demo/backups
 #> ├── demo_lake.ducklake
 #> └── main
 #>     └── cars
-#>         ├── ducklake-019f3ede-f706-7a93-a251-2dcb8db8070e.parquet
-#>         ├── ducklake-019f3ede-f7e5-7fe6-a8f7-a4c1d44c19b1.parquet
-#>         └── ducklake-019f3ede-f877-7431-869e-9b016751ac4e.parquet
+#>         ├── ducklake-019f3f28-5439-7161-be1b-ab8952199fd2.parquet
+#>         ├── ducklake-019f3f28-5516-7462-a1d4-320156196459.parquet
+#>         └── ducklake-019f3f28-5599-792d-bf46-50bbedabec5d.parquet
 
 # To work with the backup, attach it. override_data_path is needed because
 # the catalog remembers the original data location, which the backup no
@@ -273,17 +273,17 @@ attach_ducklake(
 # Verify you're working with the backup
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 2           1 2026-07-07 23:17:07              1
-#> 3           2 2026-07-07 23:17:07              2
-#> 4           3 2026-07-07 23:17:07              3
+#> 1           1 2026-07-08 00:37:15              1
+#> 2           2 2026-07-08 00:37:15              2
+#> 3           3 2026-07-08 00:37:15              3
 #>                                                                 changes
-#> 2                    tables_created, tables_inserted_into, main.cars, 1
-#> 3 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2
-#> 4 tables_created, tables_dropped, tables_inserted_into, main.cars, 2, 3
+#> 1                    tables_created, tables_inserted_into, main.cars, 1
+#> 2 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2
+#> 3 tables_created, tables_dropped, tables_inserted_into, main.cars, 2, 3
 #>      author                       commit_message commit_extra_info
-#> 2 Demo User                         Initial load              <NA>
-#> 3 Demo User                Add hp_per_cyl metric              <NA>
-#> 4 Demo User Add adjusted MPG for 4-cylinder cars              <NA>
+#> 1 Demo User                         Initial load              <NA>
+#> 2 Demo User                Add hp_per_cyl metric              <NA>
+#> 3 Demo User Add adjusted MPG for 4-cylinder cars              <NA>
 
 # You can switch back to the original by detaching and reattaching
 detach_ducklake("demo_lake")
@@ -357,9 +357,9 @@ If your catalog is corrupted or lost:
 ``` r
 
 # Restore from backup by copying the backup file
+# (backup_dir here is a directory created earlier, e.g. by backup_ducklake())
 file.copy(
-  from = file.path(lake_dir, "backups", 
-                   paste0("demo_lake_backup_", Sys.Date(), ".ducklake")),
+  from = file.path(backup_dir, "demo_lake.ducklake"),
   to = file.path(lake_dir, "demo_lake.ducklake"),
   overwrite = TRUE
 )
@@ -407,19 +407,25 @@ When planning backups, coordinate with maintenance operations:
 # 2. Ensure all transactions are committed
 # (no pending work)
 
-# 3. Back up catalog
+# 3. Release file locks before copying the catalog
+detach_ducklake("demo_lake", shutdown = TRUE)
+
+# 4. Back up catalog
 dir.create(file.path(lake_dir, "backups"), showWarnings = FALSE)
 file.copy(
   from = file.path(lake_dir, "demo_lake.ducklake"),
-  to = file.path(lake_dir, "backups", 
+  to = file.path(lake_dir, "backups",
                  paste0("backup_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".ducklake"))
 )
 
-# 4. Back up data files
+# 5. Back up data files
 dir_copy(
   path = file.path(lake_dir, "main"),
   new_path = file.path(lake_dir, "backups", "main_latest")
 )
+
+# 6. Re-attach and continue working
+attach_ducklake("demo_lake", lake_path = lake_dir)
 ```
 
 ## Complete Backup Example
@@ -439,18 +445,19 @@ backup_dir <- backup_ducklake(
 #> Catalog backed up successfully.
 #> Data files backed up successfully (1 directory).
 #> Backup completed:
-#> /tmp/RtmpUHKKTO/storage_backups_vignette/storage_demo/backups/backup_20260707_231708
+#> /tmp/RtmpWGIvrP/storage_backups_vignette/storage_demo/backups/backup_20260708_003716
 
 # The function returns the backup directory path
 print(backup_dir)
-#> [1] "/tmp/RtmpUHKKTO/storage_backups_vignette/storage_demo/backups/backup_20260707_231708"
+#> [1] "/tmp/RtmpWGIvrP/storage_backups_vignette/storage_demo/backups/backup_20260708_003716"
 ```
 
 The
 [`backup_ducklake()`](https://tgerke.github.io/ducklake-r/reference/backup_ducklake.md)
 function: - Creates a timestamped backup directory - Copies the catalog
-database file - Copies all data files from the main/ directory - Returns
-the backup directory path for reference
+database file (releasing file locks first) - Copies the data files from
+every schema directory in the lake - Returns the backup directory path
+for reference
 
 ## Cleanup
 

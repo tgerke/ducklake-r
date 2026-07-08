@@ -37,7 +37,13 @@ verbs:
 
 - Queries with mutate() generate UPDATE operations
 
-- Other queries generate INSERT operations
+- Plain reads from a *different* table generate INSERT operations
+  (appending that table's rows into `table_name`)
+
+A plain read from `table_name` itself is refused, since inserting a
+table's own rows back into it would duplicate them. Use
+[`show_ducklake_query()`](https://tgerke.github.io/ducklake-r/reference/show_ducklake_query.md)
+to preview the generated SQL without running it.
 
 ## See also
 

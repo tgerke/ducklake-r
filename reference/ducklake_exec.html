@@ -83,8 +83,12 @@
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>This function automatically detects the type of operation based on dplyr verbs:</p><ul><li><p>Filter-only queries generate DELETE operations (removes rows that DON'T match filter)</p></li>
 <li><p>Queries with mutate() generate UPDATE operations</p></li>
-<li><p>Other queries generate INSERT operations</p></li>
-</ul></div>
+<li><p>Plain reads from a <em>different</em> table generate INSERT operations
+(appending that table's rows into <code>table_name</code>)</p></li>
+</ul><p>A plain read from <code>table_name</code> itself is refused, since inserting a
+table's own rows back into it would duplicate them. Use
+<code><a href="show_ducklake_query.html">show_ducklake_query()</a></code> to preview the generated SQL without running it.</p>
+    </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
     <div class="dont-index"><p>Other table operations:

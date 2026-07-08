@@ -75,7 +75,7 @@
 <ul><li>
 <code><a href="../reference/attach_ducklake.html">attach_ducklake()</a></code> gains an <code>encrypted</code> argument: pass <code>encrypted = TRUE</code> to have DuckLake encrypt the Parquet files it writes (<a href="https://github.com/tgerke/ducklake-r/issues/18" class="external-link">#18</a>). Note that the encryption keys are stored in the catalog database, so protect the catalog. The httpfs extension is loaded automatically for encrypted lakes, since on some platforms (notably Windows) DuckDB’s built-in crypto module is read-only.</li>
 <li>
-<code><a href="../reference/restore_table_version.html">restore_table_version()</a></code> now works. It previously generated a <code>RESTORE TABLE</code> statement that does not exist in DuckLake and failed on every call. It now recreates the table from a time-travel read inside a transaction, recording the restore as a new snapshot so history is preserved.</li>
+<code><a href="../reference/restore_table_version.html">restore_table_version()</a></code> now works. It previously generated a <code>RESTORE TABLE</code> statement that does not exist in DuckLake and failed on every call. It now recreates the table from a time-travel read inside a transaction, recording the restore as a new snapshot so history is preserved. It also gains <code>author</code> and <code>commit_message</code> arguments so the restore snapshot carries full audit-trail metadata.</li>
 <li>
 <code><a href="../reference/get_ducklake_backend.html">get_ducklake_backend()</a></code> gains a <code>ducklake_name</code> argument and tracks each attached lake separately, so sessions with several lakes on different catalog backends resolve backend-specific behaviour correctly.</li>
 </ul></div>
@@ -87,10 +87,20 @@
 <li>
 <code><a href="../reference/rows_insert.html">rows_insert()</a></code>, <code><a href="../reference/rows_update.html">rows_update()</a></code>, and <code><a href="../reference/rows_delete.html">rows_delete()</a></code> now also dispatch as S3 methods on tables returned by <code><a href="../reference/get_ducklake_table.html">get_ducklake_table()</a></code>. Previously, if dplyr was loaded <em>after</em> ducklake, dplyr’s generics masked ducklake’s wrappers and calls failed with <code>conflict = "error"</code> complaints; load order no longer matters.</li>
 <li>
+<code><a href="../reference/rows_insert.html">rows_insert()</a></code>, <code><a href="../reference/rows_update.html">rows_update()</a></code>, and <code><a href="../reference/rows_delete.html">rows_delete()</a></code> now work inside <code><a href="../reference/with_transaction.html">with_transaction()</a></code>, so several row operations can be grouped into a single snapshot with an author and commit message. Previously, passing a local data frame made dbplyr copy it to a temporary table inside its own transaction, which DuckDB rejects when one is already open. Local data frames are now sent as inline queries (<code><a href="https://dbplyr.tidyverse.org/reference/copy_inline.html" class="external-link">dbplyr::copy_inline()</a></code>), which is also faster for the small changesets these functions are designed for.</li>
+<li>
 <code><a href="../reference/backup_ducklake.html">backup_ducklake()</a></code> backs up every schema directory, not just <code>main</code>.</li>
 <li>
 <code><a href="../reference/create_table.html">create_table()</a></code> now converts factor columns to character (with a message) instead of failing with “unsupported type ENUM” – DuckLake does not support DuckDB’s ENUM type, which is what factors become.</li>
 <li>The internal dplyr-to-SQL translation in <code><a href="../reference/ducklake_exec.html">ducklake_exec()</a></code> no longer uses <code><a href="https://rdrr.io/r/base/sink.html" class="external-link">sink()</a></code> (which could leak diverted output on error), and now refuses queries with subqueries or multiple <code>WHERE</code> clauses instead of generating incorrect SQL.</li>
+<li>
+<code><a href="../reference/ducklake_exec.html">ducklake_exec()</a></code> no longer executes its statement twice. The internal translation step also executed the SQL before <code><a href="../reference/ducklake_exec.html">ducklake_exec()</a></code> ran it again, so every call created two snapshots and non-idempotent updates (e.g. <code>v = v + 1</code>) were applied twice.</li>
+<li>
+<code><a href="../reference/show_ducklake_query.html">show_ducklake_query()</a></code> is now a true preview: it previously <em>executed</em> the translated statement against the lake while displaying it.</li>
+<li>
+<code><a href="../reference/ducklake_exec.html">ducklake_exec()</a></code> now translates any <code><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate()</a></code> into an UPDATE, not just those that compile to <code>CASE WHEN</code>. Previously a simple transformation like <code>mutate(v = round(v, 1))</code> fell through to an INSERT of the table’s own rows, silently duplicating the table. Plain self-reads with nothing to translate are now refused for the same reason, and UPDATE assignments containing commas inside function calls are parsed correctly.</li>
+<li>
+<code>list_table_snapshots(table_name)</code> no longer misses snapshots created by <code><a href="../reference/rows_insert.html">rows_insert()</a></code>, <code><a href="../reference/rows_update.html">rows_update()</a></code>, and <code><a href="../reference/rows_delete.html">rows_delete()</a></code>. DuckLake records row-level changes against the table’s numeric id rather than its name; the filter now resolves and matches those ids, so the per-table audit trail is complete. Filtered listings also number their rows from 1 instead of leaking the row positions of the unfiltered result.</li>
 </ul></div>
 </div>
 <div class="section level3">
