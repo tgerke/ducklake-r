@@ -42,11 +42,31 @@ rows_update <- function(x, y, by = NULL, copy = TRUE, in_place = TRUE, unmatched
   dplyr::rows_update(x = x, y = y, by = by, copy = copy, in_place = in_place, unmatched = unmatched, ...)
 }
 
+#' Prepare the `y` argument for a rows_* operation
+#'
+#' Local data frames are converted to an inline query on the same connection
+#' as `x` via [dbplyr::copy_inline()]. Unlike dplyr's `copy = TRUE` path,
+#' this creates no temporary table and starts no transaction of its own, so
+#' rows_* calls work inside [with_transaction()] (DuckDB does not support
+#' nested transactions).
+#'
+#' @param x Target lazy table
+#' @param y Data frame or lazy table
+#' @keywords internal
+prep_rows_y <- function(x, y) {
+  if (is.data.frame(y)) {
+    dbplyr::copy_inline(dbplyr::remote_con(x), y)
+  } else {
+    y
+  }
+}
+
 #' @exportS3Method dplyr::rows_update
 rows_update.tbl_ducklake <- function(x, y, by = NULL, ...,
                                      unmatched = "ignore",
                                      copy = TRUE, in_place = TRUE) {
   class(x) <- setdiff(class(x), "tbl_ducklake")
+  y <- prep_rows_y(x, y)
   dplyr::rows_update(
     x = x, y = y, by = by, ...,
     unmatched = unmatched, copy = copy, in_place = in_place
@@ -101,6 +121,7 @@ rows_insert.tbl_ducklake <- function(x, y, by = NULL, ...,
                                      conflict = "ignore",
                                      copy = TRUE, in_place = TRUE) {
   class(x) <- setdiff(class(x), "tbl_ducklake")
+  y <- prep_rows_y(x, y)
   dplyr::rows_insert(
     x = x, y = y, by = by, ...,
     conflict = conflict, copy = copy, in_place = in_place
@@ -155,6 +176,7 @@ rows_delete.tbl_ducklake <- function(x, y, by = NULL, ...,
                                      unmatched = "ignore",
                                      copy = TRUE, in_place = TRUE) {
   class(x) <- setdiff(class(x), "tbl_ducklake")
+  y <- prep_rows_y(x, y)
   dplyr::rows_delete(
     x = x, y = y, by = by, ...,
     unmatched = unmatched, copy = copy, in_place = in_place

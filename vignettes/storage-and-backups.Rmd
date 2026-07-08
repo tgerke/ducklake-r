@@ -298,9 +298,9 @@ If your catalog is corrupted or lost:
 
 ```{r recovery-catalog, eval=FALSE}
 # Restore from backup by copying the backup file
+# (backup_dir here is a directory created earlier, e.g. by backup_ducklake())
 file.copy(
-  from = file.path(lake_dir, "backups", 
-                   paste0("demo_lake_backup_", Sys.Date(), ".ducklake")),
+  from = file.path(backup_dir, "demo_lake.ducklake"),
   to = file.path(lake_dir, "demo_lake.ducklake"),
   overwrite = TRUE
 )
@@ -344,19 +344,25 @@ When planning backups, coordinate with maintenance operations:
 # 2. Ensure all transactions are committed
 # (no pending work)
 
-# 3. Back up catalog
+# 3. Release file locks before copying the catalog
+detach_ducklake("demo_lake", shutdown = TRUE)
+
+# 4. Back up catalog
 dir.create(file.path(lake_dir, "backups"), showWarnings = FALSE)
 file.copy(
   from = file.path(lake_dir, "demo_lake.ducklake"),
-  to = file.path(lake_dir, "backups", 
+  to = file.path(lake_dir, "backups",
                  paste0("backup_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".ducklake"))
 )
 
-# 4. Back up data files
+# 5. Back up data files
 dir_copy(
   path = file.path(lake_dir, "main"),
   new_path = file.path(lake_dir, "backups", "main_latest")
 )
+
+# 6. Re-attach and continue working
+attach_ducklake("demo_lake", lake_path = lake_dir)
 ```
 
 ## Complete Backup Example
@@ -377,8 +383,8 @@ print(backup_dir)
 
 The `backup_ducklake()` function:
 - Creates a timestamped backup directory
-- Copies the catalog database file
-- Copies all data files from the main/ directory
+- Copies the catalog database file (releasing file locks first)
+- Copies the data files from every schema directory in the lake
 - Returns the backup directory path for reference
 
 ## Cleanup

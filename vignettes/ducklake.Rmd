@@ -178,16 +178,17 @@ list_table_snapshots("cars")
 
 ### Read a specific version
 
-```{r read_version, eval=FALSE}
-# Query data as it existed at snapshot 1
+```{r read_version}
+# Query data as it existed at snapshot 1 -- before the kpl column was added
 get_ducklake_table_version("cars", version = 1) |>
-  collect()
+  select(mpg, cyl, hp) |>
+  head(3)
 ```
 
 ### Read data at a specific timestamp
 
 ```{r read_timestamp, eval=FALSE}
-# Query data as of a specific time
+# Query data as of a specific time (see list_table_snapshots() for times)
 get_ducklake_table_asof("cars", timestamp = "2024-01-15 10:30:00") |>
   collect()
 ```
@@ -210,15 +211,6 @@ Note: Use `replace_table()` for structural changes (adding or removing columns) 
 
 ## Metadata and versioning recipes
 
-### List all tables
-
-```{r list_tables}
-get_ducklake_table("duckdb_tables") |>
-  filter(schema_name == "main") |>
-  select(table_name) |>
-  collect()
-```
-
 ### View all snapshots
 
 ```{r list_snapshots}
@@ -233,13 +225,13 @@ list_table_snapshots("cars")
 
 ### Restore a table to a previous version
 
-```{r restore, eval=FALSE}
-# Use time travel to read an old version, then replace the current table
-with_transaction(
-  get_ducklake_table_version("cars", version = 1) |>
-    replace_table("cars"),
-  author = "Data Engineer",
-  commit_message = "Restore to version 1"
+```{r restore}
+# Roll cars back to snapshot 1. The restore is recorded as a new snapshot,
+# so nothing is lost -- you can still time-travel to any version.
+restore_table_version(
+  "cars",
+  version = 1,
+  author = "Data Engineer"
 )
 
 list_table_snapshots("cars")
@@ -300,10 +292,21 @@ commit_transaction(
 
 ### Preview query without execution
 
-```{r show_query, eval=FALSE}
+To see the SQL a *read* pipeline will run, use dplyr's `show_query()`:
+
+```{r show_query}
 get_ducklake_table("cars") |>
   filter(mpg > 25) |>
-  mutate(efficient = TRUE) |>
+  select(mpg, cyl, hp) |>
+  show_query()
+```
+
+To preview the SQL an in-place *modification* would run (before committing
+to it with `ducklake_exec()`), use `show_ducklake_query()`:
+
+```{r show_ducklake_query}
+get_ducklake_table("cars") |>
+  mutate(mpg = round(mpg)) |>
   show_ducklake_query()
 ```
 

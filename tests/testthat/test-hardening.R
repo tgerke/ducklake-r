@@ -111,6 +111,21 @@ test_that("restore_table_version restores by version and preserves history", {
   snaps_after <- list_table_snapshots()
   expect_gt(max(snaps_after$snapshot_id), max(snaps_before$snapshot_id))
   expect_true(any(grepl("Restored hist", snaps_after$commit_message)))
+
+  # author and commit_message are recorded on the restore snapshot
+  restore_table_version(
+    "hist",
+    version = first_version,
+    author = "Data Steward",
+    commit_message = "Roll back bad update"
+  )
+  snaps_final <- list_table_snapshots("hist")
+  last <- snaps_final[which.max(snaps_final$snapshot_id), ]
+  expect_equal(last$author, "Data Steward")
+  expect_equal(last$commit_message, "Roll back bad update")
+
+  # Filtered snapshot listings have clean row names for display
+  expect_identical(rownames(snaps_final), as.character(seq_len(nrow(snaps_final))))
 })
 
 test_that("restore_table_version validates version/timestamp arguments", {
@@ -230,6 +245,116 @@ test_that("dplyr rows_* generics dispatch DuckLake defaults on lake tables", {
 
   dplyr::rows_delete(get_ducklake_table("dispatch"), data.frame(id = 2L), by = "id")
   expect_equal(nrow(dplyr::collect(get_ducklake_table("dispatch"))), 2)
+})
+
+test_that("rows_* calls work inside with_transaction as one snapshot", {
+  skip_if_not_installed("duckdb")
+  skip_if_not_installed("dplyr")
+
+  lake <- create_temp_ducklake()
+  on.exit(cleanup_temp_ducklake(lake), add = TRUE)
+
+  create_table(data.frame(id = 1:3, v = c("a", "b", "c")), "txn_rows")
+  snaps_before <- list_table_snapshots()
+
+  # Local data frames must not trigger dbplyr's copy_to transaction,
+  # which would nest a BEGIN inside ours and fail on DuckDB
+  with_transaction({
+    rows_insert(get_ducklake_table("txn_rows"), data.frame(id = 4L, v = "d"), by = "id")
+    rows_update(get_ducklake_table("txn_rows"), data.frame(id = 1L, v = "z"), by = "id")
+    rows_delete(get_ducklake_table("txn_rows"), data.frame(id = 2L), by = "id")
+  },
+    author = "Txn Tester",
+    commit_message = "Batched row changes"
+  )
+
+  result <- dplyr::collect(get_ducklake_table("txn_rows"))
+  expect_setequal(result$id, c(1L, 3L, 4L))
+  expect_equal(result$v[result$id == 1], "z")
+
+  # All three operations landed as a single snapshot with metadata
+  snaps_after <- list_table_snapshots()
+  expect_equal(max(snaps_after$snapshot_id), max(snaps_before$snapshot_id) + 1)
+  last <- snaps_after[which.max(snaps_after$snapshot_id), ]
+  expect_equal(last$author, "Txn Tester")
+  expect_equal(last$commit_message, "Batched row changes")
+})
+
+test_that("ducklake_exec executes exactly once and previews don't execute", {
+  skip_if_not_installed("duckdb")
+  skip_if_not_installed("dplyr")
+
+  lake <- create_temp_ducklake()
+  on.exit(cleanup_temp_ducklake(lake), add = TRUE)
+
+  create_table(data.frame(id = 1:3, v = c(10, 20, 30)), "exec_once")
+  snaps_before <- nrow(list_table_snapshots())
+
+  # A non-idempotent update reveals double execution immediately
+  get_ducklake_table("exec_once") |>
+    dplyr::mutate(v = dplyr::if_else(id == 1, v + 1, v)) |>
+    ducklake_exec()
+
+  result <- dplyr::collect(get_ducklake_table("exec_once"))
+  expect_equal(result$v[result$id == 1], 11)
+  expect_equal(nrow(list_table_snapshots()) - snaps_before, 1)
+
+  # show_ducklake_query is a pure preview: no data change, no snapshot
+  before <- dplyr::collect(get_ducklake_table("exec_once"))
+  out <- capture.output(
+    get_ducklake_table("exec_once") |>
+      dplyr::mutate(v = v * 2) |>
+      show_ducklake_query()
+  )
+  expect_true(any(grepl("UPDATE", out)))
+  expect_identical(dplyr::collect(get_ducklake_table("exec_once")), before)
+})
+
+test_that("update_table handles function calls with commas and blocks self-inserts", {
+  skip_if_not_installed("duckdb")
+  skip_if_not_installed("dplyr")
+
+  lake <- create_temp_ducklake()
+  on.exit(cleanup_temp_ducklake(lake), add = TRUE)
+
+  create_table(data.frame(id = 1:3, v = c(10.16, 20.24, 30.55)), "commas")
+
+  # round(v, 1) renders as a function call with a comma in its arguments;
+  # the UPDATE assignments must not be split apart
+  get_ducklake_table("commas") |>
+    dplyr::mutate(v = round(v, 1)) |>
+    ducklake_exec()
+  result <- dplyr::collect(get_ducklake_table("commas"))
+  expect_equal(sort(result$v), c(10.2, 20.2, 30.6))
+  expect_equal(nrow(result), 3)
+
+  # A plain self-read has nothing to translate and would duplicate rows
+  expect_error(
+    ducklake_exec(get_ducklake_table("commas")),
+    "duplicate"
+  )
+})
+
+test_that("list_table_snapshots includes row-level DML snapshots", {
+  skip_if_not_installed("duckdb")
+  skip_if_not_installed("dplyr")
+
+  lake <- create_temp_ducklake()
+  on.exit(cleanup_temp_ducklake(lake), add = TRUE)
+
+  create_table(data.frame(id = 1:3, v = c("a", "b", "c")), "dml_hist")
+  rows_insert(get_ducklake_table("dml_hist"), data.frame(id = 4L, v = "d"), by = "id")
+  rows_delete(get_ducklake_table("dml_hist"), data.frame(id = 2L), by = "id")
+  create_table(data.frame(x = 1), "dml_bystander")
+
+  # DML snapshots reference the table by numeric id in the changes column;
+  # the filtered listing must include them alongside the creation snapshot
+  snaps <- list_table_snapshots("dml_hist")
+  expect_equal(nrow(snaps), 3)
+
+  # ...without leaking other tables' snapshots
+  bystander <- list_table_snapshots("dml_bystander")
+  expect_equal(nrow(bystander), 1)
 })
 
 test_that("backup_ducklake copies every schema directory", {

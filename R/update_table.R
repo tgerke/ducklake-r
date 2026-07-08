@@ -1,10 +1,12 @@
-#' Update existing column values in a table (in-place, no versioning)
+#' Translate a dplyr pipeline into an in-place statement
 #'
 #' @param .data A dplyr query object (tbl_lazy) with mutate() operations
 #' @param table_name Table name to update
 #' @param .quiet Logical, whether to suppress debug output (default FALSE for backward compatibility)
+#' @param .execute Logical, whether to execute the generated SQL (default
+#'   TRUE). [show_ducklake_query()] passes FALSE to preview without running.
 #'
-#' @returns Invisibly returns the SQL statement string after executing it
+#' @returns Invisibly returns the SQL statement string
 #' @keywords internal
 #' @noRd
 #'
@@ -42,7 +44,7 @@
 #'   ) |>
 #'   update_table("adae")
 #' }
-update_table <- function(.data, table_name, .quiet = FALSE) {
+update_table <- function(.data, table_name, .quiet = FALSE, .execute = TRUE) {
 
   if (!.quiet) {
     cli::cli_inform("Translating dplyr query into an in-place statement for {.val {table_name}}.")
@@ -76,17 +78,32 @@ update_table <- function(.data, table_name, .quiet = FALSE) {
       ))
     }
 
-    # Determine operation type
+    # Determine operation type from the shape of the rendered SELECT:
+    # - aliased expressions in the select list (mutate) -> UPDATE
+    # - a WHERE clause with no aliases (filter)         -> DELETE
+    # - a plain SELECT from a *different* table         -> INSERT (append)
+    # A plain SELECT from the target table itself is refused: an INSERT
+    # would duplicate every row.
     has_where <- grepl("\\bWHERE\\b", combined_sql)
-    has_case_when <- grepl("CASE WHEN", combined_sql)
-    has_select_star <- grepl("SELECT\\s+[^,]*\\*", combined_sql)
+    select_part <- sub("^SELECT\\s+(.*?)\\s+FROM\\b.*$", "\\1", combined_sql, perl = TRUE)
+    has_alias <- grepl("\\bAS\\b", select_part)
 
-    # Operation detection
-    if (has_where && !has_case_when) {
-      operation_type <- "delete"
-    } else if (has_case_when) {
+    if (has_alias) {
       operation_type <- "update"
+    } else if (has_where) {
+      operation_type <- "delete"
     } else {
+      bare_table <- gsub('"', "", table_name)
+      reads_target <- grepl(
+        paste0("\\bFROM\\s+\"?", bare_table, "\"?\\b"),
+        combined_sql
+      )
+      if (reads_target) {
+        cli::cli_abort(c(
+          "The dplyr query has no filter or mutate to translate, and inserting a table's own rows back into it would duplicate them.",
+          "i" = "Use {.fn rows_insert} to append new records, or {.fn replace_table} to rewrite the table."
+        ))
+      }
       operation_type <- "insert"
     }
 
@@ -112,8 +129,9 @@ update_table <- function(.data, table_name, .quiet = FALSE) {
 
     if (!.quiet) cli::cli_inform("Generated SQL: {.code {result_sql}}")
 
-    # Execute the generated SQL directly
-    db_execute(result_sql)
+    if (.execute) {
+      db_execute(result_sql)
+    }
 
     # Return invisibly for potential chaining
     invisible(result_sql)
@@ -131,7 +149,9 @@ update_table <- function(.data, table_name, .quiet = FALSE) {
 extract_assignments_from_sql <- function(sql_text) {
   select_part <- gsub("SELECT\\s+(.+?)\\s+FROM.*", "\\1", sql_text, perl = TRUE)
 
-  columns <- strsplit(select_part, ",")[[1]]
+  # Split on top-level commas only: expressions like ROUND(x, 1) or
+  # CASE WHEN f(a, b) ... contain commas inside parentheses
+  columns <- split_top_level_commas(select_part)
   columns <- trimws(columns)
 
   assignments <- c()

@@ -28,9 +28,9 @@ show_ducklake_query <- function(.data, table_name = NULL) {
   }
   cat("\n=== DuckLake SQL Preview ===\n")
   
-  # Show main operation SQL
+  # Show main operation SQL without executing it
   cat("\n-- Main operation\n")
-  sql_string <- update_table(.data, table_name, .quiet = TRUE)
+  sql_string <- update_table(.data, table_name, .quiet = TRUE, .execute = FALSE)
   cat(sql_string, ";\n")
   
   invisible(.data)

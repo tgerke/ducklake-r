@@ -33,7 +33,8 @@ SQLite catalog, since the whole setup stays inside DuckDB and DuckLake.
   `RESTORE TABLE` statement that does not exist in DuckLake and failed on
   every call. It now recreates the table from a time-travel read inside a
   transaction, recording the restore as a new snapshot so history is
-  preserved.
+  preserved. It also gains `author` and `commit_message` arguments so the
+  restore snapshot carries full audit-trail metadata.
 * `get_ducklake_backend()` gains a `ducklake_name` argument and tracks each
   attached lake separately, so sessions with several lakes on different
   catalog backends resolve backend-specific behaviour correctly.
@@ -55,6 +56,13 @@ SQLite catalog, since the whole setup stays inside DuckDB and DuckLake.
   dplyr was loaded *after* ducklake, dplyr's generics masked ducklake's
   wrappers and calls failed with `conflict = "error"` complaints; load order
   no longer matters.
+* `rows_insert()`, `rows_update()`, and `rows_delete()` now work inside
+  `with_transaction()`, so several row operations can be grouped into a
+  single snapshot with an author and commit message. Previously, passing a
+  local data frame made dbplyr copy it to a temporary table inside its own
+  transaction, which DuckDB rejects when one is already open. Local data
+  frames are now sent as inline queries (`dbplyr::copy_inline()`), which is
+  also faster for the small changesets these functions are designed for.
 * `backup_ducklake()` backs up every schema directory, not just `main`.
 * `create_table()` now converts factor columns to character (with a message)
   instead of failing with "unsupported type ENUM" -- DuckLake does not
@@ -63,6 +71,24 @@ SQLite catalog, since the whole setup stays inside DuckDB and DuckLake.
   `sink()` (which could leak diverted output on error), and now refuses
   queries with subqueries or multiple `WHERE` clauses instead of generating
   incorrect SQL.
+* `ducklake_exec()` no longer executes its statement twice. The internal
+  translation step also executed the SQL before `ducklake_exec()` ran it
+  again, so every call created two snapshots and non-idempotent updates
+  (e.g. `v = v + 1`) were applied twice.
+* `show_ducklake_query()` is now a true preview: it previously *executed*
+  the translated statement against the lake while displaying it.
+* `ducklake_exec()` now translates any `mutate()` into an UPDATE, not just
+  those that compile to `CASE WHEN`. Previously a simple transformation
+  like `mutate(v = round(v, 1))` fell through to an INSERT of the table's
+  own rows, silently duplicating the table. Plain self-reads with nothing
+  to translate are now refused for the same reason, and UPDATE assignments
+  containing commas inside function calls are parsed correctly.
+* `list_table_snapshots(table_name)` no longer misses snapshots created by
+  `rows_insert()`, `rows_update()`, and `rows_delete()`. DuckLake records
+  row-level changes against the table's numeric id rather than its name;
+  the filter now resolves and matches those ids, so the per-table audit
+  trail is complete. Filtered listings also number their rows from 1
+  instead of leaking the row positions of the unfiltered result.
 
 ## Connection management is now self-contained
 

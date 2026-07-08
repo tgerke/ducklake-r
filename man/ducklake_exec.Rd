@@ -24,8 +24,13 @@ This function automatically detects the type of operation based on dplyr verbs:
 \itemize{
 \item Filter-only queries generate DELETE operations (removes rows that DON'T match filter)
 \item Queries with mutate() generate UPDATE operations
-\item Other queries generate INSERT operations
+\item Plain reads from a \emph{different} table generate INSERT operations
+(appending that table's rows into \code{table_name})
 }
+
+A plain read from \code{table_name} itself is refused, since inserting a
+table's own rows back into it would duplicate them. Use
+\code{\link[=show_ducklake_query]{show_ducklake_query()}} to preview the generated SQL without running it.
 }
 \examples{
 \dontrun{
