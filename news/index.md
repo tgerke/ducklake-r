@@ -2,6 +2,24 @@
 
 ## ducklake (development version)
 
+- New plotting functions, all requiring the suggested ggplot2 package
+  and shown in action in a new “Visualizing Your Lake” vignette:
+  [`plot_snapshots()`](https://tgerke.github.io/ducklake-r/reference/plot_snapshots.md)
+  draws a table’s (or the whole lake’s) snapshot history as a commit-log
+  style timeline, colored by change type and annotated with snapshot
+  authors and commit messages;
+  [`plot_table_changes()`](https://tgerke.github.io/ducklake-r/reference/plot_table_changes.md)
+  draws the rows each snapshot inserted, updated, and deleted as
+  diverging bars; and
+  [`plot_table_files()`](https://tgerke.github.io/ducklake-r/reference/plot_table_files.md)
+  draws each table’s Parquet file count and size on disk.
+
+- New
+  [`get_table_info()`](https://tgerke.github.io/ducklake-r/reference/get_table_info.md)
+  returns per-table file statistics (data and delete file counts and
+  sizes) from the DuckLake catalog, wrapping DuckLake’s
+  `ducklake_table_info()` function.
+
 - New targeted maintenance wrappers complement
   [`checkpoint_ducklake()`](https://tgerke.github.io/ducklake-r/reference/checkpoint_ducklake.md):
   [`expire_snapshots()`](https://tgerke.github.io/ducklake-r/reference/expire_snapshots.md)

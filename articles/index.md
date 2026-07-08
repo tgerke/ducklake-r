@@ -18,3 +18,5 @@
   Queries](https://tgerke.github.io/ducklake-r/articles/time-travel.md):
 - [Working with
   Transactions](https://tgerke.github.io/ducklake-r/articles/transactions.md):
+- [Visualizing Your
+  Lake](https://tgerke.github.io/ducklake-r/articles/visualizing-your-lake.md):

@@ -285,10 +285,10 @@ inlined insert or delete creates a snapshot, just like a regular write:
 snapshots <- list_table_snapshots("readings")
 snapshots
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-07-08 05:40:55              1
-#> 2           2 2026-07-08 05:40:55              2
-#> 3           3 2026-07-08 05:40:56              3
-#> 4           5 2026-07-08 05:40:57              4
+#> 1           1 2026-07-08 20:22:18              1
+#> 2           2 2026-07-08 20:22:19              2
+#> 3           3 2026-07-08 20:22:19              3
+#> 4           5 2026-07-08 20:22:19              4
 #>                                                               changes
 #> 1                    tables_created, inlined_insert, main.readings, 1
 #> 2 tables_created, tables_dropped, inlined_insert, main.readings, 1, 2

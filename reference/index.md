@@ -73,6 +73,10 @@ Query and restore historical data
   : Get the changes made to a table between two snapshots
 - [`list_table_snapshots()`](https://tgerke.github.io/ducklake-r/reference/list_table_snapshots.md)
   : List available snapshots for a table
+- [`plot_snapshots()`](https://tgerke.github.io/ducklake-r/reference/plot_snapshots.md)
+  : Plot the snapshot history of a table or lake
+- [`plot_table_changes()`](https://tgerke.github.io/ducklake-r/reference/plot_table_changes.md)
+  : Plot the rows changed in each snapshot of a table
 - [`restore_table_version()`](https://tgerke.github.io/ducklake-r/reference/restore_table_version.md)
   : Restore a table to a previous version
 
@@ -125,6 +129,10 @@ Backup, compaction, and storage reclamation
   : Delete orphaned files
 - [`rewrite_data_files()`](https://tgerke.github.io/ducklake-r/reference/rewrite_data_files.md)
   : Rewrite data files with many deletes
+- [`get_table_info()`](https://tgerke.github.io/ducklake-r/reference/get_table_info.md)
+  : Get file statistics for the tables in a lake
+- [`plot_table_files()`](https://tgerke.github.io/ducklake-r/reference/plot_table_files.md)
+  : Plot the file layout of a lake
 
 ## Quack remote access
 

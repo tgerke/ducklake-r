@@ -11,6 +11,7 @@
 <url><loc>https://tgerke.github.io/ducklake-r/articles/storage-and-backups.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/articles/time-travel.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/articles/transactions.html</loc></url>
+<url><loc>https://tgerke.github.io/ducklake-r/articles/visualizing-your-lake.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/authors.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/index.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/news/index.html</loc></url>
@@ -42,12 +43,16 @@
 <url><loc>https://tgerke.github.io/ducklake-r/reference/get_inlining_row_limit.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/get_metadata_table.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/get_table_changes.html</loc></url>
+<url><loc>https://tgerke.github.io/ducklake-r/reference/get_table_info.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/get_table_partitions.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/index.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/install_ducklake.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/install_quack.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/list_table_snapshots.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/merge_adjacent_files.html</loc></url>
+<url><loc>https://tgerke.github.io/ducklake-r/reference/plot_snapshots.html</loc></url>
+<url><loc>https://tgerke.github.io/ducklake-r/reference/plot_table_changes.html</loc></url>
+<url><loc>https://tgerke.github.io/ducklake-r/reference/plot_table_files.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/prep_rows_y.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/quack_query.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/quack_serve.html</loc></url>

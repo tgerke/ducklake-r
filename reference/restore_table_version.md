@@ -74,7 +74,9 @@ Other time travel:
 [`get_ducklake_table_asof()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_table_asof.md),
 [`get_ducklake_table_version()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_table_version.md),
 [`get_table_changes()`](https://tgerke.github.io/ducklake-r/reference/get_table_changes.md),
-[`list_table_snapshots()`](https://tgerke.github.io/ducklake-r/reference/list_table_snapshots.md)
+[`list_table_snapshots()`](https://tgerke.github.io/ducklake-r/reference/list_table_snapshots.md),
+[`plot_snapshots()`](https://tgerke.github.io/ducklake-r/reference/plot_snapshots.md),
+[`plot_table_changes()`](https://tgerke.github.io/ducklake-r/reference/plot_table_changes.md)
 
 ## Examples
 

@@ -67,7 +67,9 @@ Other maintenance:
 [`cleanup_old_files()`](https://tgerke.github.io/ducklake-r/reference/cleanup_old_files.md),
 [`delete_orphaned_files()`](https://tgerke.github.io/ducklake-r/reference/delete_orphaned_files.md),
 [`flush_inlined_data()`](https://tgerke.github.io/ducklake-r/reference/flush_inlined_data.md),
+[`get_table_info()`](https://tgerke.github.io/ducklake-r/reference/get_table_info.md),
 [`merge_adjacent_files()`](https://tgerke.github.io/ducklake-r/reference/merge_adjacent_files.md),
+[`plot_table_files()`](https://tgerke.github.io/ducklake-r/reference/plot_table_files.md),
 [`rewrite_data_files()`](https://tgerke.github.io/ducklake-r/reference/rewrite_data_files.md)
 
 ## Examples
