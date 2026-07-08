@@ -58,7 +58,12 @@ Other data inlining:
 
 Other maintenance:
 [`backup_ducklake()`](https://tgerke.github.io/ducklake-r/reference/backup_ducklake.md),
-[`checkpoint_ducklake()`](https://tgerke.github.io/ducklake-r/reference/checkpoint_ducklake.md)
+[`checkpoint_ducklake()`](https://tgerke.github.io/ducklake-r/reference/checkpoint_ducklake.md),
+[`cleanup_old_files()`](https://tgerke.github.io/ducklake-r/reference/cleanup_old_files.md),
+[`delete_orphaned_files()`](https://tgerke.github.io/ducklake-r/reference/delete_orphaned_files.md),
+[`expire_snapshots()`](https://tgerke.github.io/ducklake-r/reference/expire_snapshots.md),
+[`merge_adjacent_files()`](https://tgerke.github.io/ducklake-r/reference/merge_adjacent_files.md),
+[`rewrite_data_files()`](https://tgerke.github.io/ducklake-r/reference/rewrite_data_files.md)
 
 ## Examples
 

@@ -2,6 +2,49 @@
 
 ## ducklake (development version)
 
+- New targeted maintenance wrappers complement
+  [`checkpoint_ducklake()`](https://tgerke.github.io/ducklake-r/reference/checkpoint_ducklake.md):
+  [`expire_snapshots()`](https://tgerke.github.io/ducklake-r/reference/expire_snapshots.md)
+  (with `older_than`, `versions`, and `dry_run`),
+  [`merge_adjacent_files()`](https://tgerke.github.io/ducklake-r/reference/merge_adjacent_files.md),
+  [`cleanup_old_files()`](https://tgerke.github.io/ducklake-r/reference/cleanup_old_files.md),
+  [`delete_orphaned_files()`](https://tgerke.github.io/ducklake-r/reference/delete_orphaned_files.md),
+  and
+  [`rewrite_data_files()`](https://tgerke.github.io/ducklake-r/reference/rewrite_data_files.md)
+  ([\#16](https://github.com/tgerke/ducklake-r/issues/16), suggested by
+  [@stefanlinner](https://github.com/stefanlinner)).
+
+- New partitioning support:
+  [`set_table_partitioning()`](https://tgerke.github.io/ducklake-r/reference/set_table_partitioning.md)
+  and
+  [`reset_table_partitioning()`](https://tgerke.github.io/ducklake-r/reference/reset_table_partitioning.md)
+  manage a table’s partition keys (identity,
+  `year`/`month`/`day`/`hour`, and `bucket` transforms), and
+  [`get_table_partitions()`](https://tgerke.github.io/ducklake-r/reference/get_table_partitions.md)
+  lists the keys from the metadata catalog
+  ([\#16](https://github.com/tgerke/ducklake-r/issues/16), suggested by
+  [@stefanlinner](https://github.com/stefanlinner)).
+
+- New
+  [`get_table_changes()`](https://tgerke.github.io/ducklake-r/reference/get_table_changes.md)
+  exposes DuckLake’s data change feed: the exact inserts, deletes, and
+  update pre/post images between two snapshots, as a lazy table that
+  composes with dplyr verbs
+  ([\#16](https://github.com/tgerke/ducklake-r/issues/16), suggested by
+  [@stefanlinner](https://github.com/stefanlinner)).
+
+- Timestamps passed to the new functions as POSIXct are converted to UTC
+  before interpolation, matching how DuckLake records snapshot times.
+
+- [`attach_ducklake()`](https://tgerke.github.io/ducklake-r/reference/attach_ducklake.md)
+  now collapses duplicate slashes in `lake_path` (remote URIs are
+  untouched). DuckLake compares file paths as exact strings, so a
+  doubled slash – which R’s
+  [`tempdir()`](https://rdrr.io/r/base/tempfile.html) produces on macOS
+  – made
+  [`delete_orphaned_files()`](https://tgerke.github.io/ducklake-r/reference/delete_orphaned_files.md)
+  treat every live data file as orphaned.
+
 - The dplyr-to-DuckLake translation behind
   [`ducklake_exec()`](https://tgerke.github.io/ducklake-r/reference/ducklake_exec.md)
   and

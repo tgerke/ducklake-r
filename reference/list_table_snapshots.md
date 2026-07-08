@@ -39,6 +39,7 @@ historical versions are available for time-travel queries.
 Other time travel:
 [`get_ducklake_table_asof()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_table_asof.md),
 [`get_ducklake_table_version()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_table_version.md),
+[`get_table_changes()`](https://tgerke.github.io/ducklake-r/reference/get_table_changes.md),
 [`restore_table_version()`](https://tgerke.github.io/ducklake-r/reference/restore_table_version.md)
 
 ## Examples

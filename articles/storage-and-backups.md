@@ -149,14 +149,14 @@ The catalog is a single database file containing all metadata:
 ``` r
 
 dir_tree(lake_dir)
-#> /tmp/RtmpCfquiP/storage_backups_vignette/storage_demo
+#> /tmp/RtmpGWN6sQ/storage_backups_vignette/storage_demo
 #> ├── demo_lake.ducklake
 #> ├── demo_lake.ducklake.wal
 #> └── main
 #>     └── cars
-#>         ├── ducklake-019f3fb8-b00d-788a-81eb-92450929c921.parquet
-#>         ├── ducklake-019f3fb8-b0f9-79b6-bbb1-36e8db577112.parquet
-#>         └── ducklake-019f3fb8-b194-750c-bf5d-26ed92633705.parquet
+#>         ├── ducklake-019f3ffa-45a2-7bfe-8537-473cf8babaf4.parquet
+#>         ├── ducklake-019f3ffa-4685-73fb-974b-a96acc32b2ba.parquet
+#>         └── ducklake-019f3ffa-470c-73bd-bd12-ab5e7be98d18.parquet
 ```
 
 The catalog files (`demo_lake.ducklake` and `.wal`) contain all metadata
@@ -172,11 +172,11 @@ Data files are stored in Parquet format in a structured directory:
 main_dir <- file.path(lake_dir, "main")
 
 dir_tree(main_dir, recurse = 2)
-#> /tmp/RtmpCfquiP/storage_backups_vignette/storage_demo/main
+#> /tmp/RtmpGWN6sQ/storage_backups_vignette/storage_demo/main
 #> └── cars
-#>     ├── ducklake-019f3fb8-b00d-788a-81eb-92450929c921.parquet
-#>     ├── ducklake-019f3fb8-b0f9-79b6-bbb1-36e8db577112.parquet
-#>     └── ducklake-019f3fb8-b194-750c-bf5d-26ed92633705.parquet
+#>     ├── ducklake-019f3ffa-45a2-7bfe-8537-473cf8babaf4.parquet
+#>     ├── ducklake-019f3ffa-4685-73fb-974b-a96acc32b2ba.parquet
+#>     └── ducklake-019f3ffa-470c-73bd-bd12-ab5e7be98d18.parquet
   
 # Get details about parquet files
 parquet_files <- dir_ls(main_dir, recurse = TRUE, regexp = "\\.parquet$")
@@ -185,9 +185,9 @@ for (f in parquet_files) {
               path_file(f), 
               file.size(f)))
 }
-#>   ducklake-019f3fb8-b00d-788a-81eb-92450929c921.parquet (2307 bytes)
-#>   ducklake-019f3fb8-b0f9-79b6-bbb1-36e8db577112.parquet (2501 bytes)
-#>   ducklake-019f3fb8-b194-750c-bf5d-26ed92633705.parquet (2724 bytes)
+#>   ducklake-019f3ffa-45a2-7bfe-8537-473cf8babaf4.parquet (2307 bytes)
+#>   ducklake-019f3ffa-4685-73fb-974b-a96acc32b2ba.parquet (2501 bytes)
+#>   ducklake-019f3ffa-470c-73bd-bd12-ab5e7be98d18.parquet (2724 bytes)
 ```
 
 ### Understanding File Organization
@@ -253,13 +253,13 @@ dir_copy(
 
 # Verify the backup was created
 dir_tree(backup_dir)
-#> /tmp/RtmpCfquiP/storage_backups_vignette/storage_demo/backups
+#> /tmp/RtmpGWN6sQ/storage_backups_vignette/storage_demo/backups
 #> ├── demo_lake.ducklake
 #> └── main
 #>     └── cars
-#>         ├── ducklake-019f3fb8-b00d-788a-81eb-92450929c921.parquet
-#>         ├── ducklake-019f3fb8-b0f9-79b6-bbb1-36e8db577112.parquet
-#>         └── ducklake-019f3fb8-b194-750c-bf5d-26ed92633705.parquet
+#>         ├── ducklake-019f3ffa-45a2-7bfe-8537-473cf8babaf4.parquet
+#>         ├── ducklake-019f3ffa-4685-73fb-974b-a96acc32b2ba.parquet
+#>         └── ducklake-019f3ffa-470c-73bd-bd12-ab5e7be98d18.parquet
 
 # To work with the backup, attach it. override_data_path is needed because
 # the catalog remembers the original data location, which the backup no
@@ -273,9 +273,9 @@ attach_ducklake(
 # Verify you're working with the backup
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-07-08 03:14:56              1
-#> 2           2 2026-07-08 03:14:56              2
-#> 3           3 2026-07-08 03:14:56              3
+#> 1           1 2026-07-08 04:26:34              1
+#> 2           2 2026-07-08 04:26:34              2
+#> 3           3 2026-07-08 04:26:34              3
 #>                                                                 changes
 #> 1                    tables_created, tables_inserted_into, main.cars, 1
 #> 2 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2
@@ -388,6 +388,41 @@ dir_copy(
 # since the catalog maintains the file paths
 ```
 
+## Routine Maintenance
+
+A lake that sees regular writes accumulates small Parquet files (one per
+insert) and old snapshots whose files can no longer be reclaimed until
+the snapshots are expired. The one-stop command is
+[`checkpoint_ducklake()`](https://tgerke.github.io/ducklake-r/reference/checkpoint_ducklake.md),
+which flushes inlined data, merges small files, expires old snapshots,
+and cleans up unreferenced files in a single call. For finer control,
+each step has its own function:
+
+``` r
+
+# Compact small adjacent Parquet files into larger ones
+merge_adjacent_files()
+
+# Preview a retention policy, then apply it
+expire_snapshots(older_than = Sys.time() - 30 * 24 * 60 * 60, dry_run = TRUE)
+expire_snapshots(older_than = Sys.time() - 30 * 24 * 60 * 60)
+
+# Expired snapshots only *schedule* file deletion; this reclaims the storage
+cleanup_old_files(cleanup_all = TRUE)
+
+# Rewrite data files whose rows have mostly been deleted
+rewrite_data_files(delete_threshold = 0.5)
+
+# Remove untracked files from the data path -- always dry-run this one first
+delete_orphaned_files(dry_run = TRUE, cleanup_all = TRUE)
+```
+
+The typical cycle is merge, then expire, then clean up: merging and
+expiring both mark files as unreferenced, and
+[`cleanup_old_files()`](https://tgerke.github.io/ducklake-r/reference/cleanup_old_files.md)
+deletes them. Expiring a snapshot gives up time travel to it, so choose
+`older_than` to match how far back you need to audit or restore.
+
 ## Maintenance Considerations
 
 When planning backups, coordinate with maintenance operations:
@@ -402,7 +437,9 @@ When planning backups, coordinate with maintenance operations:
 # Recommended backup sequence
 
 # 1. Run maintenance operations (if needed)
-# See maintenance vignettes for details
+merge_adjacent_files()
+expire_snapshots(older_than = Sys.time() - 30 * 24 * 60 * 60)
+cleanup_old_files(cleanup_all = TRUE)
 
 # 2. Ensure all transactions are committed
 # (no pending work)
@@ -445,11 +482,11 @@ backup_dir <- backup_ducklake(
 #> Catalog backed up successfully.
 #> Data files backed up successfully (1 directory).
 #> Backup completed:
-#> /tmp/RtmpCfquiP/storage_backups_vignette/storage_demo/backups/backup_20260708_031457
+#> /tmp/RtmpGWN6sQ/storage_backups_vignette/storage_demo/backups/backup_20260708_042635
 
 # The function returns the backup directory path
 print(backup_dir)
-#> [1] "/tmp/RtmpCfquiP/storage_backups_vignette/storage_demo/backups/backup_20260708_031457"
+#> [1] "/tmp/RtmpGWN6sQ/storage_backups_vignette/storage_demo/backups/backup_20260708_042635"
 ```
 
 The

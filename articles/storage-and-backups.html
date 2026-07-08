@@ -244,14 +244,14 @@ generates:</p>
 <p>The catalog is a single database file containing all metadata:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://fs.r-lib.org/reference/dir_tree.html" class="external-link">dir_tree</a></span><span class="op">(</span><span class="va">lake_dir</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #0000BB; font-weight: bold;">/tmp/RtmpCfquiP/storage_backups_vignette/storage_demo</span></span></span>
+<span><span class="co">#&gt; <span style="color: #0000BB; font-weight: bold;">/tmp/RtmpGWN6sQ/storage_backups_vignette/storage_demo</span></span></span>
 <span><span class="co">#&gt; ├── demo_lake.ducklake</span></span>
 <span><span class="co">#&gt; ├── demo_lake.ducklake.wal</span></span>
 <span><span class="co">#&gt; └── <span style="color: #0000BB; font-weight: bold;">main</span></span></span>
 <span><span class="co">#&gt;     └── <span style="color: #0000BB; font-weight: bold;">cars</span></span></span>
-<span><span class="co">#&gt;         ├── ducklake-019f3fb8-b00d-788a-81eb-92450929c921.parquet</span></span>
-<span><span class="co">#&gt;         ├── ducklake-019f3fb8-b0f9-79b6-bbb1-36e8db577112.parquet</span></span>
-<span><span class="co">#&gt;         └── ducklake-019f3fb8-b194-750c-bf5d-26ed92633705.parquet</span></span></code></pre></div>
+<span><span class="co">#&gt;         ├── ducklake-019f3ffa-45a2-7bfe-8537-473cf8babaf4.parquet</span></span>
+<span><span class="co">#&gt;         ├── ducklake-019f3ffa-4685-73fb-974b-a96acc32b2ba.parquet</span></span>
+<span><span class="co">#&gt;         └── ducklake-019f3ffa-470c-73bd-bd12-ab5e7be98d18.parquet</span></span></code></pre></div>
 <p>The catalog files (<code>demo_lake.ducklake</code> and
 <code>.wal</code>) contain all metadata about tables, snapshots, and
 transactions.</p>
@@ -266,11 +266,11 @@ directory:</p>
 <span><span class="va">main_dir</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">lake_dir</span>, <span class="st">"main"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://fs.r-lib.org/reference/dir_tree.html" class="external-link">dir_tree</a></span><span class="op">(</span><span class="va">main_dir</span>, recurse <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #0000BB; font-weight: bold;">/tmp/RtmpCfquiP/storage_backups_vignette/storage_demo/main</span></span></span>
+<span><span class="co">#&gt; <span style="color: #0000BB; font-weight: bold;">/tmp/RtmpGWN6sQ/storage_backups_vignette/storage_demo/main</span></span></span>
 <span><span class="co">#&gt; └── <span style="color: #0000BB; font-weight: bold;">cars</span></span></span>
-<span><span class="co">#&gt;     ├── ducklake-019f3fb8-b00d-788a-81eb-92450929c921.parquet</span></span>
-<span><span class="co">#&gt;     ├── ducklake-019f3fb8-b0f9-79b6-bbb1-36e8db577112.parquet</span></span>
-<span><span class="co">#&gt;     └── ducklake-019f3fb8-b194-750c-bf5d-26ed92633705.parquet</span></span>
+<span><span class="co">#&gt;     ├── ducklake-019f3ffa-45a2-7bfe-8537-473cf8babaf4.parquet</span></span>
+<span><span class="co">#&gt;     ├── ducklake-019f3ffa-4685-73fb-974b-a96acc32b2ba.parquet</span></span>
+<span><span class="co">#&gt;     └── ducklake-019f3ffa-470c-73bd-bd12-ab5e7be98d18.parquet</span></span>
 <span>  </span>
 <span><span class="co"># Get details about parquet files</span></span>
 <span><span class="va">parquet_files</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://fs.r-lib.org/reference/dir_ls.html" class="external-link">dir_ls</a></span><span class="op">(</span><span class="va">main_dir</span>, recurse <span class="op">=</span> <span class="cn">TRUE</span>, regexp <span class="op">=</span> <span class="st">"\\.parquet$"</span><span class="op">)</span></span>
@@ -279,9 +279,9 @@ directory:</p>
 <span>              <span class="fu"><a href="https://fs.r-lib.org/reference/path_file.html" class="external-link">path_file</a></span><span class="op">(</span><span class="va">f</span><span class="op">)</span>, </span>
 <span>              <span class="fu"><a href="https://rdrr.io/r/base/file.info.html" class="external-link">file.size</a></span><span class="op">(</span><span class="va">f</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="op">}</span></span>
-<span><span class="co">#&gt;   ducklake-019f3fb8-b00d-788a-81eb-92450929c921.parquet (2307 bytes)</span></span>
-<span><span class="co">#&gt;   ducklake-019f3fb8-b0f9-79b6-bbb1-36e8db577112.parquet (2501 bytes)</span></span>
-<span><span class="co">#&gt;   ducklake-019f3fb8-b194-750c-bf5d-26ed92633705.parquet (2724 bytes)</span></span></code></pre></div>
+<span><span class="co">#&gt;   ducklake-019f3ffa-45a2-7bfe-8537-473cf8babaf4.parquet (2307 bytes)</span></span>
+<span><span class="co">#&gt;   ducklake-019f3ffa-4685-73fb-974b-a96acc32b2ba.parquet (2501 bytes)</span></span>
+<span><span class="co">#&gt;   ducklake-019f3ffa-470c-73bd-bd12-ab5e7be98d18.parquet (2724 bytes)</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="understanding-file-organization">Understanding File Organization<a class="anchor" aria-label="anchor" href="#understanding-file-organization"></a>
@@ -343,13 +343,13 @@ exactly this dance for you:</p>
 <span></span>
 <span><span class="co"># Verify the backup was created</span></span>
 <span><span class="fu"><a href="https://fs.r-lib.org/reference/dir_tree.html" class="external-link">dir_tree</a></span><span class="op">(</span><span class="va">backup_dir</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #0000BB; font-weight: bold;">/tmp/RtmpCfquiP/storage_backups_vignette/storage_demo/backups</span></span></span>
+<span><span class="co">#&gt; <span style="color: #0000BB; font-weight: bold;">/tmp/RtmpGWN6sQ/storage_backups_vignette/storage_demo/backups</span></span></span>
 <span><span class="co">#&gt; ├── demo_lake.ducklake</span></span>
 <span><span class="co">#&gt; └── <span style="color: #0000BB; font-weight: bold;">main</span></span></span>
 <span><span class="co">#&gt;     └── <span style="color: #0000BB; font-weight: bold;">cars</span></span></span>
-<span><span class="co">#&gt;         ├── ducklake-019f3fb8-b00d-788a-81eb-92450929c921.parquet</span></span>
-<span><span class="co">#&gt;         ├── ducklake-019f3fb8-b0f9-79b6-bbb1-36e8db577112.parquet</span></span>
-<span><span class="co">#&gt;         └── ducklake-019f3fb8-b194-750c-bf5d-26ed92633705.parquet</span></span>
+<span><span class="co">#&gt;         ├── ducklake-019f3ffa-45a2-7bfe-8537-473cf8babaf4.parquet</span></span>
+<span><span class="co">#&gt;         ├── ducklake-019f3ffa-4685-73fb-974b-a96acc32b2ba.parquet</span></span>
+<span><span class="co">#&gt;         └── ducklake-019f3ffa-470c-73bd-bd12-ab5e7be98d18.parquet</span></span>
 <span></span>
 <span><span class="co"># To work with the backup, attach it. override_data_path is needed because</span></span>
 <span><span class="co"># the catalog remembers the original data location, which the backup no</span></span>
@@ -363,9 +363,9 @@ exactly this dance for you:</p>
 <span><span class="co"># Verify you're working with the backup</span></span>
 <span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 1           1 2026-07-08 03:14:56              1</span></span>
-<span><span class="co">#&gt; 2           2 2026-07-08 03:14:56              2</span></span>
-<span><span class="co">#&gt; 3           3 2026-07-08 03:14:56              3</span></span>
+<span><span class="co">#&gt; 1           1 2026-07-08 04:26:34              1</span></span>
+<span><span class="co">#&gt; 2           2 2026-07-08 04:26:34              2</span></span>
+<span><span class="co">#&gt; 3           3 2026-07-08 04:26:34              3</span></span>
 <span><span class="co">#&gt;                                                                 changes</span></span>
 <span><span class="co">#&gt; 1                    tables_created, tables_inserted_into, main.cars, 1</span></span>
 <span><span class="co">#&gt; 2 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2</span></span>
@@ -472,6 +472,37 @@ Backup and DR service - Object versioning with soft deletes</p>
 </div>
 </div>
 <div class="section level2">
+<h2 id="routine-maintenance">Routine Maintenance<a class="anchor" aria-label="anchor" href="#routine-maintenance"></a>
+</h2>
+<p>A lake that sees regular writes accumulates small Parquet files (one
+per insert) and old snapshots whose files can no longer be reclaimed
+until the snapshots are expired. The one-stop command is
+<code><a href="../reference/checkpoint_ducklake.html">checkpoint_ducklake()</a></code>, which flushes inlined data, merges
+small files, expires old snapshots, and cleans up unreferenced files in
+a single call. For finer control, each step has its own function:</p>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Compact small adjacent Parquet files into larger ones</span></span>
+<span><span class="fu"><a href="../reference/merge_adjacent_files.html">merge_adjacent_files</a></span><span class="op">(</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Preview a retention policy, then apply it</span></span>
+<span><span class="fu"><a href="../reference/expire_snapshots.html">expire_snapshots</a></span><span class="op">(</span>older_than <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.time.html" class="external-link">Sys.time</a></span><span class="op">(</span><span class="op">)</span> <span class="op">-</span> <span class="fl">30</span> <span class="op">*</span> <span class="fl">24</span> <span class="op">*</span> <span class="fl">60</span> <span class="op">*</span> <span class="fl">60</span>, dry_run <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/expire_snapshots.html">expire_snapshots</a></span><span class="op">(</span>older_than <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.time.html" class="external-link">Sys.time</a></span><span class="op">(</span><span class="op">)</span> <span class="op">-</span> <span class="fl">30</span> <span class="op">*</span> <span class="fl">24</span> <span class="op">*</span> <span class="fl">60</span> <span class="op">*</span> <span class="fl">60</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Expired snapshots only *schedule* file deletion; this reclaims the storage</span></span>
+<span><span class="fu"><a href="../reference/cleanup_old_files.html">cleanup_old_files</a></span><span class="op">(</span>cleanup_all <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Rewrite data files whose rows have mostly been deleted</span></span>
+<span><span class="fu"><a href="../reference/rewrite_data_files.html">rewrite_data_files</a></span><span class="op">(</span>delete_threshold <span class="op">=</span> <span class="fl">0.5</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Remove untracked files from the data path -- always dry-run this one first</span></span>
+<span><span class="fu"><a href="../reference/delete_orphaned_files.html">delete_orphaned_files</a></span><span class="op">(</span>dry_run <span class="op">=</span> <span class="cn">TRUE</span>, cleanup_all <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+<p>The typical cycle is merge, then expire, then clean up: merging and
+expiring both mark files as unreferenced, and
+<code><a href="../reference/cleanup_old_files.html">cleanup_old_files()</a></code> deletes them. Expiring a snapshot gives
+up time travel to it, so choose <code>older_than</code> to match how far
+back you need to audit or restore.</p>
+</div>
+<div class="section level2">
 <h2 id="maintenance-considerations">Maintenance Considerations<a class="anchor" aria-label="anchor" href="#maintenance-considerations"></a>
 </h2>
 <p>When planning backups, coordinate with maintenance operations:</p>
@@ -483,11 +514,13 @@ backups to ensure consistent file layout</li>
 <strong>Cleanup</strong> (removing obsolete files): Run before
 backups to avoid backing up unnecessary files</li>
 </ul>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Recommended backup sequence</span></span>
 <span></span>
 <span><span class="co"># 1. Run maintenance operations (if needed)</span></span>
-<span><span class="co"># See maintenance vignettes for details</span></span>
+<span><span class="fu"><a href="../reference/merge_adjacent_files.html">merge_adjacent_files</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/expire_snapshots.html">expire_snapshots</a></span><span class="op">(</span>older_than <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.time.html" class="external-link">Sys.time</a></span><span class="op">(</span><span class="op">)</span> <span class="op">-</span> <span class="fl">30</span> <span class="op">*</span> <span class="fl">24</span> <span class="op">*</span> <span class="fl">60</span> <span class="op">*</span> <span class="fl">60</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/cleanup_old_files.html">cleanup_old_files</a></span><span class="op">(</span>cleanup_all <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># 2. Ensure all transactions are committed</span></span>
 <span><span class="co"># (no pending work)</span></span>
@@ -517,7 +550,7 @@ backups to avoid backing up unnecessary files</li>
 </h2>
 <p>DuckLake provides a convenient <code><a href="../reference/backup_ducklake.html">backup_ducklake()</a></code>
 function for creating timestamped backups:</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Create a complete backup with timestamp</span></span>
 <span><span class="va">backup_dir</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/backup_ducklake.html">backup_ducklake</a></span><span class="op">(</span></span>
 <span>  ducklake_name <span class="op">=</span> <span class="st">"demo_lake"</span>,</span>
@@ -527,11 +560,11 @@ function for creating timestamped backups:</p>
 <span><span class="co">#&gt; Catalog backed up successfully.</span></span>
 <span><span class="co">#&gt; Data files backed up successfully (1 directory).</span></span>
 <span><span class="co">#&gt; Backup completed:</span></span>
-<span><span class="co">#&gt; <span style="color: #0000BB;">/tmp/RtmpCfquiP/storage_backups_vignette/storage_demo/backups/backup_20260708_031457</span></span></span>
+<span><span class="co">#&gt; <span style="color: #0000BB;">/tmp/RtmpGWN6sQ/storage_backups_vignette/storage_demo/backups/backup_20260708_042635</span></span></span>
 <span></span>
 <span><span class="co"># The function returns the backup directory path</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">backup_dir</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "/tmp/RtmpCfquiP/storage_backups_vignette/storage_demo/backups/backup_20260708_031457"</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "/tmp/RtmpGWN6sQ/storage_backups_vignette/storage_demo/backups/backup_20260708_042635"</span></span></code></pre></div>
 <p>The <code><a href="../reference/backup_ducklake.html">backup_ducklake()</a></code> function: - Creates a timestamped
 backup directory - Copies the catalog database file (releasing file
 locks first) - Copies the data files from every schema directory in the
@@ -540,7 +573,7 @@ lake - Returns the backup directory path for reference</p>
 <div class="section level2">
 <h2 id="cleanup">Cleanup<a class="anchor" aria-label="anchor" href="#cleanup"></a>
 </h2>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Detach the demo lake</span></span>
 <span><span class="fu"><a href="../reference/detach_ducklake.html">detach_ducklake</a></span><span class="op">(</span><span class="st">"demo_lake"</span><span class="op">)</span></span>
 <span></span>

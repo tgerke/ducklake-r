@@ -245,6 +245,13 @@
 
         <dt>
 
+          <code><a href="get_table_changes.html">get_table_changes()</a></code>
+
+        </dt>
+        <dd>Get the changes made to a table between two snapshots</dd>
+
+        <dt>
+
           <code><a href="list_table_snapshots.html">list_table_snapshots()</a></code>
 
         </dt>
@@ -317,9 +324,39 @@
         </dt>
         <dd>Run a DuckLake checkpoint</dd>
       </dl></div><div class="section level2">
+      <h2 id="partitioning">Partitioning<a class="anchor" aria-label="anchor" href="#partitioning"></a></h2>
+
+      <div class="section-desc"><p>Manage table partition keys for file pruning</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="set_table_partitioning.html">set_table_partitioning()</a></code>
+
+        </dt>
+        <dd>Set partitioning keys for a table</dd>
+
+        <dt>
+
+          <code><a href="reset_table_partitioning.html">reset_table_partitioning()</a></code>
+
+        </dt>
+        <dd>Remove partitioning keys from a table</dd>
+
+        <dt>
+
+          <code><a href="get_table_partitions.html">get_table_partitions()</a></code>
+
+        </dt>
+        <dd>List the partitioning keys of tables in a lake</dd>
+      </dl></div><div class="section level2">
       <h2 id="backup-and-maintenance">Backup and Maintenance<a class="anchor" aria-label="anchor" href="#backup-and-maintenance"></a></h2>
 
-      <div class="section-desc"><p>Backup and restore operations</p></div>
+      <div class="section-desc"><p>Backup, compaction, and storage reclamation</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -332,6 +369,41 @@
 
         </dt>
         <dd>Create a DuckLake backup</dd>
+
+        <dt>
+
+          <code><a href="expire_snapshots.html">expire_snapshots()</a></code>
+
+        </dt>
+        <dd>Expire old snapshots</dd>
+
+        <dt>
+
+          <code><a href="merge_adjacent_files.html">merge_adjacent_files()</a></code>
+
+        </dt>
+        <dd>Merge adjacent Parquet files</dd>
+
+        <dt>
+
+          <code><a href="cleanup_old_files.html">cleanup_old_files()</a></code>
+
+        </dt>
+        <dd>Delete files scheduled for removal</dd>
+
+        <dt>
+
+          <code><a href="delete_orphaned_files.html">delete_orphaned_files()</a></code>
+
+        </dt>
+        <dd>Delete orphaned files</dd>
+
+        <dt>
+
+          <code><a href="rewrite_data_files.html">rewrite_data_files()</a></code>
+
+        </dt>
+        <dd>Rewrite data files with many deletes</dd>
       </dl></div><div class="section level2">
       <h2 id="quack-remote-access">Quack remote access<a class="anchor" aria-label="anchor" href="#quack-remote-access"></a></h2>
 

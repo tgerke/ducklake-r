@@ -69,6 +69,8 @@ Query and restore historical data
   : Query a table at a specific timestamp (time travel)
 - [`get_ducklake_table_version()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_table_version.md)
   : Query a table at a specific version/snapshot
+- [`get_table_changes()`](https://tgerke.github.io/ducklake-r/reference/get_table_changes.md)
+  : Get the changes made to a table between two snapshots
 - [`list_table_snapshots()`](https://tgerke.github.io/ducklake-r/reference/list_table_snapshots.md)
   : List available snapshots for a table
 - [`restore_table_version()`](https://tgerke.github.io/ducklake-r/reference/restore_table_version.md)
@@ -96,12 +98,33 @@ Configure and manage data inlining for streaming workloads
 - [`checkpoint_ducklake()`](https://tgerke.github.io/ducklake-r/reference/checkpoint_ducklake.md)
   : Run a DuckLake checkpoint
 
+## Partitioning
+
+Manage table partition keys for file pruning
+
+- [`set_table_partitioning()`](https://tgerke.github.io/ducklake-r/reference/set_table_partitioning.md)
+  : Set partitioning keys for a table
+- [`reset_table_partitioning()`](https://tgerke.github.io/ducklake-r/reference/reset_table_partitioning.md)
+  : Remove partitioning keys from a table
+- [`get_table_partitions()`](https://tgerke.github.io/ducklake-r/reference/get_table_partitions.md)
+  : List the partitioning keys of tables in a lake
+
 ## Backup and Maintenance
 
-Backup and restore operations
+Backup, compaction, and storage reclamation
 
 - [`backup_ducklake()`](https://tgerke.github.io/ducklake-r/reference/backup_ducklake.md)
   : Create a DuckLake backup
+- [`expire_snapshots()`](https://tgerke.github.io/ducklake-r/reference/expire_snapshots.md)
+  : Expire old snapshots
+- [`merge_adjacent_files()`](https://tgerke.github.io/ducklake-r/reference/merge_adjacent_files.md)
+  : Merge adjacent Parquet files
+- [`cleanup_old_files()`](https://tgerke.github.io/ducklake-r/reference/cleanup_old_files.md)
+  : Delete files scheduled for removal
+- [`delete_orphaned_files()`](https://tgerke.github.io/ducklake-r/reference/delete_orphaned_files.md)
+  : Delete orphaned files
+- [`rewrite_data_files()`](https://tgerke.github.io/ducklake-r/reference/rewrite_data_files.md)
+  : Rewrite data files with many deletes
 
 ## Quack remote access
 
