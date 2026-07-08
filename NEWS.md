@@ -11,6 +11,11 @@
   `get_table_partitions()` lists the keys from the metadata catalog (#16,
   suggested by @stefanlinner).
 
+* New `get_table_changes()` exposes DuckLake's data change feed: the exact
+  inserts, deletes, and update pre/post images between two snapshots, as a
+  lazy table that composes with dplyr verbs (#16, suggested by
+  @stefanlinner).
+
 * Timestamps passed to the new functions as POSIXct are converted to UTC
   before interpolation, matching how DuckLake records snapshot times.
 

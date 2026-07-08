@@ -87,6 +87,7 @@ reference:
     contents:
     - get_ducklake_table_asof
     - get_ducklake_table_version
+    - get_table_changes
     - list_table_snapshots
     - restore_table_version
     

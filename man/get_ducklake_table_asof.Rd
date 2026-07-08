@@ -59,6 +59,7 @@ get_ducklake_table_asof("my_table", snapshots$snapshot_time[2] + 1) |>
 \seealso{
 Other time travel:
 \code{\link[=get_ducklake_table_version]{get_ducklake_table_version()}},
+\code{\link[=get_table_changes]{get_table_changes()}},
 \code{\link[=list_table_snapshots]{list_table_snapshots()}},
 \code{\link[=restore_table_version]{restore_table_version()}}
 }
