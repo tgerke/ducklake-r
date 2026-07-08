@@ -1,5 +1,18 @@
 # ducklake (development version)
 
+* New plotting functions, all requiring the suggested ggplot2 package and
+  shown in action in a new "Visualizing Your Lake" vignette:
+  `plot_snapshots()` draws a table's (or the whole lake's) snapshot history
+  as a commit-log style timeline, colored by change type and annotated with
+  snapshot authors and commit messages; `plot_table_changes()` draws the rows
+  each snapshot inserted, updated, and deleted as diverging bars; and
+  `plot_table_files()` draws each table's Parquet file count and size on
+  disk.
+
+* New `get_table_info()` returns per-table file statistics (data and delete
+  file counts and sizes) from the DuckLake catalog, wrapping DuckLake's
+  `ducklake_table_info()` function.
+
 * New targeted maintenance wrappers complement `checkpoint_ducklake()`:
   `expire_snapshots()` (with `older_than`, `versions`, and `dry_run`),
   `merge_adjacent_files()`, `cleanup_old_files()`, `delete_orphaned_files()`,
