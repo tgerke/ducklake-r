@@ -121,10 +121,14 @@ list_table_snapshots("fleet") |>
 plot_snapshots("fleet")
 ```
 
-Reading it like a git log: the newest snapshot is at the top, the horizontal
-position shows when each change landed, and the color shows whether the
-snapshot created the table, changed data, changed the schema, or was
-maintenance activity (like flushing inlined data or compacting files).
+Reading it like a git log: the newest snapshot is at the top, each row shows
+the snapshot's timestamp, author, and commit message, and the color shows
+whether the snapshot created the table, changed data, changed the schema, or
+was maintenance activity (like flushing inlined data or compacting files).
+Snapshots are spaced evenly by order rather than by clock time, so a table
+that sat untouched for months stays readable: a long idle stretch shows up
+as an inline marker (like "103 days later") instead of stretching the whole
+plot.
 
 ## How Much Changed
 
@@ -136,15 +140,6 @@ inserted or updated above the axis, rows deleted below it.
 
 ```{r plot-changes}
 plot_table_changes("fleet")
-```
-
-## Plotting the Whole Lake
-
-Calling `plot_snapshots()` without a table name shows every snapshot in the
-lake, which is useful for a quick health check of overall activity:
-
-```{r plot-lake}
-plot_snapshots()
 ```
 
 ## How the Data Is Stored
@@ -202,14 +197,33 @@ delete-file share mean it is time for the compaction tools covered in
 `vignette("storage-and-backups")`, like `merge_adjacent_files()` and
 `rewrite_data_files()`.
 
+## Plotting the Whole Lake
+
+With two tables in the lake, we can step back and look at everything at
+once. Calling `plot_snapshots()` without a table name switches to a swimlane
+view: one row per table, one point per snapshot, with recently active tables
+at the top. It answers a different question than the single-table timeline
+-- not "what happened to this table" but "which tables are active, and what
+kind of churn does each one see":
+
+```{r plot-lake}
+plot_snapshots()
+```
+
+Snapshots that don't belong to any table, like the initial schema creation,
+appear in a `(lake)` lane. As in the timeline, points are spaced by order
+rather than clock time; the x axis labels show each snapshot's date.
+
 ## Customizing the Plots
 
 Each function returns a regular ggplot object, so you can restyle it like
-any other plot:
+any other plot. (The single-table timeline draws on a blank canvas, so it is
+best customized with `labs()` and `theme()` tweaks rather than a full theme
+swap like `theme_classic()`, which would bring back axes that have no
+meaning there.)
 
 ```{r plot-custom}
 plot_snapshots("fleet") +
-  ggplot2::theme_classic() +
   ggplot2::labs(title = "Fleet table audit trail")
 ```
 

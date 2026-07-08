@@ -2,9 +2,10 @@
 
 * New plotting functions, all requiring the suggested ggplot2 package and
   shown in action in a new "Visualizing Your Lake" vignette:
-  `plot_snapshots()` draws a table's (or the whole lake's) snapshot history
-  as a commit-log style timeline, colored by change type and annotated with
-  snapshot authors and commit messages; `plot_table_changes()` draws the rows
+  `plot_snapshots()` draws a table's snapshot history as a commit-log
+  timeline (snapshots in order, with authors, commit messages, and inline
+  markers for long idle gaps) or, without a table name, the whole lake as a
+  swimlane with one row per table; `plot_table_changes()` draws the rows
   each snapshot inserted, updated, and deleted as diverging bars; and
   `plot_table_files()` draws each table's Parquet file count and size on
   disk.
