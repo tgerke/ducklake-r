@@ -18,7 +18,8 @@ restore_table_version(
 
 \item{version}{Optional snapshot id to restore to (see \code{\link[=list_table_snapshots]{list_table_snapshots()}})}
 
-\item{timestamp}{Optional timestamp to restore to (POSIXct or character)}
+\item{timestamp}{Optional timestamp to restore to (POSIXct, converted to
+UTC, or character already in UTC)}
 
 \item{author}{Optional author to record on the restore snapshot, for the
 audit trail}
