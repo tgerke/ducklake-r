@@ -19,6 +19,11 @@
 * Timestamps passed to the new functions as POSIXct are converted to UTC
   before interpolation, matching how DuckLake records snapshot times.
 
+* `attach_ducklake()` now collapses duplicate slashes in `lake_path` (remote
+  URIs are untouched). DuckLake compares file paths as exact strings, so a
+  doubled slash -- which R's `tempdir()` produces on macOS -- made
+  `delete_orphaned_files()` treat every live data file as orphaned.
+
 * The dplyr-to-DuckLake translation behind `ducklake_exec()` and
   `show_ducklake_query()` is now built from dbplyr's structured query
   objects (`dbplyr::sql_build()`) instead of pattern-matching rendered SQL

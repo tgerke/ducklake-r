@@ -144,3 +144,34 @@ test_that("delete_orphaned_files removes only untracked files", {
   expect_false(file.exists(stray))
   expect_equal(nrow(dplyr::collect(get_ducklake_table("orph"))), 5)
 })
+
+test_that("doubled slashes in lake_path don't make live files look orphaned", {
+  skip_if_not_installed("duckdb")
+  skip_if_not_installed("dplyr")
+
+  # DuckLake stores DATA_PATH verbatim and compares file paths as exact
+  # strings. Before attach_ducklake() normalized the path, a doubled slash
+  # (as R's tempdir() produces on macOS) made delete_orphaned_files()
+  # classify every live data file as orphaned.
+  raw_dir <- tempfile()
+  dir.create(raw_dir, recursive = TRUE)
+  clean <- normalizePath(raw_dir)
+  dirty <- paste0(dirname(clean), "//", basename(clean))
+  lake_name <- paste0("slashlake_", sample.int(.Machine$integer.max, 1))
+  attach_ducklake(lake_name, lake_path = dirty)
+  on.exit({
+    tryCatch(detach_ducklake(lake_name), error = function(e) NULL)
+    unlink(clean, recursive = TRUE)
+  }, add = TRUE)
+
+  suppressMessages(set_inlining_row_limit(0))
+  on.exit(suppressMessages(set_inlining_row_limit(10)), add = TRUE)
+
+  create_table(data.frame(id = 1:5), "slashed")
+
+  expect_equal(
+    nrow(delete_orphaned_files(dry_run = TRUE, cleanup_all = TRUE)),
+    0
+  )
+  expect_equal(nrow(dplyr::collect(get_ducklake_table("slashed"))), 5)
+})
