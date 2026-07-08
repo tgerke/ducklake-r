@@ -149,14 +149,14 @@ The catalog is a single database file containing all metadata:
 ``` r
 
 dir_tree(lake_dir)
-#> /tmp/RtmpmaHwAh/storage_backups_vignette/storage_demo
+#> /tmp/RtmpYiFmo1/storage_backups_vignette/storage_demo
 #> ├── demo_lake.ducklake
 #> ├── demo_lake.ducklake.wal
 #> └── main
 #>     └── cars
-#>         ├── ducklake-019f4006-9216-702a-9101-9b5b82855713.parquet
-#>         ├── ducklake-019f4006-9306-7283-a721-748b422e6ee1.parquet
-#>         └── ducklake-019f4006-938e-7bcb-95bf-f325bd116a9b.parquet
+#>         ├── ducklake-019f401a-8919-7e8c-9075-47c41ad20f11.parquet
+#>         ├── ducklake-019f401a-8a16-72cb-ba97-0df45654e78a.parquet
+#>         └── ducklake-019f401a-8aac-7d1b-8569-ee0d58e6ae5f.parquet
 ```
 
 The catalog files (`demo_lake.ducklake` and `.wal`) contain all metadata
@@ -172,11 +172,11 @@ Data files are stored in Parquet format in a structured directory:
 main_dir <- file.path(lake_dir, "main")
 
 dir_tree(main_dir, recurse = 2)
-#> /tmp/RtmpmaHwAh/storage_backups_vignette/storage_demo/main
+#> /tmp/RtmpYiFmo1/storage_backups_vignette/storage_demo/main
 #> └── cars
-#>     ├── ducklake-019f4006-9216-702a-9101-9b5b82855713.parquet
-#>     ├── ducklake-019f4006-9306-7283-a721-748b422e6ee1.parquet
-#>     └── ducklake-019f4006-938e-7bcb-95bf-f325bd116a9b.parquet
+#>     ├── ducklake-019f401a-8919-7e8c-9075-47c41ad20f11.parquet
+#>     ├── ducklake-019f401a-8a16-72cb-ba97-0df45654e78a.parquet
+#>     └── ducklake-019f401a-8aac-7d1b-8569-ee0d58e6ae5f.parquet
   
 # Get details about parquet files
 parquet_files <- dir_ls(main_dir, recurse = TRUE, regexp = "\\.parquet$")
@@ -185,9 +185,9 @@ for (f in parquet_files) {
               path_file(f), 
               file.size(f)))
 }
-#>   ducklake-019f4006-9216-702a-9101-9b5b82855713.parquet (2307 bytes)
-#>   ducklake-019f4006-9306-7283-a721-748b422e6ee1.parquet (2501 bytes)
-#>   ducklake-019f4006-938e-7bcb-95bf-f325bd116a9b.parquet (2724 bytes)
+#>   ducklake-019f401a-8919-7e8c-9075-47c41ad20f11.parquet (2307 bytes)
+#>   ducklake-019f401a-8a16-72cb-ba97-0df45654e78a.parquet (2501 bytes)
+#>   ducklake-019f401a-8aac-7d1b-8569-ee0d58e6ae5f.parquet (2724 bytes)
 ```
 
 ### Understanding File Organization
@@ -253,13 +253,13 @@ dir_copy(
 
 # Verify the backup was created
 dir_tree(backup_dir)
-#> /tmp/RtmpmaHwAh/storage_backups_vignette/storage_demo/backups
+#> /tmp/RtmpYiFmo1/storage_backups_vignette/storage_demo/backups
 #> ├── demo_lake.ducklake
 #> └── main
 #>     └── cars
-#>         ├── ducklake-019f4006-9216-702a-9101-9b5b82855713.parquet
-#>         ├── ducklake-019f4006-9306-7283-a721-748b422e6ee1.parquet
-#>         └── ducklake-019f4006-938e-7bcb-95bf-f325bd116a9b.parquet
+#>         ├── ducklake-019f401a-8919-7e8c-9075-47c41ad20f11.parquet
+#>         ├── ducklake-019f401a-8a16-72cb-ba97-0df45654e78a.parquet
+#>         └── ducklake-019f401a-8aac-7d1b-8569-ee0d58e6ae5f.parquet
 
 # To work with the backup, attach it. override_data_path is needed because
 # the catalog remembers the original data location, which the backup no
@@ -273,9 +273,9 @@ attach_ducklake(
 # Verify you're working with the backup
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-07-08 04:40:00              1
-#> 2           2 2026-07-08 04:40:00              2
-#> 3           3 2026-07-08 04:40:00              3
+#> 1           1 2026-07-08 05:01:48              1
+#> 2           2 2026-07-08 05:01:48              2
+#> 3           3 2026-07-08 05:01:48              3
 #>                                                                 changes
 #> 1                    tables_created, tables_inserted_into, main.cars, 1
 #> 2 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2
@@ -423,6 +423,11 @@ expiring both mark files as unreferenced, and
 deletes them. Expiring a snapshot gives up time travel to it, so choose
 `older_than` to match how far back you need to audit or restore.
 
+One task lives outside DuckLake itself: the catalog database. If you use
+a PostgreSQL or SQLite catalog, occasionally run `VACUUM` there with
+that database’s own tooling so metadata queries stay fast. The default
+DuckDB-file catalog does not need this.
+
 ## Maintenance Considerations
 
 When planning backups, coordinate with maintenance operations:
@@ -482,11 +487,11 @@ backup_dir <- backup_ducklake(
 #> Catalog backed up successfully.
 #> Data files backed up successfully (1 directory).
 #> Backup completed:
-#> /tmp/RtmpmaHwAh/storage_backups_vignette/storage_demo/backups/backup_20260708_044001
+#> /tmp/RtmpYiFmo1/storage_backups_vignette/storage_demo/backups/backup_20260708_050150
 
 # The function returns the backup directory path
 print(backup_dir)
-#> [1] "/tmp/RtmpmaHwAh/storage_backups_vignette/storage_demo/backups/backup_20260708_044001"
+#> [1] "/tmp/RtmpYiFmo1/storage_backups_vignette/storage_demo/backups/backup_20260708_050150"
 ```
 
 The
