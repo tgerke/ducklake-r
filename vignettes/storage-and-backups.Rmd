@@ -360,6 +360,11 @@ both mark files as unreferenced, and `cleanup_old_files()` deletes them.
 Expiring a snapshot gives up time travel to it, so choose `older_than` to
 match how far back you need to audit or restore.
 
+One task lives outside DuckLake itself: the catalog database. If you use a
+PostgreSQL or SQLite catalog, occasionally run `VACUUM` there with that
+database's own tooling so metadata queries stay fast. The default DuckDB-file
+catalog does not need this.
+
 ## Maintenance Considerations
 
 When planning backups, coordinate with maintenance operations:
