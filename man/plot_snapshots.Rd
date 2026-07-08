@@ -19,28 +19,38 @@ A ggplot object, which can be further customized with ggplot2
 functions
 }
 \description{
-Draws a table's snapshot history as a commit-log style timeline: one row per
-snapshot (newest at top), positioned by snapshot time, colored by the kind
-of change, and annotated with the author and commit message where those were
-recorded (see \code{\link[=set_snapshot_metadata]{set_snapshot_metadata()}} and \code{\link[=commit_transaction]{commit_transaction()}}).
+Draws snapshot history in one of two layouts. With a \code{table_name}, a
+commit-log timeline: one row per snapshot (newest at top) on an ordinal
+spine, with the timestamp, author, and commit message as aligned text and
+long idle stretches marked inline (e.g. "103 days later") instead of
+stretching an axis. Without a \code{table_name}, a lake-wide swimlane: one row
+per table, one point per snapshot, evenly spaced in snapshot order, so
+active and stale tables read at a glance.
 }
 \details{
 Requires the ggplot2 package (listed in Suggests). Snapshot data comes from
 \code{\link[=list_table_snapshots]{list_table_snapshots()}}; each snapshot is classified from its \code{changes}
 column into one of: created, schema change, data change, maintenance, or
-other.
+other. Authors and commit messages appear where they were recorded (see
+\code{\link[=set_snapshot_metadata]{set_snapshot_metadata()}} and \code{\link[=commit_transaction]{commit_transaction()}}).
+
+Both layouts position snapshots by order rather than by clock time, so a
+history with months of silence between bursts of activity stays readable.
+In the swimlane, snapshots that touch no table (like the initial schema
+creation) appear in a \code{(lake)} lane, and the x axis labels show each
+snapshot's date.
 }
 \examples{
 \dontrun{
-# Plot the snapshot history of a table
+# Commit-log timeline of one table's history
 plot_snapshots("my_table")
 
-# Plot every snapshot in the lake
+# Swimlane of every table in the lake
 plot_snapshots()
 
 # Customize the result like any ggplot
 plot_snapshots("my_table") +
-  ggplot2::theme_classic()
+  ggplot2::labs(title = "Audit trail")
 }
 }
 \seealso{
