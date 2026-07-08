@@ -142,3 +142,28 @@ test_that("time travel functions work with explicit connection", {
   
   cleanup_temp_ducklake(lake)
 })
+
+test_that("naive local POSIXct timestamps resolve as the correct instant", {
+  skip_if_not_installed("duckdb")
+  skip_if_not_installed("dplyr")
+
+  lake <- create_temp_ducklake()
+  on.exit(cleanup_temp_ducklake(lake), add = TRUE)
+
+  create_table(data.frame(id = 1:3, v = c("a", "b", "c")), "utc_asof")
+
+  # Sys.time() carries no tzone attribute; before the UTC fix it was
+  # rendered in local time but read by DuckLake as UTC, shifting the
+  # queried instant by the UTC offset (hours in the past for tz < UTC,
+  # "no snapshot found" here)
+  asof_now <- get_ducklake_table_asof("utc_asof", Sys.time() + 5) |>
+    dplyr::collect()
+  expect_equal(nrow(asof_now), 3)
+
+  # restore_table_version with a bare Sys.time() had the same skew
+  get_ducklake_table("utc_asof") |>
+    dplyr::filter(id != 3) |>
+    replace_table("utc_asof")
+  expect_true(restore_table_version("utc_asof", timestamp = Sys.time()))
+  expect_equal(nrow(dplyr::collect(get_ducklake_table("utc_asof"))), 2)
+})

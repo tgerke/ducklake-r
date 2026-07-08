@@ -4,7 +4,9 @@
 #' using DuckLake's AT (TIMESTAMP => ...) syntax.
 #'
 #' @param table_name The name of the table to query
-#' @param timestamp A POSIXct timestamp or character string in ISO 8601 format (e.g., "2024-01-15 10:30:00")
+#' @param timestamp A POSIXct timestamp (converted to UTC, which is how
+#'   DuckLake records snapshot times) or character string in ISO 8601 format
+#'   already in UTC (e.g., "2024-01-15 10:30:00")
 #' @param conn Optional DuckDB connection object. If not provided, uses the default ducklake connection.
 #'
 #' @returns A dplyr lazy query object (tbl_lazy) that can be further manipulated with dplyr verbs
@@ -49,13 +51,10 @@ get_ducklake_table_asof <- function(table_name, timestamp, conn = NULL) {
     conn <- get_ducklake_connection()
   }
   
-  # Convert timestamp to character if it's POSIXct
-  if (inherits(timestamp, "POSIXct")) {
-    timestamp_str <- format(timestamp, "%Y-%m-%d %H:%M:%S")
-  } else {
-    timestamp_str <- as.character(timestamp)
-  }
-  
+  # DuckLake reads naive timestamp literals as UTC, so POSIXct values are
+  # rendered in UTC; character input must already be UTC
+  timestamp_str <- format_timestamp(timestamp)
+
   # Add schema prefix if not already present.
   # DuckDB and SQLite use the main. schema; PostgreSQL and MySQL do not.
   if (!grepl("\\.", table_name)) {
@@ -241,7 +240,8 @@ list_table_snapshots <- function(table_name = NULL, ducklake_name = NULL, conn =
 #'
 #' @param table_name The name of the table to restore
 #' @param version Optional snapshot id to restore to (see [list_table_snapshots()])
-#' @param timestamp Optional timestamp to restore to (POSIXct or character)
+#' @param timestamp Optional timestamp to restore to (POSIXct, converted to
+#'   UTC, or character already in UTC)
 #' @param author Optional author to record on the restore snapshot, for the
 #'   audit trail
 #' @param commit_message Optional commit message for the restore snapshot.
@@ -299,12 +299,9 @@ restore_table_version <- function(table_name, version = NULL, timestamp = NULL,
     at_clause <- sprintf("VERSION => %d", as.integer(version))
     restore_point <- sprintf("snapshot %d", as.integer(version))
   } else {
-    # Convert timestamp to character if it's POSIXct
-    if (inherits(timestamp, "POSIXct")) {
-      timestamp_str <- format(timestamp, "%Y-%m-%d %H:%M:%S")
-    } else {
-      timestamp_str <- as.character(timestamp)
-    }
+    # DuckLake reads naive timestamp literals as UTC, so POSIXct values are
+    # rendered in UTC; character input must already be UTC
+    timestamp_str <- format_timestamp(timestamp)
     at_clause <- sprintf("TIMESTAMP => %s", quote_sql(timestamp_str))
     restore_point <- timestamp_str
   }

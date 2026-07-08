@@ -115,7 +115,9 @@ infer_ducklake_name <- function(ducklake_name = NULL,
 #' @noRd
 format_timestamp <- function(x) {
   if (inherits(x, "POSIXct")) {
-    format(x, "%Y-%m-%d %H:%M:%S", tz = "UTC")
+    # %OS6 keeps sub-second precision: flooring to the second can move the
+    # instant before a snapshot taken in the same second
+    format(x, "%Y-%m-%d %H:%M:%OS6", tz = "UTC")
   } else {
     as.character(x)
   }

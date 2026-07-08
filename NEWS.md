@@ -19,6 +19,13 @@
 * Timestamps passed to the new functions as POSIXct are converted to UTC
   before interpolation, matching how DuckLake records snapshot times.
 
+* `get_ducklake_table_asof()` and `restore_table_version()` now also convert
+  POSIXct timestamps to UTC. Previously they rendered local time, which
+  DuckLake reads as UTC, silently shifting the queried instant by the UTC
+  offset -- a bare `Sys.time()` looked hours in the past (or future) unless
+  the session's timezone was UTC. Timestamps taken from
+  `list_table_snapshots()$snapshot_time` are unaffected.
+
 * `attach_ducklake()` now collapses duplicate slashes in `lake_path` (remote
   URIs are untouched). DuckLake compares file paths as exact strings, so a
   doubled slash -- which R's `tempdir()` produces on macOS -- made
