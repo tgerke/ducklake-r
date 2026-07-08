@@ -1,5 +1,29 @@
 # ducklake (development version)
 
+* New targeted maintenance wrappers complement `checkpoint_ducklake()`:
+  `expire_snapshots()` (with `older_than`, `versions`, and `dry_run`),
+  `merge_adjacent_files()`, `cleanup_old_files()`, `delete_orphaned_files()`,
+  and `rewrite_data_files()` (#16, suggested by @stefanlinner).
+
+* New partitioning support: `set_table_partitioning()` and
+  `reset_table_partitioning()` manage a table's partition keys (identity,
+  `year`/`month`/`day`/`hour`, and `bucket` transforms), and
+  `get_table_partitions()` lists the keys from the metadata catalog (#16,
+  suggested by @stefanlinner).
+
+* New `get_table_changes()` exposes DuckLake's data change feed: the exact
+  inserts, deletes, and update pre/post images between two snapshots, as a
+  lazy table that composes with dplyr verbs (#16, suggested by
+  @stefanlinner).
+
+* Timestamps passed to the new functions as POSIXct are converted to UTC
+  before interpolation, matching how DuckLake records snapshot times.
+
+* `attach_ducklake()` now collapses duplicate slashes in `lake_path` (remote
+  URIs are untouched). DuckLake compares file paths as exact strings, so a
+  doubled slash -- which R's `tempdir()` produces on macOS -- made
+  `delete_orphaned_files()` treat every live data file as orphaned.
+
 * The dplyr-to-DuckLake translation behind `ducklake_exec()` and
   `show_ducklake_query()` is now built from dbplyr's structured query
   objects (`dbplyr::sql_build()`) instead of pattern-matching rendered SQL

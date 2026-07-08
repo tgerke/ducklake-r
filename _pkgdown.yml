@@ -87,6 +87,7 @@ reference:
     contents:
     - get_ducklake_table_asof
     - get_ducklake_table_version
+    - get_table_changes
     - list_table_snapshots
     - restore_table_version
     
@@ -104,10 +105,22 @@ reference:
     - flush_inlined_data
     - checkpoint_ducklake
 
+  - title: "Partitioning"
+    desc: "Manage table partition keys for file pruning"
+    contents:
+    - set_table_partitioning
+    - reset_table_partitioning
+    - get_table_partitions
+
   - title: "Backup and Maintenance"
-    desc: "Backup and restore operations"
+    desc: "Backup, compaction, and storage reclamation"
     contents:
     - backup_ducklake
+    - expire_snapshots
+    - merge_adjacent_files
+    - cleanup_old_files
+    - delete_orphaned_files
+    - rewrite_data_files
 
   - title: "Quack remote access"
     desc: "Connect to and serve DuckLake over the Quack protocol"

@@ -34,6 +34,7 @@ list_table_snapshots("my_table")
 Other time travel:
 \code{\link[=get_ducklake_table_asof]{get_ducklake_table_asof()}},
 \code{\link[=get_ducklake_table_version]{get_ducklake_table_version()}},
+\code{\link[=get_table_changes]{get_table_changes()}},
 \code{\link[=restore_table_version]{restore_table_version()}}
 }
 \concept{time travel}

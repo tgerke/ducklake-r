@@ -126,6 +126,7 @@ attach_ducklake <- function(ducklake_name, lake_path,
       "i" = "Example: {.code attach_ducklake(\"{ducklake_name}\", lake_path = \"path/to/lake\")}"
     ))
   }
+  lake_path <- normalize_lake_path(lake_path)
   
   # Non-DuckDB backends also need a connection string
   if (backend != "duckdb") {
@@ -173,6 +174,24 @@ attach_ducklake <- function(ducklake_name, lake_path,
   register_lake(ducklake_name, backend, catalog_connection_string)
 
   invisible(NULL)
+}
+
+#' Collapse duplicate slashes in a local lake path
+#'
+#' DuckLake stores DATA_PATH verbatim and compares file paths as exact
+#' strings, so a doubled slash -- which R's [tempdir()] produces on macOS --
+#' makes every live data file look untracked to
+#' `ducklake_delete_orphaned_files()`, turning orphan cleanup destructive.
+#' Remote URIs (`s3://`, `gs://`, ...) are left untouched.
+#'
+#' @param lake_path Path as supplied by the user.
+#' @returns The path with runs of `/` collapsed to one.
+#' @noRd
+normalize_lake_path <- function(lake_path) {
+  if (grepl("^[A-Za-z][A-Za-z0-9+.-]*://", lake_path)) {
+    return(lake_path)
+  }
+  gsub("/{2,}", "/", lake_path)
 }
 
 #' Install and load required DuckDB extensions for a given backend
