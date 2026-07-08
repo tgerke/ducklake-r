@@ -35,16 +35,18 @@ All operations happen within the current transaction context. Use
 \itemize{
 \item \strong{Adding new columns} - DuckLake UPDATE cannot add columns; use replace_table()
 \item \strong{Removing columns} - Restructure schema with select()
-\item \strong{Versioning needed} - Creates snapshots via DROP + CREATE for time travel
 \item \strong{Complex transformations} - Apply full dplyr pipelines naturally
 }
 
-\strong{When to use update_table() instead:}
+\strong{When to use \code{\link[=ducklake_exec]{ducklake_exec()}} instead:}
 \itemize{
 \item Modifying existing column values only (no schema changes)
-\item Performance critical and versioning not needed
-\item Making targeted corrections to specific rows
+\item Making targeted corrections to specific rows without rewriting the table
 }
+
+Both paths create a snapshot: replace_table() via DROP + CREATE, and
+ducklake_exec() via the in-place UPDATE/DELETE it runs, so either way the
+change is available for time travel.
 }
 \examples{
 \dontrun{

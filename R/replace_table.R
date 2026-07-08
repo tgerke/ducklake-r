@@ -21,13 +21,15 @@
 #' **When to use replace_table():**
 #' - **Adding new columns** - DuckLake UPDATE cannot add columns; use replace_table()
 #' - **Removing columns** - Restructure schema with select()
-#' - **Versioning needed** - Creates snapshots via DROP + CREATE for time travel
 #' - **Complex transformations** - Apply full dplyr pipelines naturally
-#' 
-#' **When to use update_table() instead:**
+#'
+#' **When to use [ducklake_exec()] instead:**
 #' - Modifying existing column values only (no schema changes)
-#' - Performance critical and versioning not needed
-#' - Making targeted corrections to specific rows
+#' - Making targeted corrections to specific rows without rewriting the table
+#'
+#' Both paths create a snapshot: replace_table() via DROP + CREATE, and
+#' ducklake_exec() via the in-place UPDATE/DELETE it runs, so either way the
+#' change is available for time travel.
 #' 
 #' @examples
 #' \dontrun{

@@ -238,3 +238,88 @@ test_that("quoted identifiers survive translation", {
     dplyr::collect()
   expect_equal(result[["my col"]], c(1, 20, 30))
 })
+
+test_that("unioned sources append into the target; unions reading it are refused", {
+  skip_if_not_installed("duckdb")
+  skip_if_not_installed("dplyr")
+
+  lake <- create_temp_ducklake()
+  on.exit(cleanup_temp_ducklake(lake), add = TRUE)
+
+  create_table(data.frame(id = 1L), "union_target")
+  create_table(data.frame(id = 2L), "union_a")
+  create_table(data.frame(id = 3L), "union_b")
+
+  dplyr::union_all(
+    get_ducklake_table("union_a"),
+    get_ducklake_table("union_b")
+  ) |>
+    ducklake_exec("union_target")
+
+  result <- get_ducklake_table("union_target") |>
+    dplyr::arrange(id) |>
+    dplyr::collect()
+  expect_equal(result$id, 1:3)
+
+  # A set operation that reads the target cannot be an in-place statement
+  expect_error(
+    dplyr::union_all(
+      get_ducklake_table("union_a"),
+      get_ducklake_table("union_target")
+    ) |>
+      ducklake_exec("union_target"),
+    "too complex|subquery"
+  )
+  expect_equal(nrow(dplyr::collect(get_ducklake_table("union_target"))), 3)
+})
+
+test_that("split_select_alias finds only the trailing top-level alias", {
+  split_select_alias <- ducklake:::split_select_alias
+
+  # No alias: bare columns and stars pass through
+  expect_equal(split_select_alias("mpg"), list(expr = "mpg", name = ""))
+  expect_equal(split_select_alias("*"), list(expr = "*", name = ""))
+  expect_equal(split_select_alias("cars.*"), list(expr = "cars.*", name = ""))
+
+  # Plain alias
+  expect_equal(
+    split_select_alias("mpg + 1.0 AS mpg"),
+    list(expr = "mpg + 1.0", name = "mpg")
+  )
+
+  # AS inside parentheses (CAST) is not the alias
+  expect_equal(
+    split_select_alias("CAST(ROUND(mpg, 0) AS INTEGER) AS mpg"),
+    list(expr = "CAST(ROUND(mpg, 0) AS INTEGER)", name = "mpg")
+  )
+  expect_equal(
+    split_select_alias("CAST(mpg AS INTEGER)"),
+    list(expr = "CAST(mpg AS INTEGER)", name = "")
+  )
+
+  # AS inside a string literal is not the alias
+  expect_equal(
+    split_select_alias("'x AS y' AS note"),
+    list(expr = "'x AS y'", name = "note")
+  )
+
+  # Quoted aliases are unquoted, including embedded doubled quotes
+  expect_equal(
+    split_select_alias('"my col" + 1 AS "my col"'),
+    list(expr = '"my col" + 1', name = "my col")
+  )
+  expect_equal(
+    split_select_alias('x AS "a""b"'),
+    list(expr = "x", name = 'a"b')
+  )
+})
+
+test_that("bare_table_name normalizes qualified and quoted references", {
+  bare_table_name <- ducklake:::bare_table_name
+
+  expect_equal(bare_table_name("cars"), "cars")
+  expect_equal(bare_table_name("CARS"), "cars")
+  expect_equal(bare_table_name('"cars"'), "cars")
+  expect_equal(bare_table_name("my_lake.main.cars"), "cars")
+  expect_equal(bare_table_name('"my_lake"."main"."cars"'), "cars")
+})

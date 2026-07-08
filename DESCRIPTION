@@ -20,7 +20,7 @@ Roxygen: list(markdown = TRUE)
 Imports:
     cli,
     DBI,
-    dbplyr,
+    dbplyr (>= 2.5.0),
     dplyr,
     duckdb (>= 1.5.1)
 Suggests:

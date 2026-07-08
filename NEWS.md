@@ -24,6 +24,9 @@
   in-place equivalent (`arrange()`, `head()`, `distinct()`), are detected
   structurally and refused with a clear message rather than mistranslated.
 
+* dbplyr (>= 2.5.0) is now required; both dbplyr 2.5.x and the select-list
+  format introduced in dbplyr 2.6.0 are supported.
+
 # ducklake 0.4.0
 
 This release focuses on production hardiness: self-contained connection

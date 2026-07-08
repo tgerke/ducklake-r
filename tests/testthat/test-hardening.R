@@ -136,7 +136,7 @@ test_that("restore_table_version validates version/timestamp arguments", {
   )
 })
 
-test_that("update_table refuses subqueries and multiple WHERE clauses", {
+test_that("update_table refuses pipelines that compile to subqueries", {
   skip_if_not_installed("duckdb")
   skip_if_not_installed("dplyr")
 
