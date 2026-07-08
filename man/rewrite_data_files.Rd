@@ -54,6 +54,8 @@ Other maintenance:
 \code{\link[=delete_orphaned_files]{delete_orphaned_files()}},
 \code{\link[=expire_snapshots]{expire_snapshots()}},
 \code{\link[=flush_inlined_data]{flush_inlined_data()}},
-\code{\link[=merge_adjacent_files]{merge_adjacent_files()}}
+\code{\link[=get_table_info]{get_table_info()}},
+\code{\link[=merge_adjacent_files]{merge_adjacent_files()}},
+\code{\link[=plot_table_files]{plot_table_files()}}
 }
 \concept{maintenance}

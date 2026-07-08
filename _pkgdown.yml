@@ -38,8 +38,8 @@ navbar:
         href: articles/transactions.html
       - text: Time Travel Queries
         href: articles/time-travel.html
-      - text: Visualizing Snapshot History
-        href: articles/visualizing-snapshots.html
+      - text: Visualizing Your Lake
+        href: articles/visualizing-your-lake.html
       - text: Storage and Backup Management
         href: articles/storage-and-backups.html
       - text: Quack Remote Access
@@ -92,6 +92,7 @@ reference:
     - get_table_changes
     - list_table_snapshots
     - plot_snapshots
+    - plot_table_changes
     - restore_table_version
     
   - title: "Metadata"
@@ -124,6 +125,8 @@ reference:
     - cleanup_old_files
     - delete_orphaned_files
     - rewrite_data_files
+    - get_table_info
+    - plot_table_files
 
   - title: "Quack remote access"
     desc: "Connect to and serve DuckLake over the Quack protocol"
