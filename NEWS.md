@@ -1,5 +1,11 @@
 # ducklake (development version)
 
+* New `plot_snapshots()` draws a table's (or the whole lake's) snapshot
+  history as a commit-log style timeline, colored by change type and
+  annotated with snapshot authors and commit messages. Requires the suggested
+  ggplot2 package; a new "Visualizing Snapshot History" vignette shows it in
+  action.
+
 * New targeted maintenance wrappers complement `checkpoint_ducklake()`:
   `expire_snapshots()` (with `older_than`, `versions`, and `dry_run`),
   `merge_adjacent_files()`, `cleanup_old_files()`, `delete_orphaned_files()`,

@@ -27,6 +27,7 @@ Suggests:
     admiral,
     DiagrammeR,
     fs,
+    ggplot2,
     jsonlite,
     knitr,
     lubridate,
