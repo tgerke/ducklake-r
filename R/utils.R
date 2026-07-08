@@ -75,6 +75,52 @@ duckdb_version_at_least <- function(version, minimum) {
   numeric_version(core) >= minimum
 }
 
+#' Resolve the target DuckLake catalog name
+#'
+#' Uses the supplied name, or falls back to the currently USEd database.
+#' Aborts when neither is available, and validates the result with
+#' `check_identifier()` since the CALL statements it feeds require bare
+#' identifiers.
+#'
+#' @param ducklake_name A catalog name, or `NULL` to infer it.
+#' @param conn A DBI connection.
+#' @returns The resolved catalog name.
+#' @noRd
+infer_ducklake_name <- function(ducklake_name = NULL,
+                                conn = get_ducklake_connection()) {
+  if (is.null(ducklake_name)) {
+    ducklake_name <- tryCatch(
+      DBI::dbGetQuery(conn, "SELECT current_database() AS db")$db,
+      error = function(e) NULL
+    )
+    if (is.null(ducklake_name) || ducklake_name == "") {
+      cli::cli_abort(
+        "Could not determine {.arg ducklake_name}. Please provide it explicitly."
+      )
+    }
+  }
+  check_identifier(ducklake_name)
+  ducklake_name
+}
+
+#' Format a timestamp argument for SQL interpolation
+#'
+#' POSIXct values are rendered in UTC, because the duckdb driver reads naive
+#' timestamp literals as UTC (and returns snapshot times as UTC-tagged
+#' POSIXct). Rendering in local time would silently shift the instant by the
+#' UTC offset. Character input is passed through and must already be UTC.
+#'
+#' @param x A POSIXct or character timestamp.
+#' @returns A character timestamp.
+#' @noRd
+format_timestamp <- function(x) {
+  if (inherits(x, "POSIXct")) {
+    format(x, "%Y-%m-%d %H:%M:%S", tz = "UTC")
+  } else {
+    as.character(x)
+  }
+}
+
 #' Quote a value as a SQL string literal
 #'
 #' Wraps `x` in single quotes and doubles any embedded single quotes.

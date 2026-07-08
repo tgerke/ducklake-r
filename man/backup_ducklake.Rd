@@ -69,6 +69,11 @@ backup_dir <- backup_ducklake(
 \seealso{
 Other maintenance:
 \code{\link[=checkpoint_ducklake]{checkpoint_ducklake()}},
-\code{\link[=flush_inlined_data]{flush_inlined_data()}}
+\code{\link[=cleanup_old_files]{cleanup_old_files()}},
+\code{\link[=delete_orphaned_files]{delete_orphaned_files()}},
+\code{\link[=expire_snapshots]{expire_snapshots()}},
+\code{\link[=flush_inlined_data]{flush_inlined_data()}},
+\code{\link[=merge_adjacent_files]{merge_adjacent_files()}},
+\code{\link[=rewrite_data_files]{rewrite_data_files()}}
 }
 \concept{maintenance}

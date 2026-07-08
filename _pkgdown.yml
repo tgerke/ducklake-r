@@ -105,9 +105,14 @@ reference:
     - checkpoint_ducklake
 
   - title: "Backup and Maintenance"
-    desc: "Backup and restore operations"
+    desc: "Backup, compaction, and storage reclamation"
     contents:
     - backup_ducklake
+    - expire_snapshots
+    - merge_adjacent_files
+    - cleanup_old_files
+    - delete_orphaned_files
+    - rewrite_data_files
 
   - title: "Quack remote access"
     desc: "Connect to and serve DuckLake over the Quack protocol"

@@ -328,6 +328,38 @@ dir_copy(
 # since the catalog maintains the file paths
 ```
 
+## Routine Maintenance
+
+A lake that sees regular writes accumulates small Parquet files (one per
+insert) and old snapshots whose files can no longer be reclaimed until the
+snapshots are expired. The one-stop command is `checkpoint_ducklake()`, which
+flushes inlined data, merges small files, expires old snapshots, and cleans
+up unreferenced files in a single call. For finer control, each step has its
+own function:
+
+```{r routine-maintenance, eval=FALSE}
+# Compact small adjacent Parquet files into larger ones
+merge_adjacent_files()
+
+# Preview a retention policy, then apply it
+expire_snapshots(older_than = Sys.time() - 30 * 24 * 60 * 60, dry_run = TRUE)
+expire_snapshots(older_than = Sys.time() - 30 * 24 * 60 * 60)
+
+# Expired snapshots only *schedule* file deletion; this reclaims the storage
+cleanup_old_files(cleanup_all = TRUE)
+
+# Rewrite data files whose rows have mostly been deleted
+rewrite_data_files(delete_threshold = 0.5)
+
+# Remove untracked files from the data path -- always dry-run this one first
+delete_orphaned_files(dry_run = TRUE, cleanup_all = TRUE)
+```
+
+The typical cycle is merge, then expire, then clean up: merging and expiring
+both mark files as unreferenced, and `cleanup_old_files()` deletes them.
+Expiring a snapshot gives up time travel to it, so choose `older_than` to
+match how far back you need to audit or restore.
+
 ## Maintenance Considerations
 
 When planning backups, coordinate with maintenance operations:
@@ -339,7 +371,9 @@ When planning backups, coordinate with maintenance operations:
 # Recommended backup sequence
 
 # 1. Run maintenance operations (if needed)
-# See maintenance vignettes for details
+merge_adjacent_files()
+expire_snapshots(older_than = Sys.time() - 30 * 24 * 60 * 60)
+cleanup_old_files(cleanup_all = TRUE)
 
 # 2. Ensure all transactions are committed
 # (no pending work)

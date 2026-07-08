@@ -1,5 +1,13 @@
 # ducklake (development version)
 
+* New targeted maintenance wrappers complement `checkpoint_ducklake()`:
+  `expire_snapshots()` (with `older_than`, `versions`, and `dry_run`),
+  `merge_adjacent_files()`, `cleanup_old_files()`, `delete_orphaned_files()`,
+  and `rewrite_data_files()` (#16, suggested by @stefanlinner).
+
+* Timestamps passed to the new functions as POSIXct are converted to UTC
+  before interpolation, matching how DuckLake records snapshot times.
+
 * The dplyr-to-DuckLake translation behind `ducklake_exec()` and
   `show_ducklake_query()` is now built from dbplyr's structured query
   objects (`dbplyr::sql_build()`) instead of pattern-matching rendered SQL
