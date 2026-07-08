@@ -33,7 +33,8 @@ restore_table_version(
 
 - timestamp:
 
-  Optional timestamp to restore to (POSIXct or character)
+  Optional timestamp to restore to (POSIXct, converted to UTC, or
+  character already in UTC)
 
 - author:
 

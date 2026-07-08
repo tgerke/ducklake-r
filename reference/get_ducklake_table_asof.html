@@ -71,7 +71,9 @@ using DuckLake's AT (TIMESTAMP =&gt; ...) syntax.</p>
 
 
 <dt id="arg-timestamp">timestamp<a class="anchor" aria-label="anchor" href="#arg-timestamp"></a></dt>
-<dd><p>A POSIXct timestamp or character string in ISO 8601 format (e.g., "2024-01-15 10:30:00")</p></dd>
+<dd><p>A POSIXct timestamp (converted to UTC, which is how
+DuckLake records snapshot times) or character string in ISO 8601 format
+already in UTC (e.g., "2024-01-15 10:30:00")</p></dd>
 
 
 <dt id="arg-conn">conn<a class="anchor" aria-label="anchor" href="#arg-conn"></a></dt>

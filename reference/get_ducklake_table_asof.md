@@ -17,8 +17,9 @@ get_ducklake_table_asof(table_name, timestamp, conn = NULL)
 
 - timestamp:
 
-  A POSIXct timestamp or character string in ISO 8601 format (e.g.,
-  "2024-01-15 10:30:00")
+  A POSIXct timestamp (converted to UTC, which is how DuckLake records
+  snapshot times) or character string in ISO 8601 format already in UTC
+  (e.g., "2024-01-15 10:30:00")
 
 - conn:
 
