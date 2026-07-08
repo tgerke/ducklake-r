@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ducklake</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -77,7 +77,7 @@
       <img src="../logo.png" class="logo" alt=""><h1>ducklake Cookbook</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/tgerke/ducklake-r/blob/v0.4.0/vignettes/ducklake.Rmd" class="external-link"><code>vignettes/ducklake.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/tgerke/ducklake-r/blob/main/vignettes/ducklake.Rmd" class="external-link"><code>vignettes/ducklake.Rmd</code></a></small>
       <div class="d-none name"><code>ducklake.Rmd</code></div>
     </div>
 
@@ -246,7 +246,7 @@ vignette.</p>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">mpg</span>, <span class="va">cyl</span>, <span class="va">hp</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">3</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A query:  ?? x 3</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/Rtmp00jaN4/ducklake/ducklake1ef42c6f59c7.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpfiGlr6/ducklake/ducklake1f322efd0959.duckdb]</span></span></span>
 <span><span class="co">#&gt;     mpg   cyl    hp</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>  21       6   110</span></span>
@@ -274,8 +274,8 @@ vignette.</p>
 <code class="sourceCode R"><span><span class="co"># See all snapshots for the cars table</span></span>
 <span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 1           1 2026-07-08 00:48:05              1</span></span>
-<span><span class="co">#&gt; 2           2 2026-07-08 00:48:05              2</span></span>
+<span><span class="co">#&gt; 1           1 2026-07-08 03:14:43              1</span></span>
+<span><span class="co">#&gt; 2           2 2026-07-08 03:14:44              2</span></span>
 <span><span class="co">#&gt;                                                                 changes</span></span>
 <span><span class="co">#&gt; 1                    tables_created, tables_inserted_into, main.cars, 1</span></span>
 <span><span class="co">#&gt; 2 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2</span></span>
@@ -292,7 +292,7 @@ vignette.</p>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">mpg</span>, <span class="va">cyl</span>, <span class="va">hp</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">3</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A query:  ?? x 3</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/Rtmp00jaN4/ducklake/ducklake1ef42c6f59c7.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpfiGlr6/ducklake/ducklake1f322efd0959.duckdb]</span></span></span>
 <span><span class="co">#&gt;     mpg   cyl    hp</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>  21       6   110</span></span>
@@ -342,12 +342,12 @@ guidance on choosing between them.</p>
 <div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 1           0 2026-07-08 00:48:05              0</span></span>
-<span><span class="co">#&gt; 2           1 2026-07-08 00:48:05              1</span></span>
-<span><span class="co">#&gt; 3           2 2026-07-08 00:48:05              2</span></span>
-<span><span class="co">#&gt; 4           3 2026-07-08 00:48:06              3</span></span>
-<span><span class="co">#&gt; 5           4 2026-07-08 00:48:06              4</span></span>
-<span><span class="co">#&gt; 6           5 2026-07-08 00:48:07              5</span></span>
+<span><span class="co">#&gt; 1           0 2026-07-08 03:14:43              0</span></span>
+<span><span class="co">#&gt; 2           1 2026-07-08 03:14:43              1</span></span>
+<span><span class="co">#&gt; 3           2 2026-07-08 03:14:44              2</span></span>
+<span><span class="co">#&gt; 4           3 2026-07-08 03:14:44              3</span></span>
+<span><span class="co">#&gt; 5           4 2026-07-08 03:14:44              4</span></span>
+<span><span class="co">#&gt; 6           5 2026-07-08 03:14:45              5</span></span>
 <span><span class="co">#&gt;                                                                 changes</span></span>
 <span><span class="co">#&gt; 1                                                 schemas_created, main</span></span>
 <span><span class="co">#&gt; 2                    tables_created, tables_inserted_into, main.cars, 1</span></span>
@@ -386,10 +386,10 @@ guidance on choosing between them.</p>
 <span></span>
 <span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 1           1 2026-07-08 00:48:05              1</span></span>
-<span><span class="co">#&gt; 2           2 2026-07-08 00:48:05              2</span></span>
-<span><span class="co">#&gt; 3           5 2026-07-08 00:48:07              5</span></span>
-<span><span class="co">#&gt; 4           6 2026-07-08 00:48:07              6</span></span>
+<span><span class="co">#&gt; 1           1 2026-07-08 03:14:43              1</span></span>
+<span><span class="co">#&gt; 2           2 2026-07-08 03:14:44              2</span></span>
+<span><span class="co">#&gt; 3           5 2026-07-08 03:14:45              5</span></span>
+<span><span class="co">#&gt; 4           6 2026-07-08 03:14:45              6</span></span>
 <span><span class="co">#&gt;                                                                 changes</span></span>
 <span><span class="co">#&gt; 1                    tables_created, tables_inserted_into, main.cars, 1</span></span>
 <span><span class="co">#&gt; 2 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2</span></span>
@@ -495,7 +495,7 @@ guidance on choosing between them.</p>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>kpl <span class="op">=</span> <span class="va">mpg</span> <span class="op">*</span> <span class="fl">0.425144</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">3</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A query:  ?? x 12</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/Rtmp00jaN4/ducklake/ducklake1ef42c6f59c7.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpfiGlr6/ducklake/ducklake1f322efd0959.duckdb]</span></span></span>
 <span><span class="co">#&gt;     mpg   cyl  disp    hp  drat    wt  qsec    vs    am  gear  carb   kpl</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>  21       6   160   110  3.9   2.62  16.5     0     1     4     4  8.93</span></span>
@@ -511,7 +511,7 @@ guidance on choosing between them.</p>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">mpg</span>, <span class="va">cyl</span>, <span class="va">hp</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">mpg</span> <span class="op">&gt;</span> <span class="fl">25</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A query:  ?? x 3</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/Rtmp00jaN4/ducklake/ducklake1ef42c6f59c7.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpfiGlr6/ducklake/ducklake1f322efd0959.duckdb]</span></span></span>
 <span><span class="co">#&gt;     mpg   cyl    hp</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>  32.4     4    66</span></span>

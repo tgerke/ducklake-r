@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ducklake</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -46,7 +46,7 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Replace a table with modified data and create a new snapshot</h1>
-      <small class="dont-index">Source: <a href="https://github.com/tgerke/ducklake-r/blob/v0.4.0/R/replace_table.R" class="external-link"><code>R/replace_table.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/tgerke/ducklake-r/blob/main/R/replace_table.R" class="external-link"><code>R/replace_table.R</code></a></small>
       <div class="d-none name"><code>replace_table.Rd</code></div>
     </div>
 
@@ -89,12 +89,13 @@ create a new versioned snapshot. It:</p><ol><li><p>Collects the transformed data
 <code><a href="begin_transaction.html">begin_transaction()</a></code> and <code><a href="commit_transaction.html">commit_transaction()</a></code> to ensure proper versioning.</p>
 <p><strong>When to use replace_table():</strong></p><ul><li><p><strong>Adding new columns</strong> - DuckLake UPDATE cannot add columns; use replace_table()</p></li>
 <li><p><strong>Removing columns</strong> - Restructure schema with select()</p></li>
-<li><p><strong>Versioning needed</strong> - Creates snapshots via DROP + CREATE for time travel</p></li>
 <li><p><strong>Complex transformations</strong> - Apply full dplyr pipelines naturally</p></li>
-</ul><p><strong>When to use update_table() instead:</strong></p><ul><li><p>Modifying existing column values only (no schema changes)</p></li>
-<li><p>Performance critical and versioning not needed</p></li>
-<li><p>Making targeted corrections to specific rows</p></li>
-</ul></div>
+</ul><p><strong>When to use <code><a href="ducklake_exec.html">ducklake_exec()</a></code> instead:</strong></p><ul><li><p>Modifying existing column values only (no schema changes)</p></li>
+<li><p>Making targeted corrections to specific rows without rewriting the table</p></li>
+</ul><p>Both paths create a snapshot: replace_table() via DROP + CREATE, and
+ducklake_exec() via the in-place UPDATE/DELETE it runs, so either way the
+change is available for time travel.</p>
+    </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
     <div class="dont-index"><p>Other table operations:

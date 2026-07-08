@@ -1,5 +1,45 @@
 # Changelog
 
+## ducklake (development version)
+
+- The dplyr-to-DuckLake translation behind
+  [`ducklake_exec()`](https://tgerke.github.io/ducklake-r/reference/ducklake_exec.md)
+  and
+  [`show_ducklake_query()`](https://tgerke.github.io/ducklake-r/reference/show_ducklake_query.md)
+  is now built from dbplyr’s structured query objects
+  ([`dbplyr::sql_build()`](https://dbplyr.tidyverse.org/reference/sql_build.html))
+  instead of pattern-matching rendered SQL text. Classification no
+  longer depends on what the SQL happens to look like, which fixes
+  several latent bugs:
+
+  - A filtered read from *another* table
+    (`get_ducklake_table("staging") |> filter(...) |> ducklake_exec("target")`)
+    was translated into a `DELETE` on the target table; it now appends
+    the matching rows, as intended.
+  - Filter values containing SQL keywords (e.g.
+    `filter(note != "WHERE is it")`) were refused as “too complex”; they
+    now translate fine.
+  - A [`mutate()`](https://dplyr.tidyverse.org/reference/mutate.html)
+    that adds a new column is refused upfront with a pointer to
+    [`replace_table()`](https://tgerke.github.io/ducklake-r/reference/replace_table.md),
+    instead of failing with a database binder error.
+
+- `INSERT` translations now list columns explicitly, so appends from
+  another table match columns by name rather than by position, and
+  joined or unioned sources can be appended in one step.
+
+- Pipelines that compile to a subquery over the target table (grouped
+  filters, filtering on a just-mutated column), and clauses with no
+  in-place equivalent
+  ([`arrange()`](https://dplyr.tidyverse.org/reference/arrange.html),
+  [`head()`](https://rdrr.io/r/utils/head.html),
+  [`distinct()`](https://dplyr.tidyverse.org/reference/distinct.html)),
+  are detected structurally and refused with a clear message rather than
+  mistranslated.
+
+- dbplyr (\>= 2.5.0) is now required; both dbplyr 2.5.x and the
+  select-list format introduced in dbplyr 2.6.0 are supported.
+
 ## ducklake 0.4.0
 
 This release focuses on production hardiness: self-contained connection
@@ -315,8 +355,7 @@ infrastructure built on DuckDB and DuckLake.
   Execute SQL with automatic assignment handling
 - [`show_ducklake_query()`](https://tgerke.github.io/ducklake-r/reference/show_ducklake_query.md) -
   Preview translated SQL queries
-- [`extract_assignments_from_sql()`](https://tgerke.github.io/ducklake-r/reference/extract_assignments_from_sql.md) -
-  Parse SQL table assignments
+- `extract_assignments_from_sql()` - Parse SQL table assignments
 
 #### Backup and Maintenance
 

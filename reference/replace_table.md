@@ -50,18 +50,20 @@ to ensure proper versioning.
 
 - **Removing columns** - Restructure schema with select()
 
-- **Versioning needed** - Creates snapshots via DROP + CREATE for time
-  travel
-
 - **Complex transformations** - Apply full dplyr pipelines naturally
 
-**When to use update_table() instead:**
+**When to use
+[`ducklake_exec()`](https://tgerke.github.io/ducklake-r/reference/ducklake_exec.md)
+instead:**
 
 - Modifying existing column values only (no schema changes)
 
-- Performance critical and versioning not needed
+- Making targeted corrections to specific rows without rewriting the
+  table
 
-- Making targeted corrections to specific rows
+Both paths create a snapshot: replace_table() via DROP + CREATE, and
+ducklake_exec() via the in-place UPDATE/DELETE it runs, so either way
+the change is available for time travel.
 
 ## See also
 

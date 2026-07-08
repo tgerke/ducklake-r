@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ducklake</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -46,9 +46,21 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Changelog</h1>
-      <small>Source: <a href="https://github.com/tgerke/ducklake-r/blob/v0.4.0/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
+      <small>Source: <a href="https://github.com/tgerke/ducklake-r/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="development version" id="ducklake-development-version">ducklake (development version)<a class="anchor" aria-label="anchor" href="#ducklake-development-version"></a></h2>
+<ul><li>
+<p>The dplyr-to-DuckLake translation behind <code><a href="../reference/ducklake_exec.html">ducklake_exec()</a></code> and <code><a href="../reference/show_ducklake_query.html">show_ducklake_query()</a></code> is now built from dbplyr’s structured query objects (<code><a href="https://dbplyr.tidyverse.org/reference/sql_build.html" class="external-link">dbplyr::sql_build()</a></code>) instead of pattern-matching rendered SQL text. Classification no longer depends on what the SQL happens to look like, which fixes several latent bugs:</p>
+<ul><li>A filtered read from <em>another</em> table (<code>get_ducklake_table("staging") |&gt; filter(...) |&gt; ducklake_exec("target")</code>) was translated into a <code>DELETE</code> on the target table; it now appends the matching rows, as intended.</li>
+<li>Filter values containing SQL keywords (e.g. <code>filter(note != "WHERE is it")</code>) were refused as “too complex”; they now translate fine.</li>
+<li>A <code><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate()</a></code> that adds a new column is refused upfront with a pointer to <code><a href="../reference/replace_table.html">replace_table()</a></code>, instead of failing with a database binder error.</li>
+</ul></li>
+<li><p><code>INSERT</code> translations now list columns explicitly, so appends from another table match columns by name rather than by position, and joined or unioned sources can be appended in one step.</p></li>
+<li><p>Pipelines that compile to a subquery over the target table (grouped filters, filtering on a just-mutated column), and clauses with no in-place equivalent (<code><a href="https://dplyr.tidyverse.org/reference/arrange.html" class="external-link">arrange()</a></code>, <code><a href="https://rdrr.io/r/utils/head.html" class="external-link">head()</a></code>, <code><a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">distinct()</a></code>), are detected structurally and refused with a clear message rather than mistranslated.</p></li>
+<li><p>dbplyr (&gt;= 2.5.0) is now required; both dbplyr 2.5.x and the select-list format introduced in dbplyr 2.6.0 are supported.</p></li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.4.0" id="ducklake-040">ducklake 0.4.0<a class="anchor" aria-label="anchor" href="#ducklake-040"></a></h2>
 <p>This release focuses on production hardiness: self-contained connection management, working detach/restore, SQL identifier safety, Quack remote access, and a documentation overhaul.</p>
@@ -230,7 +242,7 @@
 <li>
 <code><a href="../reference/show_ducklake_query.html">show_ducklake_query()</a></code> - Preview translated SQL queries</li>
 <li>
-<code><a href="../reference/extract_assignments_from_sql.html">extract_assignments_from_sql()</a></code> - Parse SQL table assignments</li>
+<code>extract_assignments_from_sql()</code> - Parse SQL table assignments</li>
 </ul></div>
 <div class="section level4">
 <h4 id="backup-and-maintenance-0-1-0">Backup and Maintenance<a class="anchor" aria-label="anchor" href="#backup-and-maintenance-0-1-0"></a></h4>

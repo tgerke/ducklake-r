@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ducklake</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -46,7 +46,7 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Execute DuckLake operations from dplyr queries</h1>
-      <small class="dont-index">Source: <a href="https://github.com/tgerke/ducklake-r/blob/v0.4.0/R/ducklake_exec.R" class="external-link"><code>R/ducklake_exec.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/tgerke/ducklake-r/blob/main/R/ducklake_exec.R" class="external-link"><code>R/ducklake_exec.R</code></a></small>
       <div class="d-none name"><code>ducklake_exec.Rd</code></div>
     </div>
 
@@ -81,12 +81,16 @@
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>This function automatically detects the type of operation based on dplyr verbs:</p><ul><li><p>Filter-only queries generate DELETE operations (removes rows that DON'T match filter)</p></li>
-<li><p>Queries with mutate() generate UPDATE operations</p></li>
-<li><p>Plain reads from a <em>different</em> table generate INSERT operations
-(appending that table's rows into <code>table_name</code>)</p></li>
+    <p>This function automatically detects the type of operation based on dplyr verbs:</p><ul><li><p>Filter-only queries on <code>table_name</code> generate DELETE operations
+(removes rows that DON'T match filter)</p></li>
+<li><p>Queries with mutate() on <code>table_name</code> generate UPDATE operations</p></li>
+<li><p>Reads from <em>other</em> tables generate INSERT operations, appending their
+result into <code>table_name</code> with columns matched by name; <code><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter()</a></code> and
+joins are fine here, since the whole query just feeds the INSERT</p></li>
 </ul><p>A plain read from <code>table_name</code> itself is refused, since inserting a
-table's own rows back into it would duplicate them. Use
+table's own rows back into it would duplicate them. Pipelines that
+compile to a subquery over <code>table_name</code> (grouped filters, <code><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate()</a></code>
+followed by <code><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter()</a></code>) are also refused rather than mistranslated. Use
 <code><a href="show_ducklake_query.html">show_ducklake_query()</a></code> to preview the generated SQL without running it.</p>
     </div>
     <div class="section level2">
