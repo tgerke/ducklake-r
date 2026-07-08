@@ -5,6 +5,12 @@
   `merge_adjacent_files()`, `cleanup_old_files()`, `delete_orphaned_files()`,
   and `rewrite_data_files()` (#16, suggested by @stefanlinner).
 
+* New partitioning support: `set_table_partitioning()` and
+  `reset_table_partitioning()` manage a table's partition keys (identity,
+  `year`/`month`/`day`/`hour`, and `bucket` transforms), and
+  `get_table_partitions()` lists the keys from the metadata catalog (#16,
+  suggested by @stefanlinner).
+
 * Timestamps passed to the new functions as POSIXct are converted to UTC
   before interpolation, matching how DuckLake records snapshot times.
 

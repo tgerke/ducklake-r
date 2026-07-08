@@ -104,6 +104,13 @@ reference:
     - flush_inlined_data
     - checkpoint_ducklake
 
+  - title: "Partitioning"
+    desc: "Manage table partition keys for file pruning"
+    contents:
+    - set_table_partitioning
+    - reset_table_partitioning
+    - get_table_partitions
+
   - title: "Backup and Maintenance"
     desc: "Backup, compaction, and storage reclamation"
     contents:
