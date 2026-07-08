@@ -201,6 +201,31 @@ enables:
 - **Quality assurance**: Separate concerns between ingestion, cleaning,
   and analysis
 
+## Column-level lineage with dplyneage
+
+ducklake tracks lineage at the table level: which tables changed at
+each snapshot, and why. For lineage *within* a query — which source
+columns feed each output column — the companion package
+[dplyneage](https://github.com/tgerke/dplyneage) picks up where
+ducklake leaves off. Lake tables are ordinary dbplyr lazy tables, so
+any query pipes straight into an interactive diagram:
+
+``` r
+library(dplyneage)
+
+get_ducklake_table("orders") |>
+  dplyr::left_join(get_ducklake_table("customers"), by = "customer_id") |>
+  dplyr::group_by(region) |>
+  dplyr::summarise(total_sales = sum(amount, na.rm = TRUE)) |>
+  extract_lineage() |>
+  lineage_flow()
+```
+
+dplyneage's [ducklake lineage
+vignette](https://tgerke.github.io/dplyneage/articles/ducklake-lineage.html)
+walks through a full example, including per-layer diagrams for
+medallion pipelines and lineage for time-travel queries.
+
 ## Learn more
 
 Check out the [pkgdown site](https://tgerke.github.io/ducklake-r/) for
