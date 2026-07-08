@@ -5,9 +5,10 @@
 - New plotting functions, all requiring the suggested ggplot2 package
   and shown in action in a new “Visualizing Your Lake” vignette:
   [`plot_snapshots()`](https://tgerke.github.io/ducklake-r/reference/plot_snapshots.md)
-  draws a table’s (or the whole lake’s) snapshot history as a commit-log
-  style timeline, colored by change type and annotated with snapshot
-  authors and commit messages;
+  draws a table’s snapshot history as a commit-log timeline (snapshots
+  in order, with authors, commit messages, and inline markers for long
+  idle gaps) or, without a table name, the whole lake as a swimlane with
+  one row per table;
   [`plot_table_changes()`](https://tgerke.github.io/ducklake-r/reference/plot_table_changes.md)
   draws the rows each snapshot inserted, updated, and deleted as
   diverging bars; and

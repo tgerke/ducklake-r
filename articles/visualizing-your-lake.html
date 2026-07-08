@@ -179,10 +179,10 @@ recording authors and commit messages along the way.</p>
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"fleet"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">snapshot_id</span>, <span class="va">snapshot_time</span>, <span class="va">author</span>, <span class="va">commit_message</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time        author                  commit_message</span></span>
-<span><span class="co">#&gt; 1           1 2026-07-08 20:22:48 Data Engineer              Initial fleet load</span></span>
-<span><span class="co">#&gt; 2           2 2026-07-08 20:22:48 Fleet Manager              Add March arrivals</span></span>
-<span><span class="co">#&gt; 3           3 2026-07-08 20:22:48 Fleet Manager Record spring odometer readings</span></span>
-<span><span class="co">#&gt; 4           4 2026-07-08 20:22:48 Fleet Manager               Remove sold F-150</span></span></code></pre></div>
+<span><span class="co">#&gt; 1           1 2026-07-08 21:14:01 Data Engineer              Initial fleet load</span></span>
+<span><span class="co">#&gt; 2           2 2026-07-08 21:14:01 Fleet Manager              Add March arrivals</span></span>
+<span><span class="co">#&gt; 3           3 2026-07-08 21:14:02 Fleet Manager Record spring odometer readings</span></span>
+<span><span class="co">#&gt; 4           4 2026-07-08 21:14:02 Fleet Manager               Remove sold F-150</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="plotting-the-timeline">Plotting the Timeline<a class="anchor" aria-label="anchor" href="#plotting-the-timeline"></a>
@@ -192,11 +192,14 @@ picture:</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_snapshots.html">plot_snapshots</a></span><span class="op">(</span><span class="st">"fleet"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="visualizing-your-lake_files/figure-html/plot-table-1.png" class="r-plt" alt="" width="672"></p>
-<p>Reading it like a git log: the newest snapshot is at the top, the
-horizontal position shows when each change landed, and the color shows
-whether the snapshot created the table, changed data, changed the
-schema, or was maintenance activity (like flushing inlined data or
-compacting files).</p>
+<p>Reading it like a git log: the newest snapshot is at the top, each
+row shows the snapshot’s timestamp, author, and commit message, and the
+color shows whether the snapshot created the table, changed data,
+changed the schema, or was maintenance activity (like flushing inlined
+data or compacting files). Snapshots are spaced evenly by order rather
+than by clock time, so a table that sat untouched for months stays
+readable: a long idle stretch shows up as an inline marker (like “103
+days later”) instead of stretching the whole plot.</p>
 </div>
 <div class="section level2">
 <h2 id="how-much-changed">How Much Changed<a class="anchor" aria-label="anchor" href="#how-much-changed"></a>
@@ -212,16 +215,6 @@ below it.</p>
 <p><img src="visualizing-your-lake_files/figure-html/plot-changes-1.png" class="r-plt" alt="" width="672"></p>
 </div>
 <div class="section level2">
-<h2 id="plotting-the-whole-lake">Plotting the Whole Lake<a class="anchor" aria-label="anchor" href="#plotting-the-whole-lake"></a>
-</h2>
-<p>Calling <code><a href="../reference/plot_snapshots.html">plot_snapshots()</a></code> without a table name shows
-every snapshot in the lake, which is useful for a quick health check of
-overall activity:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_snapshots.html">plot_snapshots</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<p><img src="visualizing-your-lake_files/figure-html/plot-lake-1.png" class="r-plt" alt="" width="672"></p>
-</div>
-<div class="section level2">
 <h2 id="how-the-data-is-stored">How the Data Is Stored<a class="anchor" aria-label="anchor" href="#how-the-data-is-stored"></a>
 </h2>
 <p>Behind the scenes, table data lives in Parquet files (very small
@@ -229,7 +222,7 @@ writes may be inlined into the catalog until they are flushed out). To
 make the storage view interesting, let’s add a larger table alongside
 <code>fleet</code> and grow it in two batches, so it ends up with two
 data files:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">42</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">telemetry</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link">tibble</a></span><span class="op">(</span></span>
@@ -252,24 +245,24 @@ data files:</p>
 <p>The fleet table’s handful of rows were small enough to be inlined, so
 we flush them into a Parquet file to make them visible to the storage
 statistics:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/flush_inlined_data.html">flush_inlined_data</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Flushed <span style="color: #0000BB;">10</span> rows from <span style="color: #0000BB;">1</span> table to Parquet.</span></span>
 <span><span class="co">#&gt;   schema_name table_name rows_flushed</span></span>
 <span><span class="co">#&gt; 1        main      fleet           10</span></span></code></pre></div>
 <p><code><a href="../reference/get_table_info.html">get_table_info()</a></code> reports each table’s file count and
 size:</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/get_table_info.html">get_table_info</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   table_name schema_id table_id                           table_uuid file_count</span></span>
-<span><span class="co">#&gt; 1      fleet         0        1 019f4365-ba73-7046-ba0a-4d27d940431c          1</span></span>
-<span><span class="co">#&gt; 2  telemetry         0        2 019f4365-c229-7a29-b803-8ca71074a257          2</span></span>
+<span><span class="co">#&gt; 1      fleet         0        1 019f4394-a0bc-7972-b3ba-006d644b5cd6          1</span></span>
+<span><span class="co">#&gt; 2  telemetry         0        2 019f4394-a717-723b-849c-6943819a9b4d          2</span></span>
 <span><span class="co">#&gt;   file_size_bytes delete_file_count delete_file_size_bytes</span></span>
 <span><span class="co">#&gt; 1            1027                 1                   1120</span></span>
-<span><span class="co">#&gt; 2           65525                 0                      0</span></span></code></pre></div>
+<span><span class="co">#&gt; 2           65518                 0                      0</span></span></code></pre></div>
 <p>And <code><a href="../reference/plot_table_files.html">plot_table_files()</a></code> draws it, with delete files (rows
 removed but not yet compacted away) stacked in a second color:</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_table_files.html">plot_table_files</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p><img src="visualizing-your-lake_files/figure-html/plot-files-1.png" class="r-plt" alt="" width="672"></p>
 <p>This is the picture to watch as a lake ages: many small files or a
@@ -279,13 +272,33 @@ covered in <code><a href="../articles/storage-and-backups.html">vignette("storag
 <code><a href="../reference/rewrite_data_files.html">rewrite_data_files()</a></code>.</p>
 </div>
 <div class="section level2">
+<h2 id="plotting-the-whole-lake">Plotting the Whole Lake<a class="anchor" aria-label="anchor" href="#plotting-the-whole-lake"></a>
+</h2>
+<p>With two tables in the lake, we can step back and look at everything
+at once. Calling <code><a href="../reference/plot_snapshots.html">plot_snapshots()</a></code> without a table name
+switches to a swimlane view: one row per table, one point per snapshot,
+with recently active tables at the top. It answers a different question
+than the single-table timeline – not “what happened to this table” but
+“which tables are active, and what kind of churn does each one see”:</p>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_snapshots.html">plot_snapshots</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<p><img src="visualizing-your-lake_files/figure-html/plot-lake-1.png" class="r-plt" alt="" width="672"></p>
+<p>Snapshots that don’t belong to any table, like the initial schema
+creation, appear in a <code>(lake)</code> lane. As in the timeline,
+points are spaced by order rather than clock time; the x axis labels
+show each snapshot’s date.</p>
+</div>
+<div class="section level2">
 <h2 id="customizing-the-plots">Customizing the Plots<a class="anchor" aria-label="anchor" href="#customizing-the-plots"></a>
 </h2>
 <p>Each function returns a regular ggplot object, so you can restyle it
-like any other plot:</p>
+like any other plot. (The single-table timeline draws on a blank canvas,
+so it is best customized with <code>labs()</code> and
+<code>theme()</code> tweaks rather than a full theme swap like
+<code>theme_classic()</code>, which would bring back axes that have no
+meaning there.)</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_snapshots.html">plot_snapshots</a></span><span class="op">(</span><span class="st">"fleet"</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_classic</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>title <span class="op">=</span> <span class="st">"Fleet table audit trail"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="visualizing-your-lake_files/figure-html/plot-custom-1.png" class="r-plt" alt="" width="672"></p>
 </div>

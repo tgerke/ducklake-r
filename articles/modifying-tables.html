@@ -270,11 +270,11 @@ commit message – or to make several row operations land as
 <span><span class="co"># The full history: every change is versioned, wrapped or not</span></span>
 <span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"fleet"</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 1           2 2026-07-08 20:22:27              2</span></span>
-<span><span class="co">#&gt; 2           3 2026-07-08 20:22:28              2</span></span>
-<span><span class="co">#&gt; 3           4 2026-07-08 20:22:28              2</span></span>
-<span><span class="co">#&gt; 4           5 2026-07-08 20:22:28              2</span></span>
-<span><span class="co">#&gt; 5           6 2026-07-08 20:22:28              2</span></span>
+<span><span class="co">#&gt; 1           2 2026-07-08 21:13:41              2</span></span>
+<span><span class="co">#&gt; 2           3 2026-07-08 21:13:41              2</span></span>
+<span><span class="co">#&gt; 3           4 2026-07-08 21:13:41              2</span></span>
+<span><span class="co">#&gt; 4           5 2026-07-08 21:13:41              2</span></span>
+<span><span class="co">#&gt; 5           6 2026-07-08 21:13:42              2</span></span>
 <span><span class="co">#&gt;                                         changes        author</span></span>
 <span><span class="co">#&gt; 1 tables_created, inlined_insert, main.fleet, 2 Fleet Manager</span></span>
 <span><span class="co">#&gt; 2                             inlined_insert, 2          &lt;NA&gt;</span></span>
@@ -308,8 +308,8 @@ commit message – or to make several row operations land as
 <span><span class="co"># Check version history - should show the new snapshot</span></span>
 <span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 1           1 2026-07-08 20:22:27              1</span></span>
-<span><span class="co">#&gt; 2           7 2026-07-08 20:22:29              3</span></span>
+<span><span class="co">#&gt; 1           1 2026-07-08 21:13:41              1</span></span>
+<span><span class="co">#&gt; 2           7 2026-07-08 21:13:42              3</span></span>
 <span><span class="co">#&gt;                                                                 changes</span></span>
 <span><span class="co">#&gt; 1                    tables_created, tables_inserted_into, main.cars, 1</span></span>
 <span><span class="co">#&gt; 2 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 3</span></span>
@@ -341,7 +341,7 @@ commit message – or to make several row operations land as
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">hp</span> <span class="op">&gt;</span> <span class="fl">200</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">hp</span>, <span class="va">cyl</span>, <span class="va">hp_per_cyl</span>, <span class="va">high_performance</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A query:  ?? x 4</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/Rtmp7wCysL/ducklake/ducklake205443b4d907.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/Rtmp5mH7GH/ducklake/ducklake20ab207bf704.duckdb]</span></span></span>
 <span><span class="co">#&gt;      hp   cyl hp_per_cyl high_performance</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>   245     8       30.6 Y               </span></span>
@@ -370,7 +370,7 @@ commit message – or to make several row operations land as
 <span><span class="co"># Show the filtered table</span></span>
 <span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A query:  ?? x 13</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/Rtmp7wCysL/ducklake/ducklake205443b4d907.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/Rtmp5mH7GH/ducklake/ducklake20ab207bf704.duckdb]</span></span></span>
 <span><span class="co">#&gt;      mpg   cyl  disp    hp  drat    wt  qsec    vs    am  gear  carb hp_per_cyl</span></span>
 <span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span>  18.7     8  360    175  3.15  3.44  17.0     0     0     3     2       21.9</span></span>
@@ -392,10 +392,10 @@ commit message – or to make several row operations land as
 <span><span class="co"># View version history - old versions still accessible via time travel</span></span>
 <span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 1           1 2026-07-08 20:22:27              1</span></span>
-<span><span class="co">#&gt; 2           7 2026-07-08 20:22:29              3</span></span>
-<span><span class="co">#&gt; 3           8 2026-07-08 20:22:29              4</span></span>
-<span><span class="co">#&gt; 4           9 2026-07-08 20:22:29              5</span></span>
+<span><span class="co">#&gt; 1           1 2026-07-08 21:13:41              1</span></span>
+<span><span class="co">#&gt; 2           7 2026-07-08 21:13:42              3</span></span>
+<span><span class="co">#&gt; 3           8 2026-07-08 21:13:42              4</span></span>
+<span><span class="co">#&gt; 4           9 2026-07-08 21:13:42              5</span></span>
 <span><span class="co">#&gt;                                                                 changes</span></span>
 <span><span class="co">#&gt; 1                    tables_created, tables_inserted_into, main.cars, 1</span></span>
 <span><span class="co">#&gt; 2 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 3</span></span>
@@ -418,10 +418,10 @@ commit message – or to make several row operations land as
 <span><span class="va">snapshots</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span></span>
 <span><span class="va">snapshots</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 1           1 2026-07-08 20:22:27              1</span></span>
-<span><span class="co">#&gt; 2           7 2026-07-08 20:22:29              3</span></span>
-<span><span class="co">#&gt; 3           8 2026-07-08 20:22:29              4</span></span>
-<span><span class="co">#&gt; 4           9 2026-07-08 20:22:29              5</span></span>
+<span><span class="co">#&gt; 1           1 2026-07-08 21:13:41              1</span></span>
+<span><span class="co">#&gt; 2           7 2026-07-08 21:13:42              3</span></span>
+<span><span class="co">#&gt; 3           8 2026-07-08 21:13:42              4</span></span>
+<span><span class="co">#&gt; 4           9 2026-07-08 21:13:42              5</span></span>
 <span><span class="co">#&gt;                                                                 changes</span></span>
 <span><span class="co">#&gt; 1                    tables_created, tables_inserted_into, main.cars, 1</span></span>
 <span><span class="co">#&gt; 2 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 3</span></span>
