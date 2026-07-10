@@ -63,6 +63,7 @@ Other maintenance:
 \code{\link[=delete_orphaned_files]{delete_orphaned_files()}},
 \code{\link[=expire_snapshots]{expire_snapshots()}},
 \code{\link[=get_table_info]{get_table_info()}},
+\code{\link[=list_ducklake_files]{list_ducklake_files()}},
 \code{\link[=merge_adjacent_files]{merge_adjacent_files()}},
 \code{\link[=plot_table_files]{plot_table_files()}},
 \code{\link[=rewrite_data_files]{rewrite_data_files()}}

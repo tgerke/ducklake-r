@@ -12,7 +12,9 @@ attach_ducklake(
   read_only = FALSE,
   override_data_path = FALSE,
   data_inlining_row_limit = NULL,
-  encrypted = FALSE
+  encrypted = FALSE,
+  snapshot_version = NULL,
+  snapshot_time = NULL
 )
 }
 \arguments{
@@ -20,7 +22,10 @@ attach_ducklake(
 
 \item{lake_path}{Directory path where the lake lives. For \code{"duckdb"} this is
 where the catalog file and Parquet data are stored. For other backends this
-sets the Parquet data location (DuckLake's \code{DATA_PATH}).}
+sets the Parquet data location (DuckLake's \code{DATA_PATH}), which may also be
+an object-storage URI such as \code{"s3://bucket/path"} -- register credentials
+first with \code{\link[=create_storage_secret]{create_storage_secret()}}. (The \code{"duckdb"} backend needs a local
+\code{lake_path}, since its catalog is a database file.)}
 
 \item{backend}{Catalog backend: \code{"duckdb"} (default), \code{"postgres"},
 \code{"sqlite"}, or \code{"mysql"}.}
@@ -53,6 +58,14 @@ lake keeps the setting it was created with. The httpfs extension is
 loaded automatically: on some platforms (notably Windows) DuckDB's
 built-in crypto module is read-only and httpfs provides the writer.
 Default \code{FALSE}.}
+
+\item{snapshot_version}{Optional snapshot id. Attaches the lake pinned to
+that snapshot: queries see the lake exactly as it was then, and writes
+are rejected. Mutually exclusive with \code{snapshot_time}.}
+
+\item{snapshot_time}{Optional POSIXct or UTC timestamp string. Attaches
+the lake pinned to its state at that moment. Mutually exclusive with
+\code{snapshot_version}.}
 }
 \description{
 Wrapper for the ducklake \href{https://ducklake.select/docs/stable/duckdb/usage/connecting}{ATTACH} command.
@@ -126,12 +139,16 @@ attach_ducklake(
 
 # Encrypted Parquet files (keys live in the catalog)
 attach_ducklake("secure_lake", lake_path = "~/data/secure", encrypted = TRUE)
+
+# A frozen view of the lake as of snapshot 12, e.g. for reproducing a report
+attach_ducklake("lake_v12", lake_path = "~/data/lake", snapshot_version = 12)
 }
 }
 \seealso{
-\code{\link[=detach_ducklake]{detach_ducklake()}}, \code{\link[=install_ducklake]{install_ducklake()}}
+\code{\link[=detach_ducklake]{detach_ducklake()}}, \code{\link[=install_ducklake]{install_ducklake()}}, \code{\link[=create_storage_secret]{create_storage_secret()}}
 
 Other connection management:
+\code{\link[=create_storage_secret]{create_storage_secret()}},
 \code{\link[=detach_ducklake]{detach_ducklake()}},
 \code{\link[=get_ducklake_backend]{get_ducklake_backend()}},
 \code{\link[=get_ducklake_connection]{get_ducklake_connection()}},

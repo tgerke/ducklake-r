@@ -40,6 +40,7 @@ attach_ducklake("my_lake", lake_path = "~/lakes/my_lake")
 
 Other connection management:
 \code{\link[=attach_ducklake]{attach_ducklake()}},
+\code{\link[=create_storage_secret]{create_storage_secret()}},
 \code{\link[=detach_ducklake]{detach_ducklake()}},
 \code{\link[=get_ducklake_backend]{get_ducklake_backend()}},
 \code{\link[=get_ducklake_connection]{get_ducklake_connection()}},

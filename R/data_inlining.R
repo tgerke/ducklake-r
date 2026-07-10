@@ -88,26 +88,11 @@ set_inlining_row_limit <- function(limit,
     }
     check_identifier(ducklake_name)
 
-    if (!is.null(table_name) && !is.null(schema_name)) {
-      call_sql <- sprintf(
-        "CALL %s.set_option('data_inlining_row_limit', %d, schema => '%s', table_name => '%s');",
-        ducklake_name, limit,
-        gsub("'", "''", schema_name),
-        gsub("'", "''", table_name)
-      )
-    } else if (!is.null(table_name)) {
-      call_sql <- sprintf(
-        "CALL %s.set_option('data_inlining_row_limit', %d, table_name => '%s');",
-        ducklake_name, limit,
-        gsub("'", "''", table_name)
-      )
-    } else {
-      call_sql <- sprintf(
-        "CALL %s.set_option('data_inlining_row_limit', %d, schema => '%s');",
-        ducklake_name, limit,
-        gsub("'", "''", schema_name)
-      )
-    }
+    call_sql <- sprintf(
+      "CALL %s.set_option('data_inlining_row_limit', %d%s);",
+      ducklake_name, limit,
+      option_scope_args(table_name, schema_name)
+    )
 
     DBI::dbExecute(conn, call_sql)
 

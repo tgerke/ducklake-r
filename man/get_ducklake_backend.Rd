@@ -30,6 +30,7 @@ get_ducklake_backend("my_sqlite_lake")
 \seealso{
 Other connection management:
 \code{\link[=attach_ducklake]{attach_ducklake()}},
+\code{\link[=create_storage_secret]{create_storage_secret()}},
 \code{\link[=detach_ducklake]{detach_ducklake()}},
 \code{\link[=get_ducklake_connection]{get_ducklake_connection()}},
 \code{\link[=install_ducklake]{install_ducklake()}},
