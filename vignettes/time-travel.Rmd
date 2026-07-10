@@ -263,6 +263,24 @@ for time travel. That also means a restore is itself reversible with another
 list_table_snapshots("cars")
 ```
 
+## Pinning a Whole Session to a Snapshot
+
+The queries above travel one table at a time. To freeze *everything* — say,
+to re-run a report exactly as it stood at a submission milestone — attach
+the lake pinned to a snapshot:
+
+```{r pinned-attach, eval=FALSE}
+attach_ducklake(
+  "cars_milestone",
+  lake_path = "~/data/lake",
+  snapshot_version = 2
+)
+```
+
+Every table then reads as of snapshot 2 with no `AT (...)` clauses needed,
+and writes are rejected, so the milestone view can't drift. A
+`snapshot_time` argument does the same for a point in time.
+
 ## Use Cases for Time Travel
 
 Time travel functionality is particularly valuable for:

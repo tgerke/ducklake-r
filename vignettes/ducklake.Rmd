@@ -123,6 +123,23 @@ with_transaction(
 )
 ```
 
+### Register existing Parquet files without copying
+
+If your data is already in Parquet, `add_data_files()` records the files in
+the lake in place -- no copy, no rewrite. This is the fast migration path
+from a folder of Parquet extracts. Note that the lake takes ownership of
+the files: later compaction may rewrite or delete them.
+
+```{r add_data_files, eval=FALSE}
+# The table must exist with a compatible schema
+create_table(data.frame(id = integer(), value = numeric()), "readings")
+
+add_data_files("readings", c("extracts/jan.parquet", "extracts/feb.parquet"))
+
+# See which files back a table
+list_ducklake_files("readings")
+```
+
 ### Load with a dplyr pipeline
 
 ```{r load_pipeline}
@@ -327,6 +344,34 @@ get_ducklake_table("cars") |>
 get_ducklake_table("cars") |>
   select(mpg, cyl, hp) |>
   filter(mpg > 25)
+```
+
+### Sort or partition large tables for file pruning
+
+For big tables, declaring a sort order or partition keys lets DuckLake skip
+whole Parquet files when a query filters on those columns:
+
+```{r sorting_partitioning, eval=FALSE}
+# Sorting suits high-cardinality columns like timestamps or ids
+set_table_sorting("events", "event_time")
+
+# Partitioning suits low-cardinality columns like year or region
+set_table_partitioning("sales", c("year(order_date)", "region"))
+```
+
+### Tune lake options
+
+`set_ducklake_option()` adjusts DuckLake's persisted settings at lake,
+schema, or table scope, and `get_ducklake_options()` shows what's set:
+
+```{r options, eval=FALSE}
+# Trade write speed for smaller files
+set_ducklake_option("parquet_compression", "zstd")
+
+# Require a commit message on every snapshot -- useful for audit discipline
+set_ducklake_option("require_commit_message", TRUE)
+
+get_ducklake_options()
 ```
 
 ## Cleanup

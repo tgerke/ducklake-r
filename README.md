@@ -124,8 +124,8 @@ with_transaction(
 get_ducklake_table("vehicles_analysis") |>
   select(mpg, cyl, efficiency) |>
   head(3)
-#> # Source:   SQL [?? x 3]
-#> # Database: DuckDB 1.5.4 [root@Darwin 23.4.0:R 4.5.2//private/var/folders/fw/0d9nr9951q57f0d5l6qc1j200000gn/T/RtmpOZ3EaB/ducklake/ducklakee2a34a963752.duckdb]
+#> # A query:  ?? x 3
+#> # Database: DuckDB 1.5.4 [root@Darwin 25.5.0:R 4.5.2//private/var/folders/fw/0d9nr9951q57f0d5l6qc1j200000gn/T/RtmpHKx6Qe/ducklake/ducklake1f1f53c54359.duckdb]
 #>     mpg cyl   efficiency
 #>   <dbl> <chr> <chr>     
 #> 1  21   6.0   Medium    
@@ -135,11 +135,11 @@ get_ducklake_table("vehicles_analysis") |>
 # View complete audit trail across all layers with author and commit messages
 list_table_snapshots()
 #>   snapshot_id       snapshot_time schema_version
-#> 1           0 2026-07-07 20:30:18              0
-#> 2           1 2026-07-07 20:30:18              1
-#> 3           2 2026-07-07 20:30:18              2
-#> 4           3 2026-07-07 20:30:18              3
-#> 5           4 2026-07-07 20:30:18              4
+#> 1           0 2026-07-10 17:06:01              0
+#> 2           1 2026-07-10 17:06:01              1
+#> 3           2 2026-07-10 17:06:01              2
+#> 4           3 2026-07-10 17:06:01              3
+#> 5           4 2026-07-10 17:06:01              4
 #>                                                                           changes
 #> 1                                                           schemas_created, main
 #> 2                      tables_created, tables_inserted_into, main.vehicles_raw, 1
@@ -163,8 +163,8 @@ list_table_snapshots()
 get_ducklake_table_version("vehicles_clean", version = 2) |>
   select(mpg, cyl, gear) |>
   head(3)
-#> # Source:   SQL [?? x 3]
-#> # Database: DuckDB 1.5.4 [root@Darwin 23.4.0:R 4.5.2//private/var/folders/fw/0d9nr9951q57f0d5l6qc1j200000gn/T/RtmpOZ3EaB/ducklake/ducklakee2a34a963752.duckdb]
+#> # A query:  ?? x 3
+#> # Database: DuckDB 1.5.4 [root@Darwin 25.5.0:R 4.5.2//private/var/folders/fw/0d9nr9951q57f0d5l6qc1j200000gn/T/RtmpHKx6Qe/ducklake/ducklake1f1f53c54359.duckdb]
 #>     mpg cyl    gear
 #>   <dbl> <chr> <dbl>
 #> 1  21   6.0       4
@@ -203,12 +203,12 @@ enables:
 
 ## Column-level lineage with dplyneage
 
-ducklake tracks lineage at the table level: which tables changed at
-each snapshot, and why. For lineage *within* a query — which source
-columns feed each output column — the companion package
-[dplyneage](https://github.com/tgerke/dplyneage) picks up where
-ducklake leaves off. Lake tables are ordinary dbplyr lazy tables, so
-any query pipes straight into an interactive diagram:
+ducklake tracks lineage at the table level: which tables changed at each
+snapshot, and why. For lineage *within* a query — which source columns
+feed each output column — the companion package
+[dplyneage](https://github.com/tgerke/dplyneage) picks up where ducklake
+leaves off. Lake tables are ordinary dbplyr lazy tables, so any query
+pipes straight into an interactive diagram:
 
 ``` r
 library(dplyneage)
@@ -221,10 +221,10 @@ get_ducklake_table("orders") |>
   lineage_flow()
 ```
 
-dplyneage's [ducklake lineage
+dplyneage’s [ducklake lineage
 vignette](https://tgerke.github.io/dplyneage/articles/ducklake-lineage.html)
-walks through a full example, including per-layer diagrams for
-medallion pipelines and lineage for time-travel queries.
+walks through a full example, including per-layer diagrams for medallion
+pipelines and lineage for time-travel queries.
 
 ## Learn more
 
@@ -251,6 +251,9 @@ detailed vignettes:
 - [Storage and
   Backups](https://tgerke.github.io/ducklake-r/articles/storage-and-backups.html) -
   Back up and recover your lake
+- [Visualizing Your
+  Lake](https://tgerke.github.io/ducklake-r/articles/visualizing-your-lake.html) -
+  Plot snapshot history, change volume, and storage layout
 - [Quack Remote
   Access](https://tgerke.github.io/ducklake-r/articles/quack-remote-access.html) -
   Share a DuckLake over the network with the Quack protocol
@@ -273,10 +276,19 @@ detailed vignettes:
 - **ACID transactions**: Atomic updates with concurrent access and
   transactional guarantees over multi-table operations
 - **Time travel**: Query data exactly as it existed at any point in
-  time—essential for reproducibility
+  time—essential for reproducibility. Pin a whole session to a snapshot
+  with `attach_ducklake(snapshot_version = ...)`
 - **Performance-oriented**: Uses Parquet columnar storage with
   statistics for filter pushdown, enabling fast queries on large
-  datasets
+  datasets. Partitioning (`set_table_partitioning()`) and sorted tables
+  (`set_table_sorting()`) prune files on large tables
+- **Migrate Parquet in place**: `add_data_files()` registers existing
+  Parquet files with the lake without copying or rewriting them
+- **Cloud storage**: Keep data files on S3, GCS, R2, or Azure —
+  `create_storage_secret()` handles credentials
+- **Tunable**: `set_ducklake_option()` adjusts DuckLake’s persisted
+  settings (compression, file sizes, commit-message policy) at lake,
+  schema, or table scope
 - **Schema evolution**: Adapt table schemas over time as requirements
   change
 - **Tidyverse interface**: Familiar dplyr syntax for data manipulation

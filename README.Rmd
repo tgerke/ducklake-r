@@ -177,6 +177,7 @@ Check out the [pkgdown site](https://tgerke.github.io/ducklake-r/) for detailed 
 - [Transactions](https://tgerke.github.io/ducklake-r/articles/transactions.html) - ACID transaction support
 - [Time Travel](https://tgerke.github.io/ducklake-r/articles/time-travel.html) - Query and restore historical data
 - [Storage and Backups](https://tgerke.github.io/ducklake-r/articles/storage-and-backups.html) - Back up and recover your lake
+- [Visualizing Your Lake](https://tgerke.github.io/ducklake-r/articles/visualizing-your-lake.html) - Plot snapshot history, change volume, and storage layout
 - [Quack Remote Access](https://tgerke.github.io/ducklake-r/articles/quack-remote-access.html) - Share a DuckLake over the network with the Quack protocol
 
 ## Key features
@@ -187,8 +188,11 @@ Check out the [pkgdown site](https://tgerke.github.io/ducklake-r/) for detailed 
 - **Lightweight snapshots**: Create unlimited snapshots without frequent compacting steps
 - **Medallion architecture**: Bronze/silver/gold layers for data lineage and quality
 - **ACID transactions**: Atomic updates with concurrent access and transactional guarantees over multi-table operations
-- **Time travel**: Query data exactly as it existed at any point in time—essential for reproducibility
-- **Performance-oriented**: Uses Parquet columnar storage with statistics for filter pushdown, enabling fast queries on large datasets
+- **Time travel**: Query data exactly as it existed at any point in time—essential for reproducibility. Pin a whole session to a snapshot with `attach_ducklake(snapshot_version = ...)`
+- **Performance-oriented**: Uses Parquet columnar storage with statistics for filter pushdown, enabling fast queries on large datasets. Partitioning (`set_table_partitioning()`) and sorted tables (`set_table_sorting()`) prune files on large tables
+- **Migrate Parquet in place**: `add_data_files()` registers existing Parquet files with the lake without copying or rewriting them
+- **Cloud storage**: Keep data files on S3, GCS, R2, or Azure — `create_storage_secret()` handles credentials
+- **Tunable**: `set_ducklake_option()` adjusts DuckLake's persisted settings (compression, file sizes, commit-message policy) at lake, schema, or table scope
 - **Schema evolution**: Adapt table schemas over time as requirements change
 - **Tidyverse interface**: Familiar dplyr syntax for data manipulation
 - **Encryption**: Opt-in Parquet encryption with `attach_ducklake(encrypted = TRUE)`

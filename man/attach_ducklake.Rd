@@ -22,7 +22,10 @@ attach_ducklake(
 
 \item{lake_path}{Directory path where the lake lives. For \code{"duckdb"} this is
 where the catalog file and Parquet data are stored. For other backends this
-sets the Parquet data location (DuckLake's \code{DATA_PATH}).}
+sets the Parquet data location (DuckLake's \code{DATA_PATH}), which may also be
+an object-storage URI such as \code{"s3://bucket/path"} -- register credentials
+first with \code{\link[=create_storage_secret]{create_storage_secret()}}. (The \code{"duckdb"} backend needs a local
+\code{lake_path}, since its catalog is a database file.)}
 
 \item{backend}{Catalog backend: \code{"duckdb"} (default), \code{"postgres"},
 \code{"sqlite"}, or \code{"mysql"}.}
@@ -142,7 +145,7 @@ attach_ducklake("lake_v12", lake_path = "~/data/lake", snapshot_version = 12)
 }
 }
 \seealso{
-\code{\link[=detach_ducklake]{detach_ducklake()}}, \code{\link[=install_ducklake]{install_ducklake()}}
+\code{\link[=detach_ducklake]{detach_ducklake()}}, \code{\link[=install_ducklake]{install_ducklake()}}, \code{\link[=create_storage_secret]{create_storage_secret()}}
 
 Other connection management:
 \code{\link[=create_storage_secret]{create_storage_secret()}},

@@ -12,7 +12,10 @@
 #' @param ducklake_name Name for the ducklake, used as the database alias in DuckDB
 #' @param lake_path Directory path where the lake lives. For `"duckdb"` this is
 #'   where the catalog file and Parquet data are stored. For other backends this
-#'   sets the Parquet data location (DuckLake's `DATA_PATH`).
+#'   sets the Parquet data location (DuckLake's `DATA_PATH`), which may also be
+#'   an object-storage URI such as `"s3://bucket/path"` -- register credentials
+#'   first with [create_storage_secret()]. (The `"duckdb"` backend needs a local
+#'   `lake_path`, since its catalog is a database file.)
 #' @param backend Catalog backend: `"duckdb"` (default), `"postgres"`,
 #'   `"sqlite"`, or `"mysql"`.
 #' @param catalog_connection_string Backend-specific connection string:
@@ -74,7 +77,7 @@
 #' @family connection management
 #' @export
 #'
-#' @seealso [detach_ducklake()], [install_ducklake()]
+#' @seealso [detach_ducklake()], [install_ducklake()], [create_storage_secret()]
 #'
 #' @examples
 #' \dontrun{

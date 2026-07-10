@@ -97,6 +97,39 @@ attach_ducklake(
 - **Scalability vs. cost**: Object stores scale easily but may charge for data transfer
 - **Security**: Consider using DuckLake's encryption features for cloud storage
 
+### Cloud Storage Credentials
+
+Object storage needs credentials before a remote `lake_path` will work.
+`create_storage_secret()` registers them with DuckDB's secrets manager:
+
+```{r storage-secrets, eval=FALSE}
+# Explicit keys, scoped to one bucket
+create_storage_secret(
+  "s3",
+  key_id = Sys.getenv("AWS_ACCESS_KEY_ID"),
+  secret = Sys.getenv("AWS_SECRET_ACCESS_KEY"),
+  region = "us-east-1",
+  scope = "s3://my-bucket"
+)
+
+# Or let the AWS credential chain find them (env vars, profiles,
+# instance metadata) -- no keys in code
+create_storage_secret("s3", provider = "credential_chain")
+
+# Then attach as usual
+attach_ducklake("shared_lake", lake_path = "s3://my-bucket/ducklake/data")
+```
+
+Secrets are in-memory by default and disappear with the session; pass
+`persistent = TRUE` only if you are comfortable with DuckDB writing them,
+unencrypted, under `~/.duckdb/`. GCS, Cloudflare R2, and Azure use the same
+function with `type = "gcs"`, `"r2"`, or `"azure"`.
+
+Note that `backup_ducklake()` works on local data paths only. For a lake on
+object storage, use your provider's replication or sync tooling (bucket
+versioning, `aws s3 sync`, and similar) for the data files, and back up the
+catalog database with the tools for its backend.
+
 ## Inspecting DuckLake Files
 
 Let's create a sample DuckLake and explore what files it generates:
