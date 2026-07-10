@@ -12,12 +12,16 @@
 #' This function is designed for schema changes or bulk transformations that should
 #' create a new versioned snapshot. It:
 #' 1. Collects the transformed data
-#' 2. Drops the existing table  
+#' 2. Drops the existing table
 #' 3. Creates a new table with the updated schema/data
-#' 
-#' All operations happen within the current transaction context. Use
-#' `begin_transaction()` and `commit_transaction()` to ensure proper versioning.
-#' 
+#'
+#' The drop and create run atomically: when no transaction is open,
+#' `replace_table()` wraps them in one of its own, so a failed create never
+#' leaves the table dropped. Wrap the call in [with_transaction()] (or
+#' `begin_transaction()`/`commit_transaction()`) when you want to record an
+#' author and commit message on the snapshot, or to group the replacement
+#' with other changes.
+#'
 #' **When to use replace_table():**
 #' - **Adding new columns** - DuckLake UPDATE cannot add columns; use replace_table()
 #' - **Removing columns** - Restructure schema with select()
@@ -33,8 +37,7 @@
 #' 
 #' @examples
 #' \dontrun{
-#' # Add new derived columns with versioning
-#' begin_transaction()
+#' # Add new derived columns (atomic on its own; creates a new snapshot)
 #' get_ducklake_table("adsl") |>
 #'   mutate(
 #'     AGE65FL = if_else(AGE >= 65, "Y", "N"),
@@ -45,14 +48,15 @@
 #'     )
 #'   ) |>
 #'   replace_table("adsl")
-#' commit_transaction()
-#' 
-#' # Remove columns and create new snapshot
-#' begin_transaction()
-#' get_ducklake_table("adsl") |>
-#'   select(-AGE65FL, -AGECAT) |>
-#'   replace_table("adsl")
-#' commit_transaction()
+#'
+#' # Wrap in with_transaction() to record audit metadata on the snapshot
+#' with_transaction(
+#'   get_ducklake_table("adsl") |>
+#'     select(-AGE65FL, -AGECAT) |>
+#'     replace_table("adsl"),
+#'   author = "Data Engineer",
+#'   commit_message = "Drop derived age columns"
+#' )
 #' }
 replace_table <- function(.data, table_name, .quiet = TRUE) {
 
