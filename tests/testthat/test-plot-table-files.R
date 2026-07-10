@@ -38,3 +38,26 @@ test_that("format_bytes produces readable sizes", {
     c("0 B", "512 B", "2.9 kB", "20 kB", "5.2 MB", "1.4 GB", NA)
   )
 })
+
+test_that("plot_table_files treats NA file stats as zero", {
+  skip_if_not_installed("ggplot2")
+
+  local_mocked_bindings(
+    get_ducklake_connection = function() NULL,
+    infer_ducklake_name = function(ducklake_name, conn) "mock_lake",
+    get_table_info = function(...) {
+      data.frame(
+        table_name = c("inlined_tbl", "on_disk"),
+        file_count = c(NA, 2),
+        file_size_bytes = c(NA, 1000),
+        delete_file_count = c(NA, 0),
+        delete_file_size_bytes = c(NA, 0)
+      )
+    }
+  )
+
+  p <- plot_table_files()
+
+  expect_s3_class(p, "ggplot")
+  expect_equal(sum(p$data$bytes), 1000)
+})

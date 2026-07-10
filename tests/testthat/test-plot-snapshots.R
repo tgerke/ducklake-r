@@ -156,3 +156,19 @@ test_that("commit log marks large gaps between snapshots", {
   expect_length(gap_labels, 1)
   expect_match(gap_labels, "103 days later")
 })
+
+test_that("commit log handles a single snapshot without metadata columns", {
+  skip_if_not_installed("ggplot2")
+
+  snapshots <- data.frame(
+    snapshot_id = 1,
+    snapshot_time = as.POSIXct("2026-03-10 09:00:00", tz = "UTC")
+  )
+  snapshots$changes <- I(list("tables_created, main.solo"))
+  snapshots$change_type <- classify_snapshot_changes(snapshots$changes)
+
+  expect_no_warning(p <- plot_snapshot_commit_log(snapshots, "solo"))
+
+  expect_s3_class(p, "ggplot")
+  expect_true(all(is.na(p$data$annotation)))
+})

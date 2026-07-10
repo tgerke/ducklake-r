@@ -101,8 +101,9 @@ plot_snapshot_commit_log <- function(snapshots, table_name) {
   d$id_label <- paste0("#", d$snapshot_id)
   d$time_label <- format(d$snapshot_time, "%Y-%m-%d %H:%M:%S")
 
-  author <- ifelse(is.na(d$author), "", d$author)
-  msg <- ifelse(is.na(d$commit_message), "", d$commit_message)
+  # snapshots() may omit author/commit_message depending on DuckLake version
+  author <- if (is.null(d$author)) rep("", nrow(d)) else ifelse(is.na(d$author), "", d$author)
+  msg <- if (is.null(d$commit_message)) rep("", nrow(d)) else ifelse(is.na(d$commit_message), "", d$commit_message)
   annotation <- ifelse(
     author != "" & msg != "",
     paste0(author, ": ", msg),
@@ -115,9 +116,13 @@ plot_snapshot_commit_log <- function(snapshots, table_name) {
   # trigger markers while real idle stretches do
   gap_secs <- diff(as.numeric(d$snapshot_time))
   gaps <- data.frame(y = utils::head(d$row, -1) + 0.5, secs = gap_secs)
-  gaps <- gaps[
-    gaps$secs > max(4 * stats::median(gap_secs), 3600) & !is.na(gaps$secs),
-  ]
+  gaps <- gaps[!is.na(gaps$secs), , drop = FALSE]
+  if (nrow(gaps) > 0) {
+    gaps <- gaps[
+      gaps$secs > max(4 * stats::median(gaps$secs), 3600), ,
+      drop = FALSE
+    ]
+  }
 
   # Fixed x positions lay the id, timestamp, and annotation out as columns;
   # the coordinates are arbitrary units within xlim
