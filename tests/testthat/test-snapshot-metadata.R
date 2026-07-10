@@ -157,3 +157,10 @@ test_that("set_snapshot_metadata warns when no metadata provided", {
 
   cleanup_temp_ducklake(lake)
 })
+
+test_that("set_snapshot_metadata validates the ducklake name", {
+  expect_error(
+    set_snapshot_metadata('bad"name', author = "x"),
+    "simple identifier"
+  )
+})

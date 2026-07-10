@@ -107,19 +107,15 @@ commit_transaction <- function(
     if (db_ok) {
       # Build the CALL set_commit_message() statement
       # Signature: CALL ducklake.set_commit_message(author, message, extra_info => '...')
-      author_sql <- if (!is.null(author)) {
-        sprintf("'%s'", gsub("'", "''", author))
-      } else {
-        "NULL"
-      }
+      author_sql <- if (!is.null(author)) quote_sql(author) else "NULL"
       message_sql <- if (!is.null(commit_message)) {
-        sprintf("'%s'", gsub("'", "''", commit_message))
+        quote_sql(commit_message)
       } else {
         "NULL"
       }
 
       if (!is.null(commit_extra_info)) {
-        extra_sql <- sprintf("'%s'", gsub("'", "''", commit_extra_info))
+        extra_sql <- quote_sql(commit_extra_info)
         call_sql <- sprintf(
           "CALL %s.set_commit_message(%s, %s, extra_info => %s)",
           current_db,
@@ -198,6 +194,7 @@ set_snapshot_metadata <- function(
   if (is.null(conn)) {
     conn <- get_ducklake_connection()
   }
+  check_identifier(ducklake_name)
 
   if (
     is.null(author) && is.null(commit_message) && is.null(commit_extra_info)
@@ -223,7 +220,7 @@ set_snapshot_metadata <- function(
   }
 
   # Qualify metadata table names based on backend
-  backend <- get_ducklake_backend()
+  backend <- get_ducklake_backend(ducklake_name)
   meta_db <- paste0("__ducklake_metadata_", ducklake_name)
   if (backend %in% c("postgres", "mysql")) {
     changes_ref <- sprintf("\"%s\".ducklake_snapshot_changes", meta_db)

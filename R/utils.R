@@ -123,6 +123,28 @@ format_timestamp <- function(x) {
   }
 }
 
+#' Test whether the connection has an open transaction
+#'
+#' DuckDB aborts an open transaction when any statement in it fails, so
+#' probing with a BEGIN would poison a caller's transaction. Instead compare
+#' `current_transaction_id()` across two statements: in autocommit mode each
+#' statement runs in its own transaction so the id advances, while inside an
+#' open transaction it stays the same.
+#'
+#' @param conn A DBI connection.
+#' @returns `TRUE` if a transaction is open, otherwise `FALSE`.
+#' @noRd
+in_transaction <- function(conn = get_ducklake_connection()) {
+  ids <- tryCatch(
+    c(
+      DBI::dbGetQuery(conn, "SELECT current_transaction_id() AS id")$id,
+      DBI::dbGetQuery(conn, "SELECT current_transaction_id() AS id")$id
+    ),
+    error = function(e) NULL
+  )
+  length(ids) == 2 && ids[1] == ids[2]
+}
+
 #' Quote a value as a SQL string literal
 #'
 #' Wraps `x` in single quotes and doubles any embedded single quotes.

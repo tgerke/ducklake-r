@@ -136,3 +136,40 @@ test_that("quack_serve and quack_query complete a live round trip", {
     }
   )
 })
+
+test_that("install_quack installs and optionally loads the extension", {
+  executed <- character()
+  local_mocked_bindings(
+    check_quack_version = function(...) invisible(TRUE),
+    db_execute = function(sql, ...) {
+      executed <<- c(executed, sql)
+      invisible(NULL)
+    }
+  )
+
+  suppressMessages(install_quack())
+  expect_equal(executed, c("INSTALL quack;", "LOAD quack;"))
+
+  executed <- character()
+  suppressMessages(install_quack(load = FALSE))
+  expect_equal(executed, "INSTALL quack;")
+})
+
+test_that("detach_quack removes the catalog and ignores unknown names", {
+  skip_if_not_installed("duckdb")
+
+  conn <- get_ducklake_connection()
+  DBI::dbExecute(conn, "ATTACH ':memory:' AS quack_detach_test;")
+
+  detach_quack("quack_detach_test")
+
+  attached <- DBI::dbGetQuery(
+    conn,
+    "SELECT database_name FROM duckdb_databases();"
+  )$database_name
+  expect_false("quack_detach_test" %in% attached)
+
+  # Unknown names and NULL are silent no-ops
+  expect_no_error(detach_quack("no_such_catalog"))
+  expect_no_error(detach_quack())
+})
