@@ -135,36 +135,20 @@ test_that("replace_table respects .quiet parameter", {
   })
   
   # Test with .quiet = FALSE
-  output_verbose <- capture.output({
-    with_transaction({
-      get_ducklake_table("test_replace_quiet") |>
-        dplyr::mutate(new_col = "added") |>
-        replace_table("test_replace_quiet", .quiet = FALSE)
-    })
-  })
-  
-  # Should have messages
-  expect_true(length(output_verbose) > 0)
-  
-  # Reset table
-  with_transaction({
+  expect_message(
+    get_ducklake_table("test_replace_quiet") |>
+      dplyr::mutate(new_col = "added") |>
+      replace_table("test_replace_quiet", .quiet = FALSE),
+    "Replacing table"
+  )
+
+  # Test with .quiet = TRUE
+  expect_no_message(
     get_ducklake_table("test_replace_quiet") |>
       dplyr::select(id, value) |>
       replace_table("test_replace_quiet", .quiet = TRUE)
-  })
-  
-  # Test with .quiet = TRUE
-  output_quiet <- capture.output({
-    with_transaction({
-      get_ducklake_table("test_replace_quiet") |>
-        dplyr::mutate(new_col = "added") |>
-        replace_table("test_replace_quiet", .quiet = TRUE)
-    })
-  })
-  
-  # Should have less output
-  expect_true(length(output_quiet) < length(output_verbose))
-  
+  )
+
   cleanup_temp_ducklake(lake)
 })
 

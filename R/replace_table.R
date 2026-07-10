@@ -55,19 +55,20 @@
 #' commit_transaction()
 #' }
 replace_table <- function(.data, table_name, .quiet = TRUE) {
-  
+
   if (!.quiet) {
-    cat("=== Replacing table:", table_name, "===\n")
+    cli::cli_inform("Replacing table {.val {table_name}}...")
   }
-  
+
   # Collect the transformed data
-  if (!.quiet) cat("Collecting transformed data...\n")
   new_data <- dplyr::collect(.data)
-  
+
   if (!.quiet) {
-    cat("Collected", nrow(new_data), "rows with", ncol(new_data), "columns\n")
+    cli::cli_inform(
+      "Collected {nrow(new_data)} row{?s} with {ncol(new_data)} column{?s}."
+    )
   }
-  
+
   # The drop and create must land together: outside a transaction they
   # autocommit separately, so a failed create would leave the table gone.
   # When the caller already opened a transaction, they own the
@@ -86,12 +87,10 @@ replace_table <- function(.data, table_name, .quiet = TRUE) {
   }
 
   # Drop the existing table
-  if (!.quiet) cat("Dropping existing table...\n")
   drop_sql <- sprintf("DROP TABLE IF EXISTS %s", quote_ident(table_name))
   db_execute(drop_sql)
 
   # Create the new table
-  if (!.quiet) cat("Creating new table...\n")
   create_table(new_data, table_name)
 
   if (own_txn) {
@@ -100,7 +99,7 @@ replace_table <- function(.data, table_name, .quiet = TRUE) {
   }
 
   if (!.quiet) {
-    cat("Table", table_name, "successfully replaced\n")
+    cli::cli_inform("Table {.val {table_name}} successfully replaced.")
   }
 
   invisible(NULL)

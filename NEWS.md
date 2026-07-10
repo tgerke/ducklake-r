@@ -25,6 +25,10 @@
 * `create_table()` no longer leaves a temporary view registered on the
   shared connection when the CREATE statement fails.
 
+* `replace_table(.quiet = FALSE)` reports progress via messages (cli) rather
+  than printing to the console, so it can be suppressed and captured like
+  the rest of the package's output.
+
 * New targeted maintenance wrappers complement `checkpoint_ducklake()`:
   `expire_snapshots()` (with `older_than`, `versions`, and `dry_run`),
   `merge_adjacent_files()`, `cleanup_old_files()`, `delete_orphaned_files()`,
