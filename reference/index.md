@@ -16,6 +16,8 @@ Initialize and manage DuckLake connections
   : Use your own DuckDB connection with ducklake
 - [`get_ducklake_backend()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_backend.md)
   : Get the catalog backend type of an attached lake
+- [`create_storage_secret()`](https://tgerke.github.io/ducklake-r/reference/create_storage_secret.md)
+  : Store object storage credentials for a session
 
 ## Table Operations
 
@@ -27,6 +29,8 @@ Create and query tables
   : Get a DuckLake table
 - [`replace_table()`](https://tgerke.github.io/ducklake-r/reference/replace_table.md)
   : Replace a table with modified data and create a new snapshot
+- [`add_data_files()`](https://tgerke.github.io/ducklake-r/reference/add_data_files.md)
+  : Register existing Parquet files with a DuckLake table
 
 ## Row Operations
 
@@ -102,9 +106,9 @@ Configure and manage data inlining for streaming workloads
 - [`checkpoint_ducklake()`](https://tgerke.github.io/ducklake-r/reference/checkpoint_ducklake.md)
   : Run a DuckLake checkpoint
 
-## Partitioning
+## Partitioning and Sorting
 
-Manage table partition keys for file pruning
+Manage partition keys and sort orders for file pruning
 
 - [`set_table_partitioning()`](https://tgerke.github.io/ducklake-r/reference/set_table_partitioning.md)
   : Set partitioning keys for a table
@@ -112,6 +116,19 @@ Manage table partition keys for file pruning
   : Remove partitioning keys from a table
 - [`get_table_partitions()`](https://tgerke.github.io/ducklake-r/reference/get_table_partitions.md)
   : List the partitioning keys of tables in a lake
+- [`set_table_sorting()`](https://tgerke.github.io/ducklake-r/reference/set_table_sorting.md)
+  : Set the sort order of a table
+- [`reset_table_sorting()`](https://tgerke.github.io/ducklake-r/reference/reset_table_sorting.md)
+  : Remove the sort order from a table
+
+## Options
+
+Lake, schema, and table configuration
+
+- [`set_ducklake_option()`](https://tgerke.github.io/ducklake-r/reference/set_ducklake_option.md)
+  : Set a DuckLake option
+- [`get_ducklake_options()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_options.md)
+  : List the options set on a DuckLake
 
 ## Backup and Maintenance
 
@@ -133,6 +150,8 @@ Backup, compaction, and storage reclamation
   : Get file statistics for the tables in a lake
 - [`plot_table_files()`](https://tgerke.github.io/ducklake-r/reference/plot_table_files.md)
   : Plot the file layout of a lake
+- [`list_ducklake_files()`](https://tgerke.github.io/ducklake-r/reference/list_ducklake_files.md)
+  : List the data files backing a DuckLake table
 
 ## Quack remote access
 

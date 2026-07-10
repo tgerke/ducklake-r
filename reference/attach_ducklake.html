@@ -71,7 +71,9 @@ an existing one. The lake can be detached with <code><a href="detach_ducklake.ht
 <span>  read_only <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  override_data_path <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  data_inlining_row_limit <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  encrypted <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span>  encrypted <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  snapshot_version <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  snapshot_time <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -86,7 +88,10 @@ an existing one. The lake can be detached with <code><a href="detach_ducklake.ht
 <dt id="arg-lake-path">lake_path<a class="anchor" aria-label="anchor" href="#arg-lake-path"></a></dt>
 <dd><p>Directory path where the lake lives. For <code>"duckdb"</code> this is
 where the catalog file and Parquet data are stored. For other backends this
-sets the Parquet data location (DuckLake's <code>DATA_PATH</code>).</p></dd>
+sets the Parquet data location (DuckLake's <code>DATA_PATH</code>), which may also be
+an object-storage URI such as <code>"s3://bucket/path"</code> – register credentials
+first with <code><a href="create_storage_secret.html">create_storage_secret()</a></code>. (The <code>"duckdb"</code> backend needs a local
+<code>lake_path</code>, since its catalog is a database file.)</p></dd>
 
 
 <dt id="arg-backend">backend<a class="anchor" aria-label="anchor" href="#arg-backend"></a></dt>
@@ -139,6 +144,18 @@ loaded automatically: on some platforms (notably Windows) DuckDB's
 built-in crypto module is read-only and httpfs provides the writer.
 Default <code>FALSE</code>.</p></dd>
 
+
+<dt id="arg-snapshot-version">snapshot_version<a class="anchor" aria-label="anchor" href="#arg-snapshot-version"></a></dt>
+<dd><p>Optional snapshot id. Attaches the lake pinned to
+that snapshot: queries see the lake exactly as it was then, and writes
+are rejected. Mutually exclusive with <code>snapshot_time</code>.</p></dd>
+
+
+<dt id="arg-snapshot-time">snapshot_time<a class="anchor" aria-label="anchor" href="#arg-snapshot-time"></a></dt>
+<dd><p>Optional POSIXct or UTC timestamp string. Attaches
+the lake pinned to its state at that moment. Mutually exclusive with
+<code>snapshot_version</code>.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -169,8 +186,9 @@ See <a href="https://github.com/duckdb/duckdb/issues/7892" class="external-link"
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="detach_ducklake.html">detach_ducklake()</a></code>, <code><a href="install_ducklake.html">install_ducklake()</a></code></p>
+    <div class="dont-index"><p><code><a href="detach_ducklake.html">detach_ducklake()</a></code>, <code><a href="install_ducklake.html">install_ducklake()</a></code>, <code><a href="create_storage_secret.html">create_storage_secret()</a></code></p>
 <p>Other connection management:
+<code><a href="create_storage_secret.html">create_storage_secret()</a></code>,
 <code><a href="detach_ducklake.html">detach_ducklake()</a></code>,
 <code><a href="get_ducklake_backend.html">get_ducklake_backend()</a></code>,
 <code><a href="get_ducklake_connection.html">get_ducklake_connection()</a></code>,
@@ -217,6 +235,9 @@ See <a href="https://github.com/duckdb/duckdb/issues/7892" class="external-link"
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Encrypted Parquet files (keys live in the catalog)</span></span></span>
 <span class="r-in"><span><span class="fu">attach_ducklake</span><span class="op">(</span><span class="st">"secure_lake"</span>, lake_path <span class="op">=</span> <span class="st">"~/data/secure"</span>, encrypted <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># A frozen view of the lake as of snapshot 12, e.g. for reproducing a report</span></span></span>
+<span class="r-in"><span><span class="fu">attach_ducklake</span><span class="op">(</span><span class="st">"lake_v12"</span>, lake_path <span class="op">=</span> <span class="st">"~/data/lake"</span>, snapshot_version <span class="op">=</span> <span class="fl">12</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 </code></pre></div>
     </div>

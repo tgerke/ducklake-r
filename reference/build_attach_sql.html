@@ -65,7 +65,9 @@
 <span>  <span class="va">read_only</span>,</span>
 <span>  override_data_path <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  data_inlining_row_limit <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  encrypted <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span>  encrypted <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  snapshot_version <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  snapshot_time <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -103,6 +105,14 @@
 
 <dt id="arg-encrypted">encrypted<a class="anchor" aria-label="anchor" href="#arg-encrypted"></a></dt>
 <dd><p>Whether to add ENCRYPTED TRUE</p></dd>
+
+
+<dt id="arg-snapshot-version">snapshot_version<a class="anchor" aria-label="anchor" href="#arg-snapshot-version"></a></dt>
+<dd><p>Optional snapshot id for SNAPSHOT_VERSION</p></dd>
+
+
+<dt id="arg-snapshot-time">snapshot_time<a class="anchor" aria-label="anchor" href="#arg-snapshot-time"></a></dt>
+<dd><p>Optional timestamp for SNAPSHOT_TIME</p></dd>
 
 </dl></div>
     <div class="section level2">

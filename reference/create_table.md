@@ -29,6 +29,7 @@ create_table(data_source, table_name)
 ## See also
 
 Other table operations:
+[`add_data_files()`](https://tgerke.github.io/ducklake-r/reference/add_data_files.md),
 [`ducklake_exec()`](https://tgerke.github.io/ducklake-r/reference/ducklake_exec.md),
 [`get_ducklake_table()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_table.md),
 [`get_metadata_table()`](https://tgerke.github.io/ducklake-r/reference/get_metadata_table.md),

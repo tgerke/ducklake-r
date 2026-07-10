@@ -92,6 +92,43 @@ attach_ducklake(
 - **Security**: Consider using DuckLake’s encryption features for cloud
   storage
 
+### Cloud Storage Credentials
+
+Object storage needs credentials before a remote `lake_path` will work.
+[`create_storage_secret()`](https://tgerke.github.io/ducklake-r/reference/create_storage_secret.md)
+registers them with DuckDB’s secrets manager:
+
+``` r
+
+# Explicit keys, scoped to one bucket
+create_storage_secret(
+  "s3",
+  key_id = Sys.getenv("AWS_ACCESS_KEY_ID"),
+  secret = Sys.getenv("AWS_SECRET_ACCESS_KEY"),
+  region = "us-east-1",
+  scope = "s3://my-bucket"
+)
+
+# Or let the AWS credential chain find them (env vars, profiles,
+# instance metadata) -- no keys in code
+create_storage_secret("s3", provider = "credential_chain")
+
+# Then attach as usual
+attach_ducklake("shared_lake", lake_path = "s3://my-bucket/ducklake/data")
+```
+
+Secrets are in-memory by default and disappear with the session; pass
+`persistent = TRUE` only if you are comfortable with DuckDB writing
+them, unencrypted, under `~/.duckdb/`. GCS, Cloudflare R2, and Azure use
+the same function with `type = "gcs"`, `"r2"`, or `"azure"`.
+
+Note that
+[`backup_ducklake()`](https://tgerke.github.io/ducklake-r/reference/backup_ducklake.md)
+works on local data paths only. For a lake on object storage, use your
+provider’s replication or sync tooling (bucket versioning,
+`aws s3 sync`, and similar) for the data files, and back up the catalog
+database with the tools for its backend.
+
 ## Inspecting DuckLake Files
 
 Let’s create a sample DuckLake and explore what files it generates:
@@ -149,14 +186,14 @@ The catalog is a single database file containing all metadata:
 ``` r
 
 dir_tree(lake_dir)
-#> /tmp/Rtmpmi8WIW/storage_backups_vignette/storage_demo
+#> /tmp/Rtmp6U3Gy7/storage_backups_vignette/storage_demo
 #> ├── demo_lake.ducklake
 #> ├── demo_lake.ducklake.wal
 #> └── main
 #>     └── cars
-#>         ├── ducklake-019f4d0f-2cce-7d11-832b-b00c1f466e8b.parquet
-#>         ├── ducklake-019f4d0f-2dc2-7426-982a-7526b2412315.parquet
-#>         └── ducklake-019f4d0f-2e57-71ce-8d08-2da9bd40680e.parquet
+#>         ├── ducklake-019f4d36-d5a0-7eda-ab43-d7c3cfb3b0dd.parquet
+#>         ├── ducklake-019f4d36-d683-709d-a006-dd10ef5207d4.parquet
+#>         └── ducklake-019f4d36-d70c-7baf-8ee9-59ea9b6e72ff.parquet
 ```
 
 The catalog files (`demo_lake.ducklake` and `.wal`) contain all metadata
@@ -172,11 +209,11 @@ Data files are stored in Parquet format in a structured directory:
 main_dir <- file.path(lake_dir, "main")
 
 dir_tree(main_dir, recurse = 2)
-#> /tmp/Rtmpmi8WIW/storage_backups_vignette/storage_demo/main
+#> /tmp/Rtmp6U3Gy7/storage_backups_vignette/storage_demo/main
 #> └── cars
-#>     ├── ducklake-019f4d0f-2cce-7d11-832b-b00c1f466e8b.parquet
-#>     ├── ducklake-019f4d0f-2dc2-7426-982a-7526b2412315.parquet
-#>     └── ducklake-019f4d0f-2e57-71ce-8d08-2da9bd40680e.parquet
+#>     ├── ducklake-019f4d36-d5a0-7eda-ab43-d7c3cfb3b0dd.parquet
+#>     ├── ducklake-019f4d36-d683-709d-a006-dd10ef5207d4.parquet
+#>     └── ducklake-019f4d36-d70c-7baf-8ee9-59ea9b6e72ff.parquet
   
 # Get details about parquet files
 parquet_files <- dir_ls(main_dir, recurse = TRUE, regexp = "\\.parquet$")
@@ -185,9 +222,9 @@ for (f in parquet_files) {
               path_file(f), 
               file.size(f)))
 }
-#>   ducklake-019f4d0f-2cce-7d11-832b-b00c1f466e8b.parquet (2307 bytes)
-#>   ducklake-019f4d0f-2dc2-7426-982a-7526b2412315.parquet (2501 bytes)
-#>   ducklake-019f4d0f-2e57-71ce-8d08-2da9bd40680e.parquet (2724 bytes)
+#>   ducklake-019f4d36-d5a0-7eda-ab43-d7c3cfb3b0dd.parquet (2307 bytes)
+#>   ducklake-019f4d36-d683-709d-a006-dd10ef5207d4.parquet (2501 bytes)
+#>   ducklake-019f4d36-d70c-7baf-8ee9-59ea9b6e72ff.parquet (2724 bytes)
 ```
 
 ### Understanding File Organization
@@ -253,13 +290,13 @@ dir_copy(
 
 # Verify the backup was created
 dir_tree(backup_dir)
-#> /tmp/Rtmpmi8WIW/storage_backups_vignette/storage_demo/backups
+#> /tmp/Rtmp6U3Gy7/storage_backups_vignette/storage_demo/backups
 #> ├── demo_lake.ducklake
 #> └── main
 #>     └── cars
-#>         ├── ducklake-019f4d0f-2cce-7d11-832b-b00c1f466e8b.parquet
-#>         ├── ducklake-019f4d0f-2dc2-7426-982a-7526b2412315.parquet
-#>         └── ducklake-019f4d0f-2e57-71ce-8d08-2da9bd40680e.parquet
+#>         ├── ducklake-019f4d36-d5a0-7eda-ab43-d7c3cfb3b0dd.parquet
+#>         ├── ducklake-019f4d36-d683-709d-a006-dd10ef5207d4.parquet
+#>         └── ducklake-019f4d36-d70c-7baf-8ee9-59ea9b6e72ff.parquet
 
 # To work with the backup, attach it. override_data_path is needed because
 # the catalog remembers the original data location, which the backup no
@@ -273,9 +310,9 @@ attach_ducklake(
 # Verify you're working with the backup
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-07-10 17:24:27              1
-#> 2           2 2026-07-10 17:24:28              2
-#> 3           3 2026-07-10 17:24:28              3
+#> 1           1 2026-07-10 18:07:47              1
+#> 2           2 2026-07-10 18:07:47              2
+#> 3           3 2026-07-10 18:07:47              3
 #>                                                                 changes
 #> 1                    tables_created, tables_inserted_into, main.cars, 1
 #> 2 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2
@@ -487,11 +524,11 @@ backup_dir <- backup_ducklake(
 #> Catalog backed up successfully.
 #> Data files backed up successfully (1 directory).
 #> Backup completed:
-#> /tmp/Rtmpmi8WIW/storage_backups_vignette/storage_demo/backups/backup_20260710_172429
+#> /tmp/Rtmp6U3Gy7/storage_backups_vignette/storage_demo/backups/backup_20260710_180748
 
 # The function returns the backup directory path
 print(backup_dir)
-#> [1] "/tmp/Rtmpmi8WIW/storage_backups_vignette/storage_demo/backups/backup_20260710_172429"
+#> [1] "/tmp/Rtmp6U3Gy7/storage_backups_vignette/storage_demo/backups/backup_20260710_180748"
 ```
 
 The

@@ -190,13 +190,47 @@ but may charge for data transfer</li>
 features for cloud storage</li>
 </ul>
 </div>
+<div class="section level3">
+<h3 id="cloud-storage-credentials">Cloud Storage Credentials<a class="anchor" aria-label="anchor" href="#cloud-storage-credentials"></a>
+</h3>
+<p>Object storage needs credentials before a remote
+<code>lake_path</code> will work. <code><a href="../reference/create_storage_secret.html">create_storage_secret()</a></code>
+registers them with DuckDB’s secrets manager:</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Explicit keys, scoped to one bucket</span></span>
+<span><span class="fu"><a href="../reference/create_storage_secret.html">create_storage_secret</a></span><span class="op">(</span></span>
+<span>  <span class="st">"s3"</span>,</span>
+<span>  key_id <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.getenv.html" class="external-link">Sys.getenv</a></span><span class="op">(</span><span class="st">"AWS_ACCESS_KEY_ID"</span><span class="op">)</span>,</span>
+<span>  secret <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.getenv.html" class="external-link">Sys.getenv</a></span><span class="op">(</span><span class="st">"AWS_SECRET_ACCESS_KEY"</span><span class="op">)</span>,</span>
+<span>  region <span class="op">=</span> <span class="st">"us-east-1"</span>,</span>
+<span>  scope <span class="op">=</span> <span class="st">"s3://my-bucket"</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Or let the AWS credential chain find them (env vars, profiles,</span></span>
+<span><span class="co"># instance metadata) -- no keys in code</span></span>
+<span><span class="fu"><a href="../reference/create_storage_secret.html">create_storage_secret</a></span><span class="op">(</span><span class="st">"s3"</span>, provider <span class="op">=</span> <span class="st">"credential_chain"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Then attach as usual</span></span>
+<span><span class="fu"><a href="../reference/attach_ducklake.html">attach_ducklake</a></span><span class="op">(</span><span class="st">"shared_lake"</span>, lake_path <span class="op">=</span> <span class="st">"s3://my-bucket/ducklake/data"</span><span class="op">)</span></span></code></pre></div>
+<p>Secrets are in-memory by default and disappear with the session; pass
+<code>persistent = TRUE</code> only if you are comfortable with DuckDB
+writing them, unencrypted, under <code>~/.duckdb/</code>. GCS,
+Cloudflare R2, and Azure use the same function with
+<code>type = "gcs"</code>, <code>"r2"</code>, or
+<code>"azure"</code>.</p>
+<p>Note that <code><a href="../reference/backup_ducklake.html">backup_ducklake()</a></code> works on local data paths
+only. For a lake on object storage, use your provider’s replication or
+sync tooling (bucket versioning, <code>aws s3 sync</code>, and similar)
+for the data files, and back up the catalog database with the tools for
+its backend.</p>
+</div>
 </div>
 <div class="section level2">
 <h2 id="inspecting-ducklake-files">Inspecting DuckLake Files<a class="anchor" aria-label="anchor" href="#inspecting-ducklake-files"></a>
 </h2>
 <p>Let’s create a sample DuckLake and explore what files it
 generates:</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Create a temporary directory for our demo</span></span>
 <span><span class="va">lake_dir</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">vignette_temp_dir</span>, <span class="st">"storage_demo"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/files2.html" class="external-link">dir.create</a></span><span class="op">(</span><span class="va">lake_dir</span>, showWarnings <span class="op">=</span> <span class="cn">FALSE</span>, recursive <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
@@ -243,16 +277,16 @@ generates:</p>
 <h3 id="catalog-files">Catalog Files<a class="anchor" aria-label="anchor" href="#catalog-files"></a>
 </h3>
 <p>The catalog is a single database file containing all metadata:</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://fs.r-lib.org/reference/dir_tree.html" class="external-link">dir_tree</a></span><span class="op">(</span><span class="va">lake_dir</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #0000BB; font-weight: bold;">/tmp/Rtmpmi8WIW/storage_backups_vignette/storage_demo</span></span></span>
+<span><span class="co">#&gt; <span style="color: #0000BB; font-weight: bold;">/tmp/Rtmp6U3Gy7/storage_backups_vignette/storage_demo</span></span></span>
 <span><span class="co">#&gt; ├── demo_lake.ducklake</span></span>
 <span><span class="co">#&gt; ├── demo_lake.ducklake.wal</span></span>
 <span><span class="co">#&gt; └── <span style="color: #0000BB; font-weight: bold;">main</span></span></span>
 <span><span class="co">#&gt;     └── <span style="color: #0000BB; font-weight: bold;">cars</span></span></span>
-<span><span class="co">#&gt;         ├── ducklake-019f4d0f-2cce-7d11-832b-b00c1f466e8b.parquet</span></span>
-<span><span class="co">#&gt;         ├── ducklake-019f4d0f-2dc2-7426-982a-7526b2412315.parquet</span></span>
-<span><span class="co">#&gt;         └── ducklake-019f4d0f-2e57-71ce-8d08-2da9bd40680e.parquet</span></span></code></pre></div>
+<span><span class="co">#&gt;         ├── ducklake-019f4d36-d5a0-7eda-ab43-d7c3cfb3b0dd.parquet</span></span>
+<span><span class="co">#&gt;         ├── ducklake-019f4d36-d683-709d-a006-dd10ef5207d4.parquet</span></span>
+<span><span class="co">#&gt;         └── ducklake-019f4d36-d70c-7baf-8ee9-59ea9b6e72ff.parquet</span></span></code></pre></div>
 <p>The catalog files (<code>demo_lake.ducklake</code> and
 <code>.wal</code>) contain all metadata about tables, snapshots, and
 transactions.</p>
@@ -262,16 +296,16 @@ transactions.</p>
 </h3>
 <p>Data files are stored in Parquet format in a structured
 directory:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Data files are organized by schema and table</span></span>
 <span><span class="va">main_dir</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">lake_dir</span>, <span class="st">"main"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://fs.r-lib.org/reference/dir_tree.html" class="external-link">dir_tree</a></span><span class="op">(</span><span class="va">main_dir</span>, recurse <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #0000BB; font-weight: bold;">/tmp/Rtmpmi8WIW/storage_backups_vignette/storage_demo/main</span></span></span>
+<span><span class="co">#&gt; <span style="color: #0000BB; font-weight: bold;">/tmp/Rtmp6U3Gy7/storage_backups_vignette/storage_demo/main</span></span></span>
 <span><span class="co">#&gt; └── <span style="color: #0000BB; font-weight: bold;">cars</span></span></span>
-<span><span class="co">#&gt;     ├── ducklake-019f4d0f-2cce-7d11-832b-b00c1f466e8b.parquet</span></span>
-<span><span class="co">#&gt;     ├── ducklake-019f4d0f-2dc2-7426-982a-7526b2412315.parquet</span></span>
-<span><span class="co">#&gt;     └── ducklake-019f4d0f-2e57-71ce-8d08-2da9bd40680e.parquet</span></span>
+<span><span class="co">#&gt;     ├── ducklake-019f4d36-d5a0-7eda-ab43-d7c3cfb3b0dd.parquet</span></span>
+<span><span class="co">#&gt;     ├── ducklake-019f4d36-d683-709d-a006-dd10ef5207d4.parquet</span></span>
+<span><span class="co">#&gt;     └── ducklake-019f4d36-d70c-7baf-8ee9-59ea9b6e72ff.parquet</span></span>
 <span>  </span>
 <span><span class="co"># Get details about parquet files</span></span>
 <span><span class="va">parquet_files</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://fs.r-lib.org/reference/dir_ls.html" class="external-link">dir_ls</a></span><span class="op">(</span><span class="va">main_dir</span>, recurse <span class="op">=</span> <span class="cn">TRUE</span>, regexp <span class="op">=</span> <span class="st">"\\.parquet$"</span><span class="op">)</span></span>
@@ -280,16 +314,16 @@ directory:</p>
 <span>              <span class="fu"><a href="https://fs.r-lib.org/reference/path_file.html" class="external-link">path_file</a></span><span class="op">(</span><span class="va">f</span><span class="op">)</span>, </span>
 <span>              <span class="fu"><a href="https://rdrr.io/r/base/file.info.html" class="external-link">file.size</a></span><span class="op">(</span><span class="va">f</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="op">}</span></span>
-<span><span class="co">#&gt;   ducklake-019f4d0f-2cce-7d11-832b-b00c1f466e8b.parquet (2307 bytes)</span></span>
-<span><span class="co">#&gt;   ducklake-019f4d0f-2dc2-7426-982a-7526b2412315.parquet (2501 bytes)</span></span>
-<span><span class="co">#&gt;   ducklake-019f4d0f-2e57-71ce-8d08-2da9bd40680e.parquet (2724 bytes)</span></span></code></pre></div>
+<span><span class="co">#&gt;   ducklake-019f4d36-d5a0-7eda-ab43-d7c3cfb3b0dd.parquet (2307 bytes)</span></span>
+<span><span class="co">#&gt;   ducklake-019f4d36-d683-709d-a006-dd10ef5207d4.parquet (2501 bytes)</span></span>
+<span><span class="co">#&gt;   ducklake-019f4d36-d70c-7baf-8ee9-59ea9b6e72ff.parquet (2724 bytes)</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="understanding-file-organization">Understanding File Organization<a class="anchor" aria-label="anchor" href="#understanding-file-organization"></a>
 </h3>
 <p>Each table’s data is organized by schema and table, with each
 transaction creating new Parquet files:</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># List all snapshots to see the version history</span></span>
 <span><span class="va">snapshots</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span></span>
 <span><span class="va">snapshots</span> <span class="op">|&gt;</span></span>
@@ -321,7 +355,7 @@ produces a corrupt (or, on Windows, unreadable) backup. Detach with
 <code>shutdown = TRUE</code>, copy, then re-attach — or skip the manual
 steps entirely and use <code><a href="../reference/backup_ducklake.html">backup_ducklake()</a></code>, which does
 exactly this dance for you:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Create backup directory</span></span>
 <span><span class="va">backup_dir</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">lake_dir</span>, <span class="st">"backups"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/files2.html" class="external-link">dir.create</a></span><span class="op">(</span><span class="va">backup_dir</span>, showWarnings <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
@@ -344,13 +378,13 @@ exactly this dance for you:</p>
 <span></span>
 <span><span class="co"># Verify the backup was created</span></span>
 <span><span class="fu"><a href="https://fs.r-lib.org/reference/dir_tree.html" class="external-link">dir_tree</a></span><span class="op">(</span><span class="va">backup_dir</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #0000BB; font-weight: bold;">/tmp/Rtmpmi8WIW/storage_backups_vignette/storage_demo/backups</span></span></span>
+<span><span class="co">#&gt; <span style="color: #0000BB; font-weight: bold;">/tmp/Rtmp6U3Gy7/storage_backups_vignette/storage_demo/backups</span></span></span>
 <span><span class="co">#&gt; ├── demo_lake.ducklake</span></span>
 <span><span class="co">#&gt; └── <span style="color: #0000BB; font-weight: bold;">main</span></span></span>
 <span><span class="co">#&gt;     └── <span style="color: #0000BB; font-weight: bold;">cars</span></span></span>
-<span><span class="co">#&gt;         ├── ducklake-019f4d0f-2cce-7d11-832b-b00c1f466e8b.parquet</span></span>
-<span><span class="co">#&gt;         ├── ducklake-019f4d0f-2dc2-7426-982a-7526b2412315.parquet</span></span>
-<span><span class="co">#&gt;         └── ducklake-019f4d0f-2e57-71ce-8d08-2da9bd40680e.parquet</span></span>
+<span><span class="co">#&gt;         ├── ducklake-019f4d36-d5a0-7eda-ab43-d7c3cfb3b0dd.parquet</span></span>
+<span><span class="co">#&gt;         ├── ducklake-019f4d36-d683-709d-a006-dd10ef5207d4.parquet</span></span>
+<span><span class="co">#&gt;         └── ducklake-019f4d36-d70c-7baf-8ee9-59ea9b6e72ff.parquet</span></span>
 <span></span>
 <span><span class="co"># To work with the backup, attach it. override_data_path is needed because</span></span>
 <span><span class="co"># the catalog remembers the original data location, which the backup no</span></span>
@@ -364,9 +398,9 @@ exactly this dance for you:</p>
 <span><span class="co"># Verify you're working with the backup</span></span>
 <span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 1           1 2026-07-10 17:24:27              1</span></span>
-<span><span class="co">#&gt; 2           2 2026-07-10 17:24:28              2</span></span>
-<span><span class="co">#&gt; 3           3 2026-07-10 17:24:28              3</span></span>
+<span><span class="co">#&gt; 1           1 2026-07-10 18:07:47              1</span></span>
+<span><span class="co">#&gt; 2           2 2026-07-10 18:07:47              2</span></span>
+<span><span class="co">#&gt; 3           3 2026-07-10 18:07:47              3</span></span>
 <span><span class="co">#&gt;                                                                 changes</span></span>
 <span><span class="co">#&gt; 1                    tables_created, tables_inserted_into, main.cars, 1</span></span>
 <span><span class="co">#&gt; 2 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2</span></span>
@@ -399,7 +433,7 @@ straightforward.</p>
 <div class="section level4">
 <h4 id="local-storage-backup">Local Storage Backup<a class="anchor" aria-label="anchor" href="#local-storage-backup"></a>
 </h4>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Use file system tools to copy the entire data directory</span></span>
 <span><span class="va">backup_data_dir</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">lake_dir</span>, <span class="st">"backups"</span>, <span class="st">"main_backup"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://fs.r-lib.org/reference/copy.html" class="external-link">dir_copy</a></span><span class="op">(</span></span>
@@ -418,7 +452,7 @@ objects)</p>
 <p><strong>Google Cloud Storage:</strong> - Cross-bucket replication -
 Backup and DR service - Object versioning with soft deletes</p>
 <p>When using cross-bucket replication, update your data path:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Original</span></span>
 <span><span class="fu"><a href="../reference/attach_ducklake.html">attach_ducklake</a></span><span class="op">(</span></span>
 <span>  ducklake_name <span class="op">=</span> <span class="st">"prod_lake"</span>,</span>
@@ -441,7 +475,7 @@ Backup and DR service - Object versioning with soft deletes</p>
 <h3 id="recovering-from-catalog-backup">Recovering from Catalog Backup<a class="anchor" aria-label="anchor" href="#recovering-from-catalog-backup"></a>
 </h3>
 <p>If your catalog is corrupted or lost:</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Restore from backup by copying the backup file</span></span>
 <span><span class="co"># (backup_dir here is a directory created earlier, e.g. by backup_ducklake())</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/files.html" class="external-link">file.copy</a></span><span class="op">(</span></span>
@@ -460,7 +494,7 @@ Backup and DR service - Object versioning with soft deletes</p>
 <h3 id="recovering-from-data-file-loss">Recovering from Data File Loss<a class="anchor" aria-label="anchor" href="#recovering-from-data-file-loss"></a>
 </h3>
 <p>If data files are lost but the catalog is intact:</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Restore data files from backup</span></span>
 <span><span class="fu"><a href="https://fs.r-lib.org/reference/copy.html" class="external-link">dir_copy</a></span><span class="op">(</span></span>
 <span>  path <span class="op">=</span> <span class="va">backup_data_dir</span>,</span>
@@ -481,7 +515,7 @@ until the snapshots are expired. The one-stop command is
 <code><a href="../reference/checkpoint_ducklake.html">checkpoint_ducklake()</a></code>, which flushes inlined data, merges
 small files, expires old snapshots, and cleans up unreferenced files in
 a single call. For finer control, each step has its own function:</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Compact small adjacent Parquet files into larger ones</span></span>
 <span><span class="fu"><a href="../reference/merge_adjacent_files.html">merge_adjacent_files</a></span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
@@ -519,7 +553,7 @@ backups to ensure consistent file layout</li>
 <strong>Cleanup</strong> (removing obsolete files): Run before
 backups to avoid backing up unnecessary files</li>
 </ul>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Recommended backup sequence</span></span>
 <span></span>
 <span><span class="co"># 1. Run maintenance operations (if needed)</span></span>
@@ -555,7 +589,7 @@ backups to avoid backing up unnecessary files</li>
 </h2>
 <p>DuckLake provides a convenient <code><a href="../reference/backup_ducklake.html">backup_ducklake()</a></code>
 function for creating timestamped backups:</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Create a complete backup with timestamp</span></span>
 <span><span class="va">backup_dir</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/backup_ducklake.html">backup_ducklake</a></span><span class="op">(</span></span>
 <span>  ducklake_name <span class="op">=</span> <span class="st">"demo_lake"</span>,</span>
@@ -565,11 +599,11 @@ function for creating timestamped backups:</p>
 <span><span class="co">#&gt; Catalog backed up successfully.</span></span>
 <span><span class="co">#&gt; Data files backed up successfully (1 directory).</span></span>
 <span><span class="co">#&gt; Backup completed:</span></span>
-<span><span class="co">#&gt; <span style="color: #0000BB;">/tmp/Rtmpmi8WIW/storage_backups_vignette/storage_demo/backups/backup_20260710_172429</span></span></span>
+<span><span class="co">#&gt; <span style="color: #0000BB;">/tmp/Rtmp6U3Gy7/storage_backups_vignette/storage_demo/backups/backup_20260710_180748</span></span></span>
 <span></span>
 <span><span class="co"># The function returns the backup directory path</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">backup_dir</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "/tmp/Rtmpmi8WIW/storage_backups_vignette/storage_demo/backups/backup_20260710_172429"</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "/tmp/Rtmp6U3Gy7/storage_backups_vignette/storage_demo/backups/backup_20260710_180748"</span></span></code></pre></div>
 <p>The <code><a href="../reference/backup_ducklake.html">backup_ducklake()</a></code> function: - Creates a timestamped
 backup directory - Copies the catalog database file (releasing file
 locks first) - Copies the data files from every schema directory in the
@@ -578,7 +612,7 @@ lake - Returns the backup directory path for reference</p>
 <div class="section level2">
 <h2 id="cleanup">Cleanup<a class="anchor" aria-label="anchor" href="#cleanup"></a>
 </h2>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Detach the demo lake</span></span>
 <span><span class="fu"><a href="../reference/detach_ducklake.html">detach_ducklake</a></span><span class="op">(</span><span class="st">"demo_lake"</span><span class="op">)</span></span>
 <span></span>

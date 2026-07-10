@@ -21,6 +21,69 @@
   sizes) from the DuckLake catalog, wrapping DuckLake’s
   `ducklake_table_info()` function.
 
+- New
+  [`add_data_files()`](https://tgerke.github.io/ducklake-r/reference/add_data_files.md)
+  registers existing Parquet files with a table without copying or
+  rewriting them – the migration path for data that is already in
+  Parquet.
+  [`list_ducklake_files()`](https://tgerke.github.io/ducklake-r/reference/list_ducklake_files.md)
+  shows the files backing a table, optionally as of a past snapshot.
+
+- New sorted-table support:
+  [`set_table_sorting()`](https://tgerke.github.io/ducklake-r/reference/set_table_sorting.md)
+  and
+  [`reset_table_sorting()`](https://tgerke.github.io/ducklake-r/reference/reset_table_sorting.md)
+  manage a table’s declared sort order, the complement to partitioning
+  for pruning on high-cardinality columns.
+
+- New
+  [`set_ducklake_option()`](https://tgerke.github.io/ducklake-r/reference/set_ducklake_option.md)
+  and
+  [`get_ducklake_options()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_options.md)
+  expose DuckLake’s full option system (`parquet_compression`,
+  `target_file_size`, `sort_on_insert`, `require_commit_message`, …) at
+  lake, schema, or table scope.
+  [`set_inlining_row_limit()`](https://tgerke.github.io/ducklake-r/reference/set_inlining_row_limit.md)
+  now builds on the same internals.
+
+- New
+  [`create_storage_secret()`](https://tgerke.github.io/ducklake-r/reference/create_storage_secret.md)
+  stores object-storage credentials (S3, GCS, R2, Azure) via DuckDB’s
+  secrets manager, so a lake’s `lake_path` can live on cloud storage.
+  [`backup_ducklake()`](https://tgerke.github.io/ducklake-r/reference/backup_ducklake.md)
+  now errors clearly for remote data paths instead of failing partway
+  through.
+
+- [`attach_ducklake()`](https://tgerke.github.io/ducklake-r/reference/attach_ducklake.md)
+  gains `snapshot_version` and `snapshot_time` arguments to attach a
+  lake pinned to a historical snapshot – a frozen, read-only view for
+  reproducing past analyses.
+
+- [`replace_table()`](https://tgerke.github.io/ducklake-r/reference/replace_table.md)
+  now runs its drop and create as one transaction, so a failed create no
+  longer leaves the table dropped. When the caller has already opened a
+  transaction,
+  [`replace_table()`](https://tgerke.github.io/ducklake-r/reference/replace_table.md)
+  defers to it as before.
+
+- [`set_snapshot_metadata()`](https://tgerke.github.io/ducklake-r/reference/set_snapshot_metadata.md)
+  now validates `ducklake_name` like the rest of the package, and
+  resolves the catalog backend from that name instead of the current
+  database.
+
+- [`create_table()`](https://tgerke.github.io/ducklake-r/reference/create_table.md)
+  no longer leaves a temporary view registered on the shared connection
+  when the CREATE statement fails.
+
+- `replace_table(.quiet = FALSE)` reports progress via messages (cli)
+  rather than printing to the console, so it can be suppressed and
+  captured like the rest of the package’s output.
+
+- The package now declares R (\>= 4.1) explicitly (the tests and
+  examples use the base pipe), and is prepared for CRAN:
+  extension-dependent tests skip on CRAN, and vignettes evaluate only
+  where the ducklake DuckDB extension can be loaded.
+
 - New targeted maintenance wrappers complement
   [`checkpoint_ducklake()`](https://tgerke.github.io/ducklake-r/reference/checkpoint_ducklake.md):
   [`expire_snapshots()`](https://tgerke.github.io/ducklake-r/reference/expire_snapshots.md)

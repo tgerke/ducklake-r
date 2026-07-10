@@ -36,6 +36,7 @@ and
 for time-travel reads.
 
 Other table operations:
+[`add_data_files()`](https://tgerke.github.io/ducklake-r/reference/add_data_files.md),
 [`create_table()`](https://tgerke.github.io/ducklake-r/reference/create_table.md),
 [`ducklake_exec()`](https://tgerke.github.io/ducklake-r/reference/ducklake_exec.md),
 [`get_metadata_table()`](https://tgerke.github.io/ducklake-r/reference/get_metadata_table.md),

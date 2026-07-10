@@ -17,7 +17,9 @@ attach_ducklake(
   read_only = FALSE,
   override_data_path = FALSE,
   data_inlining_row_limit = NULL,
-  encrypted = FALSE
+  encrypted = FALSE,
+  snapshot_version = NULL,
+  snapshot_time = NULL
 )
 ```
 
@@ -31,7 +33,12 @@ attach_ducklake(
 
   Directory path where the lake lives. For `"duckdb"` this is where the
   catalog file and Parquet data are stored. For other backends this sets
-  the Parquet data location (DuckLake's `DATA_PATH`).
+  the Parquet data location (DuckLake's `DATA_PATH`), which may also be
+  an object-storage URI such as `"s3://bucket/path"` – register
+  credentials first with
+  [`create_storage_secret()`](https://tgerke.github.io/ducklake-r/reference/create_storage_secret.md).
+  (The `"duckdb"` backend needs a local `lake_path`, since its catalog
+  is a database file.)
 
 - backend:
 
@@ -89,6 +96,17 @@ attach_ducklake(
   built-in crypto module is read-only and httpfs provides the writer.
   Default `FALSE`.
 
+- snapshot_version:
+
+  Optional snapshot id. Attaches the lake pinned to that snapshot:
+  queries see the lake exactly as it was then, and writes are rejected.
+  Mutually exclusive with `snapshot_time`.
+
+- snapshot_time:
+
+  Optional POSIXct or UTC timestamp string. Attaches the lake pinned to
+  its state at that moment. Mutually exclusive with `snapshot_version`.
+
 ## Details
 
 By default DuckDB is used as the catalog database. Alternative backends
@@ -122,9 +140,11 @@ backends. See <https://github.com/duckdb/duckdb/issues/7892>.
 ## See also
 
 [`detach_ducklake()`](https://tgerke.github.io/ducklake-r/reference/detach_ducklake.md),
-[`install_ducklake()`](https://tgerke.github.io/ducklake-r/reference/install_ducklake.md)
+[`install_ducklake()`](https://tgerke.github.io/ducklake-r/reference/install_ducklake.md),
+[`create_storage_secret()`](https://tgerke.github.io/ducklake-r/reference/create_storage_secret.md)
 
 Other connection management:
+[`create_storage_secret()`](https://tgerke.github.io/ducklake-r/reference/create_storage_secret.md),
 [`detach_ducklake()`](https://tgerke.github.io/ducklake-r/reference/detach_ducklake.md),
 [`get_ducklake_backend()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_backend.md),
 [`get_ducklake_connection()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_connection.md),
@@ -171,5 +191,8 @@ attach_ducklake(
 
 # Encrypted Parquet files (keys live in the catalog)
 attach_ducklake("secure_lake", lake_path = "~/data/secure", encrypted = TRUE)
+
+# A frozen view of the lake as of snapshot 12, e.g. for reproducing a report
+attach_ducklake("lake_v12", lake_path = "~/data/lake", snapshot_version = 12)
 } # }
 ```

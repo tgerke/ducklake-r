@@ -123,6 +123,26 @@ with_transaction(
 )
 ```
 
+### Register existing Parquet files without copying
+
+If your data is already in Parquet,
+[`add_data_files()`](https://tgerke.github.io/ducklake-r/reference/add_data_files.md)
+records the files in the lake in place – no copy, no rewrite. This is
+the fast migration path from a folder of Parquet extracts. Note that the
+lake takes ownership of the files: later compaction may rewrite or
+delete them.
+
+``` r
+
+# The table must exist with a compatible schema
+create_table(data.frame(id = integer(), value = numeric()), "readings")
+
+add_data_files("readings", c("extracts/jan.parquet", "extracts/feb.parquet"))
+
+# See which files back a table
+list_ducklake_files("readings")
+```
+
 ### Load with a dplyr pipeline
 
 ``` r
@@ -171,7 +191,7 @@ cars_data |>
   select(mpg, cyl, hp) |>
   head(3)
 #> # A query:  ?? x 3
-#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpZIzm8J/ducklake/ducklake20095c4c71d6.duckdb]
+#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/Rtmpkw0X4g/ducklake/ducklake220aee8da1b.duckdb]
 #>     mpg   cyl    hp
 #>   <dbl> <dbl> <dbl>
 #> 1  21       6   110
@@ -201,8 +221,8 @@ head(cars_df, 3)
 # See all snapshots for the cars table
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-07-10 17:24:15              1
-#> 2           2 2026-07-10 17:24:15              2
+#> 1           1 2026-07-10 18:07:34              1
+#> 2           2 2026-07-10 18:07:34              2
 #>                                                                 changes
 #> 1                    tables_created, tables_inserted_into, main.cars, 1
 #> 2 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2
@@ -220,7 +240,7 @@ get_ducklake_table_version("cars", version = 1) |>
   select(mpg, cyl, hp) |>
   head(3)
 #> # A query:  ?? x 3
-#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpZIzm8J/ducklake/ducklake20095c4c71d6.duckdb]
+#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/Rtmpkw0X4g/ducklake/ducklake220aee8da1b.duckdb]
 #>     mpg   cyl    hp
 #>   <dbl> <dbl> <dbl>
 #> 1  21       6   110
@@ -274,12 +294,12 @@ for guidance on choosing between them.
 
 list_table_snapshots()
 #>   snapshot_id       snapshot_time schema_version
-#> 1           0 2026-07-10 17:24:15              0
-#> 2           1 2026-07-10 17:24:15              1
-#> 3           2 2026-07-10 17:24:15              2
-#> 4           3 2026-07-10 17:24:15              3
-#> 5           4 2026-07-10 17:24:15              4
-#> 6           5 2026-07-10 17:24:16              5
+#> 1           0 2026-07-10 18:07:34              0
+#> 2           1 2026-07-10 18:07:34              1
+#> 3           2 2026-07-10 18:07:34              2
+#> 4           3 2026-07-10 18:07:34              3
+#> 5           4 2026-07-10 18:07:35              4
+#> 6           5 2026-07-10 18:07:36              5
 #>                                                                 changes
 #> 1                                                 schemas_created, main
 #> 2                    tables_created, tables_inserted_into, main.cars, 1
@@ -320,10 +340,10 @@ restore_table_version(
 
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-07-10 17:24:15              1
-#> 2           2 2026-07-10 17:24:15              2
-#> 3           5 2026-07-10 17:24:16              5
-#> 4           6 2026-07-10 17:24:17              6
+#> 1           1 2026-07-10 18:07:34              1
+#> 2           2 2026-07-10 18:07:34              2
+#> 3           5 2026-07-10 18:07:36              5
+#> 4           6 2026-07-10 18:07:36              6
 #>                                                                 changes
 #> 1                    tables_created, tables_inserted_into, main.cars, 1
 #> 2 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2
@@ -437,7 +457,7 @@ get_ducklake_table("cars") |>
   mutate(kpl = mpg * 0.425144) |>
   head(3)
 #> # A query:  ?? x 12
-#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpZIzm8J/ducklake/ducklake20095c4c71d6.duckdb]
+#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/Rtmpkw0X4g/ducklake/ducklake220aee8da1b.duckdb]
 #>     mpg   cyl  disp    hp  drat    wt  qsec    vs    am  gear  carb   kpl
 #>   <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>
 #> 1  21       6   160   110  3.9   2.62  16.5     0     1     4     4  8.93
@@ -454,7 +474,7 @@ get_ducklake_table("cars") |>
   select(mpg, cyl, hp) |>
   filter(mpg > 25)
 #> # A query:  ?? x 3
-#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpZIzm8J/ducklake/ducklake20095c4c71d6.duckdb]
+#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/Rtmpkw0X4g/ducklake/ducklake220aee8da1b.duckdb]
 #>     mpg   cyl    hp
 #>   <dbl> <dbl> <dbl>
 #> 1  32.4     4    66
@@ -463,6 +483,39 @@ get_ducklake_table("cars") |>
 #> 4  27.3     4    66
 #> 5  26       4    91
 #> 6  30.4     4   113
+```
+
+### Sort or partition large tables for file pruning
+
+For big tables, declaring a sort order or partition keys lets DuckLake
+skip whole Parquet files when a query filters on those columns:
+
+``` r
+
+# Sorting suits high-cardinality columns like timestamps or ids
+set_table_sorting("events", "event_time")
+
+# Partitioning suits low-cardinality columns like year or region
+set_table_partitioning("sales", c("year(order_date)", "region"))
+```
+
+### Tune lake options
+
+[`set_ducklake_option()`](https://tgerke.github.io/ducklake-r/reference/set_ducklake_option.md)
+adjusts DuckLake’s persisted settings at lake, schema, or table scope,
+and
+[`get_ducklake_options()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_options.md)
+shows what’s set:
+
+``` r
+
+# Trade write speed for smaller files
+set_ducklake_option("parquet_compression", "zstd")
+
+# Require a commit message on every snapshot -- useful for audit discipline
+set_ducklake_option("require_commit_message", TRUE)
+
+get_ducklake_options()
 ```
 
 ## Cleanup

@@ -28,6 +28,7 @@ automatically when the R session ends.
 
 Other connection management:
 [`attach_ducklake()`](https://tgerke.github.io/ducklake-r/reference/attach_ducklake.md),
+[`create_storage_secret()`](https://tgerke.github.io/ducklake-r/reference/create_storage_secret.md),
 [`detach_ducklake()`](https://tgerke.github.io/ducklake-r/reference/detach_ducklake.md),
 [`get_ducklake_backend()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_backend.md),
 [`install_ducklake()`](https://tgerke.github.io/ducklake-r/reference/install_ducklake.md),

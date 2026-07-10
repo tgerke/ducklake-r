@@ -179,8 +179,8 @@
 <span><span class="fu"><a href="reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"vehicles_analysis"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">mpg</span>, <span class="va">cyl</span>, <span class="va">efficiency</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">3</span><span class="op">)</span></span>
-<span><span class="co">#&gt; # Source:   SQL [?? x 3]</span></span>
-<span><span class="co">#&gt; # Database: DuckDB 1.5.4 [root@Darwin 23.4.0:R 4.5.2//private/var/folders/fw/0d9nr9951q57f0d5l6qc1j200000gn/T/RtmpOZ3EaB/ducklake/ducklakee2a34a963752.duckdb]</span></span>
+<span><span class="co">#&gt; # A query:  ?? x 3</span></span>
+<span><span class="co">#&gt; # Database: DuckDB 1.5.4 [root@Darwin 25.5.0:R 4.5.2//private/var/folders/fw/0d9nr9951q57f0d5l6qc1j200000gn/T/RtmpHKx6Qe/ducklake/ducklake1f1f53c54359.duckdb]</span></span>
 <span><span class="co">#&gt;     mpg cyl   efficiency</span></span>
 <span><span class="co">#&gt;   &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt;     </span></span>
 <span><span class="co">#&gt; 1  21   6.0   Medium    </span></span>
@@ -190,11 +190,11 @@
 <span><span class="co"># View complete audit trail across all layers with author and commit messages</span></span>
 <span><span class="fu"><a href="reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 1           0 2026-07-07 20:30:18              0</span></span>
-<span><span class="co">#&gt; 2           1 2026-07-07 20:30:18              1</span></span>
-<span><span class="co">#&gt; 3           2 2026-07-07 20:30:18              2</span></span>
-<span><span class="co">#&gt; 4           3 2026-07-07 20:30:18              3</span></span>
-<span><span class="co">#&gt; 5           4 2026-07-07 20:30:18              4</span></span>
+<span><span class="co">#&gt; 1           0 2026-07-10 17:06:01              0</span></span>
+<span><span class="co">#&gt; 2           1 2026-07-10 17:06:01              1</span></span>
+<span><span class="co">#&gt; 3           2 2026-07-10 17:06:01              2</span></span>
+<span><span class="co">#&gt; 4           3 2026-07-10 17:06:01              3</span></span>
+<span><span class="co">#&gt; 5           4 2026-07-10 17:06:01              4</span></span>
 <span><span class="co">#&gt;                                                                           changes</span></span>
 <span><span class="co">#&gt; 1                                                           schemas_created, main</span></span>
 <span><span class="co">#&gt; 2                      tables_created, tables_inserted_into, main.vehicles_raw, 1</span></span>
@@ -218,8 +218,8 @@
 <span><span class="fu"><a href="reference/get_ducklake_table_version.html">get_ducklake_table_version</a></span><span class="op">(</span><span class="st">"vehicles_clean"</span>, version <span class="op">=</span> <span class="fl">2</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">mpg</span>, <span class="va">cyl</span>, <span class="va">gear</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">3</span><span class="op">)</span></span>
-<span><span class="co">#&gt; # Source:   SQL [?? x 3]</span></span>
-<span><span class="co">#&gt; # Database: DuckDB 1.5.4 [root@Darwin 23.4.0:R 4.5.2//private/var/folders/fw/0d9nr9951q57f0d5l6qc1j200000gn/T/RtmpOZ3EaB/ducklake/ducklakee2a34a963752.duckdb]</span></span>
+<span><span class="co">#&gt; # A query:  ?? x 3</span></span>
+<span><span class="co">#&gt; # Database: DuckDB 1.5.4 [root@Darwin 25.5.0:R 4.5.2//private/var/folders/fw/0d9nr9951q57f0d5l6qc1j200000gn/T/RtmpHKx6Qe/ducklake/ducklake1f1f53c54359.duckdb]</span></span>
 <span><span class="co">#&gt;     mpg cyl    gear</span></span>
 <span><span class="co">#&gt;   &lt;dbl&gt; &lt;chr&gt; &lt;dbl&gt;</span></span>
 <span><span class="co">#&gt; 1  21   6.0       4</span></span>
@@ -291,6 +291,8 @@
 <li>
 <a href="https://tgerke.github.io/ducklake-r/articles/storage-and-backups.html">Storage and Backups</a> - Back up and recover your lake</li>
 <li>
+<a href="https://tgerke.github.io/ducklake-r/articles/visualizing-your-lake.html">Visualizing Your Lake</a> - Plot snapshot history, change volume, and storage layout</li>
+<li>
 <a href="https://tgerke.github.io/ducklake-r/articles/quack-remote-access.html">Quack Remote Access</a> - Share a DuckLake over the network with the Quack protocol</li>
 </ul>
 </div>
@@ -311,9 +313,16 @@
 <li>
 <strong>ACID transactions</strong>: Atomic updates with concurrent access and transactional guarantees over multi-table operations</li>
 <li>
-<strong>Time travel</strong>: Query data exactly as it existed at any point in time—essential for reproducibility</li>
+<strong>Time travel</strong>: Query data exactly as it existed at any point in time—essential for reproducibility. Pin a whole session to a snapshot with <code>attach_ducklake(snapshot_version = ...)</code>
+</li>
 <li>
-<strong>Performance-oriented</strong>: Uses Parquet columnar storage with statistics for filter pushdown, enabling fast queries on large datasets</li>
+<strong>Performance-oriented</strong>: Uses Parquet columnar storage with statistics for filter pushdown, enabling fast queries on large datasets. Partitioning (<code><a href="reference/set_table_partitioning.html">set_table_partitioning()</a></code>) and sorted tables (<code><a href="reference/set_table_sorting.html">set_table_sorting()</a></code>) prune files on large tables</li>
+<li>
+<strong>Migrate Parquet in place</strong>: <code><a href="reference/add_data_files.html">add_data_files()</a></code> registers existing Parquet files with the lake without copying or rewriting them</li>
+<li>
+<strong>Cloud storage</strong>: Keep data files on S3, GCS, R2, or Azure — <code><a href="reference/create_storage_secret.html">create_storage_secret()</a></code> handles credentials</li>
+<li>
+<strong>Tunable</strong>: <code><a href="reference/set_ducklake_option.html">set_ducklake_option()</a></code> adjusts DuckLake’s persisted settings (compression, file sizes, commit-message policy) at lake, schema, or table scope</li>
 <li>
 <strong>Schema evolution</strong>: Adapt table schemas over time as requirements change</li>
 <li>
@@ -368,7 +377,7 @@
 <li><a href="https://lifecycle.r-lib.org/articles/stages.html#experimental" class="external-link"><img src="https://img.shields.io/badge/lifecycle-experimental-orange.svg" alt="Lifecycle: experimental"></a></li>
 <li><a href="https://github.com/tgerke/ducklake-r/actions/workflows/R-CMD-check.yaml" class="external-link"><img src="https://github.com/tgerke/ducklake-r/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R-CMD-check"></a></li>
 <li><a href="https://github.com/tgerke/ducklake-r/actions" class="external-link"><img src="https://github.com/tgerke/ducklake-r/workflows/pkgdown/badge.svg" alt="pkgdown"></a></li>
-<li><a href="https://codecov.io/gh/tgerke/ducklake-r" class="external-link"><img src="https://codecov.io/gh/tgerke/ducklake-r/branch/main/graph/badge.svg" alt="codecov"></a></li>
+<li><a href="https://app.codecov.io/gh/tgerke/ducklake-r" class="external-link"><img src="https://codecov.io/gh/tgerke/ducklake-r/branch/main/graph/badge.svg" alt="codecov"></a></li>
 </ul>
 </div>
 

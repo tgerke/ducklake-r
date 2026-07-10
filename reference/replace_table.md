@@ -37,11 +37,14 @@ that should create a new versioned snapshot. It:
 
 3.  Creates a new table with the updated schema/data
 
-All operations happen within the current transaction context. Use
-[`begin_transaction()`](https://tgerke.github.io/ducklake-r/reference/begin_transaction.md)
-and
-[`commit_transaction()`](https://tgerke.github.io/ducklake-r/reference/commit_transaction.md)
-to ensure proper versioning.
+The drop and create run atomically: when no transaction is open,
+`replace_table()` wraps them in one of its own, so a failed create never
+leaves the table dropped. Wrap the call in
+[`with_transaction()`](https://tgerke.github.io/ducklake-r/reference/with_transaction.md)
+(or
+[`begin_transaction()`](https://tgerke.github.io/ducklake-r/reference/begin_transaction.md)/[`commit_transaction()`](https://tgerke.github.io/ducklake-r/reference/commit_transaction.md))
+when you want to record an author and commit message on the snapshot, or
+to group the replacement with other changes.
 
 **When to use replace_table():**
 
@@ -68,6 +71,7 @@ the change is available for time travel.
 ## See also
 
 Other table operations:
+[`add_data_files()`](https://tgerke.github.io/ducklake-r/reference/add_data_files.md),
 [`create_table()`](https://tgerke.github.io/ducklake-r/reference/create_table.md),
 [`ducklake_exec()`](https://tgerke.github.io/ducklake-r/reference/ducklake_exec.md),
 [`get_ducklake_table()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_table.md),
@@ -78,8 +82,7 @@ Other table operations:
 
 ``` r
 if (FALSE) { # \dontrun{
-# Add new derived columns with versioning
-begin_transaction()
+# Add new derived columns (atomic on its own; creates a new snapshot)
 get_ducklake_table("adsl") |>
   mutate(
     AGE65FL = if_else(AGE >= 65, "Y", "N"),
@@ -90,13 +93,14 @@ get_ducklake_table("adsl") |>
     )
   ) |>
   replace_table("adsl")
-commit_transaction()
 
-# Remove columns and create new snapshot
-begin_transaction()
-get_ducklake_table("adsl") |>
-  select(-AGE65FL, -AGECAT) |>
-  replace_table("adsl")
-commit_transaction()
+# Wrap in with_transaction() to record audit metadata on the snapshot
+with_transaction(
+  get_ducklake_table("adsl") |>
+    select(-AGE65FL, -AGECAT) |>
+    replace_table("adsl"),
+  author = "Data Engineer",
+  commit_message = "Drop derived age columns"
+)
 } # }
 ```

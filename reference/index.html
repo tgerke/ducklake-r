@@ -100,6 +100,13 @@
 
         </dt>
         <dd>Get the catalog backend type of an attached lake</dd>
+
+        <dt>
+
+          <code><a href="create_storage_secret.html">create_storage_secret()</a></code>
+
+        </dt>
+        <dd>Store object storage credentials for a session</dd>
       </dl></div><div class="section level2">
       <h2 id="table-operations">Table Operations<a class="anchor" aria-label="anchor" href="#table-operations"></a></h2>
 
@@ -130,6 +137,13 @@
 
         </dt>
         <dd>Replace a table with modified data and create a new snapshot</dd>
+
+        <dt>
+
+          <code><a href="add_data_files.html">add_data_files()</a></code>
+
+        </dt>
+        <dd>Register existing Parquet files with a DuckLake table</dd>
       </dl></div><div class="section level2">
       <h2 id="row-operations">Row Operations<a class="anchor" aria-label="anchor" href="#row-operations"></a></h2>
 
@@ -339,9 +353,9 @@
         </dt>
         <dd>Run a DuckLake checkpoint</dd>
       </dl></div><div class="section level2">
-      <h2 id="partitioning">Partitioning<a class="anchor" aria-label="anchor" href="#partitioning"></a></h2>
+      <h2 id="partitioning-and-sorting">Partitioning and Sorting<a class="anchor" aria-label="anchor" href="#partitioning-and-sorting"></a></h2>
 
-      <div class="section-desc"><p>Manage table partition keys for file pruning</p></div>
+      <div class="section-desc"><p>Manage partition keys and sort orders for file pruning</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -368,6 +382,43 @@
 
         </dt>
         <dd>List the partitioning keys of tables in a lake</dd>
+
+        <dt>
+
+          <code><a href="set_table_sorting.html">set_table_sorting()</a></code>
+
+        </dt>
+        <dd>Set the sort order of a table</dd>
+
+        <dt>
+
+          <code><a href="reset_table_sorting.html">reset_table_sorting()</a></code>
+
+        </dt>
+        <dd>Remove the sort order from a table</dd>
+      </dl></div><div class="section level2">
+      <h2 id="options">Options<a class="anchor" aria-label="anchor" href="#options"></a></h2>
+
+      <div class="section-desc"><p>Lake, schema, and table configuration</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="set_ducklake_option.html">set_ducklake_option()</a></code>
+
+        </dt>
+        <dd>Set a DuckLake option</dd>
+
+        <dt>
+
+          <code><a href="get_ducklake_options.html">get_ducklake_options()</a></code>
+
+        </dt>
+        <dd>List the options set on a DuckLake</dd>
       </dl></div><div class="section level2">
       <h2 id="backup-and-maintenance">Backup and Maintenance<a class="anchor" aria-label="anchor" href="#backup-and-maintenance"></a></h2>
 
@@ -433,6 +484,13 @@
 
         </dt>
         <dd>Plot the file layout of a lake</dd>
+
+        <dt>
+
+          <code><a href="list_ducklake_files.html">list_ducklake_files()</a></code>
+
+        </dt>
+        <dd>List the data files backing a DuckLake table</dd>
       </dl></div><div class="section level2">
       <h2 id="quack-remote-access">Quack remote access<a class="anchor" aria-label="anchor" href="#quack-remote-access"></a></h2>
 
