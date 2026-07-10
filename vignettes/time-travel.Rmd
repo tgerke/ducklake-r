@@ -8,14 +8,25 @@ vignette: >
 ---
 
 ```{r, include = FALSE}
-# Skip if the duckdb R package is too old to support the ducklake v1.0 extension
-duckdb_version_ok <- tryCatch({
-  packageVersion("duckdb") >= "1.5.1"
+# Evaluate chunks only where the ducklake DuckDB extension is usable: needs
+# duckdb >= 1.5.1 and, when not already cached, network access to install the
+# extension (not available on CRAN).
+ducklake_available <- tryCatch({
+  packageVersion("duckdb") >= "1.5.1" && {
+    con <- DBI::dbConnect(duckdb::duckdb())
+    ok <- tryCatch({
+      DBI::dbExecute(con, "INSTALL ducklake;")
+      DBI::dbExecute(con, "LOAD ducklake;")
+      TRUE
+    }, error = function(e) FALSE)
+    DBI::dbDisconnect(con, shutdown = TRUE)
+    ok
+  }
 }, error = function(e) FALSE)
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
-  eval = duckdb_version_ok
+  eval = ducklake_available
 )
 # Use a unique temp directory for this vignette to avoid conflicts during R CMD check
 vignette_temp_dir <- file.path(tempdir(), "time_travel_vignette")

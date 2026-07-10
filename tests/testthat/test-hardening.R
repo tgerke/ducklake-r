@@ -62,6 +62,7 @@ test_that("build_attach_sql adds ENCRYPTED TRUE when requested", {
 })
 
 test_that("encrypted lakes round-trip data", {
+  skip_if_no_ducklake()
   skip_if_not_installed("duckdb")
 
   temp_dir <- tempfile()
@@ -179,6 +180,7 @@ test_that("update_table handles values containing the word WHERE", {
 })
 
 test_that("get_ducklake_backend tracks multiple lakes independently", {
+  skip_if_no_ducklake()
   skip_if_not_installed("duckdb")
 
   dir_a <- tempfile(); dir.create(dir_a, recursive = TRUE)

@@ -6,12 +6,31 @@ get_ducklake_env <- function() {
   asNamespace("ducklake")[[".ducklake_env"]]
 }
 
+#' Skip tests that need the ducklake DuckDB extension
+#'
+#' The extension is not bundled with the duckdb R package: installing it
+#' needs network access on first use, so these tests cannot run on CRAN.
+skip_if_no_ducklake <- function() {
+  testthat::skip_on_cran()
+  ok <- tryCatch(
+    {
+      DBI::dbExecute(ducklake::get_ducklake_connection(), "LOAD ducklake;")
+      TRUE
+    },
+    error = function(e) FALSE
+  )
+  testthat::skip_if_not(ok, "ducklake extension not available")
+  invisible(TRUE)
+}
+
 #' Create a temporary ducklake for testing
 #'
 #' Creates a test ducklake in a temporary directory with proper DuckLake catalog
 #' 
 #' @return List with ducklake_name, temp_dir, lake_path, and conn
 create_temp_ducklake <- function() {
+  skip_if_no_ducklake()
+
   temp_dir <- tempfile()
   dir.create(temp_dir, showWarnings = FALSE, recursive = TRUE)
   

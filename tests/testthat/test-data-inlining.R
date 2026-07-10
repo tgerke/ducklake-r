@@ -139,6 +139,7 @@ test_that("set_inlining_row_limit rejects negative values", {
 })
 
 test_that("set_inlining_row_limit(0) disables inlining", {
+  skip_if_no_ducklake()
   skip_if_not_installed("duckdb")
   skip_if_not_installed("dplyr")
 
