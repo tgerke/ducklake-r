@@ -53,6 +53,11 @@ plot_table_files <- function(ducklake_name = NULL, conn = NULL) {
     ))
   }
 
+  # Fully inlined tables can report NA counts/sizes; treat as zero on disk
+  for (col in c("file_count", "file_size_bytes", "delete_file_size_bytes")) {
+    info[[col]][is.na(info[[col]])] <- 0
+  }
+
   # Ascending levels put the largest table at the top of the y axis
   info$total_bytes <- info$file_size_bytes + info$delete_file_size_bytes
   table_levels <- info$table_name[order(info$total_bytes)]
