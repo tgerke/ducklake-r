@@ -55,13 +55,15 @@ reference:
     - get_ducklake_connection
     - set_ducklake_connection
     - get_ducklake_backend
-    
+    - create_storage_secret
+
   - title: "Table Operations"
     desc: "Create and query tables"
     contents:
     - create_table
     - get_ducklake_table
     - replace_table
+    - add_data_files
     
   - title: "Row Operations"
     desc: "Modify table rows with dplyr-style functions"
@@ -109,12 +111,20 @@ reference:
     - flush_inlined_data
     - checkpoint_ducklake
 
-  - title: "Partitioning"
-    desc: "Manage table partition keys for file pruning"
+  - title: "Partitioning and Sorting"
+    desc: "Manage partition keys and sort orders for file pruning"
     contents:
     - set_table_partitioning
     - reset_table_partitioning
     - get_table_partitions
+    - set_table_sorting
+    - reset_table_sorting
+
+  - title: "Options"
+    desc: "Lake, schema, and table configuration"
+    contents:
+    - set_ducklake_option
+    - get_ducklake_options
 
   - title: "Backup and Maintenance"
     desc: "Backup, compaction, and storage reclamation"
@@ -127,6 +137,7 @@ reference:
     - rewrite_data_files
     - get_table_info
     - plot_table_files
+    - list_ducklake_files
 
   - title: "Quack remote access"
     desc: "Connect to and serve DuckLake over the Quack protocol"

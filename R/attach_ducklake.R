@@ -39,6 +39,12 @@
 #'   loaded automatically: on some platforms (notably Windows) DuckDB's
 #'   built-in crypto module is read-only and httpfs provides the writer.
 #'   Default `FALSE`.
+#' @param snapshot_version Optional snapshot id. Attaches the lake pinned to
+#'   that snapshot: queries see the lake exactly as it was then, and writes
+#'   are rejected. Mutually exclusive with `snapshot_time`.
+#' @param snapshot_time Optional POSIXct or UTC timestamp string. Attaches
+#'   the lake pinned to its state at that moment. Mutually exclusive with
+#'   `snapshot_version`.
 #'
 #' @details
 #' For credential management with PostgreSQL or MySQL, consider DuckDB's
@@ -108,6 +114,9 @@
 #'
 #' # Encrypted Parquet files (keys live in the catalog)
 #' attach_ducklake("secure_lake", lake_path = "~/data/secure", encrypted = TRUE)
+#'
+#' # A frozen view of the lake as of snapshot 12, e.g. for reproducing a report
+#' attach_ducklake("lake_v12", lake_path = "~/data/lake", snapshot_version = 12)
 #' }
 attach_ducklake <- function(ducklake_name, lake_path,
                              backend = c("duckdb", "postgres", "sqlite", "mysql"),
@@ -115,9 +124,17 @@ attach_ducklake <- function(ducklake_name, lake_path,
                              read_only = FALSE,
                              override_data_path = FALSE,
                              data_inlining_row_limit = NULL,
-                             encrypted = FALSE) {
+                             encrypted = FALSE,
+                             snapshot_version = NULL,
+                             snapshot_time = NULL) {
   backend <- match.arg(backend)
   check_identifier(ducklake_name)
+
+  if (!is.null(snapshot_version) && !is.null(snapshot_time)) {
+    cli::cli_abort(
+      "Provide only one of {.arg snapshot_version} and {.arg snapshot_time}."
+    )
+  }
 
   if (missing(lake_path) || is.null(lake_path)) {
     cli::cli_abort(c(
@@ -168,7 +185,9 @@ attach_ducklake <- function(ducklake_name, lake_path,
                                   catalog_connection_string, read_only,
                                   override_data_path,
                                   data_inlining_row_limit,
-                                  encrypted)
+                                  encrypted,
+                                  snapshot_version,
+                                  snapshot_time)
   db_execute(attach_sql)
   db_execute(sprintf("USE %s;", quote_ident(ducklake_name, conn)))
   register_lake(ducklake_name, backend, catalog_connection_string)
@@ -253,6 +272,8 @@ ensure_extensions <- function(backend, encrypted = FALSE) {
 #' @param override_data_path Whether to add OVERRIDE_DATA_PATH TRUE
 #' @param data_inlining_row_limit Optional integer for DATA_INLINING_ROW_LIMIT
 #' @param encrypted Whether to add ENCRYPTED TRUE
+#' @param snapshot_version Optional snapshot id for SNAPSHOT_VERSION
+#' @param snapshot_time Optional timestamp for SNAPSHOT_TIME
 #'
 #' @returns A SQL ATTACH statement string
 #' @keywords internal
@@ -260,7 +281,9 @@ build_attach_sql <- function(ducklake_name, lake_path, backend,
                               catalog_connection_string, read_only,
                               override_data_path = FALSE,
                               data_inlining_row_limit = NULL,
-                              encrypted = FALSE) {
+                              encrypted = FALSE,
+                              snapshot_version = NULL,
+                              snapshot_time = NULL) {
   connection_string <- switch(backend,
     duckdb = {
       ducklake_path <- file.path(lake_path, paste0(ducklake_name, ".ducklake"))
@@ -291,6 +314,20 @@ build_attach_sql <- function(ducklake_name, lake_path, backend,
 
   if (encrypted) {
     options <- c(options, "ENCRYPTED TRUE")
+  }
+
+  if (!is.null(snapshot_version)) {
+    options <- c(
+      options,
+      sprintf("SNAPSHOT_VERSION %d", as.integer(snapshot_version))
+    )
+  }
+
+  if (!is.null(snapshot_time)) {
+    options <- c(
+      options,
+      sprintf("SNAPSHOT_TIME %s", quote_sql(format_timestamp(snapshot_time)))
+    )
   }
 
   if (length(options) > 0) {

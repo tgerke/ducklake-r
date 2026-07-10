@@ -36,6 +36,7 @@ get_ducklake_table("cars") |>
 and \code{\link[=get_ducklake_table_version]{get_ducklake_table_version()}} for time-travel reads.
 
 Other table operations:
+\code{\link[=add_data_files]{add_data_files()}},
 \code{\link[=create_table]{create_table()}},
 \code{\link[=ducklake_exec]{ducklake_exec()}},
 \code{\link[=get_metadata_table]{get_metadata_table()}},

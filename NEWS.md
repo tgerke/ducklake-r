@@ -14,6 +14,29 @@
   file counts and sizes) from the DuckLake catalog, wrapping DuckLake's
   `ducklake_table_info()` function.
 
+* New `add_data_files()` registers existing Parquet files with a table
+  without copying or rewriting them -- the migration path for data that is
+  already in Parquet. `list_ducklake_files()` shows the files backing a
+  table, optionally as of a past snapshot.
+
+* New sorted-table support: `set_table_sorting()` and
+  `reset_table_sorting()` manage a table's declared sort order, the
+  complement to partitioning for pruning on high-cardinality columns.
+
+* New `set_ducklake_option()` and `get_ducklake_options()` expose DuckLake's
+  full option system (`parquet_compression`, `target_file_size`,
+  `sort_on_insert`, `require_commit_message`, ...) at lake, schema, or
+  table scope. `set_inlining_row_limit()` now builds on the same internals.
+
+* New `create_storage_secret()` stores object-storage credentials (S3, GCS,
+  R2, Azure) via DuckDB's secrets manager, so a lake's `lake_path` can live
+  on cloud storage. `backup_ducklake()` now errors clearly for remote data
+  paths instead of failing partway through.
+
+* `attach_ducklake()` gains `snapshot_version` and `snapshot_time`
+  arguments to attach a lake pinned to a historical snapshot -- a frozen,
+  read-only view for reproducing past analyses.
+
 * `replace_table()` now runs its drop and create as one transaction, so a
   failed create no longer leaves the table dropped. When the caller has
   already opened a transaction, `replace_table()` defers to it as before.

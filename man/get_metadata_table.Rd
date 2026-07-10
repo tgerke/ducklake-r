@@ -45,6 +45,7 @@ get_metadata_table("ducklake_data_file") |>
 \code{\link[=list_table_snapshots]{list_table_snapshots()}} for a friendlier view of snapshot history.
 
 Other table operations:
+\code{\link[=add_data_files]{add_data_files()}},
 \code{\link[=create_table]{create_table()}},
 \code{\link[=ducklake_exec]{ducklake_exec()}},
 \code{\link[=get_ducklake_table]{get_ducklake_table()}},

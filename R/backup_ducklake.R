@@ -61,6 +61,13 @@ backup_ducklake <- function(ducklake_name, lake_path, backup_path) {
   if (!is.character(ducklake_name) || length(ducklake_name) != 1) {
     cli::cli_abort("{.arg ducklake_name} must be a single character string.")
   }
+  if (grepl("^[A-Za-z][A-Za-z0-9+.-]*://", lake_path)) {
+    cli::cli_abort(c(
+      "{.fn backup_ducklake} only supports local data paths.",
+      "x" = "Got remote {.arg lake_path} {.val {lake_path}}.",
+      "i" = "For object storage, use your provider's replication or sync tooling (e.g. bucket versioning, {.code aws s3 sync})."
+    ))
+  }
   if (!dir.exists(lake_path)) {
     cli::cli_abort("{.arg lake_path} does not exist: {.path {lake_path}}")
   }

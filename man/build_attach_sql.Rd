@@ -12,7 +12,9 @@ build_attach_sql(
   read_only,
   override_data_path = FALSE,
   data_inlining_row_limit = NULL,
-  encrypted = FALSE
+  encrypted = FALSE,
+  snapshot_version = NULL,
+  snapshot_time = NULL
 )
 }
 \arguments{
@@ -31,6 +33,10 @@ build_attach_sql(
 \item{data_inlining_row_limit}{Optional integer for DATA_INLINING_ROW_LIMIT}
 
 \item{encrypted}{Whether to add ENCRYPTED TRUE}
+
+\item{snapshot_version}{Optional snapshot id for SNAPSHOT_VERSION}
+
+\item{snapshot_time}{Optional timestamp for SNAPSHOT_TIME}
 }
 \value{
 A SQL ATTACH statement string

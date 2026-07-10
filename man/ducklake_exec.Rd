@@ -58,6 +58,7 @@ tbl(con, "my_table") |>
 }
 \seealso{
 Other table operations:
+\code{\link[=add_data_files]{add_data_files()}},
 \code{\link[=create_table]{create_table()}},
 \code{\link[=get_ducklake_table]{get_ducklake_table()}},
 \code{\link[=get_metadata_table]{get_metadata_table()}},

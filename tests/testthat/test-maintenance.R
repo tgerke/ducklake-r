@@ -175,3 +175,10 @@ test_that("doubled slashes in lake_path don't make live files look orphaned", {
   )
   expect_equal(nrow(dplyr::collect(get_ducklake_table("slashed"))), 5)
 })
+
+test_that("backup_ducklake rejects remote data paths", {
+  expect_error(
+    backup_ducklake("some_lake", "s3://bucket/lake", tempdir()),
+    "only supports local data paths"
+  )
+})
