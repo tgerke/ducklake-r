@@ -109,6 +109,7 @@ test_that("rewrite_data_files rewrites heavily deleted files", {
 })
 
 test_that("delete_orphaned_files removes only untracked files", {
+  skip_if_no_ducklake()
   skip_if_not_installed("duckdb")
   skip_if_not_installed("dplyr")
 
@@ -146,6 +147,7 @@ test_that("delete_orphaned_files removes only untracked files", {
 })
 
 test_that("doubled slashes in lake_path don't make live files look orphaned", {
+  skip_if_no_ducklake()
   skip_if_not_installed("duckdb")
   skip_if_not_installed("dplyr")
 

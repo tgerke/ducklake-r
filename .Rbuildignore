@@ -8,3 +8,4 @@
 ^\.github$
 ^data-raw$
 ^\.claude$
+^cran-comments\.md$

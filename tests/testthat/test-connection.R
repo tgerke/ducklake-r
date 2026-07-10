@@ -68,6 +68,7 @@ test_that("set_ducklake_connection rejects invalid input", {
 })
 
 test_that("shutdown releases DuckLake catalog file locks", {
+  skip_if_no_ducklake()
   skip_if_not_installed("duckdb")
   skip_if_not_installed("fs")
 

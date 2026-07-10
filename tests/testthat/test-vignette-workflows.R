@@ -15,6 +15,7 @@
 
 # NOTE: This test runs first to ensure a clean connection state for file-based backup
 test_that("storage-and-backups.Rmd workflow: backup and restore", {
+  skip_if_no_ducklake()
   skip_if_not_installed("duckdb")
   skip_if_not_installed("dplyr")
   skip_if_not_installed("fs")
@@ -99,6 +100,7 @@ test_that("storage-and-backups.Rmd workflow: backup and restore", {
 })
 
 test_that("backup catalog file is non-empty (singleton connection)", {
+  skip_if_no_ducklake()
   skip_if_not_installed("duckdb")
   skip_if_not_installed("dplyr")
   skip_if_not_installed("fs")

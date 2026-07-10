@@ -52,6 +52,11 @@
   than printing to the console, so it can be suppressed and captured like
   the rest of the package's output.
 
+* The package now declares R (>= 4.1) explicitly (the tests and examples use
+  the base pipe), and is prepared for CRAN: extension-dependent tests skip
+  on CRAN, and vignettes evaluate only where the ducklake DuckDB extension
+  can be loaded.
+
 * New targeted maintenance wrappers complement `checkpoint_ducklake()`:
   `expire_snapshots()` (with `older_than`, `versions`, and `dry_run`),
   `merge_adjacent_files()`, `cleanup_old_files()`, `delete_orphaned_files()`,

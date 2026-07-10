@@ -164,6 +164,7 @@ test_that("build_attach_sql includes OVERRIDE_DATA_PATH when requested", {
 # --- SQLite backend end-to-end ---
 
 test_that("SQLite backend: create table, query, and time travel", {
+  skip_if_no_ducklake()
   skip_if_not_installed("duckdb")
   skip_if_not_installed("dplyr")
 
