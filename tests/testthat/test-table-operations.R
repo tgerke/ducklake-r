@@ -135,36 +135,20 @@ test_that("replace_table respects .quiet parameter", {
   })
   
   # Test with .quiet = FALSE
-  output_verbose <- capture.output({
-    with_transaction({
-      get_ducklake_table("test_replace_quiet") |>
-        dplyr::mutate(new_col = "added") |>
-        replace_table("test_replace_quiet", .quiet = FALSE)
-    })
-  })
-  
-  # Should have messages
-  expect_true(length(output_verbose) > 0)
-  
-  # Reset table
-  with_transaction({
+  expect_message(
+    get_ducklake_table("test_replace_quiet") |>
+      dplyr::mutate(new_col = "added") |>
+      replace_table("test_replace_quiet", .quiet = FALSE),
+    "Replacing table"
+  )
+
+  # Test with .quiet = TRUE
+  expect_no_message(
     get_ducklake_table("test_replace_quiet") |>
       dplyr::select(id, value) |>
       replace_table("test_replace_quiet", .quiet = TRUE)
-  })
-  
-  # Test with .quiet = TRUE
-  output_quiet <- capture.output({
-    with_transaction({
-      get_ducklake_table("test_replace_quiet") |>
-        dplyr::mutate(new_col = "added") |>
-        replace_table("test_replace_quiet", .quiet = TRUE)
-    })
-  })
-  
-  # Should have less output
-  expect_true(length(output_quiet) < length(output_verbose))
-  
+  )
+
   cleanup_temp_ducklake(lake)
 })
 
@@ -191,5 +175,50 @@ test_that("table operations work in transaction context", {
   result <- get_ducklake_table("test_txn_context") |> dplyr::collect()
   expect_true("doubled" %in% names(result))
   
+  cleanup_temp_ducklake(lake)
+})
+
+test_that("replace_table keeps the original table when the create fails", {
+  skip_if_not_installed("duckdb")
+  skip_if_not_installed("dplyr")
+
+  lake <- create_temp_ducklake()
+  create_table(mtcars[1:5, ], "replace_atomic")
+
+  local_mocked_bindings(
+    create_table = function(...) stop("simulated create failure")
+  )
+  expect_error(
+    get_ducklake_table("replace_atomic") |>
+      dplyr::filter(mpg > 0) |>
+      replace_table("replace_atomic"),
+    "simulated create failure"
+  )
+
+  result <- get_ducklake_table("replace_atomic") |> dplyr::collect()
+  expect_equal(nrow(result), 5)
+
+  cleanup_temp_ducklake(lake)
+})
+
+test_that("create_table unregisters its temp view when the CREATE fails", {
+  skip_if_not_installed("duckdb")
+
+  lake <- create_temp_ducklake()
+
+  local_mocked_bindings(
+    db_execute = function(sql, ...) stop("simulated create failure")
+  )
+  expect_error(
+    create_table(mtcars, "view_leak_check"),
+    "simulated create failure"
+  )
+
+  views <- DBI::dbGetQuery(
+    lake$conn,
+    "SELECT view_name FROM duckdb_views() WHERE view_name = '__temp_view_view_leak_check'"
+  )
+  expect_equal(nrow(views), 0)
+
   cleanup_temp_ducklake(lake)
 })

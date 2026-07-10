@@ -46,19 +46,22 @@ create_table <- function(data_source, table_name) {
       )
     }
 
-    # Register the data.frame as a temporary view in DuckDB
+    # Register the data.frame as a temporary view in DuckDB; unregister on
+    # exit so a failed CREATE doesn't leave the view behind on the shared
+    # connection
     temp_view_name <- paste0("__temp_view_", gsub("[^a-zA-Z0-9]", "_", table_name))
     duckdb::duckdb_register(get_ducklake_connection(), temp_view_name, data_source)
-    
+    on.exit(
+      duckdb::duckdb_unregister(get_ducklake_connection(), temp_view_name),
+      add = TRUE
+    )
+
     # Create the table from the temporary view
     db_execute(sprintf(
       "CREATE TABLE %s AS SELECT * FROM %s;",
       quote_ident(table_name), quote_ident(temp_view_name)
     ))
-    
-    # Unregister the temporary view
-    duckdb::duckdb_unregister(get_ducklake_connection(), temp_view_name)
-    
+
     return(invisible(NULL))
   }
   

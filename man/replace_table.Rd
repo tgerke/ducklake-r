@@ -28,8 +28,12 @@ create a new versioned snapshot. It:
 \item Creates a new table with the updated schema/data
 }
 
-All operations happen within the current transaction context. Use
-\code{begin_transaction()} and \code{commit_transaction()} to ensure proper versioning.
+The drop and create run atomically: when no transaction is open,
+\code{replace_table()} wraps them in one of its own, so a failed create never
+leaves the table dropped. Wrap the call in \code{\link[=with_transaction]{with_transaction()}} (or
+\code{begin_transaction()}/\code{commit_transaction()}) when you want to record an
+author and commit message on the snapshot, or to group the replacement
+with other changes.
 
 \strong{When to use replace_table():}
 \itemize{
@@ -50,8 +54,7 @@ change is available for time travel.
 }
 \examples{
 \dontrun{
-# Add new derived columns with versioning
-begin_transaction()
+# Add new derived columns (atomic on its own; creates a new snapshot)
 get_ducklake_table("adsl") |>
   mutate(
     AGE65FL = if_else(AGE >= 65, "Y", "N"),
@@ -62,14 +65,15 @@ get_ducklake_table("adsl") |>
     )
   ) |>
   replace_table("adsl")
-commit_transaction()
 
-# Remove columns and create new snapshot
-begin_transaction()
-get_ducklake_table("adsl") |>
-  select(-AGE65FL, -AGECAT) |>
-  replace_table("adsl")
-commit_transaction()
+# Wrap in with_transaction() to record audit metadata on the snapshot
+with_transaction(
+  get_ducklake_table("adsl") |>
+    select(-AGE65FL, -AGECAT) |>
+    replace_table("adsl"),
+  author = "Data Engineer",
+  commit_message = "Drop derived age columns"
+)
 }
 }
 \seealso{
