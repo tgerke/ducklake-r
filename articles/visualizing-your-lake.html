@@ -78,7 +78,7 @@
       <img src="../logo.png" class="logo" alt=""><h1>Visualizing Your Lake</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/tgerke/ducklake-r/blob/main/vignettes/visualizing-your-lake.Rmd" class="external-link"><code>vignettes/visualizing-your-lake.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/tgerke/ducklake-r/blob/v0.4.1/vignettes/visualizing-your-lake.Rmd" class="external-link"><code>vignettes/visualizing-your-lake.Rmd</code></a></small>
       <div class="d-none name"><code>visualizing-your-lake.Rmd</code></div>
     </div>
 
@@ -179,10 +179,10 @@ recording authors and commit messages along the way.</p>
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"fleet"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">snapshot_id</span>, <span class="va">snapshot_time</span>, <span class="va">author</span>, <span class="va">commit_message</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time        author                  commit_message</span></span>
-<span><span class="co">#&gt; 1           1 2026-07-10 18:08:01 Data Engineer              Initial fleet load</span></span>
-<span><span class="co">#&gt; 2           2 2026-07-10 18:08:01 Fleet Manager              Add March arrivals</span></span>
-<span><span class="co">#&gt; 3           3 2026-07-10 18:08:01 Fleet Manager Record spring odometer readings</span></span>
-<span><span class="co">#&gt; 4           4 2026-07-10 18:08:01 Fleet Manager               Remove sold F-150</span></span></code></pre></div>
+<span><span class="co">#&gt; 1           1 2026-07-20 19:43:26 Data Engineer              Initial fleet load</span></span>
+<span><span class="co">#&gt; 2           2 2026-07-20 19:43:26 Fleet Manager              Add March arrivals</span></span>
+<span><span class="co">#&gt; 3           3 2026-07-20 19:43:26 Fleet Manager Record spring odometer readings</span></span>
+<span><span class="co">#&gt; 4           4 2026-07-20 19:43:26 Fleet Manager               Remove sold F-150</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="plotting-the-timeline">Plotting the Timeline<a class="anchor" aria-label="anchor" href="#plotting-the-timeline"></a>
@@ -255,11 +255,11 @@ size:</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/get_table_info.html">get_table_info</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   table_name schema_id table_id                           table_uuid file_count</span></span>
-<span><span class="co">#&gt; 1      fleet         0        1 019f4d37-0da2-7804-966f-56a684b3fd8a          1</span></span>
-<span><span class="co">#&gt; 2  telemetry         0        2 019f4d37-13fe-74e0-9a3d-7db60bb285cf          2</span></span>
+<span><span class="co">#&gt; 1      fleet         0        1 019f810d-ff91-7e9d-8bac-b6062aa1cab6          1</span></span>
+<span><span class="co">#&gt; 2  telemetry         0        2 019f810e-05dd-7f45-b0c0-13abd0e5872c          2</span></span>
 <span><span class="co">#&gt;   file_size_bytes delete_file_count delete_file_size_bytes</span></span>
-<span><span class="co">#&gt; 1            1027                 1                   1124</span></span>
-<span><span class="co">#&gt; 2           65525                 0                      0</span></span></code></pre></div>
+<span><span class="co">#&gt; 1            1027                 1                   1120</span></span>
+<span><span class="co">#&gt; 2           65518                 0                      0</span></span></code></pre></div>
 <p>And <code><a href="../reference/plot_table_files.html">plot_table_files()</a></code> draws it, with delete files (rows
 removed but not yet compacted away) stacked in a second color:</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">

@@ -219,11 +219,11 @@ with_transaction({
 # The full history: every change is versioned, wrapped or not
 list_table_snapshots("fleet")
 #>   snapshot_id       snapshot_time schema_version
-#> 1           2 2026-07-10 18:07:40              2
-#> 2           3 2026-07-10 18:07:40              2
-#> 3           4 2026-07-10 18:07:40              2
-#> 4           5 2026-07-10 18:07:40              2
-#> 5           6 2026-07-10 18:07:41              2
+#> 1           2 2026-07-20 19:43:01              2
+#> 2           3 2026-07-20 19:43:02              2
+#> 3           4 2026-07-20 19:43:02              2
+#> 4           5 2026-07-20 19:43:02              2
+#> 5           6 2026-07-20 19:43:02              2
 #>                                         changes        author
 #> 1 tables_created, inlined_insert, main.fleet, 2 Fleet Manager
 #> 2                             inlined_insert, 2          <NA>
@@ -258,8 +258,8 @@ with_transaction(
 # Check version history - should show the new snapshot
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-07-10 18:07:40              1
-#> 2           7 2026-07-10 18:07:41              3
+#> 1           1 2026-07-20 19:43:01              1
+#> 2           7 2026-07-20 19:43:03              3
 #>                                                                 changes
 #> 1                    tables_created, tables_inserted_into, main.cars, 1
 #> 2 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 3
@@ -292,7 +292,7 @@ get_ducklake_table("cars") |>
   filter(hp > 200) |>
   select(hp, cyl, hp_per_cyl, high_performance)
 #> # A query:  ?? x 4
-#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpNxHxM5/ducklake/ducklake228e745a505a.duckdb]
+#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1020-azure:R 4.6.1//tmp/RtmpxLr6uI/ducklake/ducklake2222f1ef29b.duckdb]
 #>      hp   cyl hp_per_cyl high_performance
 #>   <dbl> <dbl>      <dbl> <chr>           
 #> 1   245     8       30.6 Y               
@@ -322,7 +322,7 @@ with_transaction(
 # Show the filtered table
 get_ducklake_table("cars")
 #> # A query:  ?? x 13
-#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1018-azure:R 4.6.1//tmp/RtmpNxHxM5/ducklake/ducklake228e745a505a.duckdb]
+#> # Database: DuckDB 1.5.4 [unknown@Linux 6.17.0-1020-azure:R 4.6.1//tmp/RtmpxLr6uI/ducklake/ducklake2222f1ef29b.duckdb]
 #>      mpg   cyl  disp    hp  drat    wt  qsec    vs    am  gear  carb hp_per_cyl
 #>    <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>      <dbl>
 #>  1  18.7     8  360    175  3.15  3.44  17.0     0     0     3     2       21.9
@@ -344,10 +344,10 @@ get_ducklake_table("cars")
 # View version history - old versions still accessible via time travel
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-07-10 18:07:40              1
-#> 2           7 2026-07-10 18:07:41              3
-#> 3           8 2026-07-10 18:07:41              4
-#> 4           9 2026-07-10 18:07:41              5
+#> 1           1 2026-07-20 19:43:01              1
+#> 2           7 2026-07-20 19:43:03              3
+#> 3           8 2026-07-20 19:43:03              4
+#> 4           9 2026-07-20 19:43:03              5
 #>                                                                 changes
 #> 1                    tables_created, tables_inserted_into, main.cars, 1
 #> 2 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 3
@@ -371,10 +371,10 @@ current <- get_ducklake_table("cars") |> collect()
 snapshots <- list_table_snapshots("cars")
 snapshots
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-07-10 18:07:40              1
-#> 2           7 2026-07-10 18:07:41              3
-#> 3           8 2026-07-10 18:07:41              4
-#> 4           9 2026-07-10 18:07:41              5
+#> 1           1 2026-07-20 19:43:01              1
+#> 2           7 2026-07-20 19:43:03              3
+#> 3           8 2026-07-20 19:43:03              4
+#> 4           9 2026-07-20 19:43:03              5
 #>                                                                 changes
 #> 1                    tables_created, tables_inserted_into, main.cars, 1
 #> 2 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 3

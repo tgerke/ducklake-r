@@ -103,10 +103,10 @@ The audit trail so far:
 list_table_snapshots("fleet") |>
   select(snapshot_id, snapshot_time, author, commit_message)
 #>   snapshot_id       snapshot_time        author                  commit_message
-#> 1           1 2026-07-10 18:08:01 Data Engineer              Initial fleet load
-#> 2           2 2026-07-10 18:08:01 Fleet Manager              Add March arrivals
-#> 3           3 2026-07-10 18:08:01 Fleet Manager Record spring odometer readings
-#> 4           4 2026-07-10 18:08:01 Fleet Manager               Remove sold F-150
+#> 1           1 2026-07-20 19:43:26 Data Engineer              Initial fleet load
+#> 2           2 2026-07-20 19:43:26 Fleet Manager              Add March arrivals
+#> 3           3 2026-07-20 19:43:26 Fleet Manager Record spring odometer readings
+#> 4           4 2026-07-20 19:43:26 Fleet Manager               Remove sold F-150
 ```
 
 ## Plotting the Timeline
@@ -196,11 +196,11 @@ reports each table’s file count and size:
 
 get_table_info()
 #>   table_name schema_id table_id                           table_uuid file_count
-#> 1      fleet         0        1 019f4d37-0da2-7804-966f-56a684b3fd8a          1
-#> 2  telemetry         0        2 019f4d37-13fe-74e0-9a3d-7db60bb285cf          2
+#> 1      fleet         0        1 019f810d-ff91-7e9d-8bac-b6062aa1cab6          1
+#> 2  telemetry         0        2 019f810e-05dd-7f45-b0c0-13abd0e5872c          2
 #>   file_size_bytes delete_file_count delete_file_size_bytes
-#> 1            1027                 1                   1124
-#> 2           65525                 0                      0
+#> 1            1027                 1                   1120
+#> 2           65518                 0                      0
 ```
 
 And
