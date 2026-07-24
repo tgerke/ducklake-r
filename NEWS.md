@@ -16,7 +16,9 @@
 
 * New `add_data_files()` registers existing Parquet files with a table
   without copying or rewriting them -- the migration path for data that is
-  already in Parquet. `list_ducklake_files()` shows the files backing a
+  already in Parquet. A vector of files is registered atomically in one
+  snapshot, and `create = TRUE` can bootstrap a new target table directly
+  from the Parquet schema. `list_ducklake_files()` shows the files backing a
   table, optionally as of a past snapshot.
 
 * New sorted-table support: `set_table_sorting()` and

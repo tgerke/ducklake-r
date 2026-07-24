@@ -142,15 +142,19 @@ with_transaction(
 ### Register existing Parquet files without copying
 
 If your data is already in Parquet, `add_data_files()` records the files in
-the lake in place -- no copy, no rewrite. This is the fast migration path
-from a folder of Parquet extracts. Note that the lake takes ownership of
-the files: later compaction may rewrite or delete them.
+the lake in place -- no copy, no rewrite, and no collection into R. A vector
+of files is registered atomically in one snapshot. This is the fast migration
+path from a folder of Parquet extracts. The target table can already exist
+with a compatible schema, or `create = TRUE` can create it directly from the
+Parquet schema. Note that the lake takes ownership of the files: later
+compaction may rewrite or delete them.
 
 ```{r add_data_files, eval=FALSE}
-# The table must exist with a compatible schema
-create_table(data.frame(id = integer(), value = numeric()), "readings")
-
-add_data_files("readings", c("extracts/jan.parquet", "extracts/feb.parquet"))
+add_data_files(
+  "readings",
+  c("extracts/jan.parquet", "extracts/feb.parquet"),
+  create = TRUE
+)
 
 # See which files back a table
 list_ducklake_files("readings")
