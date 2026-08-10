@@ -64,6 +64,9 @@ reference:
     - get_ducklake_table
     - replace_table
     - add_data_files
+    - create_view
+    - drop_view
+    - list_ducklake_tables
     
   - title: "Row Operations"
     desc: "Modify table rows with dplyr-style functions"
@@ -108,6 +111,13 @@ reference:
     - plot_table_changes
     - restore_table_version
     
+  - title: "Table Documentation"
+    desc: "Comments and variable labels stored in the lake"
+    contents:
+    - set_table_comment
+    - set_column_comments
+    - get_table_comments
+
   - title: "Metadata"
     desc: "Access metadata and snapshots"
     contents:

@@ -163,10 +163,37 @@ with_transaction(
 )
 
 # Verify the cleaned table
-get_ducklake_table("dm") |> 
-  select(USUBJID, AGE, SEX, RACE, ARM) |> 
+get_ducklake_table("dm") |>
+  select(USUBJID, AGE, SEX, RACE, ARM) |>
   head()
 ```
+
+Notice the message when the bronze table was created: SDTM datasets carry
+CDISC variable labels as `label` attributes, and `create_table()` stored
+them in the lake as column comments. The labels are now part of the
+catalog itself -- queryable from R, Python, or SQL, and available as
+context for AI tools reading the lake:
+
+```{r dm-labels}
+get_table_comments("dm_raw") |> head()
+```
+
+They also come back on the way out. `collect()` reattaches stored
+comments as `label` attributes, so label-aware tools downstream --
+gtsummary and gt table headers, labelled-based workflows -- behave as if
+the data had never left R:
+
+```{r dm-labels-collect}
+dm_check <- get_ducklake_table("dm_raw") |>
+  select(USUBJID, AGE, SEX) |>
+  collect()
+
+attr(dm_check$AGE, "label")
+```
+
+For flat-file workflows, labels typically survive only inside `.rds` or
+XPT files and vanish through CSV round trips. Here they live with the
+data, versioned like everything else in the lake.
 
 ### Supplemental Demographics (SUPPDM)
 
@@ -457,6 +484,18 @@ with_transaction(
   author = "T Gerke",
   commit_message = "Create ADSL dataset",
   commit_extra_info = "Derived from DM, SUPPDM, DS, EX; includes treatment dates, safety flags, age groups"
+)
+
+# Variables carried over from DM kept their SDTM labels automatically.
+# Derived variables are new, so label them now -- the ADaM way, but stored
+# in the catalog rather than a spec sidecar
+set_column_comments(
+  "adsl",
+  TRT01P = "Planned Treatment for Period 01",
+  TRT01A = "Actual Treatment for Period 01",
+  AGEGR1 = "Pooled Age Group 1",
+  AGEGR1N = "Pooled Age Group 1 (N)",
+  SAFFL = "Safety Population Flag"
 )
 
 # Preview ADSL

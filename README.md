@@ -125,7 +125,7 @@ get_ducklake_table("vehicles_analysis") |>
   select(mpg, cyl, efficiency) |>
   head(3)
 #> # Source:   SQL [?? x 3]
-#> # Database: DuckDB 1.5.1 [tgerke@Darwin 25.5.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/Rtmpwp7kLo/ducklake/ducklakeb6497bdd8f05.duckdb]
+#> # Database: DuckDB 1.5.1 [tgerke@Darwin 25.5.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpGhkk8k/ducklake/ducklakec62a6ad327f9.duckdb]
 #>     mpg cyl   efficiency
 #>   <dbl> <chr> <chr>     
 #> 1  21   6.0   Medium    
@@ -135,11 +135,11 @@ get_ducklake_table("vehicles_analysis") |>
 # View complete audit trail across all layers with author and commit messages
 list_table_snapshots()
 #>   snapshot_id       snapshot_time schema_version
-#> 1           0 2026-08-10 17:33:51              0
-#> 2           1 2026-08-10 17:33:51              1
-#> 3           2 2026-08-10 17:33:51              2
-#> 4           3 2026-08-10 17:33:51              3
-#> 5           4 2026-08-10 17:33:51              4
+#> 1           0 2026-08-10 17:43:33              0
+#> 2           1 2026-08-10 17:43:33              1
+#> 3           2 2026-08-10 17:43:33              2
+#> 4           3 2026-08-10 17:43:33              3
+#> 5           4 2026-08-10 17:43:33              4
 #>                                                                           changes
 #> 1                                                           schemas_created, main
 #> 2                      tables_created, tables_inserted_into, main.vehicles_raw, 1
@@ -164,7 +164,7 @@ get_ducklake_table_version("vehicles_clean", version = 2) |>
   select(mpg, cyl, gear) |>
   head(3)
 #> # Source:   SQL [?? x 3]
-#> # Database: DuckDB 1.5.1 [tgerke@Darwin 25.5.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/Rtmpwp7kLo/ducklake/ducklakeb6497bdd8f05.duckdb]
+#> # Database: DuckDB 1.5.1 [tgerke@Darwin 25.5.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpGhkk8k/ducklake/ducklakec62a6ad327f9.duckdb]
 #>     mpg cyl    gear
 #>   <dbl> <chr> <dbl>
 #> 1  21   6.0       4
@@ -295,6 +295,15 @@ detailed vignettes:
   and `rename_ducklake_table()` change a table’s shape as metadata-only
   operations — no data rewrite, and every earlier schema stays reachable
   through time travel
+- **Variable labels survive the lake**: `create_table()` stores
+  haven/labelled column labels as catalog comments and `collect()`
+  restores them, so gtsummary and gt keep displaying them;
+  `set_table_comment()`, `set_column_comments()`, and
+  `get_table_comments()` manage documentation any client of the lake can
+  read
+- **Views**: `create_view()` stores a dplyr pipeline as a SQL view in
+  the lake — shared logic that always reads current data;
+  `list_ducklake_tables()` shows what’s there
 - **Tidyverse interface**: Familiar dplyr syntax for data manipulation
 - **Encryption**: Opt-in Parquet encryption with
   `attach_ducklake(encrypted = TRUE)`
