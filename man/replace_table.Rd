@@ -37,15 +37,20 @@ with other changes.
 
 \strong{When to use replace_table():}
 \itemize{
-\item \strong{Adding new columns} - DuckLake UPDATE cannot add columns; use replace_table()
-\item \strong{Removing columns} - Restructure schema with select()
-\item \strong{Complex transformations} - Apply full dplyr pipelines naturally
+\item \strong{Bulk transformations} - a dplyr pipeline that recomputes, reshapes,
+or filters most of the table
 }
 
-\strong{When to use \code{\link[=ducklake_exec]{ducklake_exec()}} instead:}
+\strong{When to reach elsewhere:}
 \itemize{
-\item Modifying existing column values only (no schema changes)
-\item Making targeted corrections to specific rows without rewriting the table
+\item \strong{Schema-only changes} - \code{\link[=add_table_column]{add_table_column()}}, \code{\link[=drop_table_column]{drop_table_column()}},
+\code{\link[=rename_table_column]{rename_table_column()}}, and \code{\link[=set_column_type]{set_column_type()}} alter the table in
+place; nothing is collected or rewritten
+\item \strong{Derived columns} - \code{\link[=add_table_column]{add_table_column()}} followed by a
+\code{mutate()} pipeline through \code{\link[=ducklake_exec]{ducklake_exec()}} fills the new column
+with an in-database UPDATE
+\item \strong{Targeted row changes} - \code{\link[=rows_update]{rows_update()}}, \code{\link[=rows_upsert]{rows_upsert()}}, or
+\code{\link[=ducklake_exec]{ducklake_exec()}} modify only the affected rows
 }
 
 Both paths create a snapshot: replace_table() via DROP + CREATE, and

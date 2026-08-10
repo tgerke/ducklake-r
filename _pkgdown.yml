@@ -74,6 +74,15 @@ reference:
     - rows_upsert
     - merge_into
     
+  - title: "Schema Evolution"
+    desc: "Change a table's shape in place, preserving history"
+    contents:
+    - add_table_column
+    - drop_table_column
+    - rename_table_column
+    - set_column_type
+    - rename_ducklake_table
+
   - title: "Query Execution"
     desc: "Execute and preview SQL queries"
     contents:

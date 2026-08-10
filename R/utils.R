@@ -155,3 +155,51 @@ in_transaction <- function(conn = get_ducklake_connection()) {
 quote_sql <- function(x) {
   sprintf("'%s'", gsub("'", "''", x))
 }
+
+#' Quote a single column name
+#'
+#' Unlike `quote_ident()`, does not split on `.`, so column names such as
+#' `Sepal.Length` stay one identifier.
+#'
+#' @param x A single column name.
+#' @param conn A DBI connection used for quoting rules.
+#' @param arg Argument name for error messages.
+#' @returns A quoted identifier string.
+#' @noRd
+quote_column <- function(x, conn = get_ducklake_connection(),
+                         arg = "column_name") {
+  if (!is.character(x) || length(x) != 1 || is.na(x) || !nzchar(x)) {
+    cli::cli_abort("{.arg {arg}} must be a single, non-empty column name.")
+  }
+  as.character(DBI::dbQuoteIdentifier(conn, x))
+}
+
+#' Render an R value as a SQL literal
+#'
+#' Used for DEFAULT clauses in schema evolution statements. `NA` renders as
+#' `NULL`; Date and POSIXct values become typed literals (POSIXct in UTC,
+#' via `format_timestamp()`).
+#'
+#' @param x A length-one vector.
+#' @returns A SQL literal string.
+#' @noRd
+render_sql_literal <- function(x) {
+  if (length(x) != 1) {
+    cli::cli_abort("SQL literal values must have length 1.")
+  }
+  if (is.na(x)) {
+    "NULL"
+  } else if (inherits(x, "Date")) {
+    sprintf("DATE %s", quote_sql(format(x, "%Y-%m-%d")))
+  } else if (inherits(x, "POSIXct")) {
+    sprintf("TIMESTAMP %s", quote_sql(format_timestamp(x)))
+  } else if (is.logical(x)) {
+    if (x) "TRUE" else "FALSE"
+  } else if (is.numeric(x)) {
+    format(x, scientific = FALSE)
+  } else if (is.character(x)) {
+    quote_sql(x)
+  } else {
+    cli::cli_abort("Cannot render {.cls {class(x)}} as a SQL literal.")
+  }
+}

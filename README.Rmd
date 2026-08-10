@@ -193,7 +193,7 @@ Check out the [pkgdown site](https://tgerke.github.io/ducklake-r/) for detailed 
 - **Migrate Parquet in place**: `add_data_files()` registers existing Parquet files with the lake without copying or rewriting them
 - **Cloud storage**: Keep data files on S3, GCS, R2, or Azure — `create_storage_secret()` handles credentials
 - **Tunable**: `set_ducklake_option()` adjusts DuckLake's persisted settings (compression, file sizes, commit-message policy) at lake, schema, or table scope
-- **Schema evolution**: Adapt table schemas over time as requirements change
+- **Schema evolution in place**: `add_table_column()`, `drop_table_column()`, `rename_table_column()`, `set_column_type()`, and `rename_ducklake_table()` change a table's shape as metadata-only operations — no data rewrite, and every earlier schema stays reachable through time travel
 - **Tidyverse interface**: Familiar dplyr syntax for data manipulation
 - **Encryption**: Opt-in Parquet encryption with `attach_ducklake(encrypted = TRUE)`
 - **A write style for every job**: `rows_insert()`, `rows_update()`, `rows_delete()`, and `rows_upsert()` for incremental changes; `merge_into()` for conditional merges and staging-table syncs; `replace_table()` pipelines for bulk rewrites — all fully versioned

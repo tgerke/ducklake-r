@@ -23,13 +23,18 @@
 #' with other changes.
 #'
 #' **When to use replace_table():**
-#' - **Adding new columns** - DuckLake UPDATE cannot add columns; use replace_table()
-#' - **Removing columns** - Restructure schema with select()
-#' - **Complex transformations** - Apply full dplyr pipelines naturally
+#' - **Bulk transformations** - a dplyr pipeline that recomputes, reshapes,
+#'   or filters most of the table
 #'
-#' **When to use [ducklake_exec()] instead:**
-#' - Modifying existing column values only (no schema changes)
-#' - Making targeted corrections to specific rows without rewriting the table
+#' **When to reach elsewhere:**
+#' - **Schema-only changes** - [add_table_column()], [drop_table_column()],
+#'   [rename_table_column()], and [set_column_type()] alter the table in
+#'   place; nothing is collected or rewritten
+#' - **Derived columns** - [add_table_column()] followed by a
+#'   `mutate()` pipeline through [ducklake_exec()] fills the new column
+#'   with an in-database UPDATE
+#' - **Targeted row changes** - [rows_update()], [rows_upsert()], or
+#'   [ducklake_exec()] modify only the affected rows
 #'
 #' Both paths create a snapshot: replace_table() via DROP + CREATE, and
 #' ducklake_exec() via the in-place UPDATE/DELETE it runs, so either way the

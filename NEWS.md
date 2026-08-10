@@ -15,6 +15,19 @@
   that need both run as MERGE plus DELETE inside a single transaction and
   snapshot.
 
+* New schema evolution family: `add_table_column()` (with optional
+  `default`, which DuckLake applies to existing rows too),
+  `drop_table_column()`, `rename_table_column()`, `set_column_type()`
+  (widening promotions only, with the add-copy-drop-rename recipe in the
+  error when a change would narrow), and `rename_ducklake_table()`. All
+  are metadata-only `ALTER TABLE` operations: no data files are rewritten,
+  and earlier snapshots keep the earlier schema. Until now schema changes
+  went through `replace_table()`, which collects the whole table into R;
+  its documentation now points here, and it remains the tool for bulk
+  *data* transformations. Derived columns combine the two styles:
+  `add_table_column()` then a `mutate()` pipeline through
+  `ducklake_exec()` fills the column with an in-database UPDATE.
+
 * New plotting functions, all requiring the suggested ggplot2 package and
   shown in action in a new "Visualizing Your Lake" vignette:
   `plot_snapshots()` draws a table's snapshot history as a commit-log
