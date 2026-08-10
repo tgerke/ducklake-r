@@ -1,5 +1,20 @@
 # ducklake (development version)
 
+* New `rows_upsert()` completes the dplyr `rows_*` family: rows that match
+  on the key columns are updated and the rest are inserted, as one atomic
+  `MERGE INTO` statement (DuckLake tables have no primary keys, so the
+  `ON CONFLICT` upsert other databases use does not apply). One call is one
+  snapshot, with the updates and inserts recorded individually in the
+  change feed.
+
+* New `merge_into()` exposes the full SQL MERGE surface for the cases
+  `rows_upsert()` cannot express: conditional matched and not-matched
+  clauses, deleting matched rows, and `delete_missing = TRUE` to drop
+  target rows absent from the source (a staging-table sync). DuckLake
+  currently allows one update/delete action per MERGE statement, so syncs
+  that need both run as MERGE plus DELETE inside a single transaction and
+  snapshot.
+
 * New plotting functions, all requiring the suggested ggplot2 package and
   shown in action in a new "Visualizing Your Lake" vignette:
   `plot_snapshots()` draws a table's snapshot history as a commit-log

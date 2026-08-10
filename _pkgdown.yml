@@ -71,6 +71,8 @@ reference:
     - rows_insert
     - rows_update
     - rows_delete
+    - rows_upsert
+    - merge_into
     
   - title: "Query Execution"
     desc: "Execute and preview SQL queries"
