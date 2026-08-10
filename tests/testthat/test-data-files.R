@@ -19,10 +19,7 @@ test_that("add_data_files registers an existing parquet file without copying", {
     )
   )
 
-  # Preserve the pre-existing positional signature through ducklake_name.
-  suppressMessages(add_data_files(
-    "adf_target", external_file, NULL, FALSE, FALSE, lake$ducklake_name
-  ))
+  suppressMessages(add_data_files("adf_target", external_file))
 
   result <- dplyr::collect(get_ducklake_table("adf_target"))
   expect_equal(nrow(result), 4)
