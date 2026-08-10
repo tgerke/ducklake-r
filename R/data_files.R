@@ -3,11 +3,11 @@
 #' Adds Parquet files that already exist on disk (or object storage) to a
 #' DuckLake table without copying or rewriting them. This is the migration
 #' path for data that is already in Parquet: the files are recorded in the
-#' catalog in place, and one snapshot is created per file added.
+#' catalog in place.
 #'
-#' @param table_name The table to add the files to. It must already exist
-#'   with a schema compatible with the files (see `allow_missing` and
-#'   `ignore_extra_columns` for the two permitted mismatches).
+#' @param table_name The table to add the files to. Unless `create = TRUE`, it
+#'   must already exist with a schema compatible with the files (see
+#'   `allow_missing` and `ignore_extra_columns` for the permitted mismatches).
 #' @param files Character vector of Parquet file paths or URIs.
 #' @param schema_name Optional schema containing the table (defaults to the
 #'   lake's `main` schema).
@@ -19,10 +19,20 @@
 #'   `FALSE`.
 #' @param ducklake_name Optional name of the attached DuckLake catalog. If
 #'   `NULL`, the current database is used.
+#' @param create If `TRUE`, create an empty target table from the registered
+#'   Parquet schema. The table must not already exist. Default `FALSE`.
 #'
 #' @details
-#' Runs `CALL ducklake_add_data_files(...)` once per file. Ownership of each
-#' file transfers to DuckLake: compaction (e.g.
+#' Runs `CALL ducklake_add_data_files(...)` once per file. The complete vector
+#' is atomic: outside an existing transaction the function opens one, so the
+#' batch creates one snapshot and any failure rolls back every registration.
+#' Inside [with_transaction()] the registrations join the caller's snapshot.
+#'
+#' With `create = TRUE`, the table schema is read from the complete file list
+#' with `read_parquet()` and created with zero rows before registration. Neither
+#' this path nor registration copies the data or materializes it in R.
+#'
+#' Ownership of each file transfers to DuckLake: compaction (e.g.
 #' [merge_adjacent_files()]) may later rewrite and delete it, so do not add
 #' files that something else still relies on.
 #'
@@ -44,18 +54,29 @@
 #'   c("extracts/jan.parquet", "extracts/feb.parquet"),
 #'   ignore_extra_columns = TRUE
 #' )
+#'
+#' # Create a new table and register an existing Parquet batch atomically
+#' add_data_files(
+#'   "clinvar_staging",
+#'   "extracts/clinvar-2026-07.parquet",
+#'   create = TRUE
+#' )
 #' }
 add_data_files <- function(table_name,
                            files,
                            schema_name = NULL,
                            allow_missing = FALSE,
                            ignore_extra_columns = FALSE,
-                           ducklake_name = NULL) {
+                           ducklake_name = NULL,
+                           create = FALSE) {
   conn <- get_ducklake_connection()
   ducklake_name <- infer_ducklake_name(ducklake_name, conn)
 
   if (!is.character(files) || length(files) == 0 || anyNA(files)) {
     cli::cli_abort("{.arg files} must be a character vector of file paths.")
+  }
+  if (!is.logical(create) || length(create) != 1 || is.na(create)) {
+    cli::cli_abort("{.arg create} must be `TRUE` or `FALSE`.")
   }
 
   extra <- paste0(
@@ -67,6 +88,37 @@ add_data_files <- function(table_name,
     if (allow_missing) ", allow_missing => true" else "",
     if (ignore_extra_columns) ", ignore_extra_columns => true" else ""
   )
+
+  own_txn <- !in_transaction(conn)
+  committed <- FALSE
+  if (own_txn) {
+    DBI::dbExecute(conn, "BEGIN TRANSACTION;")
+    on.exit(
+      if (!committed) {
+        tryCatch(DBI::dbExecute(conn, "ROLLBACK;"), error = function(e) NULL)
+      },
+      add = TRUE
+    )
+  }
+
+  if (create) {
+    target_schema <- if (is.null(schema_name)) "main" else schema_name
+    target <- quote_ident(
+      paste(ducklake_name, target_schema, table_name, sep = "."),
+      conn
+    )
+    file_list <- paste(
+      vapply(files, quote_sql, character(1)),
+      collapse = ", "
+    )
+    db_execute(
+      sprintf(
+        "CREATE TABLE %s AS SELECT * FROM read_parquet([%s]) LIMIT 0;",
+        target, file_list
+      ),
+      conn = conn
+    )
+  }
 
   for (file in files) {
     db_execute(
@@ -81,8 +133,14 @@ add_data_files <- function(table_name,
     )
   }
 
+  if (own_txn) {
+    DBI::dbExecute(conn, "COMMIT;")
+    committed <- TRUE
+  }
+
   cli::cli_inform(c(
     "Added {length(files)} file{?s} to table {.val {table_name}}.",
+    "i" = "The batch was registered atomically in one DuckLake snapshot.",
     "i" = "DuckLake now owns the added file{cli::qty(length(files))}{?s}; compaction may rewrite or delete {?it/them}."
   ))
 

@@ -10,13 +10,14 @@ add_data_files(
   schema_name = NULL,
   allow_missing = FALSE,
   ignore_extra_columns = FALSE,
-  ducklake_name = NULL
+  ducklake_name = NULL,
+  create = FALSE
 )
 }
 \arguments{
-\item{table_name}{The table to add the files to. It must already exist
-with a schema compatible with the files (see \code{allow_missing} and
-\code{ignore_extra_columns} for the two permitted mismatches).}
+\item{table_name}{The table to add the files to. Unless \code{create = TRUE}, it
+must already exist with a schema compatible with the files (see
+\code{allow_missing} and \code{ignore_extra_columns} for the permitted mismatches).}
 
 \item{files}{Character vector of Parquet file paths or URIs.}
 
@@ -33,6 +34,9 @@ table does not have; the extra columns are inaccessible. Default
 
 \item{ducklake_name}{Optional name of the attached DuckLake catalog. If
 \code{NULL}, the current database is used.}
+
+\item{create}{If \code{TRUE}, create an empty target table from the registered
+Parquet schema. The table must not already exist. Default \code{FALSE}.}
 }
 \value{
 Invisibly returns the character vector of files added.
@@ -41,11 +45,19 @@ Invisibly returns the character vector of files added.
 Adds Parquet files that already exist on disk (or object storage) to a
 DuckLake table without copying or rewriting them. This is the migration
 path for data that is already in Parquet: the files are recorded in the
-catalog in place, and one snapshot is created per file added.
+catalog in place.
 }
 \details{
-Runs \verb{CALL ducklake_add_data_files(...)} once per file. Ownership of each
-file transfers to DuckLake: compaction (e.g.
+Runs \verb{CALL ducklake_add_data_files(...)} once per file. The complete vector
+is atomic: outside an existing transaction the function opens one, so the
+batch creates one snapshot and any failure rolls back every registration.
+Inside \code{\link[=with_transaction]{with_transaction()}} the registrations join the caller's snapshot.
+
+With \code{create = TRUE}, the table schema is read from the complete file list
+with \code{read_parquet()} and created with zero rows before registration. Neither
+this path nor registration copies the data or materializes it in R.
+
+Ownership of each file transfers to DuckLake: compaction (e.g.
 \code{\link[=merge_adjacent_files]{merge_adjacent_files()}}) may later rewrite and delete it, so do not add
 files that something else still relies on.
 }
@@ -60,6 +72,13 @@ add_data_files(
   "readings",
   c("extracts/jan.parquet", "extracts/feb.parquet"),
   ignore_extra_columns = TRUE
+)
+
+# Create a new table and register an existing Parquet batch atomically
+add_data_files(
+  "clinvar_staging",
+  "extracts/clinvar-2026-07.parquet",
+  create = TRUE
 )
 }
 }
