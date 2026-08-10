@@ -17,10 +17,10 @@
 #' @param ignore_extra_columns If `TRUE`, files may contain columns that the
 #'   table does not have; the extra columns are inaccessible. Default
 #'   `FALSE`.
-#' @param ducklake_name Optional name of the attached DuckLake catalog. If
-#'   `NULL`, the current database is used.
 #' @param create If `TRUE`, create an empty target table from the registered
 #'   Parquet schema. The table must not already exist. Default `FALSE`.
+#' @param ducklake_name Optional name of the attached DuckLake catalog. If
+#'   `NULL`, the current database is used.
 #'
 #' @details
 #' Runs `CALL ducklake_add_data_files(...)` once per file. The complete vector
@@ -67,8 +67,8 @@ add_data_files <- function(table_name,
                            schema_name = NULL,
                            allow_missing = FALSE,
                            ignore_extra_columns = FALSE,
-                           ducklake_name = NULL,
-                           create = FALSE) {
+                           create = FALSE,
+                           ducklake_name = NULL) {
   conn <- get_ducklake_connection()
   ducklake_name <- infer_ducklake_name(ducklake_name, conn)
 
@@ -140,7 +140,11 @@ add_data_files <- function(table_name,
 
   cli::cli_inform(c(
     "Added {length(files)} file{?s} to table {.val {table_name}}.",
-    "i" = "The batch was registered atomically in one DuckLake snapshot.",
+    # Inside a caller's transaction the snapshot is theirs and not yet
+    # committed, so only claim atomicity for a batch this call committed.
+    if (own_txn && length(files) > 1) {
+      c("i" = "The batch was registered atomically in one DuckLake snapshot.")
+    },
     "i" = "DuckLake now owns the added file{cli::qty(length(files))}{?s}; compaction may rewrite or delete {?it/them}."
   ))
 

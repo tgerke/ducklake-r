@@ -10,8 +10,8 @@ add_data_files(
   schema_name = NULL,
   allow_missing = FALSE,
   ignore_extra_columns = FALSE,
-  ducklake_name = NULL,
-  create = FALSE
+  create = FALSE,
+  ducklake_name = NULL
 )
 }
 \arguments{
@@ -32,11 +32,11 @@ table; missing columns read as the column's initial default. Default
 table does not have; the extra columns are inaccessible. Default
 \code{FALSE}.}
 
-\item{ducklake_name}{Optional name of the attached DuckLake catalog. If
-\code{NULL}, the current database is used.}
-
 \item{create}{If \code{TRUE}, create an empty target table from the registered
 Parquet schema. The table must not already exist. Default \code{FALSE}.}
+
+\item{ducklake_name}{Optional name of the attached DuckLake catalog. If
+\code{NULL}, the current database is used.}
 }
 \value{
 Invisibly returns the character vector of files added.
