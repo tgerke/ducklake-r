@@ -14,8 +14,8 @@ add_data_files(
   schema_name = NULL,
   allow_missing = FALSE,
   ignore_extra_columns = FALSE,
-  ducklake_name = NULL,
-  create = FALSE
+  create = FALSE,
+  ducklake_name = NULL
 )
 ```
 
@@ -46,15 +46,15 @@ add_data_files(
   If `TRUE`, files may contain columns that the table does not have; the
   extra columns are inaccessible. Default `FALSE`.
 
-- ducklake_name:
-
-  Optional name of the attached DuckLake catalog. If `NULL`, the current
-  database is used.
-
 - create:
 
   If `TRUE`, create an empty target table from the registered Parquet
   schema. The table must not already exist. Default `FALSE`.
+
+- ducklake_name:
+
+  Optional name of the attached DuckLake catalog. If `NULL`, the current
+  database is used.
 
 ## Value
 

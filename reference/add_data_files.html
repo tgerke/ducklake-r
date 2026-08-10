@@ -72,8 +72,8 @@ catalog in place.</p>
 <span>  schema_name <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  allow_missing <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  ignore_extra_columns <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  ducklake_name <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  create <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span>  create <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  ducklake_name <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -108,14 +108,14 @@ table does not have; the extra columns are inaccessible. Default
 <code>FALSE</code>.</p></dd>
 
 
-<dt id="arg-ducklake-name">ducklake_name<a class="anchor" aria-label="anchor" href="#arg-ducklake-name"></a></dt>
-<dd><p>Optional name of the attached DuckLake catalog. If
-<code>NULL</code>, the current database is used.</p></dd>
-
-
 <dt id="arg-create">create<a class="anchor" aria-label="anchor" href="#arg-create"></a></dt>
 <dd><p>If <code>TRUE</code>, create an empty target table from the registered
 Parquet schema. The table must not already exist. Default <code>FALSE</code>.</p></dd>
+
+
+<dt id="arg-ducklake-name">ducklake_name<a class="anchor" aria-label="anchor" href="#arg-ducklake-name"></a></dt>
+<dd><p>Optional name of the attached DuckLake catalog. If
+<code>NULL</code>, the current database is used.</p></dd>
 
 </dl></div>
     <div class="section level2">
