@@ -45,6 +45,10 @@ without creating tiny Parquet files.
 statement, use \code{\link[=rows_upsert]{rows_upsert()}}.
 \item For conditional merge logic or deletes driven by a staging table, use
 \code{\link[=merge_into]{merge_into()}}.
+\item To change a table's shape without touching its data -- add, drop, or
+rename columns, widen a type -- use the schema evolution family
+(\code{\link[=add_table_column]{add_table_column()}} and friends): metadata-only changes that rewrite
+nothing.
 \item For bulk transformations that touch most rows, use \code{\link[=replace_table]{replace_table()}}. It
 collects the transformed data into R and rewrites the whole table --
 heavier than the row operations, and it resets the row lineage that the
