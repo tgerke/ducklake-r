@@ -123,6 +123,10 @@ without creating tiny Parquet files.</p></li>
 statement, use <code>rows_upsert()</code>.</p></li>
 <li><p>For conditional merge logic or deletes driven by a staging table, use
 <code><a href="merge_into.html">merge_into()</a></code>.</p></li>
+<li><p>To change a table's shape without touching its data – add, drop, or
+rename columns, widen a type – use the schema evolution family
+(<code><a href="add_table_column.html">add_table_column()</a></code> and friends): metadata-only changes that rewrite
+nothing.</p></li>
 <li><p>For bulk transformations that touch most rows, use <code><a href="replace_table.html">replace_table()</a></code>. It
 collects the transformed data into R and rewrites the whole table –
 heavier than the row operations, and it resets the row lineage that the

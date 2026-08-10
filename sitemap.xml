@@ -16,6 +16,7 @@
 <url><loc>https://tgerke.github.io/ducklake-r/index.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/news/index.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/add_data_files.html</loc></url>
+<url><loc>https://tgerke.github.io/ducklake-r/reference/add_table_column.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/attach_ducklake.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/attach_quack.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/backup_ducklake.html</loc></url>
@@ -32,6 +33,7 @@
 <url><loc>https://tgerke.github.io/ducklake-r/reference/delete_orphaned_files.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/detach_ducklake.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/detach_quack.html</loc></url>
+<url><loc>https://tgerke.github.io/ducklake-r/reference/drop_table_column.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/ducklake_exec.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/ensure_extensions.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/ensure_quack_extension.html</loc></url>
@@ -64,6 +66,8 @@
 <url><loc>https://tgerke.github.io/ducklake-r/reference/quack_stop.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/quack_version_supported.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/quote_sql.html</loc></url>
+<url><loc>https://tgerke.github.io/ducklake-r/reference/rename_ducklake_table.html</loc></url>
+<url><loc>https://tgerke.github.io/ducklake-r/reference/rename_table_column.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/replace_table.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/reset_table_partitioning.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/reset_table_sorting.html</loc></url>
@@ -74,6 +78,7 @@
 <url><loc>https://tgerke.github.io/ducklake-r/reference/rows_insert.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/rows_update.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/rows_upsert.html</loc></url>
+<url><loc>https://tgerke.github.io/ducklake-r/reference/set_column_type.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/set_ducklake_connection.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/set_ducklake_option.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/set_inlining_row_limit.html</loc></url>

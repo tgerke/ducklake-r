@@ -47,6 +47,21 @@ Modify table rows with dplyr-style functions
 - [`merge_into()`](https://tgerke.github.io/ducklake-r/reference/merge_into.md)
   : Merge a source table into a DuckLake table
 
+## Schema Evolution
+
+Change a table’s shape in place, preserving history
+
+- [`add_table_column()`](https://tgerke.github.io/ducklake-r/reference/add_table_column.md)
+  : Add a column to a DuckLake table
+- [`drop_table_column()`](https://tgerke.github.io/ducklake-r/reference/drop_table_column.md)
+  : Drop a column from a DuckLake table
+- [`rename_table_column()`](https://tgerke.github.io/ducklake-r/reference/rename_table_column.md)
+  : Rename a column in a DuckLake table
+- [`set_column_type()`](https://tgerke.github.io/ducklake-r/reference/set_column_type.md)
+  : Change the type of a DuckLake table column
+- [`rename_ducklake_table()`](https://tgerke.github.io/ducklake-r/reference/rename_ducklake_table.md)
+  : Rename a DuckLake table
+
 ## Query Execution
 
 Execute and preview SQL queries

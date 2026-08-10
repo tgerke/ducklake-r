@@ -152,6 +152,11 @@ else in this table <strong>writes</strong>.</p>
 <td><code><a href="../reference/merge_into.html">merge_into()</a></code></td>
 </tr>
 <tr class="odd">
+<td>Change the schema, not the data</td>
+<td>
+<code><a href="../reference/add_table_column.html">add_table_column()</a></code> and the schema evolution family</td>
+</tr>
+<tr class="even">
 <td>Bulk transformations that touch most rows</td>
 <td><code><a href="../reference/replace_table.html">replace_table()</a></code></td>
 </tr>
@@ -232,12 +237,32 @@ inserts, updates, and deletes that actually happened.
 <code><a href="../reference/get_table_changes.html">get_table_changes()</a></code> afterward tells the true story.</p>
 </div>
 <div class="section level3">
+<h3 id="for-schema-changes-evolve-in-place">For schema changes: evolve in place<a class="anchor" aria-label="anchor" href="#for-schema-changes-evolve-in-place"></a>
+</h3>
+<p>Adding, dropping, renaming, or widening columns needs no data rewrite
+at all. DuckLake records schema changes as metadata, so the schema
+evolution functions run instantly regardless of table size, and time
+travel still shows every earlier shape of the table:</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/add_table_column.html">add_table_column</a></span><span class="op">(</span><span class="st">"my_table"</span>, <span class="st">"category"</span>, <span class="st">"VARCHAR"</span>, default <span class="op">=</span> <span class="st">"unknown"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/rename_table_column.html">rename_table_column</a></span><span class="op">(</span><span class="st">"my_table"</span>, from <span class="op">=</span> <span class="st">"cat"</span>, to <span class="op">=</span> <span class="st">"category"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/set_column_type.html">set_column_type</a></span><span class="op">(</span><span class="st">"my_table"</span>, <span class="st">"id"</span>, <span class="st">"BIGINT"</span><span class="op">)</span>   <span class="co"># widening only</span></span>
+<span><span class="fu"><a href="../reference/drop_table_column.html">drop_table_column</a></span><span class="op">(</span><span class="st">"my_table"</span>, <span class="st">"scratch"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/rename_ducklake_table.html">rename_ducklake_table</a></span><span class="op">(</span><span class="st">"my_table"</span>, <span class="st">"my_better_named_table"</span><span class="op">)</span></span></code></pre></div>
+<p>Two behaviors to know. A <code>default</code> applies to existing
+rows as well as future inserts, so the new column shows up filled
+everywhere. And type changes must widen (<code>INTEGER</code> to
+<code>BIGINT</code>, <code>FLOAT</code> to <code>DOUBLE</code>):
+DuckLake refuses conversions that could lose values, and the error from
+<code><a href="../reference/set_column_type.html">set_column_type()</a></code> walks you through the
+add-copy-drop-rename route when you need to narrow.</p>
+</div>
+<div class="section level3">
 <h3 id="for-structural-or-bulk-changes-replace_table">For structural or bulk changes: <code>replace_table()</code><a class="anchor" aria-label="anchor" href="#for-structural-or-bulk-changes-replace_table"></a>
 </h3>
-<p>Use <code><a href="../reference/replace_table.html">replace_table()</a></code> when the <em>shape</em> of the table
-changes – adding or removing columns – or when a transformation touches
-most rows anyway:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<p>Use <code><a href="../reference/replace_table.html">replace_table()</a></code> when a transformation recomputes,
+reshapes, or filters most of the table anyway:</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/with_transaction.html">with_transaction</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"my_table"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">status</span> <span class="op">==</span> <span class="st">"active"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -247,8 +272,9 @@ most rows anyway:</p>
 <span>  commit_message <span class="op">=</span> <span class="st">"Mark active records as processed"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p><code><a href="../reference/replace_table.html">replace_table()</a></code> collects the transformed data into R and
-rewrites the table, which is exactly right for schema changes but
-wasteful for touching three rows in a million-row table.</p>
+rewrites the table – the right tool for a bulk rewrite, wasteful for
+touching three rows in a million-row table, and unnecessary for pure
+schema changes now that the in-place functions above exist.</p>
 </div>
 <div class="section level3">
 <h3 id="group-related-changes-with-with_transaction">Group related changes with <code>with_transaction()</code><a class="anchor" aria-label="anchor" href="#group-related-changes-with-with_transaction"></a>
@@ -258,7 +284,7 @@ wasteful for touching three rows in a million-row table.</p>
 become <strong>one</strong> snapshot, and you can attach an author and
 commit message for the audit trail – valuable in any setting and
 essential for GxP/21 CFR Part 11 work:</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/with_transaction.html">with_transaction</a></span><span class="op">(</span><span class="op">{</span></span>
 <span>  <span class="fu"><a href="../reference/rows_insert.html">rows_insert</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"my_table"</span><span class="op">)</span>, <span class="va">march_batch</span>, by <span class="op">=</span> <span class="st">"id"</span><span class="op">)</span></span>
 <span>  <span class="fu"><a href="../reference/rows_delete.html">rows_delete</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"my_table"</span><span class="op">)</span>, <span class="va">recalled_units</span>, by <span class="op">=</span> <span class="st">"id"</span><span class="op">)</span></span>
@@ -276,7 +302,7 @@ essential for GxP/21 CFR Part 11 work:</p>
 </h3>
 <p>Let’s see the row-level functions in action on a small fleet table
 with a proper key column:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fleet</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  car_id <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">3</span>,</span>
 <span>  model <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Corolla"</span>, <span class="st">"Civic"</span>, <span class="st">"Model 3"</span><span class="op">)</span>,</span>
@@ -292,7 +318,7 @@ with a proper key column:</p>
 <span><span class="co">#&gt; Transaction committed.</span></span></code></pre></div>
 <p><strong>Insert</strong> new records by key. The new rows are appended
 in a single SQL statement – the existing rows are never read into R:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">new_cars</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  car_id <span class="op">=</span> <span class="fl">4</span><span class="op">:</span><span class="fl">5</span>,</span>
 <span>  model <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Leaf"</span>, <span class="st">"Ioniq 5"</span><span class="op">)</span>,</span>
@@ -312,7 +338,7 @@ in a single SQL statement – the existing rows are never read into R:</p>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span>      5 Ioniq 5     120</span></span></code></pre></div>
 <p><strong>Update</strong> specific values by key. Only the matched rows
 change:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">correction</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>car_id <span class="op">=</span> <span class="fl">2</span>, mileage <span class="op">=</span> <span class="fl">39000</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/rows_update.html">rows_update</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"fleet"</span><span class="op">)</span>, <span class="va">correction</span>, by <span class="op">=</span> <span class="st">"car_id"</span><span class="op">)</span></span>
@@ -323,7 +349,7 @@ change:</p>
 <span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>      2 Civic   <span style="text-decoration: underline;">39</span>000</span></span></code></pre></div>
 <p><strong>Delete</strong> rows by key:</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">sold</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>car_id <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/rows_delete.html">rows_delete</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"fleet"</span><span class="op">)</span>, <span class="va">sold</span>, by <span class="op">=</span> <span class="st">"car_id"</span><span class="op">)</span></span>
@@ -340,7 +366,7 @@ change:</p>
 commit message – or to make several row operations land as
 <strong>one</strong> snapshot – wrap them in
 <code><a href="../reference/with_transaction.html">with_transaction()</a></code>:</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">april_arrivals</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>car_id <span class="op">=</span> <span class="fl">6</span>, model <span class="op">=</span> <span class="st">"ID.4"</span>, mileage <span class="op">=</span> <span class="fl">60</span><span class="op">)</span></span>
 <span><span class="va">recalled</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>car_id <span class="op">=</span> <span class="fl">4</span><span class="op">)</span></span>
 <span></span>
@@ -357,11 +383,11 @@ commit message – or to make several row operations land as
 <span><span class="co"># The full history: every change is versioned, wrapped or not</span></span>
 <span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"fleet"</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 1           2 2026-08-10 18:03:06              2</span></span>
-<span><span class="co">#&gt; 2           3 2026-08-10 18:03:07              2</span></span>
-<span><span class="co">#&gt; 3           4 2026-08-10 18:03:07              2</span></span>
-<span><span class="co">#&gt; 4           5 2026-08-10 18:03:07              2</span></span>
-<span><span class="co">#&gt; 5           6 2026-08-10 18:03:07              2</span></span>
+<span><span class="co">#&gt; 1           2 2026-08-10 18:10:08              2</span></span>
+<span><span class="co">#&gt; 2           3 2026-08-10 18:10:08              2</span></span>
+<span><span class="co">#&gt; 3           4 2026-08-10 18:10:08              2</span></span>
+<span><span class="co">#&gt; 4           5 2026-08-10 18:10:09              2</span></span>
+<span><span class="co">#&gt; 5           6 2026-08-10 18:10:09              2</span></span>
 <span><span class="co">#&gt;                                         changes        author</span></span>
 <span><span class="co">#&gt; 1 tables_created, inlined_insert, main.fleet, 2 Fleet Manager</span></span>
 <span><span class="co">#&gt; 2                             inlined_insert, 2          &lt;NA&gt;</span></span>
@@ -377,7 +403,7 @@ commit message – or to make several row operations land as
 <p><strong>Upsert</strong> a batch that mixes corrections and new
 arrivals. The Model 3’s mileage is updated and the Kona is inserted, in
 one statement:</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">service_batch</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  car_id <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">3</span>, <span class="fl">7</span><span class="op">)</span>,</span>
 <span>  model <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Model 3"</span>, <span class="st">"Kona"</span><span class="op">)</span>,</span>
@@ -399,7 +425,7 @@ one statement:</p>
 <code><a href="../reference/merge_into.html">merge_into()</a></code>. Suppose the quarterly registry export is the
 truth: matching cars take its values, cars it doesn’t list are gone, and
 cars we haven’t seen are added. One call, one snapshot:</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">registry</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  car_id <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">3</span>, <span class="fl">5</span>, <span class="fl">8</span><span class="op">)</span>,</span>
 <span>  model <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Model 3"</span>, <span class="st">"Ioniq 5"</span>, <span class="st">"e-Golf"</span><span class="op">)</span>,</span>
@@ -423,7 +449,7 @@ cars we haven’t seen are added. One call, one snapshot:</p>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span>      8 e-Golf    <span style="text-decoration: underline;">21</span>000</span></span></code></pre></div>
 <p>Because the sync ran as targeted row changes rather than a table
 rewrite, the change feed records exactly what happened:</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">latest</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"fleet"</span><span class="op">)</span><span class="op">$</span><span class="va">snapshot_id</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/get_table_changes.html">get_table_changes</a></span><span class="op">(</span><span class="st">"fleet"</span>, <span class="va">latest</span>, <span class="va">latest</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">change_type</span>, <span class="va">car_id</span>, <span class="va">model</span>, <span class="va">mileage</span><span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -443,7 +469,7 @@ rewrite, the change feed records exactly what happened:</p>
 <div class="section level3">
 <h3 id="updating-specific-rows-with-replace_table">Updating specific rows with <code>replace_table()</code><a class="anchor" aria-label="anchor" href="#updating-specific-rows-with-replace_table"></a>
 </h3>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Update mpg values for specific cars (4-cylinder cars get a 5% efficiency boost)</span></span>
 <span><span class="fu"><a href="../reference/with_transaction.html">with_transaction</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -460,8 +486,8 @@ rewrite, the change feed records exactly what happened:</p>
 <span><span class="co"># Check version history - should show the new snapshot</span></span>
 <span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 1           1 2026-08-10 18:03:06              1</span></span>
-<span><span class="co">#&gt; 2           9 2026-08-10 18:03:08              3</span></span>
+<span><span class="co">#&gt; 1           1 2026-08-10 18:10:08              1</span></span>
+<span><span class="co">#&gt; 2           9 2026-08-10 18:10:10              3</span></span>
 <span><span class="co">#&gt;                                                                 changes</span></span>
 <span><span class="co">#&gt; 1                    tables_created, tables_inserted_into, main.cars, 1</span></span>
 <span><span class="co">#&gt; 2 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 3</span></span>
@@ -472,20 +498,31 @@ rewrite, the change feed records exactly what happened:</p>
 <div class="section level3">
 <h3 id="adding-derived-columns">Adding derived columns<a class="anchor" aria-label="anchor" href="#adding-derived-columns"></a>
 </h3>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Add new derived columns to existing table</span></span>
-<span><span class="fu"><a href="../reference/with_transaction.html">with_transaction</a></span><span class="op">(</span></span>
+<p>Derived columns no longer need <code><a href="../reference/replace_table.html">replace_table()</a></code>. Declare
+the column with <code><a href="../reference/add_table_column.html">add_table_column()</a></code> (instant,
+metadata-only), then fill it with a <code><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate()</a></code> pipeline
+through <code><a href="../reference/ducklake_exec.html">ducklake_exec()</a></code>, which runs as an in-database
+UPDATE – nothing is collected into R:</p>
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/with_transaction.html">with_transaction</a></span><span class="op">(</span><span class="op">{</span></span>
+<span>  <span class="fu"><a href="../reference/add_table_column.html">add_table_column</a></span><span class="op">(</span><span class="st">"cars"</span>, <span class="st">"hp_per_cyl"</span>, <span class="st">"DOUBLE"</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="../reference/add_table_column.html">add_table_column</a></span><span class="op">(</span><span class="st">"cars"</span>, <span class="st">"high_performance"</span>, <span class="st">"VARCHAR"</span><span class="op">)</span></span>
+<span></span>
 <span>  <span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span></span>
 <span>      hp_per_cyl <span class="op">=</span> <span class="va">hp</span> <span class="op">/</span> <span class="va">cyl</span>,</span>
-<span>      <span class="co"># Add a new flag column</span></span>
 <span>      high_performance <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/if_else.html" class="external-link">if_else</a></span><span class="op">(</span><span class="va">hp</span> <span class="op">&gt;</span> <span class="fl">200</span>, <span class="st">"Y"</span>, <span class="st">"N"</span><span class="op">)</span></span>
 <span>    <span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>    <span class="fu"><a href="../reference/replace_table.html">replace_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span>,</span>
+<span>    <span class="fu"><a href="../reference/ducklake_exec.html">ducklake_exec</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="op">}</span>,</span>
 <span>  author <span class="op">=</span> <span class="st">"Data Engineer"</span>,</span>
 <span>  commit_message <span class="op">=</span> <span class="st">"Add HP per cylinder and performance flag"</span></span>
 <span><span class="op">)</span></span>
 <span><span class="co">#&gt; Transaction started.</span></span>
+<span><span class="co">#&gt; Added column <span style="color: #0000BB;">"hp_per_cyl"</span> (DOUBLE) to <span style="color: #0000BB;">"cars"</span>.</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Metadata-only change; no data files were rewritten.</span></span>
+<span><span class="co">#&gt; Added column <span style="color: #0000BB;">"high_performance"</span> (VARCHAR) to <span style="color: #0000BB;">"cars"</span>.</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Metadata-only change; no data files were rewritten.</span></span>
 <span><span class="co">#&gt; Transaction committed.</span></span>
 <span></span>
 <span><span class="co"># Verify new columns exist</span></span>
@@ -493,7 +530,7 @@ rewrite, the change feed records exactly what happened:</p>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">hp</span> <span class="op">&gt;</span> <span class="fl">200</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">hp</span>, <span class="va">cyl</span>, <span class="va">hp_per_cyl</span>, <span class="va">high_performance</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A query:  ?? x 4</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1020-azure:R 4.6.1//tmp/Rtmpbj30Vg/ducklake/ducklake21eb3749a8b.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1020-azure:R 4.6.1//tmp/RtmpjYrn44/ducklake/ducklake22fcf5a91a6.duckdb]</span></span></span>
 <span><span class="co">#&gt;      hp   cyl hp_per_cyl high_performance</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>   245     8       30.6 Y               </span></span>
@@ -505,9 +542,42 @@ rewrite, the change feed records exactly what happened:</p>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">7</span>   335     8       41.9 Y</span></span></code></pre></div>
 </div>
 <div class="section level3">
+<h3 id="reshaping-the-schema-in-place">Reshaping the schema in place<a class="anchor" aria-label="anchor" href="#reshaping-the-schema-in-place"></a>
+</h3>
+<p>The rest of the schema evolution family works the same way. Widen a
+type, rename a column, drop one – each change is instant, and earlier
+snapshots keep the earlier shape:</p>
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">snapshot_before</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span><span class="op">$</span><span class="va">snapshot_id</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="../reference/rename_table_column.html">rename_table_column</a></span><span class="op">(</span><span class="st">"cars"</span>, from <span class="op">=</span> <span class="st">"high_performance"</span>, to <span class="op">=</span> <span class="st">"high_perf_flag"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Renamed column <span style="color: #0000BB;">"high_performance"</span> to <span style="color: #0000BB;">"high_perf_flag"</span> in</span></span>
+<span><span class="co">#&gt; <span style="color: #0000BB;">"cars"</span>.</span></span>
+<span><span class="fu"><a href="../reference/drop_table_column.html">drop_table_column</a></span><span class="op">(</span><span class="st">"cars"</span>, <span class="st">"hp_per_cyl"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Dropped column <span style="color: #0000BB;">"hp_per_cyl"</span> from <span style="color: #0000BB;">"cars"</span>. Earlier</span></span>
+<span><span class="co">#&gt; snapshots still contain it.</span></span>
+<span></span>
+<span><span class="co"># Widen fleet's integer key without rewriting any data</span></span>
+<span><span class="fu"><a href="../reference/set_column_type.html">set_column_type</a></span><span class="op">(</span><span class="st">"fleet"</span>, <span class="st">"car_id"</span>, <span class="st">"BIGINT"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Column <span style="color: #0000BB;">"car_id"</span> in <span style="color: #0000BB;">"fleet"</span> is now BIGINT.</span></span>
+<span></span>
+<span><span class="co"># Current schema reflects the rename and the drop</span></span>
+<span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt;  [1] "mpg"            "cyl"            "disp"           "hp"            </span></span>
+<span><span class="co">#&gt;  [5] "drat"           "wt"             "qsec"           "vs"            </span></span>
+<span><span class="co">#&gt;  [9] "am"             "gear"           "carb"           "high_perf_flag"</span></span>
+<span></span>
+<span><span class="co"># The pre-change snapshot still shows the old shape</span></span>
+<span><span class="fu"><a href="../reference/get_ducklake_table_version.html">get_ducklake_table_version</a></span><span class="op">(</span><span class="st">"cars"</span>, <span class="va">snapshot_before</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt;  [1] "mpg"              "cyl"              "disp"             "hp"              </span></span>
+<span><span class="co">#&gt;  [5] "drat"             "wt"               "qsec"             "vs"              </span></span>
+<span><span class="co">#&gt;  [9] "am"               "gear"             "carb"             "hp_per_cyl"      </span></span>
+<span><span class="co">#&gt; [13] "high_performance"</span></span></code></pre></div>
+</div>
+<div class="section level3">
 <h3 id="filtering-rows-with-replace_table">Filtering rows with <code>replace_table()</code><a class="anchor" aria-label="anchor" href="#filtering-rows-with-replace_table"></a>
 </h3>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Keep only specific rows - creates a versioned snapshot</span></span>
 <span><span class="fu"><a href="../reference/with_transaction.html">with_transaction</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -521,48 +591,54 @@ rewrite, the change feed records exactly what happened:</p>
 <span></span>
 <span><span class="co"># Show the filtered table</span></span>
 <span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A query:  ?? x 13</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1020-azure:R 4.6.1//tmp/Rtmpbj30Vg/ducklake/ducklake21eb3749a8b.duckdb]</span></span></span>
-<span><span class="co">#&gt;      mpg   cyl  disp    hp  drat    wt  qsec    vs    am  gear  carb hp_per_cyl</span></span>
-<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span>  18.7     8  360    175  3.15  3.44  17.0     0     0     3     2       21.9</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span>  14.3     8  360    245  3.21  3.57  15.8     0     0     3     4       30.6</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span>  16.4     8  276.   180  3.07  4.07  17.4     0     0     3     3       22.5</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span>  17.3     8  276.   180  3.07  3.73  17.6     0     0     3     3       22.5</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span>  15.2     8  276.   180  3.07  3.78  18       0     0     3     3       22.5</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span>  10.4     8  472    205  2.93  5.25  18.0     0     0     3     4       25.6</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span>  10.4     8  460    215  3     5.42  17.8     0     0     3     4       26.9</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span>  14.7     8  440    230  3.23  5.34  17.4     0     0     3     4       28.8</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span>  15.5     8  318    150  2.76  3.52  16.9     0     0     3     2       18.8</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span>  15.2     8  304    150  3.15  3.44  17.3     0     0     3     2       18.8</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">11</span>  13.3     8  350    245  3.73  3.84  15.4     0     0     3     4       30.6</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">12</span>  19.2     8  400    175  3.08  3.84  17.0     0     0     3     2       21.9</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">13</span>  15.8     8  351    264  4.22  3.17  14.5     0     1     5     4       33  </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">14</span>  15       8  301    335  3.54  3.57  14.6     0     1     5     8       41.9</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 1 more variable: high_performance &lt;chr&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A query:  ?? x 12</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1020-azure:R 4.6.1//tmp/RtmpjYrn44/ducklake/ducklake22fcf5a91a6.duckdb]</span></span></span>
+<span><span class="co">#&gt;      mpg   cyl  disp    hp  drat    wt  qsec    vs    am  gear  carb</span></span>
+<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span>  18.7     8  360    175  3.15  3.44  17.0     0     0     3     2</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span>  14.3     8  360    245  3.21  3.57  15.8     0     0     3     4</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span>  16.4     8  276.   180  3.07  4.07  17.4     0     0     3     3</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span>  17.3     8  276.   180  3.07  3.73  17.6     0     0     3     3</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span>  15.2     8  276.   180  3.07  3.78  18       0     0     3     3</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span>  10.4     8  472    205  2.93  5.25  18.0     0     0     3     4</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span>  10.4     8  460    215  3     5.42  17.8     0     0     3     4</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span>  14.7     8  440    230  3.23  5.34  17.4     0     0     3     4</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span>  15.5     8  318    150  2.76  3.52  16.9     0     0     3     2</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span>  15.2     8  304    150  3.15  3.44  17.3     0     0     3     2</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">11</span>  13.3     8  350    245  3.73  3.84  15.4     0     0     3     4</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">12</span>  19.2     8  400    175  3.08  3.84  17.0     0     0     3     2</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">13</span>  15.8     8  351    264  4.22  3.17  14.5     0     1     5     4</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">14</span>  15       8  301    335  3.54  3.57  14.6     0     1     5     8</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 1 more variable: high_perf_flag &lt;chr&gt;</span></span></span>
 <span></span>
 <span><span class="co"># View version history - old versions still accessible via time travel</span></span>
 <span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 1           1 2026-08-10 18:03:06              1</span></span>
-<span><span class="co">#&gt; 2           9 2026-08-10 18:03:08              3</span></span>
-<span><span class="co">#&gt; 3          10 2026-08-10 18:03:08              4</span></span>
-<span><span class="co">#&gt; 4          11 2026-08-10 18:03:08              5</span></span>
+<span><span class="co">#&gt; 1           1 2026-08-10 18:10:08              1</span></span>
+<span><span class="co">#&gt; 2           9 2026-08-10 18:10:10              3</span></span>
+<span><span class="co">#&gt; 3          10 2026-08-10 18:10:10              4</span></span>
+<span><span class="co">#&gt; 4          11 2026-08-10 18:10:10              5</span></span>
+<span><span class="co">#&gt; 5          12 2026-08-10 18:10:10              6</span></span>
+<span><span class="co">#&gt; 6          14 2026-08-10 18:10:10              8</span></span>
 <span><span class="co">#&gt;                                                                 changes</span></span>
 <span><span class="co">#&gt; 1                    tables_created, tables_inserted_into, main.cars, 1</span></span>
 <span><span class="co">#&gt; 2 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 3</span></span>
-<span><span class="co">#&gt; 3 tables_created, tables_dropped, tables_inserted_into, main.cars, 3, 4</span></span>
-<span><span class="co">#&gt; 4 tables_created, tables_dropped, tables_inserted_into, main.cars, 4, 5</span></span>
+<span><span class="co">#&gt; 3    tables_altered, tables_inserted_into, tables_deleted_from, 3, 3, 3</span></span>
+<span><span class="co">#&gt; 4                                                     tables_altered, 3</span></span>
+<span><span class="co">#&gt; 5                                                     tables_altered, 3</span></span>
+<span><span class="co">#&gt; 6 tables_created, tables_dropped, tables_inserted_into, main.cars, 3, 4</span></span>
 <span><span class="co">#&gt;          author                           commit_message commit_extra_info</span></span>
 <span><span class="co">#&gt; 1 Data Engineer                    Initial car data load              &lt;NA&gt;</span></span>
 <span><span class="co">#&gt; 2 Data Engineer       Update MPG for 4-cylinder vehicles              &lt;NA&gt;</span></span>
 <span><span class="co">#&gt; 3 Data Engineer Add HP per cylinder and performance flag              &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 4 Data Engineer                Filter to V8 engines only              &lt;NA&gt;</span></span></code></pre></div>
+<span><span class="co">#&gt; 4          &lt;NA&gt;                                     &lt;NA&gt;              &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 5          &lt;NA&gt;                                     &lt;NA&gt;              &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 6 Data Engineer                Filter to V8 engines only              &lt;NA&gt;</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="time-travel-accessing-previous-versions">Time Travel: Accessing Previous Versions<a class="anchor" aria-label="anchor" href="#time-travel-accessing-previous-versions"></a>
 </h3>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Get the current version</span></span>
 <span><span class="va">current</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/compute.html" class="external-link">collect</a></span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
@@ -570,20 +646,26 @@ rewrite, the change feed records exactly what happened:</p>
 <span><span class="va">snapshots</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span></span>
 <span><span class="va">snapshots</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 1           1 2026-08-10 18:03:06              1</span></span>
-<span><span class="co">#&gt; 2           9 2026-08-10 18:03:08              3</span></span>
-<span><span class="co">#&gt; 3          10 2026-08-10 18:03:08              4</span></span>
-<span><span class="co">#&gt; 4          11 2026-08-10 18:03:08              5</span></span>
+<span><span class="co">#&gt; 1           1 2026-08-10 18:10:08              1</span></span>
+<span><span class="co">#&gt; 2           9 2026-08-10 18:10:10              3</span></span>
+<span><span class="co">#&gt; 3          10 2026-08-10 18:10:10              4</span></span>
+<span><span class="co">#&gt; 4          11 2026-08-10 18:10:10              5</span></span>
+<span><span class="co">#&gt; 5          12 2026-08-10 18:10:10              6</span></span>
+<span><span class="co">#&gt; 6          14 2026-08-10 18:10:10              8</span></span>
 <span><span class="co">#&gt;                                                                 changes</span></span>
 <span><span class="co">#&gt; 1                    tables_created, tables_inserted_into, main.cars, 1</span></span>
 <span><span class="co">#&gt; 2 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 3</span></span>
-<span><span class="co">#&gt; 3 tables_created, tables_dropped, tables_inserted_into, main.cars, 3, 4</span></span>
-<span><span class="co">#&gt; 4 tables_created, tables_dropped, tables_inserted_into, main.cars, 4, 5</span></span>
+<span><span class="co">#&gt; 3    tables_altered, tables_inserted_into, tables_deleted_from, 3, 3, 3</span></span>
+<span><span class="co">#&gt; 4                                                     tables_altered, 3</span></span>
+<span><span class="co">#&gt; 5                                                     tables_altered, 3</span></span>
+<span><span class="co">#&gt; 6 tables_created, tables_dropped, tables_inserted_into, main.cars, 3, 4</span></span>
 <span><span class="co">#&gt;          author                           commit_message commit_extra_info</span></span>
 <span><span class="co">#&gt; 1 Data Engineer                    Initial car data load              &lt;NA&gt;</span></span>
 <span><span class="co">#&gt; 2 Data Engineer       Update MPG for 4-cylinder vehicles              &lt;NA&gt;</span></span>
 <span><span class="co">#&gt; 3 Data Engineer Add HP per cylinder and performance flag              &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 4 Data Engineer                Filter to V8 engines only              &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 4          &lt;NA&gt;                                     &lt;NA&gt;              &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 5          &lt;NA&gt;                                     &lt;NA&gt;              &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 6 Data Engineer                Filter to V8 engines only              &lt;NA&gt;</span></span>
 <span></span>
 <span><span class="co"># Access a specific previous version by snapshot_id</span></span>
 <span><span class="va">original_version</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_ducklake_table_version.html">get_ducklake_table_version</a></span><span class="op">(</span></span>

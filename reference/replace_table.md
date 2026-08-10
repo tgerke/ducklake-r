@@ -48,21 +48,33 @@ to group the replacement with other changes.
 
 **When to use replace_table():**
 
-- **Adding new columns** - DuckLake UPDATE cannot add columns; use
-  replace_table()
+- **Bulk transformations** - a dplyr pipeline that recomputes, reshapes,
+  or filters most of the table
 
-- **Removing columns** - Restructure schema with select()
+**When to reach elsewhere:**
 
-- **Complex transformations** - Apply full dplyr pipelines naturally
+- **Schema-only changes** -
+  [`add_table_column()`](https://tgerke.github.io/ducklake-r/reference/add_table_column.md),
+  [`drop_table_column()`](https://tgerke.github.io/ducklake-r/reference/drop_table_column.md),
+  [`rename_table_column()`](https://tgerke.github.io/ducklake-r/reference/rename_table_column.md),
+  and
+  [`set_column_type()`](https://tgerke.github.io/ducklake-r/reference/set_column_type.md)
+  alter the table in place; nothing is collected or rewritten
 
-**When to use
-[`ducklake_exec()`](https://tgerke.github.io/ducklake-r/reference/ducklake_exec.md)
-instead:**
+- **Derived columns** -
+  [`add_table_column()`](https://tgerke.github.io/ducklake-r/reference/add_table_column.md)
+  followed by a
+  [`mutate()`](https://dplyr.tidyverse.org/reference/mutate.html)
+  pipeline through
+  [`ducklake_exec()`](https://tgerke.github.io/ducklake-r/reference/ducklake_exec.md)
+  fills the new column with an in-database UPDATE
 
-- Modifying existing column values only (no schema changes)
-
-- Making targeted corrections to specific rows without rewriting the
-  table
+- **Targeted row changes** -
+  [`rows_update()`](https://tgerke.github.io/ducklake-r/reference/rows_update.md),
+  [`rows_upsert()`](https://tgerke.github.io/ducklake-r/reference/rows_upsert.md),
+  or
+  [`ducklake_exec()`](https://tgerke.github.io/ducklake-r/reference/ducklake_exec.md)
+  modify only the affected rows
 
 Both paths create a snapshot: replace_table() via DROP + CREATE, and
 ducklake_exec() via the in-place UPDATE/DELETE it runs, so either way

@@ -112,6 +112,11 @@ staging source.
 - For conditional merge logic or deletes driven by a staging table, use
   `merge_into()`.
 
+- To change a table's shape without touching its data – add, drop, or
+  rename columns, widen a type – use the schema evolution family
+  ([`add_table_column()`](https://tgerke.github.io/ducklake-r/reference/add_table_column.md)
+  and friends): metadata-only changes that rewrite nothing.
+
 - For bulk transformations that touch most rows, use
   [`replace_table()`](https://tgerke.github.io/ducklake-r/reference/replace_table.md).
   It collects the transformed data into R and rewrites the whole table –

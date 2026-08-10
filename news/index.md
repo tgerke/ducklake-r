@@ -21,6 +21,29 @@
   update/delete action per MERGE statement, so syncs that need both run
   as MERGE plus DELETE inside a single transaction and snapshot.
 
+- New schema evolution family:
+  [`add_table_column()`](https://tgerke.github.io/ducklake-r/reference/add_table_column.md)
+  (with optional `default`, which DuckLake applies to existing rows
+  too),
+  [`drop_table_column()`](https://tgerke.github.io/ducklake-r/reference/drop_table_column.md),
+  [`rename_table_column()`](https://tgerke.github.io/ducklake-r/reference/rename_table_column.md),
+  [`set_column_type()`](https://tgerke.github.io/ducklake-r/reference/set_column_type.md)
+  (widening promotions only, with the add-copy-drop-rename recipe in the
+  error when a change would narrow), and
+  [`rename_ducklake_table()`](https://tgerke.github.io/ducklake-r/reference/rename_ducklake_table.md).
+  All are metadata-only `ALTER TABLE` operations: no data files are
+  rewritten, and earlier snapshots keep the earlier schema. Until now
+  schema changes went through
+  [`replace_table()`](https://tgerke.github.io/ducklake-r/reference/replace_table.md),
+  which collects the whole table into R; its documentation now points
+  here, and it remains the tool for bulk *data* transformations. Derived
+  columns combine the two styles:
+  [`add_table_column()`](https://tgerke.github.io/ducklake-r/reference/add_table_column.md)
+  then a [`mutate()`](https://dplyr.tidyverse.org/reference/mutate.html)
+  pipeline through
+  [`ducklake_exec()`](https://tgerke.github.io/ducklake-r/reference/ducklake_exec.md)
+  fills the column with an in-database UPDATE.
+
 - New plotting functions, all requiring the suggested ggplot2 package
   and shown in action in a new “Visualizing Your Lake” vignette:
   [`plot_snapshots()`](https://tgerke.github.io/ducklake-r/reference/plot_snapshots.md)

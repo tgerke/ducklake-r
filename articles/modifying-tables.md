@@ -55,6 +55,7 @@ data. Everything else in this table **writes**.
 | Append, correct, or remove specific rows | [`rows_insert()`](https://tgerke.github.io/ducklake-r/reference/rows_insert.md), [`rows_update()`](https://tgerke.github.io/ducklake-r/reference/rows_update.md), [`rows_delete()`](https://tgerke.github.io/ducklake-r/reference/rows_delete.md) |
 | Update rows that exist, insert the ones that don’t | [`rows_upsert()`](https://tgerke.github.io/ducklake-r/reference/rows_upsert.md) |
 | Conditional updates, or deletes driven by a staging table | [`merge_into()`](https://tgerke.github.io/ducklake-r/reference/merge_into.md) |
+| Change the schema, not the data | [`add_table_column()`](https://tgerke.github.io/ducklake-r/reference/add_table_column.md) and the schema evolution family |
 | Bulk transformations that touch most rows | [`replace_table()`](https://tgerke.github.io/ducklake-r/reference/replace_table.md) |
 
 ### For incremental changes: the `rows_*` functions
@@ -145,12 +146,36 @@ touches only the affected rows, so
 [`get_table_changes()`](https://tgerke.github.io/ducklake-r/reference/get_table_changes.md)
 afterward tells the true story.
 
+### For schema changes: evolve in place
+
+Adding, dropping, renaming, or widening columns needs no data rewrite at
+all. DuckLake records schema changes as metadata, so the schema
+evolution functions run instantly regardless of table size, and time
+travel still shows every earlier shape of the table:
+
+``` r
+
+add_table_column("my_table", "category", "VARCHAR", default = "unknown")
+rename_table_column("my_table", from = "cat", to = "category")
+set_column_type("my_table", "id", "BIGINT")   # widening only
+drop_table_column("my_table", "scratch")
+rename_ducklake_table("my_table", "my_better_named_table")
+```
+
+Two behaviors to know. A `default` applies to existing rows as well as
+future inserts, so the new column shows up filled everywhere. And type
+changes must widen (`INTEGER` to `BIGINT`, `FLOAT` to `DOUBLE`):
+DuckLake refuses conversions that could lose values, and the error from
+[`set_column_type()`](https://tgerke.github.io/ducklake-r/reference/set_column_type.md)
+walks you through the add-copy-drop-rename route when you need to
+narrow.
+
 ### For structural or bulk changes: `replace_table()`
 
 Use
 [`replace_table()`](https://tgerke.github.io/ducklake-r/reference/replace_table.md)
-when the *shape* of the table changes – adding or removing columns – or
-when a transformation touches most rows anyway:
+when a transformation recomputes, reshapes, or filters most of the table
+anyway:
 
 ``` r
 
@@ -165,9 +190,10 @@ with_transaction(
 ```
 
 [`replace_table()`](https://tgerke.github.io/ducklake-r/reference/replace_table.md)
-collects the transformed data into R and rewrites the table, which is
-exactly right for schema changes but wasteful for touching three rows in
-a million-row table.
+collects the transformed data into R and rewrites the table – the right
+tool for a bulk rewrite, wasteful for touching three rows in a
+million-row table, and unnecessary for pure schema changes now that the
+in-place functions above exist.
 
 ### Group related changes with `with_transaction()`
 
@@ -292,11 +318,11 @@ with_transaction({
 # The full history: every change is versioned, wrapped or not
 list_table_snapshots("fleet")
 #>   snapshot_id       snapshot_time schema_version
-#> 1           2 2026-08-10 18:03:06              2
-#> 2           3 2026-08-10 18:03:07              2
-#> 3           4 2026-08-10 18:03:07              2
-#> 4           5 2026-08-10 18:03:07              2
-#> 5           6 2026-08-10 18:03:07              2
+#> 1           2 2026-08-10 18:10:08              2
+#> 2           3 2026-08-10 18:10:08              2
+#> 3           4 2026-08-10 18:10:08              2
+#> 4           5 2026-08-10 18:10:09              2
+#> 5           6 2026-08-10 18:10:09              2
 #>                                         changes        author
 #> 1 tables_created, inlined_insert, main.fleet, 2 Fleet Manager
 #> 2                             inlined_insert, 2          <NA>
@@ -408,8 +434,8 @@ with_transaction(
 # Check version history - should show the new snapshot
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-08-10 18:03:06              1
-#> 2           9 2026-08-10 18:03:08              3
+#> 1           1 2026-08-10 18:10:08              1
+#> 2           9 2026-08-10 18:10:10              3
 #>                                                                 changes
 #> 1                    tables_created, tables_inserted_into, main.cars, 1
 #> 2 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 3
@@ -420,21 +446,37 @@ list_table_snapshots("cars")
 
 ### Adding derived columns
 
+Derived columns no longer need
+[`replace_table()`](https://tgerke.github.io/ducklake-r/reference/replace_table.md).
+Declare the column with
+[`add_table_column()`](https://tgerke.github.io/ducklake-r/reference/add_table_column.md)
+(instant, metadata-only), then fill it with a
+[`mutate()`](https://dplyr.tidyverse.org/reference/mutate.html) pipeline
+through
+[`ducklake_exec()`](https://tgerke.github.io/ducklake-r/reference/ducklake_exec.md),
+which runs as an in-database UPDATE – nothing is collected into R:
+
 ``` r
 
-# Add new derived columns to existing table
-with_transaction(
+with_transaction({
+  add_table_column("cars", "hp_per_cyl", "DOUBLE")
+  add_table_column("cars", "high_performance", "VARCHAR")
+
   get_ducklake_table("cars") |>
     mutate(
       hp_per_cyl = hp / cyl,
-      # Add a new flag column
       high_performance = if_else(hp > 200, "Y", "N")
     ) |>
-    replace_table("cars"),
+    ducklake_exec()
+},
   author = "Data Engineer",
   commit_message = "Add HP per cylinder and performance flag"
 )
 #> Transaction started.
+#> Added column "hp_per_cyl" (DOUBLE) to "cars".
+#> ℹ Metadata-only change; no data files were rewritten.
+#> Added column "high_performance" (VARCHAR) to "cars".
+#> ℹ Metadata-only change; no data files were rewritten.
 #> Transaction committed.
 
 # Verify new columns exist
@@ -442,7 +484,7 @@ get_ducklake_table("cars") |>
   filter(hp > 200) |>
   select(hp, cyl, hp_per_cyl, high_performance)
 #> # A query:  ?? x 4
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1020-azure:R 4.6.1//tmp/Rtmpbj30Vg/ducklake/ducklake21eb3749a8b.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1020-azure:R 4.6.1//tmp/RtmpjYrn44/ducklake/ducklake22fcf5a91a6.duckdb]
 #>      hp   cyl hp_per_cyl high_performance
 #>   <dbl> <dbl>      <dbl> <chr>           
 #> 1   245     8       30.6 Y               
@@ -452,6 +494,41 @@ get_ducklake_table("cars") |>
 #> 5   245     8       30.6 Y               
 #> 6   264     8       33   Y               
 #> 7   335     8       41.9 Y
+```
+
+### Reshaping the schema in place
+
+The rest of the schema evolution family works the same way. Widen a
+type, rename a column, drop one – each change is instant, and earlier
+snapshots keep the earlier shape:
+
+``` r
+
+snapshot_before <- max(list_table_snapshots("cars")$snapshot_id)
+
+rename_table_column("cars", from = "high_performance", to = "high_perf_flag")
+#> Renamed column "high_performance" to "high_perf_flag" in
+#> "cars".
+drop_table_column("cars", "hp_per_cyl")
+#> Dropped column "hp_per_cyl" from "cars". Earlier
+#> snapshots still contain it.
+
+# Widen fleet's integer key without rewriting any data
+set_column_type("fleet", "car_id", "BIGINT")
+#> Column "car_id" in "fleet" is now BIGINT.
+
+# Current schema reflects the rename and the drop
+get_ducklake_table("cars") |> colnames()
+#>  [1] "mpg"            "cyl"            "disp"           "hp"            
+#>  [5] "drat"           "wt"             "qsec"           "vs"            
+#>  [9] "am"             "gear"           "carb"           "high_perf_flag"
+
+# The pre-change snapshot still shows the old shape
+get_ducklake_table_version("cars", snapshot_before) |> colnames()
+#>  [1] "mpg"              "cyl"              "disp"             "hp"              
+#>  [5] "drat"             "wt"               "qsec"             "vs"              
+#>  [9] "am"               "gear"             "carb"             "hp_per_cyl"      
+#> [13] "high_performance"
 ```
 
 ### Filtering rows with `replace_table()`
@@ -471,43 +548,49 @@ with_transaction(
 
 # Show the filtered table
 get_ducklake_table("cars")
-#> # A query:  ?? x 13
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1020-azure:R 4.6.1//tmp/Rtmpbj30Vg/ducklake/ducklake21eb3749a8b.duckdb]
-#>      mpg   cyl  disp    hp  drat    wt  qsec    vs    am  gear  carb hp_per_cyl
-#>    <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>      <dbl>
-#>  1  18.7     8  360    175  3.15  3.44  17.0     0     0     3     2       21.9
-#>  2  14.3     8  360    245  3.21  3.57  15.8     0     0     3     4       30.6
-#>  3  16.4     8  276.   180  3.07  4.07  17.4     0     0     3     3       22.5
-#>  4  17.3     8  276.   180  3.07  3.73  17.6     0     0     3     3       22.5
-#>  5  15.2     8  276.   180  3.07  3.78  18       0     0     3     3       22.5
-#>  6  10.4     8  472    205  2.93  5.25  18.0     0     0     3     4       25.6
-#>  7  10.4     8  460    215  3     5.42  17.8     0     0     3     4       26.9
-#>  8  14.7     8  440    230  3.23  5.34  17.4     0     0     3     4       28.8
-#>  9  15.5     8  318    150  2.76  3.52  16.9     0     0     3     2       18.8
-#> 10  15.2     8  304    150  3.15  3.44  17.3     0     0     3     2       18.8
-#> 11  13.3     8  350    245  3.73  3.84  15.4     0     0     3     4       30.6
-#> 12  19.2     8  400    175  3.08  3.84  17.0     0     0     3     2       21.9
-#> 13  15.8     8  351    264  4.22  3.17  14.5     0     1     5     4       33  
-#> 14  15       8  301    335  3.54  3.57  14.6     0     1     5     8       41.9
-#> # ℹ 1 more variable: high_performance <chr>
+#> # A query:  ?? x 12
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1020-azure:R 4.6.1//tmp/RtmpjYrn44/ducklake/ducklake22fcf5a91a6.duckdb]
+#>      mpg   cyl  disp    hp  drat    wt  qsec    vs    am  gear  carb
+#>    <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>
+#>  1  18.7     8  360    175  3.15  3.44  17.0     0     0     3     2
+#>  2  14.3     8  360    245  3.21  3.57  15.8     0     0     3     4
+#>  3  16.4     8  276.   180  3.07  4.07  17.4     0     0     3     3
+#>  4  17.3     8  276.   180  3.07  3.73  17.6     0     0     3     3
+#>  5  15.2     8  276.   180  3.07  3.78  18       0     0     3     3
+#>  6  10.4     8  472    205  2.93  5.25  18.0     0     0     3     4
+#>  7  10.4     8  460    215  3     5.42  17.8     0     0     3     4
+#>  8  14.7     8  440    230  3.23  5.34  17.4     0     0     3     4
+#>  9  15.5     8  318    150  2.76  3.52  16.9     0     0     3     2
+#> 10  15.2     8  304    150  3.15  3.44  17.3     0     0     3     2
+#> 11  13.3     8  350    245  3.73  3.84  15.4     0     0     3     4
+#> 12  19.2     8  400    175  3.08  3.84  17.0     0     0     3     2
+#> 13  15.8     8  351    264  4.22  3.17  14.5     0     1     5     4
+#> 14  15       8  301    335  3.54  3.57  14.6     0     1     5     8
+#> # ℹ 1 more variable: high_perf_flag <chr>
 
 # View version history - old versions still accessible via time travel
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-08-10 18:03:06              1
-#> 2           9 2026-08-10 18:03:08              3
-#> 3          10 2026-08-10 18:03:08              4
-#> 4          11 2026-08-10 18:03:08              5
+#> 1           1 2026-08-10 18:10:08              1
+#> 2           9 2026-08-10 18:10:10              3
+#> 3          10 2026-08-10 18:10:10              4
+#> 4          11 2026-08-10 18:10:10              5
+#> 5          12 2026-08-10 18:10:10              6
+#> 6          14 2026-08-10 18:10:10              8
 #>                                                                 changes
 #> 1                    tables_created, tables_inserted_into, main.cars, 1
 #> 2 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 3
-#> 3 tables_created, tables_dropped, tables_inserted_into, main.cars, 3, 4
-#> 4 tables_created, tables_dropped, tables_inserted_into, main.cars, 4, 5
+#> 3    tables_altered, tables_inserted_into, tables_deleted_from, 3, 3, 3
+#> 4                                                     tables_altered, 3
+#> 5                                                     tables_altered, 3
+#> 6 tables_created, tables_dropped, tables_inserted_into, main.cars, 3, 4
 #>          author                           commit_message commit_extra_info
 #> 1 Data Engineer                    Initial car data load              <NA>
 #> 2 Data Engineer       Update MPG for 4-cylinder vehicles              <NA>
 #> 3 Data Engineer Add HP per cylinder and performance flag              <NA>
-#> 4 Data Engineer                Filter to V8 engines only              <NA>
+#> 4          <NA>                                     <NA>              <NA>
+#> 5          <NA>                                     <NA>              <NA>
+#> 6 Data Engineer                Filter to V8 engines only              <NA>
 ```
 
 ### Time Travel: Accessing Previous Versions
@@ -521,20 +604,26 @@ current <- get_ducklake_table("cars") |> collect()
 snapshots <- list_table_snapshots("cars")
 snapshots
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-08-10 18:03:06              1
-#> 2           9 2026-08-10 18:03:08              3
-#> 3          10 2026-08-10 18:03:08              4
-#> 4          11 2026-08-10 18:03:08              5
+#> 1           1 2026-08-10 18:10:08              1
+#> 2           9 2026-08-10 18:10:10              3
+#> 3          10 2026-08-10 18:10:10              4
+#> 4          11 2026-08-10 18:10:10              5
+#> 5          12 2026-08-10 18:10:10              6
+#> 6          14 2026-08-10 18:10:10              8
 #>                                                                 changes
 #> 1                    tables_created, tables_inserted_into, main.cars, 1
 #> 2 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 3
-#> 3 tables_created, tables_dropped, tables_inserted_into, main.cars, 3, 4
-#> 4 tables_created, tables_dropped, tables_inserted_into, main.cars, 4, 5
+#> 3    tables_altered, tables_inserted_into, tables_deleted_from, 3, 3, 3
+#> 4                                                     tables_altered, 3
+#> 5                                                     tables_altered, 3
+#> 6 tables_created, tables_dropped, tables_inserted_into, main.cars, 3, 4
 #>          author                           commit_message commit_extra_info
 #> 1 Data Engineer                    Initial car data load              <NA>
 #> 2 Data Engineer       Update MPG for 4-cylinder vehicles              <NA>
 #> 3 Data Engineer Add HP per cylinder and performance flag              <NA>
-#> 4 Data Engineer                Filter to V8 engines only              <NA>
+#> 4          <NA>                                     <NA>              <NA>
+#> 5          <NA>                                     <NA>              <NA>
+#> 6 Data Engineer                Filter to V8 engines only              <NA>
 
 # Access a specific previous version by snapshot_id
 original_version <- get_ducklake_table_version(

@@ -92,11 +92,16 @@ leaves the table dropped. Wrap the call in <code><a href="with_transaction.html"
 <code><a href="begin_transaction.html">begin_transaction()</a></code>/<code><a href="commit_transaction.html">commit_transaction()</a></code>) when you want to record an
 author and commit message on the snapshot, or to group the replacement
 with other changes.</p>
-<p><strong>When to use replace_table():</strong></p><ul><li><p><strong>Adding new columns</strong> - DuckLake UPDATE cannot add columns; use replace_table()</p></li>
-<li><p><strong>Removing columns</strong> - Restructure schema with select()</p></li>
-<li><p><strong>Complex transformations</strong> - Apply full dplyr pipelines naturally</p></li>
-</ul><p><strong>When to use <code><a href="ducklake_exec.html">ducklake_exec()</a></code> instead:</strong></p><ul><li><p>Modifying existing column values only (no schema changes)</p></li>
-<li><p>Making targeted corrections to specific rows without rewriting the table</p></li>
+<p><strong>When to use replace_table():</strong></p><ul><li><p><strong>Bulk transformations</strong> - a dplyr pipeline that recomputes, reshapes,
+or filters most of the table</p></li>
+</ul><p><strong>When to reach elsewhere:</strong></p><ul><li><p><strong>Schema-only changes</strong> - <code><a href="add_table_column.html">add_table_column()</a></code>, <code><a href="drop_table_column.html">drop_table_column()</a></code>,
+<code><a href="rename_table_column.html">rename_table_column()</a></code>, and <code><a href="set_column_type.html">set_column_type()</a></code> alter the table in
+place; nothing is collected or rewritten</p></li>
+<li><p><strong>Derived columns</strong> - <code><a href="add_table_column.html">add_table_column()</a></code> followed by a
+<code><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate()</a></code> pipeline through <code><a href="ducklake_exec.html">ducklake_exec()</a></code> fills the new column
+with an in-database UPDATE</p></li>
+<li><p><strong>Targeted row changes</strong> - <code><a href="rows_update.html">rows_update()</a></code>, <code><a href="rows_upsert.html">rows_upsert()</a></code>, or
+<code><a href="ducklake_exec.html">ducklake_exec()</a></code> modify only the affected rows</p></li>
 </ul><p>Both paths create a snapshot: replace_table() via DROP + CREATE, and
 ducklake_exec() via the in-place UPDATE/DELETE it runs, so either way the
 change is available for time travel.</p>

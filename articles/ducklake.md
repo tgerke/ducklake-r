@@ -195,7 +195,7 @@ cars_data |>
   select(mpg, cyl, hp) |>
   head(3)
 #> # A query:  ?? x 3
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1020-azure:R 4.6.1//tmp/Rtmpei0d51/ducklake/ducklake21427eb3e76c.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1020-azure:R 4.6.1//tmp/RtmpxXQ7gk/ducklake/ducklake22542ac566f.duckdb]
 #>     mpg   cyl    hp
 #>   <dbl> <dbl> <dbl>
 #> 1  21       6   110
@@ -225,8 +225,8 @@ head(cars_df, 3)
 # See all snapshots for the cars table
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-08-10 18:03:00              1
-#> 2           2 2026-08-10 18:03:00              2
+#> 1           1 2026-08-10 18:10:01              1
+#> 2           2 2026-08-10 18:10:02              2
 #>                                                                 changes
 #> 1                    tables_created, tables_inserted_into, main.cars, 1
 #> 2 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2
@@ -244,7 +244,7 @@ get_ducklake_table_version("cars", version = 1) |>
   select(mpg, cyl, hp) |>
   head(3)
 #> # A query:  ?? x 3
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1020-azure:R 4.6.1//tmp/Rtmpei0d51/ducklake/ducklake21427eb3e76c.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1020-azure:R 4.6.1//tmp/RtmpxXQ7gk/ducklake/ducklake22542ac566f.duckdb]
 #>     mpg   cyl    hp
 #>   <dbl> <dbl> <dbl>
 #> 1  21       6   110
@@ -298,12 +298,12 @@ for guidance on choosing between them.
 
 list_table_snapshots()
 #>   snapshot_id       snapshot_time schema_version
-#> 1           0 2026-08-10 18:03:00              0
-#> 2           1 2026-08-10 18:03:00              1
-#> 3           2 2026-08-10 18:03:00              2
-#> 4           3 2026-08-10 18:03:01              3
-#> 5           4 2026-08-10 18:03:01              4
-#> 6           5 2026-08-10 18:03:02              5
+#> 1           0 2026-08-10 18:10:01              0
+#> 2           1 2026-08-10 18:10:01              1
+#> 3           2 2026-08-10 18:10:02              2
+#> 4           3 2026-08-10 18:10:02              3
+#> 5           4 2026-08-10 18:10:02              4
+#> 6           5 2026-08-10 18:10:03              5
 #>                                                                 changes
 #> 1                                                 schemas_created, main
 #> 2                    tables_created, tables_inserted_into, main.cars, 1
@@ -344,10 +344,10 @@ restore_table_version(
 
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-08-10 18:03:00              1
-#> 2           2 2026-08-10 18:03:00              2
-#> 3           5 2026-08-10 18:03:02              5
-#> 4           6 2026-08-10 18:03:02              6
+#> 1           1 2026-08-10 18:10:01              1
+#> 2           2 2026-08-10 18:10:02              2
+#> 3           5 2026-08-10 18:10:03              5
+#> 4           6 2026-08-10 18:10:03              6
 #>                                                                 changes
 #> 1                    tables_created, tables_inserted_into, main.cars, 1
 #> 2 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2
@@ -461,7 +461,7 @@ get_ducklake_table("cars") |>
   mutate(kpl = mpg * 0.425144) |>
   head(3)
 #> # A query:  ?? x 12
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1020-azure:R 4.6.1//tmp/Rtmpei0d51/ducklake/ducklake21427eb3e76c.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1020-azure:R 4.6.1//tmp/RtmpxXQ7gk/ducklake/ducklake22542ac566f.duckdb]
 #>     mpg   cyl  disp    hp  drat    wt  qsec    vs    am  gear  carb   kpl
 #>   <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>
 #> 1  21       6   160   110  3.9   2.62  16.5     0     1     4     4  8.93
@@ -478,7 +478,7 @@ get_ducklake_table("cars") |>
   select(mpg, cyl, hp) |>
   filter(mpg > 25)
 #> # A query:  ?? x 3
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1020-azure:R 4.6.1//tmp/Rtmpei0d51/ducklake/ducklake21427eb3e76c.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1020-azure:R 4.6.1//tmp/RtmpxXQ7gk/ducklake/ducklake22542ac566f.duckdb]
 #>     mpg   cyl    hp
 #>   <dbl> <dbl> <dbl>
 #> 1  32.4     4    66
