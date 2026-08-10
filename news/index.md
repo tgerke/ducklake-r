@@ -25,7 +25,9 @@
   [`add_data_files()`](https://tgerke.github.io/ducklake-r/reference/add_data_files.md)
   registers existing Parquet files with a table without copying or
   rewriting them – the migration path for data that is already in
-  Parquet.
+  Parquet. A vector of files is registered atomically in one snapshot,
+  and `create = TRUE` can bootstrap a new target table directly from the
+  Parquet schema.
   [`list_ducklake_files()`](https://tgerke.github.io/ducklake-r/reference/list_ducklake_files.md)
   shows the files backing a table, optionally as of a past snapshot.
 
