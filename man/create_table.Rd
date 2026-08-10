@@ -4,7 +4,7 @@
 \alias{create_table}
 \title{Create a DuckLake table}
 \usage{
-create_table(data_source, table_name)
+create_table(data_source, table_name, labels = TRUE)
 }
 \arguments{
 \item{data_source}{Raw data source. Can be:
@@ -16,6 +16,13 @@ create_table(data_source, table_name)
 }}
 
 \item{table_name}{Name of the new table}
+
+\item{labels}{When \code{TRUE} (the default) and the data has haven/labelled
+variable labels (\code{label} attributes on columns), store them in the
+lake as column comments -- in the same transaction as the table
+creation, so both land as one snapshot. Collecting the table later
+restores the labels (see \code{\link[=get_table_comments]{get_table_comments()}}), and every other
+client of the lake can read them too. Set to \code{FALSE} to skip.}
 }
 \description{
 Create a DuckLake table
@@ -40,9 +47,12 @@ get_ducklake_table("source_table") \%>\%
 \seealso{
 Other table operations:
 \code{\link[=add_data_files]{add_data_files()}},
+\code{\link[=create_view]{create_view()}},
+\code{\link[=drop_view]{drop_view()}},
 \code{\link[=ducklake_exec]{ducklake_exec()}},
 \code{\link[=get_ducklake_table]{get_ducklake_table()}},
 \code{\link[=get_metadata_table]{get_metadata_table()}},
+\code{\link[=list_ducklake_tables]{list_ducklake_tables()}},
 \code{\link[=replace_table]{replace_table()}},
 \code{\link[=show_ducklake_query]{show_ducklake_query()}}
 }

@@ -15,6 +15,26 @@
   that need both run as MERGE plus DELETE inside a single transaction and
   snapshot.
 
+* New table documentation family, built for labelled-data workflows:
+  `set_table_comment()` and `set_column_comments()` store descriptions in
+  the lake's catalog (`COMMENT ON`), and `get_table_comments()` reads
+  them back as a tidy data frame. `create_table()` gains a `labels`
+  argument (default `TRUE`) that stores haven/labelled variable labels as
+  column comments at load time, and `collect()` on a lake table
+  reattaches stored comments as `label` attributes -- so gtsummary, gt,
+  and other label-aware tools work as if the data never left R, and every
+  other client of the lake can read the same documentation.
+
+* New `create_view()` stores a dplyr pipeline as a SQL view in the lake:
+  shared business logic that reads current data and that every client --
+  R, Python, or plain SQL -- sees identically. `drop_view()` removes one.
+  SQL macros stay unwrapped on purpose (a macro body is raw SQL and
+  unreachable from dplyr pipelines); the cookbook shows the
+  `DBI::dbExecute()` escape hatch.
+
+* New `list_ducklake_tables()` answers "what is in this lake?" with a
+  tidy frame of tables and views.
+
 * New schema evolution family: `add_table_column()` (with optional
   `default`, which DuckLake applies to existing rows too),
   `drop_table_column()`, `rename_table_column()`, `set_column_type()`

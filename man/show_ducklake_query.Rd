@@ -30,9 +30,12 @@ get_ducklake_table("my_table") |>
 Other table operations:
 \code{\link[=add_data_files]{add_data_files()}},
 \code{\link[=create_table]{create_table()}},
+\code{\link[=create_view]{create_view()}},
+\code{\link[=drop_view]{drop_view()}},
 \code{\link[=ducklake_exec]{ducklake_exec()}},
 \code{\link[=get_ducklake_table]{get_ducklake_table()}},
 \code{\link[=get_metadata_table]{get_metadata_table()}},
+\code{\link[=list_ducklake_tables]{list_ducklake_tables()}},
 \code{\link[=replace_table]{replace_table()}}
 }
 \concept{table operations}

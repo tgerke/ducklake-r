@@ -47,8 +47,11 @@ get_metadata_table("ducklake_data_file") |>
 Other table operations:
 \code{\link[=add_data_files]{add_data_files()}},
 \code{\link[=create_table]{create_table()}},
+\code{\link[=create_view]{create_view()}},
+\code{\link[=drop_view]{drop_view()}},
 \code{\link[=ducklake_exec]{ducklake_exec()}},
 \code{\link[=get_ducklake_table]{get_ducklake_table()}},
+\code{\link[=list_ducklake_tables]{list_ducklake_tables()}},
 \code{\link[=replace_table]{replace_table()}},
 \code{\link[=show_ducklake_query]{show_ducklake_query()}}
 }

@@ -6,6 +6,12 @@
 #'   - An R data.frame or tibble
 #'   - A lazy table (tbl_duckdb_connection or tbl_lazy)
 #' @param table_name Name of the new table
+#' @param labels When `TRUE` (the default) and the data has haven/labelled
+#'   variable labels (`label` attributes on columns), store them in the
+#'   lake as column comments -- in the same transaction as the table
+#'   creation, so both land as one snapshot. Collecting the table later
+#'   restores the labels (see [get_table_comments()]), and every other
+#'   client of the lake can read them too. Set to `FALSE` to skip.
 #'
 #' @returns NULL
 #' @family table operations
@@ -27,13 +33,13 @@
 #'   filter(x > 5) %>%
 #'   create_table("filtered_table")
 #' }
-create_table <- function(data_source, table_name) {
+create_table <- function(data_source, table_name, labels = TRUE) {
   # Handle lazy tables (tbl_duckdb_connection, tbl_lazy)
   if (inherits(data_source, "tbl_lazy")) {
     # Materialize the lazy table to a data.frame
     data_source <- dplyr::collect(data_source)
   }
-  
+
   # Handle data.frame or tibble
   if (is.data.frame(data_source)) {
     # DuckLake does not support ENUM columns, which is what factors become
@@ -46,21 +52,76 @@ create_table <- function(data_source, table_name) {
       )
     }
 
+    column_labels <- character(0)
+    if (isTRUE(labels)) {
+      found <- vapply(
+        data_source,
+        function(col) {
+          lbl <- attr(col, "label", exact = TRUE)
+          if (is.character(lbl) && length(lbl) == 1 && !is.na(lbl)) {
+            lbl
+          } else {
+            NA_character_
+          }
+        },
+        character(1)
+      )
+      column_labels <- found[!is.na(found)]
+    }
+
     # Register the data.frame as a temporary view in DuckDB; unregister on
     # exit so a failed CREATE doesn't leave the view behind on the shared
     # connection
     temp_view_name <- paste0("__temp_view_", gsub("[^a-zA-Z0-9]", "_", table_name))
-    duckdb::duckdb_register(get_ducklake_connection(), temp_view_name, data_source)
+    conn <- get_ducklake_connection()
+    duckdb::duckdb_register(conn, temp_view_name, data_source)
     on.exit(
       duckdb::duckdb_unregister(get_ducklake_connection(), temp_view_name),
       add = TRUE
     )
+
+    # When labels ride along, the CREATE and the COMMENT statements must
+    # land as one snapshot: open a transaction of our own unless the
+    # caller already has one
+    own_txn <- length(column_labels) > 0 && !in_transaction(conn)
+    committed <- FALSE
+    if (own_txn) {
+      DBI::dbExecute(conn, "BEGIN TRANSACTION;")
+      on.exit(
+        if (!committed) {
+          tryCatch(DBI::dbExecute(conn, "ROLLBACK;"), error = function(e) NULL)
+        },
+        add = TRUE
+      )
+    }
 
     # Create the table from the temporary view
     db_execute(sprintf(
       "CREATE TABLE %s AS SELECT * FROM %s;",
       quote_ident(table_name), quote_ident(temp_view_name)
     ))
+
+    for (col in names(column_labels)) {
+      db_execute(
+        sprintf(
+          "COMMENT ON COLUMN %s.%s IS %s;",
+          quote_ident(table_name, conn),
+          quote_column(col, conn),
+          quote_sql(column_labels[[col]])
+        ),
+        conn = conn
+      )
+    }
+
+    if (own_txn) {
+      DBI::dbExecute(conn, "COMMIT;")
+      committed <- TRUE
+    }
+    if (length(column_labels) > 0) {
+      cli::cli_inform(
+        "Stored {length(column_labels)} column label{?s} as column comment{?s}."
+      )
+    }
 
     return(invisible(NULL))
   }

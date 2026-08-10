@@ -175,12 +175,68 @@ with_transaction(
 ### List all tables in the lake
 
 ```{r list_all_tables}
-# See what tables exist in your lake
-get_ducklake_table("duckdb_tables") |>
-  filter(schema_name == "main") |>
-  select(table_name) |>
-  collect() |>
-  print(n = Inf)
+# Every table and view, with its schema and type
+list_ducklake_tables()
+```
+
+## Shared logic and documentation recipes
+
+### Store a pipeline as a view
+
+A view stores a query, not data: reads always run against the current
+tables, and every client of the lake -- R, Python, or plain SQL -- sees the
+same definition.
+
+```{r create_view}
+get_ducklake_table("cars") |>
+  filter(mpg > 25) |>
+  create_view("v_efficient_cars")
+
+get_ducklake_table("v_efficient_cars") |> collect()
+```
+
+Drop it when the logic is no longer needed:
+
+```{r drop_view}
+drop_view("v_efficient_cars")
+```
+
+For logic a view cannot hold -- a parameterized SQL macro, say -- DuckDB
+SQL is the escape hatch:
+`DBI::dbExecute(get_ducklake_connection(), "CREATE MACRO ...")`.
+
+### Document tables and columns
+
+Comments live in the lake's catalog, so the documentation travels with the
+data instead of in a sidecar file:
+
+```{r comments}
+set_table_comment("cars", "Motor Trend road tests of 1973-74 models")
+set_column_comments(
+  "cars",
+  mpg = "Miles per US gallon",
+  wt = "Weight (1000 lbs)"
+)
+
+get_table_comments("cars")
+```
+
+### Keep variable labels through the lake
+
+If your data carries haven/labelled-style variable labels, they survive
+the lake: `create_table()` stores `label` attributes as column comments,
+and `collect()` puts them back, so label-aware tools like gtsummary and gt
+behave as if the data never left R.
+
+```{r labels}
+df_visits <- data.frame(subject = c("S1", "S2"), sbp = c(128, 141))
+attr(df_visits$subject, "label") <- "Subject identifier"
+attr(df_visits$sbp, "label") <- "Systolic blood pressure (mmHg)"
+
+create_table(df_visits, "visits")
+
+collected <- get_ducklake_table("visits") |> collect()
+attr(collected$sbp, "label")
 ```
 
 ## Reading data recipes
