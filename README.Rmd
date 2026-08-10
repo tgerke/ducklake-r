@@ -172,7 +172,7 @@ Check out the [pkgdown site](https://tgerke.github.io/ducklake-r/) for detailed 
 
 - [Getting Started](https://tgerke.github.io/ducklake-r/articles/ducklake.html) - Quick recipes for common operations
 - [Clinical Trial Data Lake](https://tgerke.github.io/ducklake-r/articles/clinical-trial-datalake.html) - Complete workflow from SDTM to ADaM with regulatory artifacts
-- [Modifying Tables](https://tgerke.github.io/ducklake-r/articles/modifying-tables.html) - Choosing between `rows_*` and `replace_table()`
+- [Modifying Tables](https://tgerke.github.io/ducklake-r/articles/modifying-tables.html) - Choosing how to change a table: joins vs. `rows_*`, upserts, `merge_into()`, and `replace_table()`
 - [Data Inlining](https://tgerke.github.io/ducklake-r/articles/data-inlining.html) - Streaming-friendly small writes
 - [Transactions](https://tgerke.github.io/ducklake-r/articles/transactions.html) - ACID transaction support
 - [Time Travel](https://tgerke.github.io/ducklake-r/articles/time-travel.html) - Query and restore historical data
@@ -196,6 +196,6 @@ Check out the [pkgdown site](https://tgerke.github.io/ducklake-r/) for detailed 
 - **Schema evolution**: Adapt table schemas over time as requirements change
 - **Tidyverse interface**: Familiar dplyr syntax for data manipulation
 - **Encryption**: Opt-in Parquet encryption with `attach_ducklake(encrypted = TRUE)`
-- **Two complementary approaches**: `rows_*` functions for incremental changes and `replace_table()` pipelines for structural ones — both fully versioned
+- **A write style for every job**: `rows_insert()`, `rows_update()`, `rows_delete()`, and `rows_upsert()` for incremental changes; `merge_into()` for conditional merges and staging-table syncs; `replace_table()` pipelines for bulk rewrites — all fully versioned
 - **Complete audit trails**: Who changed what, when, and why—suitable for regulated industries
 - **Seamless integration**: Works with duckdb, DBI, dbplyr, and the broader tidyverse ecosystem

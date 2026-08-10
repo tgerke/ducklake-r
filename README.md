@@ -124,8 +124,8 @@ with_transaction(
 get_ducklake_table("vehicles_analysis") |>
   select(mpg, cyl, efficiency) |>
   head(3)
-#> # A query:  ?? x 3
-#> # Database: DuckDB 1.5.4 [root@Darwin 25.5.0:R 4.5.2//private/var/folders/fw/0d9nr9951q57f0d5l6qc1j200000gn/T/RtmpHKx6Qe/ducklake/ducklake1f1f53c54359.duckdb]
+#> # Source:   SQL [?? x 3]
+#> # Database: DuckDB 1.5.1 [tgerke@Darwin 25.5.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpwnwMZ1/ducklake/ducklakeaa683d8e963d.duckdb]
 #>     mpg cyl   efficiency
 #>   <dbl> <chr> <chr>     
 #> 1  21   6.0   Medium    
@@ -135,11 +135,11 @@ get_ducklake_table("vehicles_analysis") |>
 # View complete audit trail across all layers with author and commit messages
 list_table_snapshots()
 #>   snapshot_id       snapshot_time schema_version
-#> 1           0 2026-07-10 17:06:01              0
-#> 2           1 2026-07-10 17:06:01              1
-#> 3           2 2026-07-10 17:06:01              2
-#> 4           3 2026-07-10 17:06:01              3
-#> 5           4 2026-07-10 17:06:01              4
+#> 1           0 2026-08-10 17:25:04              0
+#> 2           1 2026-08-10 17:25:04              1
+#> 3           2 2026-08-10 17:25:04              2
+#> 4           3 2026-08-10 17:25:04              3
+#> 5           4 2026-08-10 17:25:04              4
 #>                                                                           changes
 #> 1                                                           schemas_created, main
 #> 2                      tables_created, tables_inserted_into, main.vehicles_raw, 1
@@ -163,8 +163,8 @@ list_table_snapshots()
 get_ducklake_table_version("vehicles_clean", version = 2) |>
   select(mpg, cyl, gear) |>
   head(3)
-#> # A query:  ?? x 3
-#> # Database: DuckDB 1.5.4 [root@Darwin 25.5.0:R 4.5.2//private/var/folders/fw/0d9nr9951q57f0d5l6qc1j200000gn/T/RtmpHKx6Qe/ducklake/ducklake1f1f53c54359.duckdb]
+#> # Source:   SQL [?? x 3]
+#> # Database: DuckDB 1.5.1 [tgerke@Darwin 25.5.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpwnwMZ1/ducklake/ducklakeaa683d8e963d.duckdb]
 #>     mpg cyl    gear
 #>   <dbl> <chr> <dbl>
 #> 1  21   6.0       4
@@ -239,7 +239,8 @@ detailed vignettes:
   Complete workflow from SDTM to ADaM with regulatory artifacts
 - [Modifying
   Tables](https://tgerke.github.io/ducklake-r/articles/modifying-tables.html) -
-  Choosing between `rows_*` and `replace_table()`
+  Choosing how to change a table: joins vs. `rows_*`, upserts,
+  `merge_into()`, and `replace_table()`
 - [Data
   Inlining](https://tgerke.github.io/ducklake-r/articles/data-inlining.html) -
   Streaming-friendly small writes
@@ -294,9 +295,10 @@ detailed vignettes:
 - **Tidyverse interface**: Familiar dplyr syntax for data manipulation
 - **Encryption**: Opt-in Parquet encryption with
   `attach_ducklake(encrypted = TRUE)`
-- **Two complementary approaches**: `rows_*` functions for incremental
-  changes and `replace_table()` pipelines for structural ones — both
-  fully versioned
+- **A write style for every job**: `rows_insert()`, `rows_update()`,
+  `rows_delete()`, and `rows_upsert()` for incremental changes;
+  `merge_into()` for conditional merges and staging-table syncs;
+  `replace_table()` pipelines for bulk rewrites — all fully versioned
 - **Complete audit trails**: Who changed what, when, and why—suitable
   for regulated industries
 - **Seamless integration**: Works with duckdb, DBI, dbplyr, and the

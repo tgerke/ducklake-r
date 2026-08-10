@@ -37,18 +37,25 @@ A wrapper around dplyr::rows_delete() with in_place = TRUE as the default,
 since DuckLake is designed for in-place modifications.
 }
 \details{
-\subsection{When to use \verb{rows_*()} vs \code{\link[=replace_table]{replace_table()}}}{
-
-Use the \verb{rows_*()} functions for \strong{targeted, incremental changes}: appending
-a batch of new records, correcting a handful of values, or removing specific
-rows. Each call is a single SQL statement against the existing table -- no
-data leaves the database, and with data inlining enabled (DuckLake's default)
-small changes land in the catalog without creating tiny Parquet files.
-
-Use \code{\link[=replace_table]{replace_table()}} for \strong{structural or bulk changes}: adding or removing
-columns, or transformations that touch most rows. It collects the transformed
-data into R and rewrites the table, which is simpler for schema changes but
-heavier for small edits.
+\subsection{Choosing how to change a table}{
+\itemize{
+\item To look up or combine data for analysis, use dplyr joins
+(\code{left_join()} and friends). Joins read from the lake and build a new
+result; they never modify a lake table.
+\item To append, correct, or remove specific rows, use \code{\link[=rows_insert]{rows_insert()}},
+\code{\link[=rows_update]{rows_update()}}, or \code{\link[=rows_delete]{rows_delete()}}. Each call is a single SQL statement
+against the existing table -- no data leaves the database, and with data
+inlining enabled (DuckLake's default) small changes land in the catalog
+without creating tiny Parquet files.
+\item To update rows that exist and insert the ones that don't in one atomic
+statement, use \code{\link[=rows_upsert]{rows_upsert()}}.
+\item For conditional merge logic or deletes driven by a staging table, use
+\code{\link[=merge_into]{merge_into()}}.
+\item For bulk transformations that touch most rows, use \code{\link[=replace_table]{replace_table()}}. It
+collects the transformed data into R and rewrites the whole table --
+heavier than the row operations, and it resets the row lineage that the
+in-place operations preserve in the change feed.
+}
 }
 }
 \examples{
@@ -62,7 +69,9 @@ rows_delete(
 }
 \seealso{
 Other row operations:
+\code{\link[=merge_into]{merge_into()}},
 \code{\link[=rows_insert]{rows_insert()}},
-\code{\link[=rows_update]{rows_update()}}
+\code{\link[=rows_update]{rows_update()}},
+\code{\link[=rows_upsert]{rows_upsert()}}
 }
 \concept{row operations}
