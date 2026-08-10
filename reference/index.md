@@ -31,6 +31,12 @@ Create and query tables
   : Replace a table with modified data and create a new snapshot
 - [`add_data_files()`](https://tgerke.github.io/ducklake-r/reference/add_data_files.md)
   : Register existing Parquet files with a DuckLake table
+- [`create_view()`](https://tgerke.github.io/ducklake-r/reference/create_view.md)
+  : Create a DuckLake view from a dplyr pipeline
+- [`drop_view()`](https://tgerke.github.io/ducklake-r/reference/drop_view.md)
+  : Drop a DuckLake view
+- [`list_ducklake_tables()`](https://tgerke.github.io/ducklake-r/reference/list_ducklake_tables.md)
+  : List the tables and views in a DuckLake catalog
 
 ## Row Operations
 
@@ -102,6 +108,17 @@ Query and restore historical data
   : Plot the rows changed in each snapshot of a table
 - [`restore_table_version()`](https://tgerke.github.io/ducklake-r/reference/restore_table_version.md)
   : Restore a table to a previous version
+
+## Table Documentation
+
+Comments and variable labels stored in the lake
+
+- [`set_table_comment()`](https://tgerke.github.io/ducklake-r/reference/set_table_comment.md)
+  : Set the comment on a DuckLake table
+- [`set_column_comments()`](https://tgerke.github.io/ducklake-r/reference/set_column_comments.md)
+  : Set column comments on a DuckLake table
+- [`get_table_comments()`](https://tgerke.github.io/ducklake-r/reference/get_table_comments.md)
+  : Read table, view, and column comments from a DuckLake catalog
 
 ## Metadata
 

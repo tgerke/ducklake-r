@@ -180,7 +180,7 @@
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">mpg</span>, <span class="va">cyl</span>, <span class="va">efficiency</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">3</span><span class="op">)</span></span>
 <span><span class="co">#&gt; # Source:   SQL [?? x 3]</span></span>
-<span><span class="co">#&gt; # Database: DuckDB 1.5.1 [tgerke@Darwin 25.5.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/Rtmpwp7kLo/ducklake/ducklakeb6497bdd8f05.duckdb]</span></span>
+<span><span class="co">#&gt; # Database: DuckDB 1.5.1 [tgerke@Darwin 25.5.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpGhkk8k/ducklake/ducklakec62a6ad327f9.duckdb]</span></span>
 <span><span class="co">#&gt;     mpg cyl   efficiency</span></span>
 <span><span class="co">#&gt;   &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt;     </span></span>
 <span><span class="co">#&gt; 1  21   6.0   Medium    </span></span>
@@ -190,11 +190,11 @@
 <span><span class="co"># View complete audit trail across all layers with author and commit messages</span></span>
 <span><span class="fu"><a href="reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 1           0 2026-08-10 17:33:51              0</span></span>
-<span><span class="co">#&gt; 2           1 2026-08-10 17:33:51              1</span></span>
-<span><span class="co">#&gt; 3           2 2026-08-10 17:33:51              2</span></span>
-<span><span class="co">#&gt; 4           3 2026-08-10 17:33:51              3</span></span>
-<span><span class="co">#&gt; 5           4 2026-08-10 17:33:51              4</span></span>
+<span><span class="co">#&gt; 1           0 2026-08-10 17:43:33              0</span></span>
+<span><span class="co">#&gt; 2           1 2026-08-10 17:43:33              1</span></span>
+<span><span class="co">#&gt; 3           2 2026-08-10 17:43:33              2</span></span>
+<span><span class="co">#&gt; 4           3 2026-08-10 17:43:33              3</span></span>
+<span><span class="co">#&gt; 5           4 2026-08-10 17:43:33              4</span></span>
 <span><span class="co">#&gt;                                                                           changes</span></span>
 <span><span class="co">#&gt; 1                                                           schemas_created, main</span></span>
 <span><span class="co">#&gt; 2                      tables_created, tables_inserted_into, main.vehicles_raw, 1</span></span>
@@ -219,7 +219,7 @@
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">mpg</span>, <span class="va">cyl</span>, <span class="va">gear</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">3</span><span class="op">)</span></span>
 <span><span class="co">#&gt; # Source:   SQL [?? x 3]</span></span>
-<span><span class="co">#&gt; # Database: DuckDB 1.5.1 [tgerke@Darwin 25.5.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/Rtmpwp7kLo/ducklake/ducklakeb6497bdd8f05.duckdb]</span></span>
+<span><span class="co">#&gt; # Database: DuckDB 1.5.1 [tgerke@Darwin 25.5.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpGhkk8k/ducklake/ducklakec62a6ad327f9.duckdb]</span></span>
 <span><span class="co">#&gt;     mpg cyl    gear</span></span>
 <span><span class="co">#&gt;   &lt;dbl&gt; &lt;chr&gt; &lt;dbl&gt;</span></span>
 <span><span class="co">#&gt; 1  21   6.0       4</span></span>
@@ -325,6 +325,10 @@
 <strong>Tunable</strong>: <code><a href="reference/set_ducklake_option.html">set_ducklake_option()</a></code> adjusts DuckLake’s persisted settings (compression, file sizes, commit-message policy) at lake, schema, or table scope</li>
 <li>
 <strong>Schema evolution in place</strong>: <code><a href="reference/add_table_column.html">add_table_column()</a></code>, <code><a href="reference/drop_table_column.html">drop_table_column()</a></code>, <code><a href="reference/rename_table_column.html">rename_table_column()</a></code>, <code><a href="reference/set_column_type.html">set_column_type()</a></code>, and <code><a href="reference/rename_ducklake_table.html">rename_ducklake_table()</a></code> change a table’s shape as metadata-only operations — no data rewrite, and every earlier schema stays reachable through time travel</li>
+<li>
+<strong>Variable labels survive the lake</strong>: <code><a href="reference/create_table.html">create_table()</a></code> stores haven/labelled column labels as catalog comments and <code><a href="https://dplyr.tidyverse.org/reference/compute.html" class="external-link">collect()</a></code> restores them, so gtsummary and gt keep displaying them; <code><a href="reference/set_table_comment.html">set_table_comment()</a></code>, <code><a href="reference/set_column_comments.html">set_column_comments()</a></code>, and <code><a href="reference/get_table_comments.html">get_table_comments()</a></code> manage documentation any client of the lake can read</li>
+<li>
+<strong>Views</strong>: <code><a href="reference/create_view.html">create_view()</a></code> stores a dplyr pipeline as a SQL view in the lake — shared logic that always reads current data; <code><a href="reference/list_ducklake_tables.html">list_ducklake_tables()</a></code> shows what’s there</li>
 <li>
 <strong>Tidyverse interface</strong>: Familiar dplyr syntax for data manipulation</li>
 <li>

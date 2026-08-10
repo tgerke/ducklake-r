@@ -57,7 +57,7 @@
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">create_table</span><span class="op">(</span><span class="va">data_source</span>, <span class="va">table_name</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">create_table</span><span class="op">(</span><span class="va">data_source</span>, <span class="va">table_name</span>, labels <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -75,14 +75,26 @@
 <dt id="arg-table-name">table_name<a class="anchor" aria-label="anchor" href="#arg-table-name"></a></dt>
 <dd><p>Name of the new table</p></dd>
 
+
+<dt id="arg-labels">labels<a class="anchor" aria-label="anchor" href="#arg-labels"></a></dt>
+<dd><p>When <code>TRUE</code> (the default) and the data has haven/labelled
+variable labels (<code>label</code> attributes on columns), store them in the
+lake as column comments – in the same transaction as the table
+creation, so both land as one snapshot. Collecting the table later
+restores the labels (see <code><a href="get_table_comments.html">get_table_comments()</a></code>), and every other
+client of the lake can read them too. Set to <code>FALSE</code> to skip.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
     <div class="dont-index"><p>Other table operations:
 <code><a href="add_data_files.html">add_data_files()</a></code>,
+<code><a href="create_view.html">create_view()</a></code>,
+<code><a href="drop_view.html">drop_view()</a></code>,
 <code><a href="ducklake_exec.html">ducklake_exec()</a></code>,
 <code><a href="get_ducklake_table.html">get_ducklake_table()</a></code>,
 <code><a href="get_metadata_table.html">get_metadata_table()</a></code>,
+<code><a href="list_ducklake_tables.html">list_ducklake_tables()</a></code>,
 <code><a href="replace_table.html">replace_table()</a></code>,
 <code><a href="show_ducklake_query.html">show_ducklake_query()</a></code></p></div>
     </div>

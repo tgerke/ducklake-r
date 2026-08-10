@@ -5,7 +5,7 @@ Create a DuckLake table
 ## Usage
 
 ``` r
-create_table(data_source, table_name)
+create_table(data_source, table_name, labels = TRUE)
 ```
 
 ## Arguments
@@ -26,13 +26,27 @@ create_table(data_source, table_name)
 
   Name of the new table
 
+- labels:
+
+  When `TRUE` (the default) and the data has haven/labelled variable
+  labels (`label` attributes on columns), store them in the lake as
+  column comments – in the same transaction as the table creation, so
+  both land as one snapshot. Collecting the table later restores the
+  labels (see
+  [`get_table_comments()`](https://tgerke.github.io/ducklake-r/reference/get_table_comments.md)),
+  and every other client of the lake can read them too. Set to `FALSE`
+  to skip.
+
 ## See also
 
 Other table operations:
 [`add_data_files()`](https://tgerke.github.io/ducklake-r/reference/add_data_files.md),
+[`create_view()`](https://tgerke.github.io/ducklake-r/reference/create_view.md),
+[`drop_view()`](https://tgerke.github.io/ducklake-r/reference/drop_view.md),
 [`ducklake_exec()`](https://tgerke.github.io/ducklake-r/reference/ducklake_exec.md),
 [`get_ducklake_table()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_table.md),
 [`get_metadata_table()`](https://tgerke.github.io/ducklake-r/reference/get_metadata_table.md),
+[`list_ducklake_tables()`](https://tgerke.github.io/ducklake-r/reference/list_ducklake_tables.md),
 [`replace_table()`](https://tgerke.github.io/ducklake-r/reference/replace_table.md),
 [`show_ducklake_query()`](https://tgerke.github.io/ducklake-r/reference/show_ducklake_query.md)
 

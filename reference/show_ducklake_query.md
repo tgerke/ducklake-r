@@ -30,9 +30,12 @@ The first argument, invisibly (following show_query convention)
 Other table operations:
 [`add_data_files()`](https://tgerke.github.io/ducklake-r/reference/add_data_files.md),
 [`create_table()`](https://tgerke.github.io/ducklake-r/reference/create_table.md),
+[`create_view()`](https://tgerke.github.io/ducklake-r/reference/create_view.md),
+[`drop_view()`](https://tgerke.github.io/ducklake-r/reference/drop_view.md),
 [`ducklake_exec()`](https://tgerke.github.io/ducklake-r/reference/ducklake_exec.md),
 [`get_ducklake_table()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_table.md),
 [`get_metadata_table()`](https://tgerke.github.io/ducklake-r/reference/get_metadata_table.md),
+[`list_ducklake_tables()`](https://tgerke.github.io/ducklake-r/reference/list_ducklake_tables.md),
 [`replace_table()`](https://tgerke.github.io/ducklake-r/reference/replace_table.md)
 
 ## Examples

@@ -21,6 +21,37 @@
   update/delete action per MERGE statement, so syncs that need both run
   as MERGE plus DELETE inside a single transaction and snapshot.
 
+- New table documentation family, built for labelled-data workflows:
+  [`set_table_comment()`](https://tgerke.github.io/ducklake-r/reference/set_table_comment.md)
+  and
+  [`set_column_comments()`](https://tgerke.github.io/ducklake-r/reference/set_column_comments.md)
+  store descriptions in the lake’s catalog (`COMMENT ON`), and
+  [`get_table_comments()`](https://tgerke.github.io/ducklake-r/reference/get_table_comments.md)
+  reads them back as a tidy data frame.
+  [`create_table()`](https://tgerke.github.io/ducklake-r/reference/create_table.md)
+  gains a `labels` argument (default `TRUE`) that stores haven/labelled
+  variable labels as column comments at load time, and
+  [`collect()`](https://dplyr.tidyverse.org/reference/compute.html) on a
+  lake table reattaches stored comments as `label` attributes – so
+  gtsummary, gt, and other label-aware tools work as if the data never
+  left R, and every other client of the lake can read the same
+  documentation.
+
+- New
+  [`create_view()`](https://tgerke.github.io/ducklake-r/reference/create_view.md)
+  stores a dplyr pipeline as a SQL view in the lake: shared business
+  logic that reads current data and that every client – R, Python, or
+  plain SQL – sees identically.
+  [`drop_view()`](https://tgerke.github.io/ducklake-r/reference/drop_view.md)
+  removes one. SQL macros stay unwrapped on purpose (a macro body is raw
+  SQL and unreachable from dplyr pipelines); the cookbook shows the
+  [`DBI::dbExecute()`](https://dbi.r-dbi.org/reference/dbExecute.html)
+  escape hatch.
+
+- New
+  [`list_ducklake_tables()`](https://tgerke.github.io/ducklake-r/reference/list_ducklake_tables.md)
+  answers “what is in this lake?” with a tidy frame of tables and views.
+
 - New schema evolution family:
   [`add_table_column()`](https://tgerke.github.io/ducklake-r/reference/add_table_column.md)
   (with optional `default`, which DuckLake applies to existing rows

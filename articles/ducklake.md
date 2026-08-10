@@ -166,18 +166,98 @@ with_transaction(
 
 ``` r
 
-# See what tables exist in your lake
-get_ducklake_table("duckdb_tables") |>
-  filter(schema_name == "main") |>
-  select(table_name) |>
-  collect() |>
-  print(n = Inf)
-#> # A tibble: 3 × 1
-#>   table_name    
-#>   <chr>         
-#> 1 efficient_cars
-#> 2 iris_sample   
-#> 3 cars
+# Every table and view, with its schema and type
+list_ducklake_tables()
+#>   schema_name     table_name  type
+#> 1        main           cars table
+#> 2        main efficient_cars table
+#> 3        main    iris_sample table
+```
+
+## Shared logic and documentation recipes
+
+### Store a pipeline as a view
+
+A view stores a query, not data: reads always run against the current
+tables, and every client of the lake – R, Python, or plain SQL – sees
+the same definition.
+
+``` r
+
+get_ducklake_table("cars") |>
+  filter(mpg > 25) |>
+  create_view("v_efficient_cars")
+#> Created view "v_efficient_cars".
+
+get_ducklake_table("v_efficient_cars") |> collect()
+#> # A tibble: 6 × 12
+#>     mpg   cyl  disp    hp  drat    wt  qsec    vs    am  gear  carb   kpl
+#>   <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>
+#> 1  32.4     4  78.7    66  4.08  2.2   19.5     1     1     4     1  13.8
+#> 2  30.4     4  75.7    52  4.93  1.62  18.5     1     1     4     2  12.9
+#> 3  33.9     4  71.1    65  4.22  1.84  19.9     1     1     4     1  14.4
+#> 4  27.3     4  79      66  4.08  1.94  18.9     1     1     4     1  11.6
+#> 5  26       4 120.     91  4.43  2.14  16.7     0     1     5     2  11.1
+#> 6  30.4     4  95.1   113  3.77  1.51  16.9     1     1     5     2  12.9
+```
+
+Drop it when the logic is no longer needed:
+
+``` r
+
+drop_view("v_efficient_cars")
+#> Dropped view "v_efficient_cars".
+```
+
+For logic a view cannot hold – a parameterized SQL macro, say – DuckDB
+SQL is the escape hatch:
+`DBI::dbExecute(get_ducklake_connection(), "CREATE MACRO ...")`.
+
+### Document tables and columns
+
+Comments live in the lake’s catalog, so the documentation travels with
+the data instead of in a sidecar file:
+
+``` r
+
+set_table_comment("cars", "Motor Trend road tests of 1973-74 models")
+#> Commented table "cars".
+set_column_comments(
+  "cars",
+  mpg = "Miles per US gallon",
+  wt = "Weight (1000 lbs)"
+)
+#> Commented 2 columns on "cars".
+
+get_table_comments("cars")
+#>   object_type table_name column_name                                  comment
+#> 1      column       cars         mpg                      Miles per US gallon
+#> 2      column       cars          wt                        Weight (1000 lbs)
+#> 3       table       cars        <NA> Motor Trend road tests of 1973-74 models
+```
+
+### Keep variable labels through the lake
+
+If your data carries haven/labelled-style variable labels, they survive
+the lake:
+[`create_table()`](https://tgerke.github.io/ducklake-r/reference/create_table.md)
+stores `label` attributes as column comments, and
+[`collect()`](https://dplyr.tidyverse.org/reference/compute.html) puts
+them back, so label-aware tools like gtsummary and gt behave as if the
+data never left R.
+
+``` r
+
+df_visits <- data.frame(subject = c("S1", "S2"), sbp = c(128, 141))
+attr(df_visits$subject, "label") <- "Subject identifier"
+attr(df_visits$sbp, "label") <- "Systolic blood pressure (mmHg)"
+
+create_table(df_visits, "visits")
+#> Stored 2 column labels as column comments.
+
+collected <- get_ducklake_table("visits") |> collect()
+attr(collected$sbp, "label")
+#> [1] "Systolic blood pressure (mmHg)"
 ```
 
 ## Reading data recipes
@@ -195,7 +275,7 @@ cars_data |>
   select(mpg, cyl, hp) |>
   head(3)
 #> # A query:  ?? x 3
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1020-azure:R 4.6.1//tmp/RtmpxXQ7gk/ducklake/ducklake22542ac566f.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1020-azure:R 4.6.1//tmp/RtmpkONK6z/ducklake/ducklake22204229de8c.duckdb]
 #>     mpg   cyl    hp
 #>   <dbl> <dbl> <dbl>
 #> 1  21       6   110
@@ -225,14 +305,20 @@ head(cars_df, 3)
 # See all snapshots for the cars table
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-08-10 18:10:01              1
-#> 2           2 2026-08-10 18:10:02              2
+#> 1           1 2026-08-10 19:08:55              1
+#> 2           2 2026-08-10 19:08:55              2
+#> 3           7 2026-08-10 19:08:56              7
+#> 4           8 2026-08-10 19:08:57              8
 #>                                                                 changes
 #> 1                    tables_created, tables_inserted_into, main.cars, 1
 #> 2 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2
+#> 3                                                     tables_altered, 2
+#> 4                                                     tables_altered, 2
 #>          author                commit_message commit_extra_info
 #> 1 Data Engineer         Initial car data load              <NA>
 #> 2 Data Engineer Add km/L metric to cars table              <NA>
+#> 3          <NA>                          <NA>              <NA>
+#> 4          <NA>                          <NA>              <NA>
 ```
 
 ### Read a specific version
@@ -244,7 +330,7 @@ get_ducklake_table_version("cars", version = 1) |>
   select(mpg, cyl, hp) |>
   head(3)
 #> # A query:  ?? x 3
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1020-azure:R 4.6.1//tmp/RtmpxXQ7gk/ducklake/ducklake22542ac566f.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1020-azure:R 4.6.1//tmp/RtmpkONK6z/ducklake/ducklake22204229de8c.duckdb]
 #>     mpg   cyl    hp
 #>   <dbl> <dbl> <dbl>
 #> 1  21       6   110
@@ -275,6 +361,7 @@ with_transaction(
   commit_message = "Add horsepower per cylinder metric"
 )
 #> Transaction started.
+#> Stored 2 column labels as column comments.
 #> Transaction committed.
 ```
 
@@ -297,27 +384,42 @@ for guidance on choosing between them.
 ``` r
 
 list_table_snapshots()
-#>   snapshot_id       snapshot_time schema_version
-#> 1           0 2026-08-10 18:10:01              0
-#> 2           1 2026-08-10 18:10:01              1
-#> 3           2 2026-08-10 18:10:02              2
-#> 4           3 2026-08-10 18:10:02              3
-#> 5           4 2026-08-10 18:10:02              4
-#> 6           5 2026-08-10 18:10:03              5
-#>                                                                 changes
-#> 1                                                 schemas_created, main
-#> 2                    tables_created, tables_inserted_into, main.cars, 1
-#> 3 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2
-#> 4             tables_created, tables_inserted_into, main.iris_sample, 3
-#> 5          tables_created, tables_inserted_into, main.efficient_cars, 4
-#> 6 tables_created, tables_dropped, tables_inserted_into, main.cars, 2, 5
-#>          author                     commit_message commit_extra_info
-#> 1          <NA>                               <NA>              <NA>
-#> 2 Data Engineer              Initial car data load              <NA>
-#> 3 Data Engineer      Add km/L metric to cars table              <NA>
-#> 4 Data Engineer          Load iris sample from CSV              <NA>
-#> 5  Data Analyst             Load filtered car data              <NA>
-#> 6 Data Engineer Add horsepower per cylinder metric              <NA>
+#>    snapshot_id       snapshot_time schema_version
+#> 1            0 2026-08-10 19:08:55              0
+#> 2            1 2026-08-10 19:08:55              1
+#> 3            2 2026-08-10 19:08:55              2
+#> 4            3 2026-08-10 19:08:56              3
+#> 5            4 2026-08-10 19:08:56              4
+#> 6            5 2026-08-10 19:08:56              5
+#> 7            6 2026-08-10 19:08:56              6
+#> 8            7 2026-08-10 19:08:56              7
+#> 9            8 2026-08-10 19:08:57              8
+#> 10           9 2026-08-10 19:08:57              9
+#> 11          10 2026-08-10 19:08:57             10
+#>                                                                                     changes
+#> 1                                                                     schemas_created, main
+#> 2                                        tables_created, tables_inserted_into, main.cars, 1
+#> 3                     tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2
+#> 4                                 tables_created, tables_inserted_into, main.iris_sample, 3
+#> 5                              tables_created, tables_inserted_into, main.efficient_cars, 4
+#> 6                                                      views_created, main.v_efficient_cars
+#> 7                                                                          views_dropped, 5
+#> 8                                                                         tables_altered, 2
+#> 9                                                                         tables_altered, 2
+#> 10                        tables_created, tables_altered, inlined_insert, main.visits, 6, 6
+#> 11 tables_created, tables_dropped, tables_altered, tables_inserted_into, main.cars, 2, 7, 7
+#>           author                     commit_message commit_extra_info
+#> 1           <NA>                               <NA>              <NA>
+#> 2  Data Engineer              Initial car data load              <NA>
+#> 3  Data Engineer      Add km/L metric to cars table              <NA>
+#> 4  Data Engineer          Load iris sample from CSV              <NA>
+#> 5   Data Analyst             Load filtered car data              <NA>
+#> 6           <NA>                               <NA>              <NA>
+#> 7           <NA>                               <NA>              <NA>
+#> 8           <NA>                               <NA>              <NA>
+#> 9           <NA>                               <NA>              <NA>
+#> 10          <NA>                               <NA>              <NA>
+#> 11 Data Engineer Add horsepower per cylinder metric              <NA>
 ```
 
 ### View snapshots for a specific table
@@ -344,20 +446,26 @@ restore_table_version(
 
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-08-10 18:10:01              1
-#> 2           2 2026-08-10 18:10:02              2
-#> 3           5 2026-08-10 18:10:03              5
-#> 4           6 2026-08-10 18:10:03              6
-#>                                                                 changes
-#> 1                    tables_created, tables_inserted_into, main.cars, 1
-#> 2 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2
-#> 3 tables_created, tables_dropped, tables_inserted_into, main.cars, 2, 5
-#> 4 tables_created, tables_dropped, tables_inserted_into, main.cars, 5, 6
+#> 1           1 2026-08-10 19:08:55              1
+#> 2           2 2026-08-10 19:08:55              2
+#> 3           7 2026-08-10 19:08:56              7
+#> 4           8 2026-08-10 19:08:57              8
+#> 5          10 2026-08-10 19:08:57             10
+#> 6          11 2026-08-10 19:08:58             11
+#>                                                                                    changes
+#> 1                                       tables_created, tables_inserted_into, main.cars, 1
+#> 2                    tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2
+#> 3                                                                        tables_altered, 2
+#> 4                                                                        tables_altered, 2
+#> 5 tables_created, tables_dropped, tables_altered, tables_inserted_into, main.cars, 2, 7, 7
+#> 6                    tables_created, tables_dropped, tables_inserted_into, main.cars, 7, 8
 #>          author                     commit_message commit_extra_info
 #> 1 Data Engineer              Initial car data load              <NA>
 #> 2 Data Engineer      Add km/L metric to cars table              <NA>
-#> 3 Data Engineer Add horsepower per cylinder metric              <NA>
-#> 4 Data Engineer        Restored cars to snapshot 1              <NA>
+#> 3          <NA>                               <NA>              <NA>
+#> 4          <NA>                               <NA>              <NA>
+#> 5 Data Engineer Add horsepower per cylinder metric              <NA>
+#> 6 Data Engineer        Restored cars to snapshot 1              <NA>
 ```
 
 ## Transaction recipes
@@ -461,7 +569,7 @@ get_ducklake_table("cars") |>
   mutate(kpl = mpg * 0.425144) |>
   head(3)
 #> # A query:  ?? x 12
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1020-azure:R 4.6.1//tmp/RtmpxXQ7gk/ducklake/ducklake22542ac566f.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1020-azure:R 4.6.1//tmp/RtmpkONK6z/ducklake/ducklake22204229de8c.duckdb]
 #>     mpg   cyl  disp    hp  drat    wt  qsec    vs    am  gear  carb   kpl
 #>   <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>
 #> 1  21       6   160   110  3.9   2.62  16.5     0     1     4     4  8.93
@@ -478,7 +586,7 @@ get_ducklake_table("cars") |>
   select(mpg, cyl, hp) |>
   filter(mpg > 25)
 #> # A query:  ?? x 3
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1020-azure:R 4.6.1//tmp/RtmpxXQ7gk/ducklake/ducklake22542ac566f.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1020-azure:R 4.6.1//tmp/RtmpkONK6z/ducklake/ducklake22204229de8c.duckdb]
 #>     mpg   cyl    hp
 #>   <dbl> <dbl> <dbl>
 #> 1  32.4     4    66
