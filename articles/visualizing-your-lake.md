@@ -33,7 +33,7 @@ recording authors and commit messages along the way.
 
 install_ducklake()
 #> duckdb keeps downloaded extensions and secrets in a temporary directory:
-#> ℹ /tmp/Rtmpa2LiLi/duckdb
+#> ℹ /tmp/RtmpupTcGT/duckdb
 #> This is removed when the R session ends.
 #> • Extensions are re-downloaded each session.
 #> • Secrets are lost.
@@ -111,10 +111,10 @@ The audit trail so far:
 list_table_snapshots("fleet") |>
   select(snapshot_id, snapshot_time, author, commit_message)
 #>   snapshot_id       snapshot_time        author                  commit_message
-#> 1           1 2026-08-10 14:58:23 Data Engineer              Initial fleet load
-#> 2           2 2026-08-10 14:58:23 Fleet Manager              Add March arrivals
-#> 3           3 2026-08-10 14:58:23 Fleet Manager Record spring odometer readings
-#> 4           4 2026-08-10 14:58:23 Fleet Manager               Remove sold F-150
+#> 1           1 2026-08-10 18:03:31 Data Engineer              Initial fleet load
+#> 2           2 2026-08-10 18:03:31 Fleet Manager              Add March arrivals
+#> 3           3 2026-08-10 18:03:31 Fleet Manager Record spring odometer readings
+#> 4           4 2026-08-10 18:03:31 Fleet Manager               Remove sold F-150
 ```
 
 ## Plotting the Timeline
@@ -204,11 +204,11 @@ reports each table’s file count and size:
 
 get_table_info()
 #>   table_name schema_id table_id                           table_uuid file_count
-#> 1      fleet         0        1 019fec2e-9396-7e5a-af48-864ddadfdb99          1
-#> 2  telemetry         0        2 019fec2e-99ca-70b2-a72d-fcebb4e66bc7          2
+#> 1      fleet         0        1 019fecd8-11b6-712b-969f-2e13a73fcf7c          1
+#> 2  telemetry         0        2 019fecd8-1790-7f01-913d-d1186c644a5f          2
 #>   file_size_bytes delete_file_count delete_file_size_bytes
 #> 1            1027                 1                   1120
-#> 2           65518                 0                      0
+#> 2           65525                 0                      0
 ```
 
 And

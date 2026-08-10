@@ -41,8 +41,21 @@ snapshot**. Whether you use
 or raw SQL, DuckLake records what changed and you can time-travel back
 to any earlier state. (Earlier versions of this vignette said the
 `rows_*` functions skip versioning – that is not true in DuckLake v1.0.)
-The choice between the two styles is about *what kind of change* you are
+The choice between the styles is about *what kind of change* you are
 making, not about whether it is audited.
+
+One distinction matters before anything else: dplyr joins **read** –
+[`left_join()`](https://dplyr.tidyverse.org/reference/mutate-joins.html)
+and friends combine tables into a new result and never touch the stored
+data. Everything else in this table **writes**.
+
+| You want to… | Reach for |
+|----|----|
+| Look up or combine data for analysis | dplyr joins ([`left_join()`](https://dplyr.tidyverse.org/reference/mutate-joins.html), …) |
+| Append, correct, or remove specific rows | [`rows_insert()`](https://tgerke.github.io/ducklake-r/reference/rows_insert.md), [`rows_update()`](https://tgerke.github.io/ducklake-r/reference/rows_update.md), [`rows_delete()`](https://tgerke.github.io/ducklake-r/reference/rows_delete.md) |
+| Update rows that exist, insert the ones that don’t | [`rows_upsert()`](https://tgerke.github.io/ducklake-r/reference/rows_upsert.md) |
+| Conditional updates, or deletes driven by a staging table | [`merge_into()`](https://tgerke.github.io/ducklake-r/reference/merge_into.md) |
+| Bulk transformations that touch most rows | [`replace_table()`](https://tgerke.github.io/ducklake-r/reference/replace_table.md) |
 
 ### For incremental changes: the `rows_*` functions
 
@@ -71,6 +84,66 @@ rows_delete(get_ducklake_table("my_table"), obsolete_ids, by = "id")
   landing in the catalog instead of spawning tiny Parquet files
 - **Still versioned** - each call produces a snapshot you can
   time-travel to
+
+### For update-or-insert: `rows_upsert()`
+
+When a batch mixes corrections to existing rows with rows you have never
+seen,
+[`rows_upsert()`](https://tgerke.github.io/ducklake-r/reference/rows_upsert.md)
+handles both in one atomic statement: rows whose key matches are
+updated, the rest are inserted.
+
+``` r
+
+# One statement, one snapshot: id 2 is updated, id 7 is inserted
+rows_upsert(get_ducklake_table("my_table"), mixed_batch, by = "id")
+```
+
+DuckLake tables have no primary keys, so under the hood this is SQL
+`MERGE INTO` matching on your `by` columns, not the `ON CONFLICT` upsert
+you may know from other databases. The practical upshot is the same,
+with one wrinkle: when the upsert data covers only some of the table’s
+columns, *inserted* rows get the column default (usually `NULL`) in the
+columns you didn’t supply, while *updated* rows keep their existing
+values there.
+
+### For staging syncs and conditional merges: `merge_into()`
+
+[`rows_upsert()`](https://tgerke.github.io/ducklake-r/reference/rows_upsert.md)
+covers update-or-insert.
+[`merge_into()`](https://tgerke.github.io/ducklake-r/reference/merge_into.md)
+exposes the rest of the SQL MERGE statement for the cases beyond it:
+
+``` r
+
+# Update only when the source is newer
+merge_into(
+  get_ducklake_table("my_table"), fresh_data, by = "id",
+  matched_condition = "source.updated_at > target.updated_at"
+)
+
+# Synchronize to a staging table: upsert, plus delete rows
+# that no longer exist in the source
+merge_into("my_table", staging, by = "id", delete_missing = TRUE)
+```
+
+Despite the name,
+[`merge_into()`](https://tgerke.github.io/ducklake-r/reference/merge_into.md)
+is unrelated to [`base::merge()`](https://rdrr.io/r/base/merge.html) and
+dplyr’s joins, which combine tables into a new result.
+[`merge_into()`](https://tgerke.github.io/ducklake-r/reference/merge_into.md)
+changes the target table in place.
+
+You could get a similar end state by joining the staging table to the
+current table and calling
+[`replace_table()`](https://tgerke.github.io/ducklake-r/reference/replace_table.md)
+on the result. Resist that instinct: it rewrites every row of the table,
+and the change feed then records a wholesale replacement instead of the
+handful of inserts, updates, and deletes that actually happened.
+[`merge_into()`](https://tgerke.github.io/ducklake-r/reference/merge_into.md)
+touches only the affected rows, so
+[`get_table_changes()`](https://tgerke.github.io/ducklake-r/reference/get_table_changes.md)
+afterward tells the true story.
 
 ### For structural or bulk changes: `replace_table()`
 
@@ -219,11 +292,11 @@ with_transaction({
 # The full history: every change is versioned, wrapped or not
 list_table_snapshots("fleet")
 #>   snapshot_id       snapshot_time schema_version
-#> 1           2 2026-08-10 14:58:00              2
-#> 2           3 2026-08-10 14:58:01              2
-#> 3           4 2026-08-10 14:58:01              2
-#> 4           5 2026-08-10 14:58:01              2
-#> 5           6 2026-08-10 14:58:01              2
+#> 1           2 2026-08-10 18:03:06              2
+#> 2           3 2026-08-10 18:03:07              2
+#> 3           4 2026-08-10 18:03:07              2
+#> 4           5 2026-08-10 18:03:07              2
+#> 5           6 2026-08-10 18:03:07              2
 #>                                         changes        author
 #> 1 tables_created, inlined_insert, main.fleet, 2 Fleet Manager
 #> 2                             inlined_insert, 2          <NA>
@@ -236,6 +309,83 @@ list_table_snapshots("fleet")
 #> 3                               <NA>              <NA>
 #> 4                               <NA>              <NA>
 #> 5 April intake; remove recalled Leaf              <NA>
+```
+
+**Upsert** a batch that mixes corrections and new arrivals. The Model
+3’s mileage is updated and the Kona is inserted, in one statement:
+
+``` r
+
+service_batch <- data.frame(
+  car_id = c(3, 7),
+  model = c("Model 3", "Kona"),
+  mileage = c(15200, 8000)
+)
+
+rows_upsert(get_ducklake_table("fleet"), service_batch, by = "car_id")
+
+get_ducklake_table("fleet") |> arrange(car_id) |> collect()
+#> # A tibble: 5 × 3
+#>   car_id model   mileage
+#>    <int> <chr>     <dbl>
+#> 1      2 Civic     39000
+#> 2      3 Model 3   15200
+#> 3      5 Ioniq 5     120
+#> 4      6 ID.4         60
+#> 5      7 Kona       8000
+```
+
+**Synchronize** to an authoritative source with
+[`merge_into()`](https://tgerke.github.io/ducklake-r/reference/merge_into.md).
+Suppose the quarterly registry export is the truth: matching cars take
+its values, cars it doesn’t list are gone, and cars we haven’t seen are
+added. One call, one snapshot:
+
+``` r
+
+registry <- data.frame(
+  car_id = c(3, 5, 8),
+  model = c("Model 3", "Ioniq 5", "e-Golf"),
+  mileage = c(15400, 900, 21000)
+)
+
+with_transaction(
+  merge_into("fleet", registry, by = "car_id", delete_missing = TRUE),
+  author = "Fleet Manager",
+  commit_message = "Quarterly registry sync"
+)
+#> Transaction started.
+#> Transaction committed.
+
+get_ducklake_table("fleet") |> arrange(car_id) |> collect()
+#> # A tibble: 3 × 3
+#>   car_id model   mileage
+#>    <int> <chr>     <dbl>
+#> 1      3 Model 3   15400
+#> 2      5 Ioniq 5     900
+#> 3      8 e-Golf    21000
+```
+
+Because the sync ran as targeted row changes rather than a table
+rewrite, the change feed records exactly what happened:
+
+``` r
+
+latest <- max(list_table_snapshots("fleet")$snapshot_id)
+get_table_changes("fleet", latest, latest) |>
+  select(change_type, car_id, model, mileage) |>
+  collect()
+#> # A tibble: 8 × 4
+#>   change_type      car_id model   mileage
+#>   <chr>             <int> <chr>     <dbl>
+#> 1 insert                8 e-Golf    21000
+#> 2 update_postimage      3 Model 3   15400
+#> 3 update_postimage      5 Ioniq 5     900
+#> 4 delete                7 Kona       8000
+#> 5 update_preimage       5 Ioniq 5     120
+#> 6 update_preimage       3 Model 3   15200
+#> 7 delete                2 Civic     39000
+#> 8 delete                6 ID.4         60
 ```
 
 ### Updating specific rows with `replace_table()`
@@ -258,8 +408,8 @@ with_transaction(
 # Check version history - should show the new snapshot
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-08-10 14:58:00              1
-#> 2           7 2026-08-10 14:58:01              3
+#> 1           1 2026-08-10 18:03:06              1
+#> 2           9 2026-08-10 18:03:08              3
 #>                                                                 changes
 #> 1                    tables_created, tables_inserted_into, main.cars, 1
 #> 2 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 3
@@ -292,7 +442,7 @@ get_ducklake_table("cars") |>
   filter(hp > 200) |>
   select(hp, cyl, hp_per_cyl, high_performance)
 #> # A query:  ?? x 4
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1020-azure:R 4.6.1//tmp/RtmptWOUk5/ducklake/ducklake21d67fccb728.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1020-azure:R 4.6.1//tmp/Rtmpbj30Vg/ducklake/ducklake21eb3749a8b.duckdb]
 #>      hp   cyl hp_per_cyl high_performance
 #>   <dbl> <dbl>      <dbl> <chr>           
 #> 1   245     8       30.6 Y               
@@ -322,7 +472,7 @@ with_transaction(
 # Show the filtered table
 get_ducklake_table("cars")
 #> # A query:  ?? x 13
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1020-azure:R 4.6.1//tmp/RtmptWOUk5/ducklake/ducklake21d67fccb728.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1020-azure:R 4.6.1//tmp/Rtmpbj30Vg/ducklake/ducklake21eb3749a8b.duckdb]
 #>      mpg   cyl  disp    hp  drat    wt  qsec    vs    am  gear  carb hp_per_cyl
 #>    <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>      <dbl>
 #>  1  18.7     8  360    175  3.15  3.44  17.0     0     0     3     2       21.9
@@ -344,10 +494,10 @@ get_ducklake_table("cars")
 # View version history - old versions still accessible via time travel
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-08-10 14:58:00              1
-#> 2           7 2026-08-10 14:58:01              3
-#> 3           8 2026-08-10 14:58:02              4
-#> 4           9 2026-08-10 14:58:02              5
+#> 1           1 2026-08-10 18:03:06              1
+#> 2           9 2026-08-10 18:03:08              3
+#> 3          10 2026-08-10 18:03:08              4
+#> 4          11 2026-08-10 18:03:08              5
 #>                                                                 changes
 #> 1                    tables_created, tables_inserted_into, main.cars, 1
 #> 2 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 3
@@ -371,10 +521,10 @@ current <- get_ducklake_table("cars") |> collect()
 snapshots <- list_table_snapshots("cars")
 snapshots
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-08-10 14:58:00              1
-#> 2           7 2026-08-10 14:58:01              3
-#> 3           8 2026-08-10 14:58:02              4
-#> 4           9 2026-08-10 14:58:02              5
+#> 1           1 2026-08-10 18:03:06              1
+#> 2           9 2026-08-10 18:03:08              3
+#> 3          10 2026-08-10 18:03:08              4
+#> 4          11 2026-08-10 18:03:08              5
 #>                                                                 changes
 #> 1                    tables_created, tables_inserted_into, main.cars, 1
 #> 2 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 3

@@ -54,6 +54,7 @@
 <url><loc>https://tgerke.github.io/ducklake-r/reference/list_ducklake_files.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/list_table_snapshots.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/merge_adjacent_files.html</loc></url>
+<url><loc>https://tgerke.github.io/ducklake-r/reference/merge_into.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/plot_snapshots.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/plot_table_changes.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/plot_table_files.html</loc></url>
@@ -72,6 +73,7 @@
 <url><loc>https://tgerke.github.io/ducklake-r/reference/rows_delete.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/rows_insert.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/rows_update.html</loc></url>
+<url><loc>https://tgerke.github.io/ducklake-r/reference/rows_upsert.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/set_ducklake_connection.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/set_ducklake_option.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/set_inlining_row_limit.html</loc></url>

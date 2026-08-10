@@ -142,7 +142,7 @@ dir.create(lake_dir, showWarnings = FALSE, recursive = TRUE)
 # Install ducklake extension
 install_ducklake()
 #> duckdb keeps downloaded extensions and secrets in a temporary directory:
-#> ℹ /tmp/RtmpoToEB2/duckdb
+#> ℹ /tmp/RtmpHamfBW/duckdb
 #> This is removed when the R session ends.
 #> • Extensions are re-downloaded each session.
 #> • Secrets are lost.
@@ -194,14 +194,14 @@ The catalog is a single database file containing all metadata:
 ``` r
 
 dir_tree(lake_dir)
-#> /tmp/RtmpoToEB2/storage_backups_vignette/storage_demo
+#> /tmp/RtmpHamfBW/storage_backups_vignette/storage_demo
 #> ├── demo_lake.ducklake
 #> ├── demo_lake.ducklake.wal
 #> └── main
 #>     └── cars
-#>         ├── ducklake-019fec2e-589e-7e29-b598-ac940b90a471.parquet
-#>         ├── ducklake-019fec2e-597d-7df5-810d-7122b559430a.parquet
-#>         └── ducklake-019fec2e-5a02-7417-9ee2-ca2e792061ec.parquet
+#>         ├── ducklake-019fecd7-d22b-7b8c-bc25-3eb4bc0b8163.parquet
+#>         ├── ducklake-019fecd7-d316-766a-89f8-4f41a5949e64.parquet
+#>         └── ducklake-019fecd7-d41b-7f59-9a91-3abe00b39422.parquet
 ```
 
 The catalog files (`demo_lake.ducklake` and `.wal`) contain all metadata
@@ -217,11 +217,11 @@ Data files are stored in Parquet format in a structured directory:
 main_dir <- file.path(lake_dir, "main")
 
 dir_tree(main_dir, recurse = 2)
-#> /tmp/RtmpoToEB2/storage_backups_vignette/storage_demo/main
+#> /tmp/RtmpHamfBW/storage_backups_vignette/storage_demo/main
 #> └── cars
-#>     ├── ducklake-019fec2e-589e-7e29-b598-ac940b90a471.parquet
-#>     ├── ducklake-019fec2e-597d-7df5-810d-7122b559430a.parquet
-#>     └── ducklake-019fec2e-5a02-7417-9ee2-ca2e792061ec.parquet
+#>     ├── ducklake-019fecd7-d22b-7b8c-bc25-3eb4bc0b8163.parquet
+#>     ├── ducklake-019fecd7-d316-766a-89f8-4f41a5949e64.parquet
+#>     └── ducklake-019fecd7-d41b-7f59-9a91-3abe00b39422.parquet
   
 # Get details about parquet files
 parquet_files <- dir_ls(main_dir, recurse = TRUE, regexp = "\\.parquet$")
@@ -230,9 +230,9 @@ for (f in parquet_files) {
               path_file(f), 
               file.size(f)))
 }
-#>   ducklake-019fec2e-589e-7e29-b598-ac940b90a471.parquet (2307 bytes)
-#>   ducklake-019fec2e-597d-7df5-810d-7122b559430a.parquet (2501 bytes)
-#>   ducklake-019fec2e-5a02-7417-9ee2-ca2e792061ec.parquet (2724 bytes)
+#>   ducklake-019fecd7-d22b-7b8c-bc25-3eb4bc0b8163.parquet (2307 bytes)
+#>   ducklake-019fecd7-d316-766a-89f8-4f41a5949e64.parquet (2501 bytes)
+#>   ducklake-019fecd7-d41b-7f59-9a91-3abe00b39422.parquet (2724 bytes)
 ```
 
 ### Understanding File Organization
@@ -298,13 +298,13 @@ dir_copy(
 
 # Verify the backup was created
 dir_tree(backup_dir)
-#> /tmp/RtmpoToEB2/storage_backups_vignette/storage_demo/backups
+#> /tmp/RtmpHamfBW/storage_backups_vignette/storage_demo/backups
 #> ├── demo_lake.ducklake
 #> └── main
 #>     └── cars
-#>         ├── ducklake-019fec2e-589e-7e29-b598-ac940b90a471.parquet
-#>         ├── ducklake-019fec2e-597d-7df5-810d-7122b559430a.parquet
-#>         └── ducklake-019fec2e-5a02-7417-9ee2-ca2e792061ec.parquet
+#>         ├── ducklake-019fecd7-d22b-7b8c-bc25-3eb4bc0b8163.parquet
+#>         ├── ducklake-019fecd7-d316-766a-89f8-4f41a5949e64.parquet
+#>         └── ducklake-019fecd7-d41b-7f59-9a91-3abe00b39422.parquet
 
 # To work with the backup, attach it. override_data_path is needed because
 # the catalog remembers the original data location, which the backup no
@@ -315,7 +315,7 @@ attach_ducklake(
   override_data_path = TRUE
 )
 #> duckdb keeps downloaded extensions and secrets in a temporary directory:
-#> ℹ /tmp/RtmpoToEB2/duckdb
+#> ℹ /tmp/RtmpHamfBW/duckdb
 #> This is removed when the R session ends.
 #> • Extensions are re-downloaded each session.
 #> • Secrets are lost.
@@ -326,9 +326,9 @@ attach_ducklake(
 # Verify you're working with the backup
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-08-10 14:58:08              1
-#> 2           2 2026-08-10 14:58:08              2
-#> 3           3 2026-08-10 14:58:08              3
+#> 1           1 2026-08-10 18:03:14              1
+#> 2           2 2026-08-10 18:03:14              2
+#> 3           3 2026-08-10 18:03:15              3
 #>                                                                 changes
 #> 1                    tables_created, tables_inserted_into, main.cars, 1
 #> 2 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2
@@ -538,7 +538,7 @@ backup_dir <- backup_ducklake(
   backup_path = file.path(lake_dir, "backups")
 )
 #> duckdb keeps downloaded extensions and secrets in a temporary directory:
-#> ℹ /tmp/RtmpoToEB2/duckdb
+#> ℹ /tmp/RtmpHamfBW/duckdb
 #> This is removed when the R session ends.
 #> • Extensions are re-downloaded each session.
 #> • Secrets are lost.
@@ -548,11 +548,11 @@ backup_dir <- backup_ducklake(
 #> Catalog backed up successfully.
 #> Data files backed up successfully (1 directory).
 #> Backup completed:
-#> /tmp/RtmpoToEB2/storage_backups_vignette/storage_demo/backups/backup_20260810_145809
+#> /tmp/RtmpHamfBW/storage_backups_vignette/storage_demo/backups/backup_20260810_180316
 
 # The function returns the backup directory path
 print(backup_dir)
-#> [1] "/tmp/RtmpoToEB2/storage_backups_vignette/storage_demo/backups/backup_20260810_145809"
+#> [1] "/tmp/RtmpHamfBW/storage_backups_vignette/storage_demo/backups/backup_20260810_180316"
 ```
 
 The

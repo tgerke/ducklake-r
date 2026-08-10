@@ -42,6 +42,10 @@ Modify table rows with dplyr-style functions
   : Update rows in a DuckLake table
 - [`rows_delete()`](https://tgerke.github.io/ducklake-r/reference/rows_delete.md)
   : Delete rows from a DuckLake table
+- [`rows_upsert()`](https://tgerke.github.io/ducklake-r/reference/rows_upsert.md)
+  : Upsert rows into a DuckLake table
+- [`merge_into()`](https://tgerke.github.io/ducklake-r/reference/merge_into.md)
+  : Merge a source table into a DuckLake table
 
 ## Query Execution
 

@@ -53,27 +53,42 @@ The updated table
 
 ## Details
 
-### When to use `rows_*()` vs [`replace_table()`](https://tgerke.github.io/ducklake-r/reference/replace_table.md)
+### Choosing how to change a table
 
-Use the `rows_*()` functions for **targeted, incremental changes**:
-appending a batch of new records, correcting a handful of values, or
-removing specific rows. Each call is a single SQL statement against the
-existing table – no data leaves the database, and with data inlining
-enabled (DuckLake's default) small changes land in the catalog without
-creating tiny Parquet files.
+- To look up or combine data for analysis, use dplyr joins
+  ([`left_join()`](https://dplyr.tidyverse.org/reference/mutate-joins.html)
+  and friends). Joins read from the lake and build a new result; they
+  never modify a lake table.
 
-Use
-[`replace_table()`](https://tgerke.github.io/ducklake-r/reference/replace_table.md)
-for **structural or bulk changes**: adding or removing columns, or
-transformations that touch most rows. It collects the transformed data
-into R and rewrites the table, which is simpler for schema changes but
-heavier for small edits.
+- To append, correct, or remove specific rows, use
+  [`rows_insert()`](https://tgerke.github.io/ducklake-r/reference/rows_insert.md),
+  `rows_update()`, or
+  [`rows_delete()`](https://tgerke.github.io/ducklake-r/reference/rows_delete.md).
+  Each call is a single SQL statement against the existing table – no
+  data leaves the database, and with data inlining enabled (DuckLake's
+  default) small changes land in the catalog without creating tiny
+  Parquet files.
+
+- To update rows that exist and insert the ones that don't in one atomic
+  statement, use
+  [`rows_upsert()`](https://tgerke.github.io/ducklake-r/reference/rows_upsert.md).
+
+- For conditional merge logic or deletes driven by a staging table, use
+  [`merge_into()`](https://tgerke.github.io/ducklake-r/reference/merge_into.md).
+
+- For bulk transformations that touch most rows, use
+  [`replace_table()`](https://tgerke.github.io/ducklake-r/reference/replace_table.md).
+  It collects the transformed data into R and rewrites the whole table –
+  heavier than the row operations, and it resets the row lineage that
+  the in-place operations preserve in the change feed.
 
 ## See also
 
 Other row operations:
+[`merge_into()`](https://tgerke.github.io/ducklake-r/reference/merge_into.md),
 [`rows_delete()`](https://tgerke.github.io/ducklake-r/reference/rows_delete.md),
-[`rows_insert()`](https://tgerke.github.io/ducklake-r/reference/rows_insert.md)
+[`rows_insert()`](https://tgerke.github.io/ducklake-r/reference/rows_insert.md),
+[`rows_upsert()`](https://tgerke.github.io/ducklake-r/reference/rows_upsert.md)
 
 ## Examples
 

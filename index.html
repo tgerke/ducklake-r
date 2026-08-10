@@ -179,8 +179,8 @@
 <span><span class="fu"><a href="reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"vehicles_analysis"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">mpg</span>, <span class="va">cyl</span>, <span class="va">efficiency</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">3</span><span class="op">)</span></span>
-<span><span class="co">#&gt; # A query:  ?? x 3</span></span>
-<span><span class="co">#&gt; # Database: DuckDB 1.5.4 [root@Darwin 25.5.0:R 4.5.2//private/var/folders/fw/0d9nr9951q57f0d5l6qc1j200000gn/T/RtmpHKx6Qe/ducklake/ducklake1f1f53c54359.duckdb]</span></span>
+<span><span class="co">#&gt; # Source:   SQL [?? x 3]</span></span>
+<span><span class="co">#&gt; # Database: DuckDB 1.5.1 [tgerke@Darwin 25.5.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpwnwMZ1/ducklake/ducklakeaa683d8e963d.duckdb]</span></span>
 <span><span class="co">#&gt;     mpg cyl   efficiency</span></span>
 <span><span class="co">#&gt;   &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt;     </span></span>
 <span><span class="co">#&gt; 1  21   6.0   Medium    </span></span>
@@ -190,11 +190,11 @@
 <span><span class="co"># View complete audit trail across all layers with author and commit messages</span></span>
 <span><span class="fu"><a href="reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 1           0 2026-07-10 17:06:01              0</span></span>
-<span><span class="co">#&gt; 2           1 2026-07-10 17:06:01              1</span></span>
-<span><span class="co">#&gt; 3           2 2026-07-10 17:06:01              2</span></span>
-<span><span class="co">#&gt; 4           3 2026-07-10 17:06:01              3</span></span>
-<span><span class="co">#&gt; 5           4 2026-07-10 17:06:01              4</span></span>
+<span><span class="co">#&gt; 1           0 2026-08-10 17:25:04              0</span></span>
+<span><span class="co">#&gt; 2           1 2026-08-10 17:25:04              1</span></span>
+<span><span class="co">#&gt; 3           2 2026-08-10 17:25:04              2</span></span>
+<span><span class="co">#&gt; 4           3 2026-08-10 17:25:04              3</span></span>
+<span><span class="co">#&gt; 5           4 2026-08-10 17:25:04              4</span></span>
 <span><span class="co">#&gt;                                                                           changes</span></span>
 <span><span class="co">#&gt; 1                                                           schemas_created, main</span></span>
 <span><span class="co">#&gt; 2                      tables_created, tables_inserted_into, main.vehicles_raw, 1</span></span>
@@ -218,8 +218,8 @@
 <span><span class="fu"><a href="reference/get_ducklake_table_version.html">get_ducklake_table_version</a></span><span class="op">(</span><span class="st">"vehicles_clean"</span>, version <span class="op">=</span> <span class="fl">2</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">mpg</span>, <span class="va">cyl</span>, <span class="va">gear</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">3</span><span class="op">)</span></span>
-<span><span class="co">#&gt; # A query:  ?? x 3</span></span>
-<span><span class="co">#&gt; # Database: DuckDB 1.5.4 [root@Darwin 25.5.0:R 4.5.2//private/var/folders/fw/0d9nr9951q57f0d5l6qc1j200000gn/T/RtmpHKx6Qe/ducklake/ducklake1f1f53c54359.duckdb]</span></span>
+<span><span class="co">#&gt; # Source:   SQL [?? x 3]</span></span>
+<span><span class="co">#&gt; # Database: DuckDB 1.5.1 [tgerke@Darwin 25.5.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpwnwMZ1/ducklake/ducklakeaa683d8e963d.duckdb]</span></span>
 <span><span class="co">#&gt;     mpg cyl    gear</span></span>
 <span><span class="co">#&gt;   &lt;dbl&gt; &lt;chr&gt; &lt;dbl&gt;</span></span>
 <span><span class="co">#&gt; 1  21   6.0       4</span></span>
@@ -280,7 +280,7 @@
 <li>
 <a href="https://tgerke.github.io/ducklake-r/articles/clinical-trial-datalake.html">Clinical Trial Data Lake</a> - Complete workflow from SDTM to ADaM with regulatory artifacts</li>
 <li>
-<a href="https://tgerke.github.io/ducklake-r/articles/modifying-tables.html">Modifying Tables</a> - Choosing between <code>rows_*</code> and <code><a href="reference/replace_table.html">replace_table()</a></code>
+<a href="https://tgerke.github.io/ducklake-r/articles/modifying-tables.html">Modifying Tables</a> - Choosing how to change a table: joins vs. <code>rows_*</code>, upserts, <code><a href="reference/merge_into.html">merge_into()</a></code>, and <code><a href="reference/replace_table.html">replace_table()</a></code>
 </li>
 <li>
 <a href="https://tgerke.github.io/ducklake-r/articles/data-inlining.html">Data Inlining</a> - Streaming-friendly small writes</li>
@@ -331,7 +331,7 @@
 <strong>Encryption</strong>: Opt-in Parquet encryption with <code>attach_ducklake(encrypted = TRUE)</code>
 </li>
 <li>
-<strong>Two complementary approaches</strong>: <code>rows_*</code> functions for incremental changes and <code><a href="reference/replace_table.html">replace_table()</a></code> pipelines for structural ones — both fully versioned</li>
+<strong>A write style for every job</strong>: <code><a href="reference/rows_insert.html">rows_insert()</a></code>, <code><a href="reference/rows_update.html">rows_update()</a></code>, <code><a href="reference/rows_delete.html">rows_delete()</a></code>, and <code><a href="reference/rows_upsert.html">rows_upsert()</a></code> for incremental changes; <code><a href="reference/merge_into.html">merge_into()</a></code> for conditional merges and staging-table syncs; <code><a href="reference/replace_table.html">replace_table()</a></code> pipelines for bulk rewrites — all fully versioned</li>
 <li>
 <strong>Complete audit trails</strong>: Who changed what, when, and why—suitable for regulated industries</li>
 <li>
