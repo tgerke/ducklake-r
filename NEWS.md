@@ -1,4 +1,4 @@
-# ducklake (development version)
+# ducklake 0.5.0
 
 * New `rows_upsert()` completes the dplyr `rows_*` family: rows that match
   on the key columns are updated and the rest are inserted, as one atomic
