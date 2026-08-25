@@ -6,6 +6,10 @@
 \usage{
 ensure_quack_extension()
 }
+\value{
+Invisibly, \code{NULL}. Called for its side effect of loading the
+extension.
+}
 \description{
 Load the Quack extension, installing it first if needed
 }

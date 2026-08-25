@@ -39,15 +39,21 @@
 #' @family row operations
 #' @export
 #'
-#' @examples
-#' \dontrun{
+#' @examplesIf ducklake_extension_available()
+#' lake_dir <- tempfile("rowsupd_lake_")
+#' dir.create(lake_dir)
+#' attach_ducklake("rowsupd_lake", lake_path = lake_dir)
+#' create_table(data.frame(id = 1:3, value = c("a", "b", "c")), "items")
+#'
 #' # Update rows - in_place = TRUE by default
 #' rows_update(
-#'   get_ducklake_table("my_table"),
+#'   get_ducklake_table("items"),
 #'   data.frame(id = 1, value = "new"),
 #'   by = "id"
 #' )
-#' }
+#'
+#' detach_ducklake("rowsupd_lake", shutdown = TRUE)
+#' unlink(lake_dir, recursive = TRUE)
 rows_update <- function(x, y, by = NULL, copy = TRUE, in_place = TRUE, unmatched = "ignore", ...) {
   dplyr::rows_update(x = x, y = y, by = by, copy = copy, in_place = in_place, unmatched = unmatched, ...)
 }
@@ -62,6 +68,7 @@ rows_update <- function(x, y, by = NULL, copy = TRUE, in_place = TRUE, unmatched
 #'
 #' @param x Target lazy table
 #' @param y Data frame or lazy table
+#' @returns A lazy table on the same connection as `x`.
 #' @keywords internal
 prep_rows_y <- function(x, y) {
   if (is.data.frame(y)) {
@@ -124,14 +131,20 @@ rows_update.tbl_ducklake <- function(x, y, by = NULL, ...,
 #' @family row operations
 #' @export
 #'
-#' @examples
-#' \dontrun{
+#' @examplesIf ducklake_extension_available()
+#' lake_dir <- tempfile("rowsins_lake_")
+#' dir.create(lake_dir)
+#' attach_ducklake("rowsins_lake", lake_path = lake_dir)
+#' create_table(data.frame(id = 1:3, value = c("a", "b", "c")), "items")
+#'
 #' rows_insert(
-#'   get_ducklake_table("my_table"),
+#'   get_ducklake_table("items"),
 #'   data.frame(id = 99, value = "new row"),
 #'   by = "id"
 #' )
-#' }
+#'
+#' detach_ducklake("rowsins_lake", shutdown = TRUE)
+#' unlink(lake_dir, recursive = TRUE)
 rows_insert <- function(x, y, by = NULL, copy = TRUE, in_place = TRUE, conflict = "ignore", ...) {
   dplyr::rows_insert(x = x, y = y, by = by, copy = copy, in_place = in_place, conflict = conflict, ...)
 }
@@ -189,14 +202,20 @@ rows_insert.tbl_ducklake <- function(x, y, by = NULL, ...,
 #' @family row operations
 #' @export
 #'
-#' @examples
-#' \dontrun{
+#' @examplesIf ducklake_extension_available()
+#' lake_dir <- tempfile("rowsdel_lake_")
+#' dir.create(lake_dir)
+#' attach_ducklake("rowsdel_lake", lake_path = lake_dir)
+#' create_table(data.frame(id = 1:3, value = c("a", "b", "c")), "items")
+#'
 #' rows_delete(
-#'   get_ducklake_table("my_table"),
-#'   data.frame(id = c(1, 2, 3)),
+#'   get_ducklake_table("items"),
+#'   data.frame(id = c(1, 2)),
 #'   by = "id"
 #' )
-#' }
+#'
+#' detach_ducklake("rowsdel_lake", shutdown = TRUE)
+#' unlink(lake_dir, recursive = TRUE)
 rows_delete <- function(x, y, by = NULL, copy = TRUE, in_place = TRUE, unmatched = "ignore", ...) {
   dplyr::rows_delete(x = x, y = y, by = by, copy = copy, in_place = in_place, unmatched = unmatched, ...)
 }
@@ -277,15 +296,21 @@ rows_delete.tbl_ducklake <- function(x, y, by = NULL, ...,
 #' @seealso [merge_into()] for conditional merge clauses and source-driven
 #'   deletes.
 #'
-#' @examples
-#' \dontrun{
+#' @examplesIf ducklake_extension_available()
+#' lake_dir <- tempfile("rowsups_lake_")
+#' dir.create(lake_dir)
+#' attach_ducklake("rowsups_lake", lake_path = lake_dir)
+#' create_table(data.frame(id = 1:3, value = c("a", "b", "c")), "items")
+#'
 #' # Update id 2, insert id 4 - one statement, one snapshot
 #' rows_upsert(
-#'   get_ducklake_table("my_table"),
+#'   get_ducklake_table("items"),
 #'   data.frame(id = c(2, 4), value = c("updated", "new")),
 #'   by = "id"
 #' )
-#' }
+#'
+#' detach_ducklake("rowsups_lake", shutdown = TRUE)
+#' unlink(lake_dir, recursive = TRUE)
 rows_upsert <- function(x, y, by = NULL, copy = TRUE, in_place = TRUE, ...) {
   dplyr::rows_upsert(x = x, y = y, by = by, copy = copy, in_place = in_place, ...)
 }

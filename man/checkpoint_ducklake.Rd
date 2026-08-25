@@ -35,13 +35,21 @@ for routine use and run full checkpoints from a fresh session, or use a
 PostgreSQL/SQLite catalog.
 }
 \examples{
-\dontrun{
+\dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}
+lake_dir <- tempfile("checkpoint_lake_")
+dir.create(lake_dir)
+attach_ducklake("checkpoint_lake", lake_path = lake_dir)
+create_table(mtcars, "cars")
+
 # Run all maintenance
 checkpoint_ducklake()
 
 # Or specify a named lake
-checkpoint_ducklake("my_lake")
-}
+checkpoint_ducklake("checkpoint_lake")
+
+detach_ducklake("checkpoint_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=flush_inlined_data]{flush_inlined_data()}}, \code{\link[=set_inlining_row_limit]{set_inlining_row_limit()}}

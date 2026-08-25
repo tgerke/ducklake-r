@@ -30,14 +30,20 @@
 #' @seealso [plot_table_files()], [merge_adjacent_files()],
 #'   [rewrite_data_files()]
 #'
-#' @examples
-#' \dontrun{
+#' @examplesIf ducklake_extension_available()
+#' lake_dir <- tempfile("info_lake_")
+#' dir.create(lake_dir)
+#' attach_ducklake("info_lake", lake_path = lake_dir)
+#' create_table(mtcars, "cars")
+#'
 #' # File statistics for every table in the lake
 #' get_table_info()
 #'
 #' # Just one table
-#' get_table_info("my_table")
-#' }
+#' get_table_info("cars")
+#'
+#' detach_ducklake("info_lake", shutdown = TRUE)
+#' unlink(lake_dir, recursive = TRUE)
 get_table_info <- function(table_name = NULL, ducklake_name = NULL, conn = NULL) {
   if (is.null(conn)) {
     conn <- get_ducklake_connection()

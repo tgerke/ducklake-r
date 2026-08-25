@@ -25,9 +25,17 @@ name reaches back only as far as the rename, while the old name still
 serves the earlier snapshots.
 }
 \examples{
-\dontrun{
-rename_ducklake_table("sales", "sales_daily")
-}
+\dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}
+lake_dir <- tempfile("renametbl_lake_")
+dir.create(lake_dir)
+attach_ducklake("renametbl_lake", lake_path = lake_dir)
+create_table(mtcars, "cars")
+
+rename_ducklake_table("cars", "cars_daily")
+
+detach_ducklake("renametbl_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=rename_table_column]{rename_table_column()}}

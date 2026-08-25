@@ -15,9 +15,10 @@
 #' @seealso [create_table()] to create tables, [get_ducklake_table_asof()]
 #'   and [get_ducklake_table_version()] for time-travel reads.
 #'
-#' @examples
-#' \dontrun{
-#' attach_ducklake("my_lake", lake_path = "~/data/lake")
+#' @examplesIf ducklake_extension_available()
+#' lake_dir <- tempfile("cars_lake_")
+#' dir.create(lake_dir)
+#' attach_ducklake("cars_lake", lake_path = lake_dir)
 #' create_table(mtcars, "cars")
 #'
 #' # Query lazily with dplyr, then collect
@@ -25,7 +26,9 @@
 #'   dplyr::filter(cyl > 4) |>
 #'   dplyr::summarise(avg_mpg = mean(mpg), .by = cyl) |>
 #'   dplyr::collect()
-#' }
+#'
+#' detach_ducklake("cars_lake", shutdown = TRUE)
+#' unlink(lake_dir, recursive = TRUE)
 get_ducklake_table <- function(tbl_name) {
   tbl <- dplyr::tbl(get_ducklake_connection(), tbl_name)
   attr(tbl, "ducklake_table_name") <- tbl_name
@@ -58,9 +61,11 @@ get_ducklake_table <- function(tbl_name) {
 #'
 #' @seealso [list_table_snapshots()] for a friendlier view of snapshot history.
 #'
-#' @examples
-#' \dontrun{
-#' attach_ducklake("my_lake", lake_path = "~/data/lake")
+#' @examplesIf ducklake_extension_available()
+#' lake_dir <- tempfile("meta_lake_")
+#' dir.create(lake_dir)
+#' attach_ducklake("meta_lake", lake_path = lake_dir)
+#' create_table(mtcars, "cars")
 #'
 #' # Every snapshot ever taken
 #' get_metadata_table("ducklake_snapshot") |> dplyr::collect()
@@ -69,7 +74,9 @@ get_ducklake_table <- function(tbl_name) {
 #' get_metadata_table("ducklake_data_file") |>
 #'   dplyr::select(data_file_id, path) |>
 #'   dplyr::collect()
-#' }
+#'
+#' detach_ducklake("meta_lake", shutdown = TRUE)
+#' unlink(lake_dir, recursive = TRUE)
 get_metadata_table <- function(tbl_name, ducklake_name = NULL) {
   # If ducklake_name not provided, try to infer from current database
   if (is.null(ducklake_name)) {

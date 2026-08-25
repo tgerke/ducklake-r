@@ -15,7 +15,8 @@
 #'
 #' @param load If `TRUE` (the default), load the extension after installing it.
 #'
-#' @returns NULL
+#' @returns Invisibly, `NULL`. Called for its side effect of installing the
+#'   `quack` DuckDB extension into the local extension cache.
 #' @family quack
 #' @export
 #'
@@ -60,7 +61,8 @@ install_quack <- function(load = TRUE) {
 #' @param disable_ssl Connect over plain HTTP instead of HTTPS (default `FALSE`).
 #'   Only appropriate on a trusted network.
 #'
-#' @returns NULL
+#' @returns Invisibly, `NULL`. Called for its side effect of attaching the
+#'   remote catalog to the package's DuckDB connection.
 #' @family quack
 #' @export
 #'
@@ -115,7 +117,8 @@ attach_quack <- function(quack_name, uri, token = NULL, disable_ssl = FALSE) {
 #' @param quack_name Name of the remote catalog to detach. If `NULL`, nothing is
 #'   detached.
 #'
-#' @returns NULL
+#' @returns Invisibly, `NULL`. Called for its side effect of detaching the
+#'   remote catalog.
 #' @family quack
 #' @export
 #'
@@ -219,7 +222,7 @@ quack_query <- function(uri, query, token = NULL, disable_ssl = FALSE) {
 #'
 #' @examples
 #' \dontrun{
-#' attach_ducklake("trial", lake_path = "~/lakes/trial")
+#' attach_ducklake("trial", lake_path = "path/to/lake")
 #' quack_serve(token = "super_secret")
 #' # ... colleagues connect with attach_quack() ...
 #' quack_stop()
@@ -285,6 +288,7 @@ quack_stop <- function(uri = "quack:localhost") {
 #' Check that the active DuckDB engine supports Quack
 #'
 #' @param conn Optional DuckDB connection. Defaults to the ducklake connection.
+#' @returns Invisibly, `TRUE`. Aborts when the engine is too old.
 #' @keywords internal
 check_quack_version <- function(conn = NULL) {
   if (is.null(conn)) {
@@ -320,16 +324,11 @@ quack_version_supported <- function(version) {
 
 #' Load the Quack extension, installing it first if needed
 #'
+#' @returns Invisibly, `NULL`. Called for its side effect of loading the
+#'   extension.
 #' @keywords internal
 ensure_quack_extension <- function() {
-  tryCatch(
-    db_execute("LOAD quack;"),
-    error = function(e) {
-      db_execute("INSTALL quack;")
-      db_execute("LOAD quack;")
-    }
-  )
-  invisible(NULL)
+  load_or_install_extension("quack")
 }
 
 #' Normalize a Quack URI

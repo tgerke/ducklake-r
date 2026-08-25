@@ -20,8 +20,10 @@ Returns a lazy reference to a table in the attached DuckLake. Like
 as a single query, only pulling the rows you asked for into R.
 }
 \examples{
-\dontrun{
-attach_ducklake("my_lake", lake_path = "~/data/lake")
+\dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}
+lake_dir <- tempfile("cars_lake_")
+dir.create(lake_dir)
+attach_ducklake("cars_lake", lake_path = lake_dir)
 create_table(mtcars, "cars")
 
 # Query lazily with dplyr, then collect
@@ -29,7 +31,10 @@ get_ducklake_table("cars") |>
   dplyr::filter(cyl > 4) |>
   dplyr::summarise(avg_mpg = mean(mpg), .by = cyl) |>
   dplyr::collect()
-}
+
+detach_ducklake("cars_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=create_table]{create_table()}} to create tables, \code{\link[=get_ducklake_table_asof]{get_ducklake_table_asof()}}

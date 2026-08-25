@@ -11,6 +11,10 @@ install_ducklake(backend = NULL)
 extension is always installed. Pass \code{"postgres"}, \code{"sqlite"}, and/or
 \code{"mysql"} to install the corresponding backend extensions.}
 }
+\value{
+Invisibly, \code{NULL}. Called for its side effect of installing the
+DuckDB extensions into the local extension cache.
+}
 \description{
 Installs the ducklake DuckDB extension and optionally the extensions for
 alternative catalog backends (postgres, sqlite, mysql). Only needs to be
@@ -32,6 +36,7 @@ Other connection management:
 \code{\link[=attach_ducklake]{attach_ducklake()}},
 \code{\link[=create_storage_secret]{create_storage_secret()}},
 \code{\link[=detach_ducklake]{detach_ducklake()}},
+\code{\link[=ducklake_extension_available]{ducklake_extension_available()}},
 \code{\link[=get_ducklake_backend]{get_ducklake_backend()}},
 \code{\link[=get_ducklake_connection]{get_ducklake_connection()}},
 \code{\link[=set_ducklake_connection]{set_ducklake_connection()}}

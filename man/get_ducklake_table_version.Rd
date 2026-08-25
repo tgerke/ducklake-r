@@ -31,15 +31,28 @@ typically the same value - both represent the snapshot identifier.
 Use \code{list_table_snapshots(table_name)} to see all available snapshots and their IDs.
 }
 \examples{
-\dontrun{
+\dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}
+lake_dir <- tempfile("version_lake_")
+dir.create(lake_dir)
+attach_ducklake("version_lake", lake_path = lake_dir)
+create_table(data.frame(id = 1:3, amount = c(10, 20, 30)), "orders")
+
+rows_insert(
+  get_ducklake_table("orders"),
+  data.frame(id = 4L, amount = 40),
+  by = "id"
+)
+
 # Get available snapshots
-snapshots <- list_table_snapshots("my_table")
+snapshots <- list_table_snapshots("orders")
 
 # Query the first snapshot version
-get_ducklake_table_version("my_table", snapshots$snapshot_id[1]) |>
-  filter(status == "active") |>
-  collect()
-}
+get_ducklake_table_version("orders", snapshots$snapshot_id[1]) |>
+  dplyr::collect()
+
+detach_ducklake("version_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 Other time travel:

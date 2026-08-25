@@ -21,12 +21,25 @@ This function discards all changes made since \code{begin_transaction()} was cal
 reverting the database to its state before the transaction began.
 }
 \examples{
-\dontrun{
+\dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}
+lake_dir <- tempfile("rollback_lake_")
+dir.create(lake_dir)
+attach_ducklake("rollback_lake", lake_path = lake_dir)
+create_table(mtcars, "cars")
+
 begin_transaction()
-# ... make changes ...
+rows_delete(
+  get_ducklake_table("cars"),
+  data.frame(gear = 3),
+  by = "gear"
+)
+
 # Something went wrong, rollback
 rollback_transaction()
-}
+
+detach_ducklake("rollback_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 Other transactions:

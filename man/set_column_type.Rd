@@ -29,9 +29,19 @@ checking they fit), \code{\link[=drop_table_column]{drop_table_column()}} the or
 \code{\link[=rename_table_column]{rename_table_column()}} the new column into place.
 }
 \examples{
-\dontrun{
-set_column_type("sales", "order_id", "BIGINT")
-}
+\dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}
+lake_dir <- tempfile("coltype_lake_")
+dir.create(lake_dir)
+attach_ducklake("coltype_lake", lake_path = lake_dir)
+create_table(mtcars, "cars")
+
+# Widening promotions only: INTEGER -> BIGINT is fine
+add_table_column("cars", "order_id", "INTEGER")
+set_column_type("cars", "order_id", "BIGINT")
+
+detach_ducklake("coltype_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=add_table_column]{add_table_column()}}, \code{\link[=drop_table_column]{drop_table_column()}},

@@ -24,14 +24,19 @@ changes or \code{rollback_transaction()} to discard them.
 DuckDB supports full ACID transactions with multiple isolation levels.
 }
 \examples{
-\dontrun{
+\dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}
+lake_dir <- tempfile("begin_lake_")
+dir.create(lake_dir)
+attach_ducklake("begin_lake", lake_path = lake_dir)
+create_table(data.frame(id = 1:3, status = "pending"), "jobs")
+
 # Start a transaction
 begin_transaction()
 
 # Make some changes
-get_ducklake_table("my_table") |>
-  filter(status == "pending") |>
-  mutate(status = "processed") |>
+get_ducklake_table("jobs") |>
+  dplyr::filter(status == "pending") |>
+  dplyr::mutate(status = "processed") |>
   ducklake_exec()
 
 # Commit if everything looks good
@@ -39,7 +44,10 @@ commit_transaction()
 
 # Or rollback if something went wrong
 # rollback_transaction()
-}
+
+detach_ducklake("begin_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 Other transactions:

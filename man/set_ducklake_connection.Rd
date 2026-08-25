@@ -29,11 +29,20 @@ If ducklake was already managing its own connection, that connection is
 shut down before yours is registered.
 }
 \examples{
-\dontrun{
-conn <- DBI::dbConnect(duckdb::duckdb(), dbdir = "my_analysis.duckdb")
+\dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}
+db_file <- tempfile(fileext = ".duckdb")
+lake_dir <- tempfile("own_conn_lake_")
+dir.create(lake_dir)
+
+conn <- DBI::dbConnect(duckdb::duckdb(), dbdir = db_file)
 set_ducklake_connection(conn)
-attach_ducklake("my_lake", lake_path = "~/lakes/my_lake")
-}
+attach_ducklake("own_conn_lake", lake_path = lake_dir)
+
+# A connection you registered is yours to close
+detach_ducklake("own_conn_lake")
+DBI::dbDisconnect(conn, shutdown = TRUE)
+unlink(c(db_file, lake_dir), recursive = TRUE)
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=get_ducklake_connection]{get_ducklake_connection()}}
@@ -42,6 +51,7 @@ Other connection management:
 \code{\link[=attach_ducklake]{attach_ducklake()}},
 \code{\link[=create_storage_secret]{create_storage_secret()}},
 \code{\link[=detach_ducklake]{detach_ducklake()}},
+\code{\link[=ducklake_extension_available]{ducklake_extension_available()}},
 \code{\link[=get_ducklake_backend]{get_ducklake_backend()}},
 \code{\link[=get_ducklake_connection]{get_ducklake_connection()}},
 \code{\link[=install_ducklake]{install_ducklake()}}

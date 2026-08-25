@@ -10,3 +10,4 @@
 ^\.claude$
 ^cran-comments\.md$
 ^CLAUDE\.md$
+^Rplots\.pdf$

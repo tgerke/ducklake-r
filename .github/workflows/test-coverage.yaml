@@ -28,6 +28,13 @@ jobs:
           extra-packages: any::covr, any::xml2
           needs: coverage
 
+      - name: Install the ducklake DuckDB extension
+        run: |
+          con <- DBI::dbConnect(duckdb::duckdb())
+          DBI::dbExecute(con, "INSTALL ducklake;")
+          DBI::dbDisconnect(con, shutdown = TRUE)
+        shell: Rscript {0}
+
       - name: Test coverage
         run: |
           cov <- covr::package_coverage(

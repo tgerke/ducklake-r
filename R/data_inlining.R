@@ -7,9 +7,9 @@
 #'
 #' The limit can be set at three levels (highest priority first):
 #' \enumerate{
-#'   \item **Table-level** – persisted in the DuckLake metadata for a specific table
-#'   \item **Schema-level** – persisted for all tables in a schema
-#'   \item **Global (DuckDB setting)** – applies to all DuckLake connections
+#'   \item **Table-level** -- persisted in the DuckLake metadata for a specific table
+#'   \item **Schema-level** -- persisted for all tables in a schema
+#'   \item **Global (DuckDB setting)** -- applies to all DuckLake connections
 #' }
 #'
 #' @param limit Integer. The maximum number of rows that will be inlined.
@@ -42,17 +42,23 @@
 #' @seealso [get_inlining_row_limit()], [flush_inlined_data()],
 #'   [checkpoint_ducklake()]
 #'
-#' @examples
-#' \dontrun{
+#' @examplesIf ducklake_extension_available()
+#' lake_dir <- tempfile("inline_set_lake_")
+#' dir.create(lake_dir)
+#' attach_ducklake("inline_set_lake", lake_path = lake_dir)
+#' create_table(mtcars, "cars")
+#'
 #' # Change the global default
 #' set_inlining_row_limit(50)
 #'
 #' # Override for a specific table
-#' set_inlining_row_limit(100, table_name = "readings")
+#' set_inlining_row_limit(100, table_name = "cars")
 #'
 #' # Disable inlining globally
 #' set_inlining_row_limit(0)
-#' }
+#'
+#' detach_ducklake("inline_set_lake", shutdown = TRUE)
+#' unlink(lake_dir, recursive = TRUE)
 set_inlining_row_limit <- function(limit,
                                    table_name = NULL,
                                    schema_name = NULL,
@@ -125,14 +131,22 @@ set_inlining_row_limit <- function(limit,
 #'
 #' @seealso [set_inlining_row_limit()]
 #'
-#' @examples
-#' \dontrun{
+#' @examplesIf ducklake_extension_available()
+#' lake_dir <- tempfile("inline_get_lake_")
+#' dir.create(lake_dir)
+#' attach_ducklake("inline_get_lake", lake_path = lake_dir)
+#' create_table(mtcars, "cars")
+#'
+#' set_inlining_row_limit(100, table_name = "cars")
+#'
 #' # Global default
 #' get_inlining_row_limit()
 #'
 #' # Table-specific limit
-#' get_inlining_row_limit(table_name = "readings")
-#' }
+#' get_inlining_row_limit(table_name = "cars")
+#'
+#' detach_ducklake("inline_get_lake", shutdown = TRUE)
+#' unlink(lake_dir, recursive = TRUE)
 get_inlining_row_limit <- function(table_name = NULL,
                                    schema_name = NULL,
                                    ducklake_name = NULL) {
@@ -227,17 +241,21 @@ get_inlining_row_limit <- function(table_name = NULL,
 #'
 #' @seealso [set_inlining_row_limit()], [checkpoint_ducklake()]
 #'
-#' @examples
-#' \dontrun{
+#' @examplesIf ducklake_extension_available()
+#' lake_dir <- tempfile("flush_lake_")
+#' dir.create(lake_dir)
+#' attach_ducklake("flush_lake", lake_path = lake_dir,
+#'                 data_inlining_row_limit = 10)
+#' create_table(head(mtcars, 3), "cars")
+#'
 #' # Flush everything
 #' flush_inlined_data()
 #'
 #' # Flush a specific table
-#' flush_inlined_data(table_name = "readings")
+#' flush_inlined_data(table_name = "cars")
 #'
-#' # Flush a specific schema
-#' flush_inlined_data(schema_name = "staging")
-#' }
+#' detach_ducklake("flush_lake", shutdown = TRUE)
+#' unlink(lake_dir, recursive = TRUE)
 flush_inlined_data <- function(ducklake_name = NULL,
                                table_name = NULL,
                                schema_name = NULL) {
@@ -329,14 +347,20 @@ flush_inlined_data <- function(ducklake_name = NULL,
 #'
 #' @seealso [flush_inlined_data()], [set_inlining_row_limit()]
 #'
-#' @examples
-#' \dontrun{
+#' @examplesIf ducklake_extension_available()
+#' lake_dir <- tempfile("checkpoint_lake_")
+#' dir.create(lake_dir)
+#' attach_ducklake("checkpoint_lake", lake_path = lake_dir)
+#' create_table(mtcars, "cars")
+#'
 #' # Run all maintenance
 #' checkpoint_ducklake()
 #'
 #' # Or specify a named lake
-#' checkpoint_ducklake("my_lake")
-#' }
+#' checkpoint_ducklake("checkpoint_lake")
+#'
+#' detach_ducklake("checkpoint_lake", shutdown = TRUE)
+#' unlink(lake_dir, recursive = TRUE)
 checkpoint_ducklake <- function(ducklake_name = NULL) {
   conn <- get_ducklake_connection()
 

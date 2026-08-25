@@ -24,25 +24,42 @@ creation, so both land as one snapshot. Collecting the table later
 restores the labels (see \code{\link[=get_table_comments]{get_table_comments()}}), and every other
 client of the lake can read them too. Set to \code{FALSE} to skip.}
 }
+\value{
+Invisibly, \code{NULL}. Called for its side effect of creating the
+table in the lake.
+}
 \description{
 Create a DuckLake table
 }
 \examples{
-\dontrun{
-# From URL
-create_table("https://example.com/data.csv", "my_table")
-
-# From local file
-create_table("data.csv", "my_table")
+\dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}
+lake_dir <- tempfile("create_lake_")
+dir.create(lake_dir)
+attach_ducklake("create_lake", lake_path = lake_dir)
 
 # From data.frame
-create_table(mtcars, "my_table")
+create_table(mtcars, "cars")
 
-# From lazy table (pipe-friendly)
-get_ducklake_table("source_table") \%>\% 
-  filter(x > 5) \%>\%
-  create_table("filtered_table")
+# From a local file
+csv_path <- tempfile(fileext = ".csv")
+utils::write.csv(mtcars, csv_path, row.names = FALSE)
+create_table(csv_path, "cars_from_csv")
+
+# From a lazy table (pipe-friendly)
+get_ducklake_table("cars") |>
+  dplyr::filter(cyl > 4) |>
+  create_table("big_cars")
+
+# From a URL -- needs network access and the httpfs extension
+\dontrun{
+create_table("https://example.com/data.csv", "remote_table")
 }
+
+unlink(csv_path)
+
+detach_ducklake("create_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 Other table operations:

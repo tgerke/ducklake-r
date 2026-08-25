@@ -37,13 +37,21 @@ counts until \code{\link[=flush_inlined_data]{flush_inlined_data()}} writes them
 This wraps DuckLake's \code{ducklake_table_info()} function.
 }
 \examples{
-\dontrun{
+\dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}
+lake_dir <- tempfile("info_lake_")
+dir.create(lake_dir)
+attach_ducklake("info_lake", lake_path = lake_dir)
+create_table(mtcars, "cars")
+
 # File statistics for every table in the lake
 get_table_info()
 
 # Just one table
-get_table_info("my_table")
-}
+get_table_info("cars")
+
+detach_ducklake("info_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=plot_table_files]{plot_table_files()}}, \code{\link[=merge_adjacent_files]{merge_adjacent_files()}},

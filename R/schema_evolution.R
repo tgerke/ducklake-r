@@ -22,11 +22,17 @@
 #' @seealso [drop_table_column()], [rename_table_column()],
 #'   [set_column_type()], [rename_ducklake_table()]
 #'
-#' @examples
-#' \dontrun{
-#' add_table_column("adsl", "AGECAT", "VARCHAR")
-#' add_table_column("sales", "discount", "DECIMAL(5,2)", default = 0)
-#' }
+#' @examplesIf ducklake_extension_available()
+#' lake_dir <- tempfile("addcol_lake_")
+#' dir.create(lake_dir)
+#' attach_ducklake("addcol_lake", lake_path = lake_dir)
+#' create_table(mtcars, "cars")
+#'
+#' add_table_column("cars", "grade", "VARCHAR")
+#' add_table_column("cars", "discount", "DECIMAL(5,2)", default = 0)
+#'
+#' detach_ducklake("addcol_lake", shutdown = TRUE)
+#' unlink(lake_dir, recursive = TRUE)
 add_table_column <- function(table_name, column_name, type, default = NULL) {
   conn <- get_ducklake_connection()
   check_column_type(type)
@@ -72,10 +78,16 @@ add_table_column <- function(table_name, column_name, type, default = NULL) {
 #'   [get_ducklake_table_version()] to read snapshots that still have the
 #'   column
 #'
-#' @examples
-#' \dontrun{
-#' drop_table_column("adsl", "SCRATCH_FLAG")
-#' }
+#' @examplesIf ducklake_extension_available()
+#' lake_dir <- tempfile("dropcol_lake_")
+#' dir.create(lake_dir)
+#' attach_ducklake("dropcol_lake", lake_path = lake_dir)
+#' create_table(mtcars, "cars")
+#'
+#' drop_table_column("cars", "carb")
+#'
+#' detach_ducklake("dropcol_lake", shutdown = TRUE)
+#' unlink(lake_dir, recursive = TRUE)
 drop_table_column <- function(table_name, column_name) {
   conn <- get_ducklake_connection()
 
@@ -110,10 +122,16 @@ drop_table_column <- function(table_name, column_name) {
 #' @seealso [add_table_column()], [drop_table_column()],
 #'   [rename_ducklake_table()]
 #'
-#' @examples
-#' \dontrun{
-#' rename_table_column("adsl", from = "AGEGRP", to = "AGEGR1")
-#' }
+#' @examplesIf ducklake_extension_available()
+#' lake_dir <- tempfile("renamecol_lake_")
+#' dir.create(lake_dir)
+#' attach_ducklake("renamecol_lake", lake_path = lake_dir)
+#' create_table(mtcars, "cars")
+#'
+#' rename_table_column("cars", from = "mpg", to = "miles_per_gallon")
+#'
+#' detach_ducklake("renamecol_lake", shutdown = TRUE)
+#' unlink(lake_dir, recursive = TRUE)
 rename_table_column <- function(table_name, from, to) {
   conn <- get_ducklake_connection()
 
@@ -153,10 +171,16 @@ rename_table_column <- function(table_name, from, to) {
 #'
 #' @seealso [rename_table_column()]
 #'
-#' @examples
-#' \dontrun{
-#' rename_ducklake_table("sales", "sales_daily")
-#' }
+#' @examplesIf ducklake_extension_available()
+#' lake_dir <- tempfile("renametbl_lake_")
+#' dir.create(lake_dir)
+#' attach_ducklake("renametbl_lake", lake_path = lake_dir)
+#' create_table(mtcars, "cars")
+#'
+#' rename_ducklake_table("cars", "cars_daily")
+#'
+#' detach_ducklake("renametbl_lake", shutdown = TRUE)
+#' unlink(lake_dir, recursive = TRUE)
 rename_ducklake_table <- function(from, to) {
   conn <- get_ducklake_connection()
 
@@ -201,10 +225,18 @@ rename_ducklake_table <- function(from, to) {
 #' @seealso [add_table_column()], [drop_table_column()],
 #'   [rename_table_column()]
 #'
-#' @examples
-#' \dontrun{
-#' set_column_type("sales", "order_id", "BIGINT")
-#' }
+#' @examplesIf ducklake_extension_available()
+#' lake_dir <- tempfile("coltype_lake_")
+#' dir.create(lake_dir)
+#' attach_ducklake("coltype_lake", lake_path = lake_dir)
+#' create_table(mtcars, "cars")
+#'
+#' # Widening promotions only: INTEGER -> BIGINT is fine
+#' add_table_column("cars", "order_id", "INTEGER")
+#' set_column_type("cars", "order_id", "BIGINT")
+#'
+#' detach_ducklake("coltype_lake", shutdown = TRUE)
+#' unlink(lake_dir, recursive = TRUE)
 set_column_type <- function(table_name, column_name, type) {
   conn <- get_ducklake_connection()
   check_column_type(type)

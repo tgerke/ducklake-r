@@ -44,19 +44,28 @@ This is because the time-travel query looks for snapshots created at or before
 the specified timestamp.
 }
 \examples{
-\dontrun{
-# Query data as it existed yesterday
-yesterday <- Sys.time() - (24 * 60 * 60)
-get_ducklake_table_asof("my_table", yesterday) |>
-  filter(category == "A") |>
-  collect()
+\dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}
+lake_dir <- tempfile("asof_lake_")
+dir.create(lake_dir)
+attach_ducklake("asof_lake", lake_path = lake_dir)
+create_table(data.frame(id = 1:3, amount = c(10, 20, 30)), "orders")
+
+rows_insert(
+  get_ducklake_table("orders"),
+  data.frame(id = 4L, amount = 40),
+  by = "id"
+)
 
 # Query data at a specific snapshot time
-snapshots <- list_table_snapshots("my_table")
+snapshots <- list_table_snapshots("orders")
 # Add 1 second to ensure the snapshot is found
-get_ducklake_table_asof("my_table", snapshots$snapshot_time[2] + 1) |>
-  summarise(total = sum(amount))
-}
+get_ducklake_table_asof("orders", snapshots$snapshot_time[1] + 1) |>
+  dplyr::summarise(total = sum(amount)) |>
+  dplyr::collect()
+
+detach_ducklake("asof_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 Other time travel:

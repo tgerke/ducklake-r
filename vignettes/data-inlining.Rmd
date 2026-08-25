@@ -8,21 +8,10 @@ vignette: >
 ---
 
 ```{r, include = FALSE}
-# Evaluate chunks only where the ducklake DuckDB extension is usable: needs
-# duckdb >= 1.5.1 and, when not already cached, network access to install the
-# extension (not available on CRAN).
-ducklake_available <- tryCatch({
-  packageVersion("duckdb") >= "1.5.1" && {
-    con <- DBI::dbConnect(duckdb::duckdb())
-    ok <- tryCatch({
-      DBI::dbExecute(con, "INSTALL ducklake;")
-      DBI::dbExecute(con, "LOAD ducklake;")
-      TRUE
-    }, error = function(e) FALSE)
-    DBI::dbDisconnect(con, shutdown = TRUE)
-    ok
-  }
-}, error = function(e) FALSE)
+# Evaluate chunks only where the ducklake DuckDB extension is already
+# installed. The probe never downloads anything, so building this vignette
+# needs no network access.
+ducklake_available <- ducklake::ducklake_extension_available()
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
@@ -62,7 +51,8 @@ files with a single call.
 ## Setup
 
 ```{r create-lake, message = FALSE}
-install_ducklake()
+# The ducklake extension only needs installing once per machine:
+# install_ducklake()
 attach_ducklake("sensor_lake", lake_path = vignette_temp_dir)
 ```
 

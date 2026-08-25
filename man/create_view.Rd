@@ -31,16 +31,24 @@ tables alike, and keep piping dplyr verbs onto it. Like tables, views
 are versioned: dropping or replacing one is a snapshot like any other.
 }
 \examples{
-\dontrun{
+\dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}
+lake_dir <- tempfile("view_lake_")
+dir.create(lake_dir)
+attach_ducklake("view_lake", lake_path = lake_dir)
+create_table(mtcars, "cars")
+
 # Encapsulate filtering logic the whole team should share
-get_ducklake_table("adsl") |>
-  filter(SAFFL == "Y") |>
-  select(USUBJID, TRT01A, AGE) |>
-  create_view("v_safety_population")
+get_ducklake_table("cars") |>
+  dplyr::filter(cyl == 4) |>
+  dplyr::select(mpg, cyl, gear) |>
+  create_view("v_efficient_cars")
 
 # Reads run the stored query against current data
-get_ducklake_table("v_safety_population") |> collect()
-}
+get_ducklake_table("v_efficient_cars") |> dplyr::collect()
+
+detach_ducklake("view_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=drop_view]{drop_view()}}, \code{\link[=list_ducklake_tables]{list_ducklake_tables()}},

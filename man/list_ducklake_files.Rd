@@ -42,13 +42,27 @@ the whole lake, see \code{\link[=get_table_info]{get_table_info()}}; for a pictu
 see \code{\link[=plot_table_files]{plot_table_files()}}.
 }
 \examples{
-\dontrun{
+\dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}
+lake_dir <- tempfile("listfiles_lake_")
+dir.create(lake_dir)
+attach_ducklake("listfiles_lake", lake_path = lake_dir)
+create_table(mtcars, "cars")
+rows_insert(
+  get_ducklake_table("cars"),
+  data.frame(mpg = 30, cyl = 4),
+  by = "mpg"
+)
+
 # Files behind a table right now
-list_ducklake_files("readings")
+list_ducklake_files("cars")
 
 # Files as of an earlier snapshot
-list_ducklake_files("readings", snapshot_version = 3)
-}
+first <- min(list_table_snapshots("cars")$snapshot_id)
+list_ducklake_files("cars", snapshot_version = first)
+
+detach_ducklake("listfiles_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=add_data_files]{add_data_files()}}, \code{\link[=get_table_info]{get_table_info()}}

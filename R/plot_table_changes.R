@@ -21,17 +21,28 @@
 #' here. Snapshots that touched the table without changing rows (a schema
 #' change, for example) keep their slot on the axis with no bar.
 #'
-#' @importFrom dplyr .data
 #'
-#' @examples
-#' \dontrun{
+#' @examplesIf ducklake_extension_available() && requireNamespace("ggplot2", quietly = TRUE)
+#' lake_dir <- tempfile("plotchg_lake_")
+#' dir.create(lake_dir)
+#' attach_ducklake("plotchg_lake", lake_path = lake_dir)
+#' create_table(mtcars, "cars")
+#'
+#' rows_update(
+#'   get_ducklake_table("cars"),
+#'   data.frame(mpg = 21, gear = 5),
+#'   by = "mpg"
+#' )
+#'
 #' # Rows inserted, updated, and deleted per snapshot
-#' plot_table_changes("my_table")
+#' plot_table_changes("cars")
 #'
 #' # Customize the result like any ggplot
-#' plot_table_changes("my_table") +
+#' plot_table_changes("cars") +
 #'   ggplot2::theme_classic()
-#' }
+#'
+#' detach_ducklake("plotchg_lake", shutdown = TRUE)
+#' unlink(lake_dir, recursive = TRUE)
 plot_table_changes <- function(table_name, ducklake_name = NULL, conn = NULL) {
   if (!requireNamespace("ggplot2", quietly = TRUE)) {
     cli::cli_abort(c(

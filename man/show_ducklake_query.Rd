@@ -19,12 +19,20 @@ This function shows the SQL that would be generated and executed by ducklake.
 This is useful for debugging and understanding what SQL is being sent to DuckDB.
 }
 \examples{
-\dontrun{
+\dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}
+lake_dir <- tempfile("sql_lake_")
+dir.create(lake_dir)
+attach_ducklake("sql_lake", lake_path = lake_dir)
+create_table(mtcars, "cars")
+
 # Show SQL for an update operation (table name inferred)
-get_ducklake_table("my_table") |>
-  mutate(status = "updated") |>
+get_ducklake_table("cars") |>
+  dplyr::mutate(gear = 5) |>
   show_ducklake_query()
-}
+
+detach_ducklake("sql_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 Other table operations:

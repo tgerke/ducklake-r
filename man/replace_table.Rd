@@ -58,28 +58,36 @@ ducklake_exec() via the in-place UPDATE/DELETE it runs, so either way the
 change is available for time travel.
 }
 \examples{
-\dontrun{
+\dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}
+lake_dir <- tempfile("replace_lake_")
+dir.create(lake_dir)
+attach_ducklake("replace_lake", lake_path = lake_dir)
+create_table(mtcars, "cars")
+
 # Add new derived columns (atomic on its own; creates a new snapshot)
-get_ducklake_table("adsl") |>
-  mutate(
-    AGE65FL = if_else(AGE >= 65, "Y", "N"),
-    AGECAT = case_when(
-      AGE < 65 ~ "<65",
-      AGE >= 65 & AGE < 75 ~ "65-74",
-      AGE >= 75 ~ ">=75"
+get_ducklake_table("cars") |>
+  dplyr::mutate(
+    thirsty = dplyr::if_else(mpg < 20, "Y", "N"),
+    mpg_band = dplyr::case_when(
+      mpg < 15 ~ "<15",
+      mpg < 25 ~ "15-24",
+      TRUE ~ ">=25"
     )
   ) |>
-  replace_table("adsl")
+  replace_table("cars")
 
 # Wrap in with_transaction() to record audit metadata on the snapshot
 with_transaction(
-  get_ducklake_table("adsl") |>
-    select(-AGE65FL, -AGECAT) |>
-    replace_table("adsl"),
+  get_ducklake_table("cars") |>
+    dplyr::select(-thirsty, -mpg_band) |>
+    replace_table("cars"),
   author = "Data Engineer",
-  commit_message = "Drop derived age columns"
+  commit_message = "Drop derived columns"
 )
-}
+
+detach_ducklake("replace_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 Other table operations:

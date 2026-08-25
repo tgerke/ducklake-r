@@ -62,25 +62,42 @@ Ownership of each file transfers to DuckLake: compaction (e.g.
 files that something else still relies on.
 }
 \examples{
-\dontrun{
+\dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}
+lake_dir <- tempfile("addfiles_lake_")
+dir.create(lake_dir)
+attach_ducklake("addfiles_lake", lake_path = lake_dir)
+
+# Write a couple of Parquet extracts to register. Cast explicitly: DuckDB
+# reads a bare 1.5 as DECIMAL, which will not map onto a DOUBLE column.
+extract_dir <- tempfile("extracts_")
+dir.create(extract_dir)
+conn <- get_ducklake_connection()
+jan <- file.path(extract_dir, "jan.parquet")
+feb <- file.path(extract_dir, "feb.parquet")
+DBI::dbExecute(conn, sprintf(
+  "COPY (SELECT 1::INTEGER AS id, 1.5::DOUBLE AS value)
+   TO '\%s' (FORMAT PARQUET);", jan
+))
+DBI::dbExecute(conn, sprintf(
+  "COPY (SELECT 2::INTEGER AS id, 2.5::DOUBLE AS value)
+   TO '\%s' (FORMAT PARQUET);", feb
+))
+
 # Bring an existing Parquet extract into the lake without copying it
 create_table(data.frame(id = integer(), value = numeric()), "readings")
-add_data_files("readings", "extracts/readings_2026.parquet")
+add_data_files("readings", jan)
 
-# Several files at once, tolerating a column the table doesn't have
-add_data_files(
-  "readings",
-  c("extracts/jan.parquet", "extracts/feb.parquet"),
-  ignore_extra_columns = TRUE
-)
+# Register another, tolerating a column the table doesn't have
+add_data_files("readings", feb, ignore_extra_columns = TRUE)
 
 # Create a new table and register an existing Parquet batch atomically
-add_data_files(
-  "clinvar_staging",
-  "extracts/clinvar-2026-07.parquet",
-  create = TRUE
-)
-}
+add_data_files("staging", feb, create = TRUE)
+
+unlink(extract_dir, recursive = TRUE)
+
+detach_ducklake("addfiles_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=list_ducklake_files]{list_ducklake_files()}}, \code{\link[=create_table]{create_table()}}

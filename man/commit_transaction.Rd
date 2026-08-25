@@ -37,10 +37,14 @@ transaction before the \code{COMMIT} statement, as required by the DuckLake
 v1.0 specification.
 }
 \examples{
-\dontrun{
+\dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}
+lake_dir <- tempfile("commit_lake_")
+dir.create(lake_dir)
+attach_ducklake("commit_lake", lake_path = lake_dir)
+
 # Basic commit
 begin_transaction()
-# ... make changes ...
+create_table(iris, "flowers")
 commit_transaction()
 
 # Commit with metadata
@@ -50,7 +54,10 @@ commit_transaction(
   author = "John Doe",
   commit_message = "Add cars dataset"
 )
-}
+
+detach_ducklake("commit_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 Other transactions:

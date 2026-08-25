@@ -17,9 +17,18 @@ Clears a table's declared sort order so newly written data files are no
 longer sorted. Existing files are unaffected.
 }
 \examples{
-\dontrun{
-reset_table_sorting("events")
-}
+\dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}
+lake_dir <- tempfile("unsort_lake_")
+dir.create(lake_dir)
+attach_ducklake("unsort_lake", lake_path = lake_dir)
+create_table(mtcars, "cars")
+
+set_table_sorting("cars", "mpg")
+reset_table_sorting("cars")
+
+detach_ducklake("unsort_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=set_table_sorting]{set_table_sorting()}}

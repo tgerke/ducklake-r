@@ -15,11 +15,17 @@
 #'
 #' @seealso [set_column_comments()], [get_table_comments()]
 #'
-#' @examples
-#' \dontrun{
-#' set_table_comment("adsl", "Subject-level analysis dataset, one row per subject")
-#' set_table_comment("scratch", NULL)  # clear
-#' }
+#' @examplesIf ducklake_extension_available()
+#' lake_dir <- tempfile("comment_lake_")
+#' dir.create(lake_dir)
+#' attach_ducklake("comment_lake", lake_path = lake_dir)
+#' create_table(mtcars, "cars")
+#'
+#' set_table_comment("cars", "Motor Trend road tests, one row per model")
+#' set_table_comment("cars", NULL) # clear
+#'
+#' detach_ducklake("comment_lake", shutdown = TRUE)
+#' unlink(lake_dir, recursive = TRUE)
 set_table_comment <- function(table_name, comment) {
   conn <- get_ducklake_connection()
 
@@ -65,15 +71,21 @@ set_table_comment <- function(table_name, comment) {
 #'
 #' @seealso [set_table_comment()], [get_table_comments()]
 #'
-#' @examples
-#' \dontrun{
+#' @examplesIf ducklake_extension_available()
+#' lake_dir <- tempfile("colcomment_lake_")
+#' dir.create(lake_dir)
+#' attach_ducklake("colcomment_lake", lake_path = lake_dir)
+#' create_table(mtcars, "cars")
+#'
 #' set_column_comments(
-#'   "adsl",
-#'   USUBJID = "Unique subject identifier",
-#'   AGEGR1 = "Age group 1",
-#'   SCRATCH = NA  # clear this one
+#'   "cars",
+#'   mpg = "Miles per US gallon",
+#'   cyl = "Number of cylinders",
+#'   disp = NA # clear this one
 #' )
-#' }
+#'
+#' detach_ducklake("colcomment_lake", shutdown = TRUE)
+#' unlink(lake_dir, recursive = TRUE)
 set_column_comments <- function(table_name, ...) {
   conn <- get_ducklake_connection()
 
@@ -148,14 +160,22 @@ set_column_comments <- function(table_name, ...) {
 #' @seealso [get_metadata_table()] for the raw `ducklake_tag` and
 #'   `ducklake_column_tag` catalog tables.
 #'
-#' @examples
-#' \dontrun{
+#' @examplesIf ducklake_extension_available()
+#' lake_dir <- tempfile("readcomment_lake_")
+#' dir.create(lake_dir)
+#' attach_ducklake("readcomment_lake", lake_path = lake_dir)
+#' create_table(mtcars, "cars")
+#' set_table_comment("cars", "Motor Trend road tests")
+#' set_column_comments("cars", mpg = "Miles per US gallon")
+#'
 #' # Everything documented in the lake
 #' get_table_comments()
 #'
 #' # One table's documentation
-#' get_table_comments("adsl")
-#' }
+#' get_table_comments("cars")
+#'
+#' detach_ducklake("readcomment_lake", shutdown = TRUE)
+#' unlink(lake_dir, recursive = TRUE)
 get_table_comments <- function(table_name = NULL, ducklake_name = NULL) {
   conn <- get_ducklake_connection()
   ducklake_name <- infer_ducklake_name(ducklake_name, conn)

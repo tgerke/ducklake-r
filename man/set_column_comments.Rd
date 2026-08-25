@@ -30,14 +30,22 @@ land as one snapshot. Inside \code{\link[=with_transaction]{with_transaction()}}
 transaction instead.
 }
 \examples{
-\dontrun{
+\dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}
+lake_dir <- tempfile("colcomment_lake_")
+dir.create(lake_dir)
+attach_ducklake("colcomment_lake", lake_path = lake_dir)
+create_table(mtcars, "cars")
+
 set_column_comments(
-  "adsl",
-  USUBJID = "Unique subject identifier",
-  AGEGR1 = "Age group 1",
-  SCRATCH = NA  # clear this one
+  "cars",
+  mpg = "Miles per US gallon",
+  cyl = "Number of cylinders",
+  disp = NA # clear this one
 )
-}
+
+detach_ducklake("colcomment_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=set_table_comment]{set_table_comment()}}, \code{\link[=get_table_comments]{get_table_comments()}}

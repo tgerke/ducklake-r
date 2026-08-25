@@ -38,18 +38,25 @@ and \code{commit_extra_info} arguments in \code{commit_transaction()} or
 \code{with_transaction()} instead.
 }
 \examples{
-\dontrun{
+\dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}
+lake_dir <- tempfile("meta_lake_")
+dir.create(lake_dir)
+attach_ducklake("meta_lake", lake_path = lake_dir)
+
 begin_transaction()
-# ... make changes ...
+create_table(mtcars, "cars")
 commit_transaction()
 
 # Add metadata to the snapshot after the fact
 set_snapshot_metadata(
-  ducklake_name = "my_ducklake",
+  ducklake_name = "meta_lake",
   author = "Data Team",
-  commit_message = "Updated station names for clarity"
+  commit_message = "Added the cars dataset"
 )
-}
+
+detach_ducklake("meta_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 Other transactions:

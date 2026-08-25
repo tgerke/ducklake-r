@@ -30,10 +30,18 @@ and earlier snapshots still show the old schema. Compare
 \code{\link[=replace_table]{replace_table()}}, which collects the table into R and rewrites it.
 }
 \examples{
-\dontrun{
-add_table_column("adsl", "AGECAT", "VARCHAR")
-add_table_column("sales", "discount", "DECIMAL(5,2)", default = 0)
-}
+\dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}
+lake_dir <- tempfile("addcol_lake_")
+dir.create(lake_dir)
+attach_ducklake("addcol_lake", lake_path = lake_dir)
+create_table(mtcars, "cars")
+
+add_table_column("cars", "grade", "VARCHAR")
+add_table_column("cars", "discount", "DECIMAL(5,2)", default = 0)
+
+detach_ducklake("addcol_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=drop_table_column]{drop_table_column()}}, \code{\link[=rename_table_column]{rename_table_column()}},

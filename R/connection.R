@@ -20,10 +20,10 @@
 #' @export
 #'
 #' @examples
-#' \dontrun{
 #' conn <- get_ducklake_connection()
 #' DBI::dbGetQuery(conn, "SELECT version()")
-#' }
+#'
+#' detach_ducklake(shutdown = TRUE)
 get_ducklake_connection <- function() {
   conn <- .ducklake_env$conn
   if (!is.null(conn)) {
@@ -64,12 +64,19 @@ get_ducklake_connection <- function() {
 #'
 #' @seealso [get_ducklake_connection()]
 #'
-#' @examples
-#' \dontrun{
-#' conn <- DBI::dbConnect(duckdb::duckdb(), dbdir = "my_analysis.duckdb")
+#' @examplesIf ducklake_extension_available()
+#' db_file <- tempfile(fileext = ".duckdb")
+#' lake_dir <- tempfile("own_conn_lake_")
+#' dir.create(lake_dir)
+#'
+#' conn <- DBI::dbConnect(duckdb::duckdb(), dbdir = db_file)
 #' set_ducklake_connection(conn)
-#' attach_ducklake("my_lake", lake_path = "~/lakes/my_lake")
-#' }
+#' attach_ducklake("own_conn_lake", lake_path = lake_dir)
+#'
+#' # A connection you registered is yours to close
+#' detach_ducklake("own_conn_lake")
+#' DBI::dbDisconnect(conn, shutdown = TRUE)
+#' unlink(c(db_file, lake_dir), recursive = TRUE)
 set_ducklake_connection <- function(conn) {
   if (!inherits(conn, "duckdb_connection")) {
     cli::cli_abort(c(
@@ -237,15 +244,18 @@ unregister_lake <- function(ducklake_name = NULL) {
 #' @family connection management
 #' @export
 #'
-#' @examples
-#' \dontrun{
-#' attach_ducklake("my_lake", lake_path = "~/data/lake")
+#' @examplesIf ducklake_extension_available()
+#' lake_dir <- tempfile("backend_lake_")
+#' dir.create(lake_dir)
+#' attach_ducklake("backend_lake", lake_path = lake_dir)
+#'
 #' get_ducklake_backend()
-#' #> [1] "duckdb"
 #'
 #' # With several lakes attached, look one up by name
-#' get_ducklake_backend("my_sqlite_lake")
-#' }
+#' get_ducklake_backend("backend_lake")
+#'
+#' detach_ducklake("backend_lake", shutdown = TRUE)
+#' unlink(lake_dir, recursive = TRUE)
 get_ducklake_backend <- function(ducklake_name = NULL) {
   lakes <- .ducklake_env$lakes
   if (is.null(lakes) || length(lakes) == 0) {
@@ -285,19 +295,22 @@ get_ducklake_backend <- function(ducklake_name = NULL) {
 #'   Only applies to the connection ducklake created itself; a connection
 #'   registered with [set_ducklake_connection()] is never closed for you.
 #'
-#' @returns NULL
+#' @returns Invisibly, `NULL`. Called for its side effect of detaching the
+#'   catalog from the package's DuckDB connection.
 #' @family connection management
 #' @export
 #'
-#' @examples
-#' \dontrun{
-#' attach_ducklake("my_ducklake", lake_path = "path/to/lake")
+#' @examplesIf ducklake_extension_available()
+#' lake_dir <- tempfile("detach_lake_")
+#' dir.create(lake_dir)
+#' attach_ducklake("detach_lake", lake_path = lake_dir)
 #' # ... do work ...
-#' detach_ducklake("my_ducklake")
+#' detach_ducklake("detach_lake")
 #'
 #' # Full shutdown when completely done
-#' detach_ducklake("my_ducklake", shutdown = TRUE)
-#' }
+#' attach_ducklake("detach_lake", lake_path = lake_dir)
+#' detach_ducklake("detach_lake", shutdown = TRUE)
+#' unlink(lake_dir, recursive = TRUE)
 detach_ducklake <- function(ducklake_name = NULL, shutdown = FALSE) {
   conn <- .ducklake_env$conn
 

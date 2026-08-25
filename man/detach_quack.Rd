@@ -10,6 +10,10 @@ detach_quack(quack_name = NULL)
 \item{quack_name}{Name of the remote catalog to detach. If \code{NULL}, nothing is
 detached.}
 }
+\value{
+Invisibly, \code{NULL}. Called for its side effect of detaching the
+remote catalog.
+}
 \description{
 Detaches a remote catalog previously attached with \code{\link[=attach_quack]{attach_quack()}}. The
 DuckDB connection itself stays alive.

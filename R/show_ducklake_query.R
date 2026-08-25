@@ -10,13 +10,19 @@
 #' @family table operations
 #' @export
 #'
-#' @examples
-#' \dontrun{
+#' @examplesIf ducklake_extension_available()
+#' lake_dir <- tempfile("sql_lake_")
+#' dir.create(lake_dir)
+#' attach_ducklake("sql_lake", lake_path = lake_dir)
+#' create_table(mtcars, "cars")
+#'
 #' # Show SQL for an update operation (table name inferred)
-#' get_ducklake_table("my_table") |>
-#'   mutate(status = "updated") |>
+#' get_ducklake_table("cars") |>
+#'   dplyr::mutate(gear = 5) |>
 #'   show_ducklake_query()
-#' }
+#'
+#' detach_ducklake("sql_lake", shutdown = TRUE)
+#' unlink(lake_dir, recursive = TRUE)
 show_ducklake_query <- function(.data, table_name = NULL) {
   
   # Extract table name from attribute if not provided

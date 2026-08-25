@@ -33,17 +33,23 @@
 #'
 #' @seealso [get_ducklake_options()], [set_inlining_row_limit()]
 #'
-#' @examples
-#' \dontrun{
+#' @examplesIf ducklake_extension_available()
+#' lake_dir <- tempfile("setopt_lake_")
+#' dir.create(lake_dir)
+#' attach_ducklake("setopt_lake", lake_path = lake_dir)
+#' create_table(mtcars, "cars")
+#'
 #' # Smaller files at some write cost, lake-wide
 #' set_ducklake_option("parquet_compression", "zstd")
 #'
-#' # Make every snapshot carry a commit message
+#' # Skip one table during compaction
+#' set_ducklake_option("auto_compact", FALSE, table_name = "cars")
+#'
+#' # Make every snapshot carry a commit message (constrains later writes)
 #' set_ducklake_option("require_commit_message", TRUE)
 #'
-#' # Skip one table during compaction
-#' set_ducklake_option("auto_compact", FALSE, table_name = "audit_log")
-#' }
+#' detach_ducklake("setopt_lake", shutdown = TRUE)
+#' unlink(lake_dir, recursive = TRUE)
 set_ducklake_option <- function(option,
                                 value,
                                 table_name = NULL,
@@ -98,10 +104,16 @@ set_ducklake_option <- function(option,
 #'
 #' @seealso [set_ducklake_option()]
 #'
-#' @examples
-#' \dontrun{
+#' @examplesIf ducklake_extension_available()
+#' lake_dir <- tempfile("getopt_lake_")
+#' dir.create(lake_dir)
+#' attach_ducklake("getopt_lake", lake_path = lake_dir)
+#'
+#' set_ducklake_option("parquet_compression", "zstd")
 #' get_ducklake_options()
-#' }
+#'
+#' detach_ducklake("getopt_lake", shutdown = TRUE)
+#' unlink(lake_dir, recursive = TRUE)
 get_ducklake_options <- function(ducklake_name = NULL) {
   conn <- get_ducklake_connection()
   ducklake_name <- infer_ducklake_name(ducklake_name, conn)

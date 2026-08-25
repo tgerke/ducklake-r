@@ -46,6 +46,13 @@ jobs:
           extra-packages: any::rcmdcheck
           needs: check
 
+      - name: Install the ducklake DuckDB extension
+        run: |
+          con <- DBI::dbConnect(duckdb::duckdb())
+          DBI::dbExecute(con, "INSTALL ducklake;")
+          DBI::dbDisconnect(con, shutdown = TRUE)
+        shell: Rscript {0}
+
       - uses: r-lib/actions/check-r-package@v2
         with:
           upload-snapshots: true

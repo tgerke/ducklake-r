@@ -41,7 +41,7 @@ and cleanup) for optimal storage efficiency.
 }
 }
 \examples{
-\dontrun{
+\dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}
 # Create a DuckLake
 lake_dir <- tempfile("my_lake")
 dir.create(lake_dir)
@@ -64,7 +64,10 @@ backup_dir <- backup_ducklake(
 # Restore (override_data_path needed when location differs):
 # detach_ducklake("my_lake")
 # attach_ducklake("my_lake", lake_path = backup_dir, override_data_path = TRUE)
-}
+
+detach_ducklake("my_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 Other maintenance:

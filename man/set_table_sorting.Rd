@@ -39,13 +39,21 @@ sorting on insert with
 \code{set_ducklake_option("sort_on_insert", FALSE, table_name = ...)}.
 }
 \examples{
-\dontrun{
-# Order events by time so time-window filters prune files
-set_table_sorting("events", "event_time")
+\dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}
+lake_dir <- tempfile("sort_lake_")
+dir.create(lake_dir)
+attach_ducklake("sort_lake", lake_path = lake_dir)
+create_table(mtcars, "cars")
+
+# Order rows so range filters can prune files
+set_table_sorting("cars", "mpg")
 
 # Compound key with explicit directions
-set_table_sorting("events", c("event_time ASC", "event_type DESC"))
-}
+set_table_sorting("cars", c("cyl ASC", "mpg DESC"))
+
+detach_ducklake("sort_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=reset_table_sorting]{reset_table_sorting()}}, \code{\link[=set_ducklake_option]{set_ducklake_option()}},

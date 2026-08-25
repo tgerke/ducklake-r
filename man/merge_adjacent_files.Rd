@@ -47,13 +47,27 @@ referenced by older snapshots. They are scheduled for deletion once no
 snapshot references them; run \code{\link[=cleanup_old_files]{cleanup_old_files()}} to remove them.
 }
 \examples{
-\dontrun{
+\dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}
+lake_dir <- tempfile("merge_files_lake_")
+dir.create(lake_dir)
+attach_ducklake("merge_files_lake", lake_path = lake_dir)
+create_table(mtcars, "cars")
+
+rows_insert(
+  get_ducklake_table("cars"),
+  data.frame(mpg = 30, cyl = 4),
+  by = "mpg"
+)
+
 # Compact the whole lake
 merge_adjacent_files()
 
 # Compact one table, only touching files under 10 MB
-merge_adjacent_files(table_name = "readings", max_file_size = 10e6)
-}
+merge_adjacent_files(table_name = "cars", max_file_size = 10e6)
+
+detach_ducklake("merge_files_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=cleanup_old_files]{cleanup_old_files()}}, \code{\link[=checkpoint_ducklake]{checkpoint_ducklake()}},

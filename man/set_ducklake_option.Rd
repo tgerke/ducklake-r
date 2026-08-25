@@ -49,16 +49,24 @@ Commonly tuned options include \code{parquet_compression} (default
 (default \code{FALSE}).
 }
 \examples{
-\dontrun{
+\dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}
+lake_dir <- tempfile("setopt_lake_")
+dir.create(lake_dir)
+attach_ducklake("setopt_lake", lake_path = lake_dir)
+create_table(mtcars, "cars")
+
 # Smaller files at some write cost, lake-wide
 set_ducklake_option("parquet_compression", "zstd")
 
-# Make every snapshot carry a commit message
+# Skip one table during compaction
+set_ducklake_option("auto_compact", FALSE, table_name = "cars")
+
+# Make every snapshot carry a commit message (constrains later writes)
 set_ducklake_option("require_commit_message", TRUE)
 
-# Skip one table during compaction
-set_ducklake_option("auto_compact", FALSE, table_name = "audit_log")
-}
+detach_ducklake("setopt_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=get_ducklake_options]{get_ducklake_options()}}, \code{\link[=set_inlining_row_limit]{set_inlining_row_limit()}}

@@ -47,7 +47,11 @@ Many industries rely on flat-file workflows (CSV, XPT, Excel, etc.) that create 
 
 ## Installation
 
-Install the development version of ducklake with:
+``` r
+install.packages("ducklake")
+```
+
+### Development version
 
 ``` r
 pak::pak("tgerke/ducklake-r")
@@ -56,8 +60,12 @@ pak::pak("tgerke/ducklake-r")
 ducklake requires the [duckdb](https://r.duckdb.org) R package version
 1.5.1 or newer (DuckDB engine 1.5.1+, matching the stable
 [DuckLake v1.0 specification](https://ducklake.select/docs/stable/specification/introduction)).
-The Quack remote-access features need DuckDB 1.5.3 or newer, available on
-CRAN since duckdb 1.5.4.
+The Quack remote-access features are the exception: they need DuckDB 1.5.3 or
+newer, which means duckdb 1.5.4 or newer from CRAN.
+
+DuckLake itself ships as a DuckDB extension that is downloaded on first use.
+Run `install_ducklake()` once per machine, or check whether you already have
+it with `ducklake_extension_available()`.
 
 ducklake manages its own DuckDB connection, so there is nothing to set up:
 just `attach_ducklake()` and go. If you prefer to supply your own connection

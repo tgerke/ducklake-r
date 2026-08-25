@@ -42,26 +42,41 @@
 #'
 #' @seealso [list_ducklake_files()], [create_table()]
 #'
-#' @examples
-#' \dontrun{
+#' @examplesIf ducklake_extension_available()
+#' lake_dir <- tempfile("addfiles_lake_")
+#' dir.create(lake_dir)
+#' attach_ducklake("addfiles_lake", lake_path = lake_dir)
+#'
+#' # Write a couple of Parquet extracts to register. Cast explicitly: DuckDB
+#' # reads a bare 1.5 as DECIMAL, which will not map onto a DOUBLE column.
+#' extract_dir <- tempfile("extracts_")
+#' dir.create(extract_dir)
+#' conn <- get_ducklake_connection()
+#' jan <- file.path(extract_dir, "jan.parquet")
+#' feb <- file.path(extract_dir, "feb.parquet")
+#' DBI::dbExecute(conn, sprintf(
+#'   "COPY (SELECT 1::INTEGER AS id, 1.5::DOUBLE AS value)
+#'    TO '%s' (FORMAT PARQUET);", jan
+#' ))
+#' DBI::dbExecute(conn, sprintf(
+#'   "COPY (SELECT 2::INTEGER AS id, 2.5::DOUBLE AS value)
+#'    TO '%s' (FORMAT PARQUET);", feb
+#' ))
+#'
 #' # Bring an existing Parquet extract into the lake without copying it
 #' create_table(data.frame(id = integer(), value = numeric()), "readings")
-#' add_data_files("readings", "extracts/readings_2026.parquet")
+#' add_data_files("readings", jan)
 #'
-#' # Several files at once, tolerating a column the table doesn't have
-#' add_data_files(
-#'   "readings",
-#'   c("extracts/jan.parquet", "extracts/feb.parquet"),
-#'   ignore_extra_columns = TRUE
-#' )
+#' # Register another, tolerating a column the table doesn't have
+#' add_data_files("readings", feb, ignore_extra_columns = TRUE)
 #'
 #' # Create a new table and register an existing Parquet batch atomically
-#' add_data_files(
-#'   "clinvar_staging",
-#'   "extracts/clinvar-2026-07.parquet",
-#'   create = TRUE
-#' )
-#' }
+#' add_data_files("staging", feb, create = TRUE)
+#'
+#' unlink(extract_dir, recursive = TRUE)
+#'
+#' detach_ducklake("addfiles_lake", shutdown = TRUE)
+#' unlink(lake_dir, recursive = TRUE)
 add_data_files <- function(table_name,
                            files,
                            schema_name = NULL,
@@ -179,14 +194,26 @@ add_data_files <- function(table_name,
 #'
 #' @seealso [add_data_files()], [get_table_info()]
 #'
-#' @examples
-#' \dontrun{
+#' @examplesIf ducklake_extension_available()
+#' lake_dir <- tempfile("listfiles_lake_")
+#' dir.create(lake_dir)
+#' attach_ducklake("listfiles_lake", lake_path = lake_dir)
+#' create_table(mtcars, "cars")
+#' rows_insert(
+#'   get_ducklake_table("cars"),
+#'   data.frame(mpg = 30, cyl = 4),
+#'   by = "mpg"
+#' )
+#'
 #' # Files behind a table right now
-#' list_ducklake_files("readings")
+#' list_ducklake_files("cars")
 #'
 #' # Files as of an earlier snapshot
-#' list_ducklake_files("readings", snapshot_version = 3)
-#' }
+#' first <- min(list_table_snapshots("cars")$snapshot_id)
+#' list_ducklake_files("cars", snapshot_version = first)
+#'
+#' detach_ducklake("listfiles_lake", shutdown = TRUE)
+#' unlink(lake_dir, recursive = TRUE)
 list_ducklake_files <- function(table_name,
                                 schema_name = NULL,
                                 snapshot_version = NULL,

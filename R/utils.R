@@ -12,6 +12,31 @@ db_execute <- function(sql, conn = get_ducklake_connection()) {
   invisible(DBI::dbExecute(conn, sql))
 }
 
+#' Load a DuckDB extension, installing it first if needed
+#'
+#' Says so before installing. An install downloads into DuckDB's extension
+#' cache under the user's home directory, which should never be a silent
+#' side effect of calling an unrelated function.
+#'
+#' @param ext Extension name.
+#' @param conn A DBI connection; defaults to the shared ducklake connection.
+#' @returns Invisibly, `NULL`.
+#' @noRd
+load_or_install_extension <- function(ext, conn = get_ducklake_connection()) {
+  tryCatch(
+    db_execute(sprintf("LOAD %s;", ext), conn = conn),
+    error = function(e) {
+      cli::cli_inform(c(
+        "Installing the {.pkg {ext}} DuckDB extension.",
+        "i" = "Downloaded once into DuckDB's extension cache under {.path ~/.duckdb/}."
+      ))
+      db_execute(sprintf("INSTALL %s;", ext), conn = conn)
+      db_execute(sprintf("LOAD %s;", ext), conn = conn)
+    }
+  )
+  invisible(NULL)
+}
+
 #' Quote a (possibly schema-qualified) identifier for SQL
 #'
 #' Splits `x` on `.` and quotes each part with [DBI::dbQuoteIdentifier()],

@@ -45,17 +45,28 @@ longer referenced are merely scheduled for deletion. Run
 The most recent snapshot can never be expired.
 }
 \examples{
-\dontrun{
+\dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}
+lake_dir <- tempfile("expire_lake_")
+dir.create(lake_dir)
+attach_ducklake("expire_lake", lake_path = lake_dir)
+create_table(mtcars, "cars")
+
+rows_insert(
+  get_ducklake_table("cars"),
+  data.frame(mpg = 30, cyl = 4),
+  by = "mpg"
+)
+
 # Preview what a one-week retention policy would remove
 expire_snapshots(older_than = Sys.time() - 7 * 24 * 60 * 60, dry_run = TRUE)
 
-# Expire it for real, then reclaim the storage
-expire_snapshots(older_than = Sys.time() - 7 * 24 * 60 * 60)
+# Expire everything older than now, then reclaim the storage
+expire_snapshots(older_than = Sys.time())
 cleanup_old_files(cleanup_all = TRUE)
 
-# Expire two specific snapshots
-expire_snapshots(versions = c(2, 3))
-}
+detach_ducklake("expire_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=cleanup_old_files]{cleanup_old_files()}}, \code{\link[=checkpoint_ducklake]{checkpoint_ducklake()}},
