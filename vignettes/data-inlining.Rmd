@@ -225,7 +225,7 @@ flush_inlined_data(table_name = "readings")
 `checkpoint_ducklake()` runs all maintenance operations in sequence—flush,
 compaction, snapshot expiration, and file cleanup:
 
-```{r checkpoint, eval = .Platform$OS.type != "windows"}
+```{r checkpoint, eval = ducklake_available && .Platform$OS.type != "windows"}
 checkpoint_ducklake()
 ```
 

@@ -37,11 +37,20 @@ ducklake_extension_available <- function() {
     {
       con <- DBI::dbConnect(duckdb::duckdb())
       on.exit(DBI::dbDisconnect(con, shutdown = TRUE), add = TRUE)
-      # Without this, a failed LOAD silently downloads the extension into
-      # ~/.duckdb/extensions/ -- exactly what this probe must not do.
-      DBI::dbExecute(con, "SET autoinstall_known_extensions=false;")
-      DBI::dbExecute(con, "LOAD ducklake;")
-      TRUE
+      # Ask the catalog rather than attempting LOAD: a failed LOAD can trigger
+      # DuckDB's automatic install, which downloads into ~/.duckdb/. Reading
+      # duckdb_extensions() cannot download anything.
+      installed <- DBI::dbGetQuery(
+        con,
+        "SELECT installed FROM duckdb_extensions() WHERE extension_name = 'ducklake'"
+      )
+      if (nrow(installed) != 1 || !isTRUE(installed$installed[1])) {
+        FALSE
+      } else {
+        # Already installed, so this LOAD cannot reach the network.
+        DBI::dbExecute(con, "LOAD ducklake;")
+        TRUE
+      }
     },
     error = function(e) FALSE
   )
