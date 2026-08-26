@@ -23,25 +23,30 @@
 #' followed by `filter()`) are also refused rather than mistranslated. Use
 #' [show_ducklake_query()] to preview the generated SQL without running it.
 #'
-#' @examples
-#' \dontrun{
-#' # Delete rows that don't match filter (table name inferred)
-#' get_ducklake_table("my_table") |>
-#'   filter(status == "inactive") |>
-#'   ducklake_exec()
+#' @examplesIf ducklake_extension_available()
+#' lake_dir <- tempfile("exec_lake_")
+#' dir.create(lake_dir)
+#' attach_ducklake("exec_lake", lake_path = lake_dir)
+#' create_table(data.frame(id = 1:3, status = "pending"), "jobs")
 #'
 #' # Update specific rows (table name inferred)
-#' get_ducklake_table("my_table") |>
-#'   filter(id == 123) |>
-#'   mutate(status = "updated") |>
+#' get_ducklake_table("jobs") |>
+#'   dplyr::filter(id == 1) |>
+#'   dplyr::mutate(status = "updated") |>
 #'   ducklake_exec()
 #'
-#' # Or provide table name explicitly
-#' tbl(con, "my_table") |>
-#'   select(id, name) |>
-#'   mutate(computed_field = name * 2) |>
-#'   ducklake_exec("my_table")
-#' }
+#' # Delete rows matching a filter
+#' get_ducklake_table("jobs") |>
+#'   dplyr::filter(status == "pending") |>
+#'   ducklake_exec()
+#'
+#' # Or provide the table name explicitly
+#' get_ducklake_table("jobs") |>
+#'   dplyr::mutate(status = "done") |>
+#'   ducklake_exec("jobs")
+#'
+#' detach_ducklake("exec_lake", shutdown = TRUE)
+#' unlink(lake_dir, recursive = TRUE)
 ducklake_exec <- function(.data, table_name = NULL, .quiet = TRUE) {
   
   # Extract table name from attribute if not provided

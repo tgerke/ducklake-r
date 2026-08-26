@@ -21,9 +21,17 @@ Renames a column in place with \verb{ALTER TABLE ... RENAME COLUMN}, a
 metadata-only change.
 }
 \examples{
-\dontrun{
-rename_table_column("adsl", from = "AGEGRP", to = "AGEGR1")
-}
+\dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}
+lake_dir <- tempfile("renamecol_lake_")
+dir.create(lake_dir)
+attach_ducklake("renamecol_lake", lake_path = lake_dir)
+create_table(mtcars, "cars")
+
+rename_table_column("cars", from = "mpg", to = "miles_per_gallon")
+
+detach_ducklake("renamecol_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=add_table_column]{add_table_column()}}, \code{\link[=drop_table_column]{drop_table_column()}},

@@ -26,13 +26,23 @@ Returns the effective data inlining row limit. When no table- or schema-level
 override is configured, the global DuckDB default is returned.
 }
 \examples{
-\dontrun{
+\dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}
+lake_dir <- tempfile("inline_get_lake_")
+dir.create(lake_dir)
+attach_ducklake("inline_get_lake", lake_path = lake_dir)
+create_table(mtcars, "cars")
+
+set_inlining_row_limit(100, table_name = "cars")
+
 # Global default
 get_inlining_row_limit()
 
 # Table-specific limit
-get_inlining_row_limit(table_name = "readings")
-}
+get_inlining_row_limit(table_name = "cars")
+
+detach_ducklake("inline_get_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=set_inlining_row_limit]{set_inlining_row_limit()}}

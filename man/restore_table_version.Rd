@@ -49,21 +49,34 @@ inside a transaction. Because the restore creates a new snapshot, it is
 itself reversible with another \code{restore_table_version()} call.
 }
 \examples{
-\dontrun{
-# Restore to snapshot 5
-restore_table_version("my_table", version = 5)
+\dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}
+lake_dir <- tempfile("restore_lake_")
+dir.create(lake_dir)
+attach_ducklake("restore_lake", lake_path = lake_dir)
+create_table(data.frame(id = 1:3, amount = c(10, 20, 30)), "orders")
 
-# Restore to a specific timestamp
-restore_table_version("my_table", timestamp = "2024-01-15 10:00:00")
+rows_delete(
+  get_ducklake_table("orders"),
+  data.frame(id = 1L),
+  by = "id"
+)
+snapshots <- list_table_snapshots("orders")
+first_version <- snapshots$snapshot_id[1]
+
+# Roll the table back to its first snapshot
+restore_table_version("orders", version = first_version)
 
 # Record who performed the restore in the audit trail
 restore_table_version(
-  "my_table",
-  version = 5,
+  "orders",
+  version = first_version,
   author = "Data Steward",
   commit_message = "Roll back erroneous bulk update"
 )
-}
+
+detach_ducklake("restore_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=get_ducklake_table_version]{get_ducklake_table_version()}}, \code{\link[=get_ducklake_table_asof]{get_ducklake_table_asof()}},

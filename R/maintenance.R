@@ -32,18 +32,27 @@
 #' @seealso [cleanup_old_files()], [checkpoint_ducklake()],
 #'   [list_table_snapshots()]
 #'
-#' @examples
-#' \dontrun{
+#' @examplesIf ducklake_extension_available()
+#' lake_dir <- tempfile("expire_lake_")
+#' dir.create(lake_dir)
+#' attach_ducklake("expire_lake", lake_path = lake_dir)
+#' create_table(mtcars, "cars")
+#'
+#' rows_insert(
+#'   get_ducklake_table("cars"),
+#'   data.frame(mpg = 30, cyl = 4),
+#'   by = "mpg"
+#' )
+#'
 #' # Preview what a one-week retention policy would remove
 #' expire_snapshots(older_than = Sys.time() - 7 * 24 * 60 * 60, dry_run = TRUE)
 #'
-#' # Expire it for real, then reclaim the storage
-#' expire_snapshots(older_than = Sys.time() - 7 * 24 * 60 * 60)
+#' # Expire everything older than now, then reclaim the storage
+#' expire_snapshots(older_than = Sys.time())
 #' cleanup_old_files(cleanup_all = TRUE)
 #'
-#' # Expire two specific snapshots
-#' expire_snapshots(versions = c(2, 3))
-#' }
+#' detach_ducklake("expire_lake", shutdown = TRUE)
+#' unlink(lake_dir, recursive = TRUE)
 expire_snapshots <- function(ducklake_name = NULL,
                              older_than = NULL,
                              versions = NULL,
@@ -128,14 +137,26 @@ expire_snapshots <- function(ducklake_name = NULL,
 #' @seealso [cleanup_old_files()], [checkpoint_ducklake()],
 #'   [flush_inlined_data()]
 #'
-#' @examples
-#' \dontrun{
+#' @examplesIf ducklake_extension_available()
+#' lake_dir <- tempfile("merge_files_lake_")
+#' dir.create(lake_dir)
+#' attach_ducklake("merge_files_lake", lake_path = lake_dir)
+#' create_table(mtcars, "cars")
+#'
+#' rows_insert(
+#'   get_ducklake_table("cars"),
+#'   data.frame(mpg = 30, cyl = 4),
+#'   by = "mpg"
+#' )
+#'
 #' # Compact the whole lake
 #' merge_adjacent_files()
 #'
 #' # Compact one table, only touching files under 10 MB
-#' merge_adjacent_files(table_name = "readings", max_file_size = 10e6)
-#' }
+#' merge_adjacent_files(table_name = "cars", max_file_size = 10e6)
+#'
+#' detach_ducklake("merge_files_lake", shutdown = TRUE)
+#' unlink(lake_dir, recursive = TRUE)
 merge_adjacent_files <- function(ducklake_name = NULL,
                                  table_name = NULL,
                                  schema_name = NULL,
@@ -262,15 +283,23 @@ run_file_cleanup <- function(sql_function, what,
 #' @seealso [expire_snapshots()], [delete_orphaned_files()],
 #'   [checkpoint_ducklake()]
 #'
-#' @examples
-#' \dontrun{
+#' @examplesIf ducklake_extension_available()
+#' lake_dir <- tempfile("cleanup_lake_")
+#' dir.create(lake_dir)
+#' attach_ducklake("cleanup_lake", lake_path = lake_dir)
+#' create_table(mtcars, "cars")
+#'
+#' expire_snapshots(older_than = Sys.time())
+#'
 #' # Preview, then delete everything that is scheduled
 #' cleanup_old_files(dry_run = TRUE, cleanup_all = TRUE)
 #' cleanup_old_files(cleanup_all = TRUE)
 #'
 #' # Only delete files scheduled more than a week ago
 #' cleanup_old_files(older_than = Sys.time() - 7 * 24 * 60 * 60)
-#' }
+#'
+#' detach_ducklake("cleanup_lake", shutdown = TRUE)
+#' unlink(lake_dir, recursive = TRUE)
 cleanup_old_files <- function(ducklake_name = NULL,
                               older_than = NULL,
                               cleanup_all = FALSE,
@@ -305,12 +334,17 @@ cleanup_old_files <- function(ducklake_name = NULL,
 #'
 #' @seealso [cleanup_old_files()], [checkpoint_ducklake()]
 #'
-#' @examples
-#' \dontrun{
+#' @examplesIf ducklake_extension_available()
+#' lake_dir <- tempfile("orphan_lake_")
+#' dir.create(lake_dir)
+#' attach_ducklake("orphan_lake", lake_path = lake_dir)
+#' create_table(mtcars, "cars")
+#'
 #' # Always preview orphan deletion first
 #' delete_orphaned_files(dry_run = TRUE, cleanup_all = TRUE)
-#' delete_orphaned_files(cleanup_all = TRUE)
-#' }
+#'
+#' detach_ducklake("orphan_lake", shutdown = TRUE)
+#' unlink(lake_dir, recursive = TRUE)
 delete_orphaned_files <- function(ducklake_name = NULL,
                                   older_than = NULL,
                                   cleanup_all = FALSE,
@@ -345,14 +379,26 @@ delete_orphaned_files <- function(ducklake_name = NULL,
 #'
 #' @seealso [cleanup_old_files()], [checkpoint_ducklake()]
 #'
-#' @examples
-#' \dontrun{
+#' @examplesIf ducklake_extension_available()
+#' lake_dir <- tempfile("rewrite_lake_")
+#' dir.create(lake_dir)
+#' attach_ducklake("rewrite_lake", lake_path = lake_dir)
+#' create_table(mtcars, "cars")
+#'
+#' rows_delete(
+#'   get_ducklake_table("cars"),
+#'   data.frame(gear = 3),
+#'   by = "gear"
+#' )
+#'
 #' # Rewrite any file that is at least half deleted
-#' rewrite_data_files("my_lake", delete_threshold = 0.5)
+#' rewrite_data_files("rewrite_lake", delete_threshold = 0.5)
 #'
 #' # Just one table, with DuckLake's default threshold
-#' rewrite_data_files(table_name = "events")
-#' }
+#' rewrite_data_files(table_name = "cars")
+#'
+#' detach_ducklake("rewrite_lake", shutdown = TRUE)
+#' unlink(lake_dir, recursive = TRUE)
 rewrite_data_files <- function(ducklake_name = NULL,
                                table_name = NULL,
                                delete_threshold = NULL) {

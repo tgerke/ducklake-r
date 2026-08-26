@@ -63,13 +63,21 @@ in-place operations preserve in the change feed.
 }
 }
 \examples{
-\dontrun{
+\dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}
+lake_dir <- tempfile("rowsdel_lake_")
+dir.create(lake_dir)
+attach_ducklake("rowsdel_lake", lake_path = lake_dir)
+create_table(data.frame(id = 1:3, value = c("a", "b", "c")), "items")
+
 rows_delete(
-  get_ducklake_table("my_table"),
-  data.frame(id = c(1, 2, 3)),
+  get_ducklake_table("items"),
+  data.frame(id = c(1, 2)),
   by = "id"
 )
-}
+
+detach_ducklake("rowsdel_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 Other row operations:

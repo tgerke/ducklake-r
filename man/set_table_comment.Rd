@@ -22,10 +22,18 @@ R, Python, or plain SQL -- sees the same documentation, and AI tools
 reading the catalog get the context too.
 }
 \examples{
-\dontrun{
-set_table_comment("adsl", "Subject-level analysis dataset, one row per subject")
-set_table_comment("scratch", NULL)  # clear
-}
+\dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}
+lake_dir <- tempfile("comment_lake_")
+dir.create(lake_dir)
+attach_ducklake("comment_lake", lake_path = lake_dir)
+create_table(mtcars, "cars")
+
+set_table_comment("cars", "Motor Trend road tests, one row per model")
+set_table_comment("cars", NULL) # clear
+
+detach_ducklake("comment_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=set_column_comments]{set_column_comments()}}, \code{\link[=get_table_comments]{get_table_comments()}}

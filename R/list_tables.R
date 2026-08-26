@@ -15,10 +15,16 @@
 #'   [get_table_comments()] for stored documentation, [get_ducklake_table()]
 #'   to read any listed object.
 #'
-#' @examples
-#' \dontrun{
+#' @examplesIf ducklake_extension_available()
+#' lake_dir <- tempfile("list_lake_")
+#' dir.create(lake_dir)
+#' attach_ducklake("list_lake", lake_path = lake_dir)
+#' create_table(mtcars, "cars")
+#'
 #' list_ducklake_tables()
-#' }
+#'
+#' detach_ducklake("list_lake", shutdown = TRUE)
+#' unlink(lake_dir, recursive = TRUE)
 list_ducklake_tables <- function(ducklake_name = NULL) {
   conn <- get_ducklake_connection()
   ducklake_name <- infer_ducklake_name(ducklake_name, conn)

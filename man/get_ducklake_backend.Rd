@@ -18,20 +18,26 @@ Defaults to \code{"duckdb"} when the lake is unknown.
 Get the catalog backend type of an attached lake
 }
 \examples{
-\dontrun{
-attach_ducklake("my_lake", lake_path = "~/data/lake")
+\dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}
+lake_dir <- tempfile("backend_lake_")
+dir.create(lake_dir)
+attach_ducklake("backend_lake", lake_path = lake_dir)
+
 get_ducklake_backend()
-#> [1] "duckdb"
 
 # With several lakes attached, look one up by name
-get_ducklake_backend("my_sqlite_lake")
-}
+get_ducklake_backend("backend_lake")
+
+detach_ducklake("backend_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 Other connection management:
 \code{\link[=attach_ducklake]{attach_ducklake()}},
 \code{\link[=create_storage_secret]{create_storage_secret()}},
 \code{\link[=detach_ducklake]{detach_ducklake()}},
+\code{\link[=ducklake_extension_available]{ducklake_extension_available()}},
 \code{\link[=get_ducklake_connection]{get_ducklake_connection()}},
 \code{\link[=install_ducklake]{install_ducklake()}},
 \code{\link[=set_ducklake_connection]{set_ducklake_connection()}}

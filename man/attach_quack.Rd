@@ -20,6 +20,10 @@ is taken from a Quack secret (see \verb{CREATE SECRET}) if one exists.}
 \item{disable_ssl}{Connect over plain HTTP instead of HTTPS (default \code{FALSE}).
 Only appropriate on a trusted network.}
 }
+\value{
+Invisibly, \code{NULL}. Called for its side effect of attaching the
+remote catalog to the package's DuckDB connection.
+}
 \description{
 Attaches a remote Quack server as a catalog in the current session. Tables in
 the server's default database are then reachable as \code{quack_name.table_name}

@@ -43,21 +43,27 @@
 #' - Making targeted value corrections to existing columns
 #' - Updating specific rows with filter(), without rewriting the table
 #'
-#' @examples
-#' \dontrun{
+#' @examplesIf ducklake_extension_available()
+#' lake_dir <- tempfile("update_lake_")
+#' dir.create(lake_dir)
+#' attach_ducklake("update_lake", lake_path = lake_dir)
+#' create_table(mtcars, "cars")
+#'
 #' # Correct a specific value (no versioning needed)
-#' get_ducklake_table("adsl") |>
-#'   mutate(SAFFL = if_else(USUBJID == "01-701-1015", "N", SAFFL)) |>
-#'   update_table("adsl")
+#' get_ducklake_table("cars") |>
+#'   dplyr::mutate(gear = dplyr::if_else(cyl == 4, 5, gear)) |>
+#'   update_table("cars")
 #'
 #' # Update multiple columns
-#' get_ducklake_table("adae") |>
-#'   mutate(
-#'     AESEV = if_else(AESEV == "MILD", "MODERATE", AESEV),
-#'     AESER = if_else(AESEV == "SEVERE", "Y", AESER)
+#' get_ducklake_table("cars") |>
+#'   dplyr::mutate(
+#'     am = dplyr::if_else(mpg > 30, 1, am),
+#'     carb = dplyr::if_else(mpg > 30, 2, carb)
 #'   ) |>
-#'   update_table("adae")
-#' }
+#'   update_table("cars")
+#'
+#' detach_ducklake("update_lake", shutdown = TRUE)
+#' unlink(lake_dir, recursive = TRUE)
 update_table <- function(.data, table_name, .quiet = FALSE, .execute = TRUE) {
 
   if (!.quiet) {

@@ -69,13 +69,7 @@ create_storage_secret <- function(type = c("s3", "gcs", "r2", "azure"),
   conn <- get_ducklake_connection()
 
   extension <- if (type == "azure") "azure" else "httpfs"
-  tryCatch(
-    db_execute(sprintf("LOAD %s;", extension), conn = conn),
-    error = function(e) {
-      db_execute(sprintf("INSTALL %s;", extension), conn = conn)
-      db_execute(sprintf("LOAD %s;", extension), conn = conn)
-    }
-  )
+  load_or_install_extension(extension, conn = conn)
 
   params <- list(...)
   if (length(params) > 0 &&

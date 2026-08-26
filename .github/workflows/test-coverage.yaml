@@ -15,6 +15,10 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      # duckdb >= 1.5.2 keeps extensions in a per-process tempdir unless given
+      # a persistent home; without this, the pre-installed extension is invisible
+      # to the check's subprocesses and examples/vignettes silently skip.
+      DUCKDB_R_HOME: ~/.duckdb-ci
 
     steps:
       - uses: actions/checkout@v4
@@ -27,6 +31,26 @@ jobs:
         with:
           extra-packages: any::covr, any::xml2
           needs: coverage
+
+      - name: Install the ducklake DuckDB extension
+        run: |
+          con <- DBI::dbConnect(duckdb::duckdb())
+          DBI::dbExecute(con, "INSTALL ducklake;")
+          DBI::dbExecute(con, "LOAD ducklake;")
+          print(DBI::dbGetQuery(con, "SELECT extension_name, installed, loaded, install_path FROM duckdb_extensions() WHERE extension_name = 'ducklake'"))
+          cat("extension_directory:", DBI::dbGetQuery(con, "SELECT current_setting('extension_directory') AS d")$d, "\n")
+          cat("HOME:", Sys.getenv("HOME"), "\n")
+          DBI::dbDisconnect(con, shutdown = TRUE)
+          # Fail loudly here rather than letting every example and vignette
+          # silently self-skip and leave a green but empty check. A fresh
+          # process is the real test: extension visibility must survive into
+          # the check's subprocesses, not just this session.
+          code <- 'g <- DBI::dbGetQuery(DBI::dbConnect(duckdb::duckdb()), "SELECT installed FROM duckdb_extensions() WHERE extension_name = \'ducklake\'"); quit(status = as.integer(!isTRUE(nrow(g) == 1 && g$installed[1])))'
+          status <- system2(file.path(R.home("bin"), "Rscript"), c("-e", shQuote(code)))
+          if (status != 0L) {
+            stop("ducklake extension is not visible to a fresh R process; examples and vignettes would skip")
+          }
+        shell: Rscript {0}
 
       - name: Test coverage
         run: |

@@ -23,16 +23,17 @@ operations work out of the box. It is closed automatically when the R
 session ends.
 }
 \examples{
-\dontrun{
 conn <- get_ducklake_connection()
 DBI::dbGetQuery(conn, "SELECT version()")
-}
+
+detach_ducklake(shutdown = TRUE)
 }
 \seealso{
 Other connection management:
 \code{\link[=attach_ducklake]{attach_ducklake()}},
 \code{\link[=create_storage_secret]{create_storage_secret()}},
 \code{\link[=detach_ducklake]{detach_ducklake()}},
+\code{\link[=ducklake_extension_available]{ducklake_extension_available()}},
 \code{\link[=get_ducklake_backend]{get_ducklake_backend()}},
 \code{\link[=install_ducklake]{install_ducklake()}},
 \code{\link[=set_ducklake_connection]{set_ducklake_connection()}}

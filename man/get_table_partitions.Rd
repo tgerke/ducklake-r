@@ -21,13 +21,23 @@ A data frame with one row per partition key: \code{table_name},
 Reads the current partitioning keys from the DuckLake metadata catalog.
 }
 \examples{
-\dontrun{
+\dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}
+lake_dir <- tempfile("getpart_lake_")
+dir.create(lake_dir)
+attach_ducklake("getpart_lake", lake_path = lake_dir)
+create_table(mtcars, "cars")
+
+set_table_partitioning("cars", "cyl")
+
 # All partitioned tables in the lake
 get_table_partitions()
 
 # Keys for one table
-get_table_partitions("events")
-}
+get_table_partitions("cars")
+
+detach_ducklake("getpart_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=set_table_partitioning]{set_table_partitioning()}}, \code{\link[=get_metadata_table]{get_metadata_table()}}

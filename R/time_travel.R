@@ -32,20 +32,27 @@
 #' This is because the time-travel query looks for snapshots created at or before
 #' the specified timestamp.
 #'
-#' @examples
-#' \dontrun{
-#' # Query data as it existed yesterday
-#' yesterday <- Sys.time() - (24 * 60 * 60)
-#' get_ducklake_table_asof("my_table", yesterday) |>
-#'   filter(category == "A") |>
-#'   collect()
+#' @examplesIf ducklake_extension_available()
+#' lake_dir <- tempfile("asof_lake_")
+#' dir.create(lake_dir)
+#' attach_ducklake("asof_lake", lake_path = lake_dir)
+#' create_table(data.frame(id = 1:3, amount = c(10, 20, 30)), "orders")
+#'
+#' rows_insert(
+#'   get_ducklake_table("orders"),
+#'   data.frame(id = 4L, amount = 40),
+#'   by = "id"
+#' )
 #'
 #' # Query data at a specific snapshot time
-#' snapshots <- list_table_snapshots("my_table")
+#' snapshots <- list_table_snapshots("orders")
 #' # Add 1 second to ensure the snapshot is found
-#' get_ducklake_table_asof("my_table", snapshots$snapshot_time[2] + 1) |>
-#'   summarise(total = sum(amount))
-#' }
+#' get_ducklake_table_asof("orders", snapshots$snapshot_time[1] + 1) |>
+#'   dplyr::summarise(total = sum(amount)) |>
+#'   dplyr::collect()
+#'
+#' detach_ducklake("asof_lake", shutdown = TRUE)
+#' unlink(lake_dir, recursive = TRUE)
 get_ducklake_table_asof <- function(table_name, timestamp, conn = NULL) {
   if (is.null(conn)) {
     conn <- get_ducklake_connection()
@@ -100,16 +107,27 @@ get_ducklake_table_asof <- function(table_name, timestamp, conn = NULL) {
 #'
 #' Use \code{list_table_snapshots(table_name)} to see all available snapshots and their IDs.
 #'
-#' @examples
-#' \dontrun{
+#' @examplesIf ducklake_extension_available()
+#' lake_dir <- tempfile("version_lake_")
+#' dir.create(lake_dir)
+#' attach_ducklake("version_lake", lake_path = lake_dir)
+#' create_table(data.frame(id = 1:3, amount = c(10, 20, 30)), "orders")
+#'
+#' rows_insert(
+#'   get_ducklake_table("orders"),
+#'   data.frame(id = 4L, amount = 40),
+#'   by = "id"
+#' )
+#'
 #' # Get available snapshots
-#' snapshots <- list_table_snapshots("my_table")
-#' 
+#' snapshots <- list_table_snapshots("orders")
+#'
 #' # Query the first snapshot version
-#' get_ducklake_table_version("my_table", snapshots$snapshot_id[1]) |>
-#'   filter(status == "active") |>
-#'   collect()
-#' }
+#' get_ducklake_table_version("orders", snapshots$snapshot_id[1]) |>
+#'   dplyr::collect()
+#'
+#' detach_ducklake("version_lake", shutdown = TRUE)
+#' unlink(lake_dir, recursive = TRUE)
 get_ducklake_table_version <- function(table_name, version, conn = NULL) {
   if (is.null(conn)) {
     conn <- get_ducklake_connection()
@@ -149,11 +167,17 @@ get_ducklake_table_version <- function(table_name, version, conn = NULL) {
 #' versions and their timestamps. This is useful for understanding what
 #' historical versions are available for time-travel queries.
 #'
-#' @examples
-#' \dontrun{
+#' @examplesIf ducklake_extension_available()
+#' lake_dir <- tempfile("snaplist_lake_")
+#' dir.create(lake_dir)
+#' attach_ducklake("snaplist_lake", lake_path = lake_dir)
+#' create_table(data.frame(id = 1:3, amount = c(10, 20, 30)), "orders")
+#'
 #' # List all snapshots for a table
-#' list_table_snapshots("my_table")
-#' }
+#' list_table_snapshots("orders")
+#'
+#' detach_ducklake("snaplist_lake", shutdown = TRUE)
+#' unlink(lake_dir, recursive = TRUE)
 list_table_snapshots <- function(table_name = NULL, ducklake_name = NULL, conn = NULL) {
   if (is.null(conn)) {
     conn <- get_ducklake_connection()
@@ -264,22 +288,33 @@ list_table_snapshots <- function(table_name = NULL, ducklake_name = NULL, conn =
 #' @seealso [get_ducklake_table_version()], [get_ducklake_table_asof()],
 #'   [list_table_snapshots()]
 #'
-#' @examples
-#' \dontrun{
-#' # Restore to snapshot 5
-#' restore_table_version("my_table", version = 5)
+#' @examplesIf ducklake_extension_available()
+#' lake_dir <- tempfile("restore_lake_")
+#' dir.create(lake_dir)
+#' attach_ducklake("restore_lake", lake_path = lake_dir)
+#' create_table(data.frame(id = 1:3, amount = c(10, 20, 30)), "orders")
 #'
-#' # Restore to a specific timestamp
-#' restore_table_version("my_table", timestamp = "2024-01-15 10:00:00")
+#' rows_delete(
+#'   get_ducklake_table("orders"),
+#'   data.frame(id = 1L),
+#'   by = "id"
+#' )
+#' snapshots <- list_table_snapshots("orders")
+#' first_version <- snapshots$snapshot_id[1]
+#'
+#' # Roll the table back to its first snapshot
+#' restore_table_version("orders", version = first_version)
 #'
 #' # Record who performed the restore in the audit trail
 #' restore_table_version(
-#'   "my_table",
-#'   version = 5,
+#'   "orders",
+#'   version = first_version,
 #'   author = "Data Steward",
 #'   commit_message = "Roll back erroneous bulk update"
 #' )
-#' }
+#'
+#' detach_ducklake("restore_lake", shutdown = TRUE)
+#' unlink(lake_dir, recursive = TRUE)
 restore_table_version <- function(table_name, version = NULL, timestamp = NULL,
                                   author = NULL, commit_message = NULL,
                                   conn = NULL) {

@@ -30,17 +30,22 @@
 #'
 #' @seealso [reset_table_partitioning()], [get_table_partitions()]
 #'
-#' @examples
-#' \dontrun{
-#' # Partition new files by year and month of the event timestamp
-#' set_table_partitioning("events", c("year(event_time)", "month(event_time)"))
+#' @examplesIf ducklake_extension_available()
+#' lake_dir <- tempfile("part_lake_")
+#' dir.create(lake_dir)
+#' attach_ducklake("part_lake", lake_path = lake_dir)
+#' create_table(mtcars, "cars")
 #'
 #' # Plain column partitioning
-#' set_table_partitioning("sales", "region")
+#' set_table_partitioning("cars", "cyl")
 #'
-#' # Hash user ids into 8 buckets, then split by month
-#' set_table_partitioning("visits", c("bucket(8, user_id)", "month(ts)"))
-#' }
+#' # Compound key
+#' set_table_partitioning("cars", c("gear", "cyl"))
+#'
+#' # Timestamp columns can be split by year(), month(), day(), or hour()
+#'
+#' detach_ducklake("part_lake", shutdown = TRUE)
+#' unlink(lake_dir, recursive = TRUE)
 set_table_partitioning <- function(table_name, partition_by) {
   conn <- get_ducklake_connection()
 
@@ -98,10 +103,17 @@ set_table_partitioning <- function(table_name, partition_by) {
 #'
 #' @seealso [set_table_partitioning()], [get_table_partitions()]
 #'
-#' @examples
-#' \dontrun{
-#' reset_table_partitioning("events")
-#' }
+#' @examplesIf ducklake_extension_available()
+#' lake_dir <- tempfile("unpart_lake_")
+#' dir.create(lake_dir)
+#' attach_ducklake("unpart_lake", lake_path = lake_dir)
+#' create_table(mtcars, "cars")
+#'
+#' set_table_partitioning("cars", "cyl")
+#' reset_table_partitioning("cars")
+#'
+#' detach_ducklake("unpart_lake", shutdown = TRUE)
+#' unlink(lake_dir, recursive = TRUE)
 reset_table_partitioning <- function(table_name) {
   conn <- get_ducklake_connection()
 
@@ -133,14 +145,22 @@ reset_table_partitioning <- function(table_name) {
 #'
 #' @seealso [set_table_partitioning()], [get_metadata_table()]
 #'
-#' @examples
-#' \dontrun{
+#' @examplesIf ducklake_extension_available()
+#' lake_dir <- tempfile("getpart_lake_")
+#' dir.create(lake_dir)
+#' attach_ducklake("getpart_lake", lake_path = lake_dir)
+#' create_table(mtcars, "cars")
+#'
+#' set_table_partitioning("cars", "cyl")
+#'
 #' # All partitioned tables in the lake
 #' get_table_partitions()
 #'
 #' # Keys for one table
-#' get_table_partitions("events")
-#' }
+#' get_table_partitions("cars")
+#'
+#' detach_ducklake("getpart_lake", shutdown = TRUE)
+#' unlink(lake_dir, recursive = TRUE)
 get_table_partitions <- function(table_name = NULL, ducklake_name = NULL) {
   conn <- get_ducklake_connection()
   ducklake_name <- infer_ducklake_name(ducklake_name, conn)

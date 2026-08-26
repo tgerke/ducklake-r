@@ -37,16 +37,23 @@ validated against the transforms DuckLake supports before any SQL is
 built.
 }
 \examples{
-\dontrun{
-# Partition new files by year and month of the event timestamp
-set_table_partitioning("events", c("year(event_time)", "month(event_time)"))
+\dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}
+lake_dir <- tempfile("part_lake_")
+dir.create(lake_dir)
+attach_ducklake("part_lake", lake_path = lake_dir)
+create_table(mtcars, "cars")
 
 # Plain column partitioning
-set_table_partitioning("sales", "region")
+set_table_partitioning("cars", "cyl")
 
-# Hash user ids into 8 buckets, then split by month
-set_table_partitioning("visits", c("bucket(8, user_id)", "month(ts)"))
-}
+# Compound key
+set_table_partitioning("cars", c("gear", "cyl"))
+
+# Timestamp columns can be split by year(), month(), day(), or hour()
+
+detach_ducklake("part_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=reset_table_partitioning]{reset_table_partitioning()}}, \code{\link[=get_table_partitions]{get_table_partitions()}}

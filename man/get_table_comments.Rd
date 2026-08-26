@@ -24,13 +24,23 @@ Returns the current comments stored in the lake -- via
 sync, or any other client -- as a tidy data frame.
 }
 \examples{
-\dontrun{
+\dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}
+lake_dir <- tempfile("readcomment_lake_")
+dir.create(lake_dir)
+attach_ducklake("readcomment_lake", lake_path = lake_dir)
+create_table(mtcars, "cars")
+set_table_comment("cars", "Motor Trend road tests")
+set_column_comments("cars", mpg = "Miles per US gallon")
+
 # Everything documented in the lake
 get_table_comments()
 
 # One table's documentation
-get_table_comments("adsl")
-}
+get_table_comments("cars")
+
+detach_ducklake("readcomment_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=get_metadata_table]{get_metadata_table()}} for the raw \code{ducklake_tag} and

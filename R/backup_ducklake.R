@@ -31,8 +31,7 @@
 #'     \code{{taskscheduleR}}.
 #' }
 #'
-#' @examples
-#' \dontrun{
+#' @examplesIf ducklake_extension_available()
 #' # Create a DuckLake
 #' lake_dir <- tempfile("my_lake")
 #' dir.create(lake_dir)
@@ -55,7 +54,9 @@
 #' # Restore (override_data_path needed when location differs):
 #' # detach_ducklake("my_lake")
 #' # attach_ducklake("my_lake", lake_path = backup_dir, override_data_path = TRUE)
-#' }
+#'
+#' detach_ducklake("my_lake", shutdown = TRUE)
+#' unlink(lake_dir, recursive = TRUE)
 backup_ducklake <- function(ducklake_name, lake_path, backup_path) {
   # Validate inputs
   if (!is.character(ducklake_name) || length(ducklake_name) != 1) {
@@ -140,7 +141,9 @@ backup_ducklake <- function(ducklake_name, lake_path, backup_path) {
 
   if (length(data_dirs) > 0) {
     for (d in data_dirs) {
-      fs::dir_copy(path = d, new_path = file.path(backup_dir, basename(d)))
+      # file.copy(recursive = TRUE) copies `d` *into* backup_dir, preserving
+      # its basename -- same destination fs::dir_copy() targeted.
+      file.copy(from = d, to = backup_dir, recursive = TRUE)
     }
     cli::cli_inform("Data files backed up successfully ({length(data_dirs)} director{?y/ies}).")
   } else {

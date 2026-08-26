@@ -37,16 +37,22 @@ If a table has a sort order defined, the flushed Parquet file will be sorted
 by those keys.
 }
 \examples{
-\dontrun{
+\dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}
+lake_dir <- tempfile("flush_lake_")
+dir.create(lake_dir)
+attach_ducklake("flush_lake", lake_path = lake_dir,
+                data_inlining_row_limit = 10)
+create_table(head(mtcars, 3), "cars")
+
 # Flush everything
 flush_inlined_data()
 
 # Flush a specific table
-flush_inlined_data(table_name = "readings")
+flush_inlined_data(table_name = "cars")
 
-# Flush a specific schema
-flush_inlined_data(schema_name = "staging")
-}
+detach_ducklake("flush_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=set_inlining_row_limit]{set_inlining_row_limit()}}, \code{\link[=checkpoint_ducklake]{checkpoint_ducklake()}}

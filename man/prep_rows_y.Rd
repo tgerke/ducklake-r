@@ -11,6 +11,9 @@ prep_rows_y(x, y)
 
 \item{y}{Data frame or lazy table}
 }
+\value{
+A lazy table on the same connection as \code{x}.
+}
 \description{
 Local data frames are converted to an inline query on the same connection
 as \code{x} via \code{\link[dbplyr:copy_inline]{dbplyr::copy_inline()}}. Unlike dplyr's \code{copy = TRUE} path,

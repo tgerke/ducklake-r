@@ -14,6 +14,10 @@ encrypted files requires the full crypto module from the httpfs
 extension on platforms where the built-in module is read-only
 (notably Windows).}
 }
+\value{
+Invisibly, \code{NULL}. Called for its side effect of loading (and, if
+necessary, installing) the required DuckDB extensions.
+}
 \description{
 Install and load required DuckDB extensions for a given backend
 }

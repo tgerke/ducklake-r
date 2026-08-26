@@ -16,15 +16,19 @@
 #'
 #' DuckDB supports full ACID transactions with multiple isolation levels.
 #'
-#' @examples
-#' \dontrun{
+#' @examplesIf ducklake_extension_available()
+#' lake_dir <- tempfile("begin_lake_")
+#' dir.create(lake_dir)
+#' attach_ducklake("begin_lake", lake_path = lake_dir)
+#' create_table(data.frame(id = 1:3, status = "pending"), "jobs")
+#'
 #' # Start a transaction
 #' begin_transaction()
 #'
 #' # Make some changes
-#' get_ducklake_table("my_table") |>
-#'   filter(status == "pending") |>
-#'   mutate(status = "processed") |>
+#' get_ducklake_table("jobs") |>
+#'   dplyr::filter(status == "pending") |>
+#'   dplyr::mutate(status = "processed") |>
 #'   ducklake_exec()
 #'
 #' # Commit if everything looks good
@@ -32,7 +36,9 @@
 #'
 #' # Or rollback if something went wrong
 #' # rollback_transaction()
-#' }
+#'
+#' detach_ducklake("begin_lake", shutdown = TRUE)
+#' unlink(lake_dir, recursive = TRUE)
 begin_transaction <- function(conn = NULL) {
   if (is.null(conn)) {
     conn <- get_ducklake_connection()
@@ -66,11 +72,14 @@ begin_transaction <- function(conn = NULL) {
 #' transaction before the \code{COMMIT} statement, as required by the DuckLake
 #' v1.0 specification.
 #'
-#' @examples
-#' \dontrun{
+#' @examplesIf ducklake_extension_available()
+#' lake_dir <- tempfile("commit_lake_")
+#' dir.create(lake_dir)
+#' attach_ducklake("commit_lake", lake_path = lake_dir)
+#'
 #' # Basic commit
 #' begin_transaction()
-#' # ... make changes ...
+#' create_table(iris, "flowers")
 #' commit_transaction()
 #'
 #' # Commit with metadata
@@ -80,7 +89,9 @@ begin_transaction <- function(conn = NULL) {
 #'   author = "John Doe",
 #'   commit_message = "Add cars dataset"
 #' )
-#' }
+#'
+#' detach_ducklake("commit_lake", shutdown = TRUE)
+#' unlink(lake_dir, recursive = TRUE)
 commit_transaction <- function(
   conn = NULL,
   author = NULL,
@@ -171,19 +182,24 @@ commit_transaction <- function(
 #' and \code{commit_extra_info} arguments in \code{commit_transaction()} or
 #' \code{with_transaction()} instead.
 #'
-#' @examples
-#' \dontrun{
+#' @examplesIf ducklake_extension_available()
+#' lake_dir <- tempfile("meta_lake_")
+#' dir.create(lake_dir)
+#' attach_ducklake("meta_lake", lake_path = lake_dir)
+#'
 #' begin_transaction()
-#' # ... make changes ...
+#' create_table(mtcars, "cars")
 #' commit_transaction()
 #'
 #' # Add metadata to the snapshot after the fact
 #' set_snapshot_metadata(
-#'   ducklake_name = "my_ducklake",
+#'   ducklake_name = "meta_lake",
 #'   author = "Data Team",
-#'   commit_message = "Updated station names for clarity"
+#'   commit_message = "Added the cars dataset"
 #' )
-#' }
+#'
+#' detach_ducklake("meta_lake", shutdown = TRUE)
+#' unlink(lake_dir, recursive = TRUE)
 set_snapshot_metadata <- function(
   ducklake_name,
   author = NULL,
@@ -280,8 +296,11 @@ set_snapshot_metadata <- function(
 #' This pattern is similar to \code{withr::with_*()} functions and provides
 #' better safety guarantees than manually managing transactions.
 #'
-#' @examples
-#' \dontrun{
+#' @examplesIf ducklake_extension_available()
+#' lake_dir <- tempfile("with_tx_lake_")
+#' dir.create(lake_dir)
+#' attach_ducklake("with_tx_lake", lake_path = lake_dir)
+#'
 #' # Single operation
 #' with_transaction(
 #'   create_table(mtcars, "cars"),
@@ -291,14 +310,14 @@ set_snapshot_metadata <- function(
 #'
 #' # Multiple operations in a block
 #' with_transaction({
-#'   create_table(mtcars, "cars")
 #'   create_table(iris, "flowers")
+#'   create_table(airquality, "air")
 #' }, author = "Data Team", commit_message = "Add datasets")
 #'
 #' # With dplyr pipeline
 #' with_transaction(
 #'   get_ducklake_table("cars") |>
-#'     mutate(kpl = mpg * 0.425144) |>
+#'     dplyr::mutate(kpl = mpg * 0.425144) |>
 #'     replace_table("cars"),
 #'   author = "Data Team",
 #'   commit_message = "Add km/L column"
@@ -307,12 +326,17 @@ set_snapshot_metadata <- function(
 #' # Automatic rollback on error
 #' tryCatch(
 #'   with_transaction({
-#'     create_table(mtcars, "cars")
-#'     stop("Simulated error")  # Transaction will be rolled back
+#'     create_table(ChickWeight, "chicks")
+#'     stop("Simulated error") # Transaction will be rolled back
 #'   }),
 #'   error = function(e) message("Transaction was rolled back: ", e$message)
 #' )
-#' }
+#'
+#' # "chicks" was never committed
+#' list_ducklake_tables()
+#'
+#' detach_ducklake("with_tx_lake", shutdown = TRUE)
+#' unlink(lake_dir, recursive = TRUE)
 with_transaction <- function(
   expr,
   author = NULL,
@@ -362,13 +386,24 @@ with_transaction <- function(
 #' This function discards all changes made since \code{begin_transaction()} was called,
 #' reverting the database to its state before the transaction began.
 #'
-#' @examples
-#' \dontrun{
+#' @examplesIf ducklake_extension_available()
+#' lake_dir <- tempfile("rollback_lake_")
+#' dir.create(lake_dir)
+#' attach_ducklake("rollback_lake", lake_path = lake_dir)
+#' create_table(mtcars, "cars")
+#'
 #' begin_transaction()
-#' # ... make changes ...
+#' rows_delete(
+#'   get_ducklake_table("cars"),
+#'   data.frame(gear = 3),
+#'   by = "gear"
+#' )
+#'
 #' # Something went wrong, rollback
 #' rollback_transaction()
-#' }
+#'
+#' detach_ducklake("rollback_lake", shutdown = TRUE)
+#' unlink(lake_dir, recursive = TRUE)
 rollback_transaction <- function(conn = NULL) {
   if (is.null(conn)) {
     conn <- get_ducklake_connection()

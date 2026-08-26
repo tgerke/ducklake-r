@@ -29,8 +29,11 @@ snapshot), \code{ducklake_table} (registered tables), and \code{ducklake_data_fi
 \href{https://ducklake.select/docs/stable/specification/introduction}{DuckLake specification}.
 }
 \examples{
-\dontrun{
-attach_ducklake("my_lake", lake_path = "~/data/lake")
+\dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}
+lake_dir <- tempfile("meta_lake_")
+dir.create(lake_dir)
+attach_ducklake("meta_lake", lake_path = lake_dir)
+create_table(mtcars, "cars")
 
 # Every snapshot ever taken
 get_metadata_table("ducklake_snapshot") |> dplyr::collect()
@@ -39,7 +42,10 @@ get_metadata_table("ducklake_snapshot") |> dplyr::collect()
 get_metadata_table("ducklake_data_file") |>
   dplyr::select(data_file_id, path) |>
   dplyr::collect()
-}
+
+detach_ducklake("meta_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=list_table_snapshots]{list_table_snapshots()}} for a friendlier view of snapshot history.

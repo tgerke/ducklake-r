@@ -50,6 +50,7 @@ reference:
     desc: "Initialize and manage DuckLake connections"
     contents:
     - install_ducklake
+    - ducklake_extension_available
     - attach_ducklake
     - detach_ducklake
     - get_ducklake_connection

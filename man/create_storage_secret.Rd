@@ -83,6 +83,7 @@ attach_ducklake("trial_lake", lake_path = "s3://my-trial-lake/data")
 Other connection management:
 \code{\link[=attach_ducklake]{attach_ducklake()}},
 \code{\link[=detach_ducklake]{detach_ducklake()}},
+\code{\link[=ducklake_extension_available]{ducklake_extension_available()}},
 \code{\link[=get_ducklake_backend]{get_ducklake_backend()}},
 \code{\link[=get_ducklake_connection]{get_ducklake_connection()}},
 \code{\link[=install_ducklake]{install_ducklake()}},

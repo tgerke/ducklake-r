@@ -46,7 +46,11 @@ This pattern is similar to \code{withr::with_*()} functions and provides
 better safety guarantees than manually managing transactions.
 }
 \examples{
-\dontrun{
+\dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}
+lake_dir <- tempfile("with_tx_lake_")
+dir.create(lake_dir)
+attach_ducklake("with_tx_lake", lake_path = lake_dir)
+
 # Single operation
 with_transaction(
   create_table(mtcars, "cars"),
@@ -56,14 +60,14 @@ with_transaction(
 
 # Multiple operations in a block
 with_transaction({
-  create_table(mtcars, "cars")
   create_table(iris, "flowers")
+  create_table(airquality, "air")
 }, author = "Data Team", commit_message = "Add datasets")
 
 # With dplyr pipeline
 with_transaction(
   get_ducklake_table("cars") |>
-    mutate(kpl = mpg * 0.425144) |>
+    dplyr::mutate(kpl = mpg * 0.425144) |>
     replace_table("cars"),
   author = "Data Team",
   commit_message = "Add km/L column"
@@ -72,12 +76,18 @@ with_transaction(
 # Automatic rollback on error
 tryCatch(
   with_transaction({
-    create_table(mtcars, "cars")
-    stop("Simulated error")  # Transaction will be rolled back
+    create_table(ChickWeight, "chicks")
+    stop("Simulated error") # Transaction will be rolled back
   }),
   error = function(e) message("Transaction was rolled back: ", e$message)
 )
-}
+
+# "chicks" was never committed
+list_ducklake_tables()
+
+detach_ducklake("with_tx_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 Other transactions:

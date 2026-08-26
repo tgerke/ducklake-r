@@ -67,6 +67,10 @@ are rejected. Mutually exclusive with \code{snapshot_time}.}
 the lake pinned to its state at that moment. Mutually exclusive with
 \code{snapshot_version}.}
 }
+\value{
+Invisibly, \code{NULL}. Called for its side effect of attaching the
+DuckLake catalog to the package's DuckDB connection.
+}
 \description{
 Wrapper for the ducklake \href{https://ducklake.select/docs/stable/duckdb/usage/connecting}{ATTACH} command.
 Creates a new DuckLake if the specified name does not exist, or connects to
@@ -102,10 +106,28 @@ work there. Use Linux, macOS, or WSL for PostgreSQL/MySQL backends.
 See \url{https://github.com/duckdb/duckdb/issues/7892}.
 }
 \examples{
-\dontrun{
+\dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}
 # DuckDB catalog (default)
-attach_ducklake("my_lake", lake_path = "~/data/lake")
+lake_dir <- tempfile("my_lake_")
+dir.create(lake_dir)
+attach_ducklake("my_lake", lake_path = lake_dir)
+detach_ducklake("my_lake")
 
+# Custom inlining threshold for a streaming workload
+stream_dir <- tempfile("streaming_lake_")
+dir.create(stream_dir)
+attach_ducklake(
+  "streaming_lake",
+  lake_path = stream_dir,
+  data_inlining_row_limit = 100
+)
+
+detach_ducklake("streaming_lake", shutdown = TRUE)
+unlink(c(lake_dir, stream_dir), recursive = TRUE)
+
+# The remaining forms need a catalog server, or extensions that are
+# downloaded on first use, so they are not run here.
+\dontrun{
 # PostgreSQL catalog
 attach_ducklake(
   "my_lake",
@@ -130,19 +152,13 @@ attach_ducklake(
   lake_path = "data_files/"
 )
 
-# Custom inlining threshold for streaming workload
-attach_ducklake(
-  "streaming_lake",
-  lake_path = "~/data/streaming",
-  data_inlining_row_limit = 100
-)
+# Encrypted Parquet files (keys live in the catalog); needs httpfs
+attach_ducklake("secure_lake", lake_path = "path/to/lake", encrypted = TRUE)
 
-# Encrypted Parquet files (keys live in the catalog)
-attach_ducklake("secure_lake", lake_path = "~/data/secure", encrypted = TRUE)
-
-# A frozen view of the lake as of snapshot 12, e.g. for reproducing a report
-attach_ducklake("lake_v12", lake_path = "~/data/lake", snapshot_version = 12)
+# A frozen view of the lake as of snapshot 12, e.g. to reproduce a report
+attach_ducklake("lake_v12", lake_path = "path/to/lake", snapshot_version = 12)
 }
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=detach_ducklake]{detach_ducklake()}}, \code{\link[=install_ducklake]{install_ducklake()}}, \code{\link[=create_storage_secret]{create_storage_secret()}}
@@ -150,6 +166,7 @@ attach_ducklake("lake_v12", lake_path = "~/data/lake", snapshot_version = 12)
 Other connection management:
 \code{\link[=create_storage_secret]{create_storage_secret()}},
 \code{\link[=detach_ducklake]{detach_ducklake()}},
+\code{\link[=ducklake_extension_available]{ducklake_extension_available()}},
 \code{\link[=get_ducklake_backend]{get_ducklake_backend()}},
 \code{\link[=get_ducklake_connection]{get_ducklake_connection()}},
 \code{\link[=install_ducklake]{install_ducklake()}},

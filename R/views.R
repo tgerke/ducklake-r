@@ -24,17 +24,23 @@
 #' @seealso [drop_view()], [list_ducklake_tables()],
 #'   [replace_table()] to materialize a pipeline as data instead.
 #'
-#' @examples
-#' \dontrun{
+#' @examplesIf ducklake_extension_available()
+#' lake_dir <- tempfile("view_lake_")
+#' dir.create(lake_dir)
+#' attach_ducklake("view_lake", lake_path = lake_dir)
+#' create_table(mtcars, "cars")
+#'
 #' # Encapsulate filtering logic the whole team should share
-#' get_ducklake_table("adsl") |>
-#'   filter(SAFFL == "Y") |>
-#'   select(USUBJID, TRT01A, AGE) |>
-#'   create_view("v_safety_population")
+#' get_ducklake_table("cars") |>
+#'   dplyr::filter(cyl == 4) |>
+#'   dplyr::select(mpg, cyl, gear) |>
+#'   create_view("v_efficient_cars")
 #'
 #' # Reads run the stored query against current data
-#' get_ducklake_table("v_safety_population") |> collect()
-#' }
+#' get_ducklake_table("v_efficient_cars") |> dplyr::collect()
+#'
+#' detach_ducklake("view_lake", shutdown = TRUE)
+#' unlink(lake_dir, recursive = TRUE)
 create_view <- function(.data, view_name, replace = TRUE) {
   if (!inherits(.data, "tbl_lazy")) {
     cli::cli_abort(c(
@@ -72,10 +78,20 @@ create_view <- function(.data, view_name, replace = TRUE) {
 #'
 #' @seealso [create_view()]
 #'
-#' @examples
-#' \dontrun{
-#' drop_view("v_safety_population")
-#' }
+#' @examplesIf ducklake_extension_available()
+#' lake_dir <- tempfile("dropview_lake_")
+#' dir.create(lake_dir)
+#' attach_ducklake("dropview_lake", lake_path = lake_dir)
+#' create_table(mtcars, "cars")
+#'
+#' get_ducklake_table("cars") |>
+#'   dplyr::filter(cyl == 4) |>
+#'   create_view("v_efficient_cars")
+#'
+#' drop_view("v_efficient_cars")
+#'
+#' detach_ducklake("dropview_lake", shutdown = TRUE)
+#' unlink(lake_dir, recursive = TRUE)
 drop_view <- function(view_name) {
   conn <- get_ducklake_connection()
 

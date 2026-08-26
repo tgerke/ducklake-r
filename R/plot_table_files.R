@@ -21,17 +21,24 @@
 #' compacted with [merge_adjacent_files()], and a large delete-file share is
 #' a sign to run [rewrite_data_files()].
 #'
-#' @importFrom dplyr .data
 #'
-#' @examples
-#' \dontrun{
+#' @examplesIf ducklake_extension_available() && requireNamespace("ggplot2", quietly = TRUE)
+#' lake_dir <- tempfile("plotfiles_lake_")
+#' dir.create(lake_dir)
+#' attach_ducklake("plotfiles_lake", lake_path = lake_dir)
+#' create_table(mtcars, "cars")
+#'
+#' create_table(iris, "flowers")
+#'
 #' # File counts and sizes for every table in the lake
 #' plot_table_files()
 #'
 #' # Customize the result like any ggplot
 #' plot_table_files() +
 #'   ggplot2::theme_classic()
-#' }
+#'
+#' detach_ducklake("plotfiles_lake", shutdown = TRUE)
+#' unlink(lake_dir, recursive = TRUE)
 plot_table_files <- function(ducklake_name = NULL, conn = NULL) {
   if (!requireNamespace("ggplot2", quietly = TRUE)) {
     cli::cli_abort(c(

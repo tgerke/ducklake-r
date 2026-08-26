@@ -9,6 +9,9 @@ check_quack_version(conn = NULL)
 \arguments{
 \item{conn}{Optional DuckDB connection. Defaults to the ducklake connection.}
 }
+\value{
+Invisibly, \code{TRUE}. Aborts when the engine is too old.
+}
 \description{
 Check that the active DuckDB engine supports Quack
 }

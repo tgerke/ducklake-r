@@ -21,9 +21,17 @@ earlier snapshots still contain it and remain queryable through time
 travel.
 }
 \examples{
-\dontrun{
-drop_table_column("adsl", "SCRATCH_FLAG")
-}
+\dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}
+lake_dir <- tempfile("dropcol_lake_")
+dir.create(lake_dir)
+attach_ducklake("dropcol_lake", lake_path = lake_dir)
+create_table(mtcars, "cars")
+
+drop_table_column("cars", "carb")
+
+detach_ducklake("dropcol_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=add_table_column]{add_table_column()}}, \code{\link[=rename_table_column]{rename_table_column()}},

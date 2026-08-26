@@ -8,23 +8,12 @@ vignette: >
 ---
 
 ```{r, include = FALSE}
-# Skip this vignette if optional packages are not available, or where the
-# ducklake DuckDB extension is unusable: it needs duckdb >= 1.5.1 and, when
-# not already cached, network access to install (not available on CRAN).
+# Skip this vignette when the optional packages are missing, or when the
+# ducklake DuckDB extension is not already installed. The probe never
+# downloads anything, so building this vignette needs no network access.
 has_deps <- requireNamespace("pharmaversesdtm", quietly = TRUE) &&
   requireNamespace("admiral", quietly = TRUE)
-ducklake_available <- tryCatch({
-  packageVersion("duckdb") >= "1.5.1" && {
-    con <- DBI::dbConnect(duckdb::duckdb())
-    ok <- tryCatch({
-      DBI::dbExecute(con, "INSTALL ducklake;")
-      DBI::dbExecute(con, "LOAD ducklake;")
-      TRUE
-    }, error = function(e) FALSE)
-    DBI::dbDisconnect(con, shutdown = TRUE)
-    ok
-  }
-}, error = function(e) FALSE)
+ducklake_available <- ducklake::ducklake_extension_available()
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
@@ -85,7 +74,8 @@ We'll use a temporary directory for this vignette, but in practice you would spe
 
 ```{r create-datalake}
 # Install the ducklake extension to duckdb (required once per system)
-install_ducklake()
+# The ducklake extension only needs installing once per machine:
+# install_ducklake()
 
 # Define where to create a new data lake or access an existing one
 # For this vignette, we use vignette_temp_dir; in practice, use a permanent location

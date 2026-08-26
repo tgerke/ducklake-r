@@ -31,20 +31,27 @@
 #' creation) appear in a `(lake)` lane, and the x axis labels show each
 #' snapshot's date.
 #'
-#' @importFrom dplyr .data
 #'
-#' @examples
-#' \dontrun{
+#' @examplesIf ducklake_extension_available() && requireNamespace("ggplot2", quietly = TRUE)
+#' lake_dir <- tempfile("plotsnap_lake_")
+#' dir.create(lake_dir)
+#' attach_ducklake("plotsnap_lake", lake_path = lake_dir)
+#' create_table(mtcars, "cars")
+#'
+#' create_table(iris, "flowers")
+#'
 #' # Commit-log timeline of one table's history
-#' plot_snapshots("my_table")
+#' plot_snapshots("cars")
 #'
 #' # Swimlane of every table in the lake
 #' plot_snapshots()
 #'
 #' # Customize the result like any ggplot
-#' plot_snapshots("my_table") +
+#' plot_snapshots("cars") +
 #'   ggplot2::labs(title = "Audit trail")
-#' }
+#'
+#' detach_ducklake("plotsnap_lake", shutdown = TRUE)
+#' unlink(lake_dir, recursive = TRUE)
 plot_snapshots <- function(table_name = NULL, ducklake_name = NULL, conn = NULL) {
   if (!requireNamespace("ggplot2", quietly = TRUE)) {
     cli::cli_abort(c(

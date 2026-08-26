@@ -73,17 +73,35 @@
 #' work there. Use Linux, macOS, or WSL for PostgreSQL/MySQL backends.
 #' See \url{https://github.com/duckdb/duckdb/issues/7892}.
 #'
-#' @returns NULL
+#' @returns Invisibly, `NULL`. Called for its side effect of attaching the
+#'   DuckLake catalog to the package's DuckDB connection.
 #' @family connection management
 #' @export
 #'
 #' @seealso [detach_ducklake()], [install_ducklake()], [create_storage_secret()]
 #'
-#' @examples
-#' \dontrun{
+#' @examplesIf ducklake_extension_available()
 #' # DuckDB catalog (default)
-#' attach_ducklake("my_lake", lake_path = "~/data/lake")
+#' lake_dir <- tempfile("my_lake_")
+#' dir.create(lake_dir)
+#' attach_ducklake("my_lake", lake_path = lake_dir)
+#' detach_ducklake("my_lake")
 #'
+#' # Custom inlining threshold for a streaming workload
+#' stream_dir <- tempfile("streaming_lake_")
+#' dir.create(stream_dir)
+#' attach_ducklake(
+#'   "streaming_lake",
+#'   lake_path = stream_dir,
+#'   data_inlining_row_limit = 100
+#' )
+#'
+#' detach_ducklake("streaming_lake", shutdown = TRUE)
+#' unlink(c(lake_dir, stream_dir), recursive = TRUE)
+#'
+#' # The remaining forms need a catalog server, or extensions that are
+#' # downloaded on first use, so they are not run here.
+#' \dontrun{
 #' # PostgreSQL catalog
 #' attach_ducklake(
 #'   "my_lake",
@@ -108,18 +126,11 @@
 #'   lake_path = "data_files/"
 #' )
 #'
-#' # Custom inlining threshold for streaming workload
-#' attach_ducklake(
-#'   "streaming_lake",
-#'   lake_path = "~/data/streaming",
-#'   data_inlining_row_limit = 100
-#' )
+#' # Encrypted Parquet files (keys live in the catalog); needs httpfs
+#' attach_ducklake("secure_lake", lake_path = "path/to/lake", encrypted = TRUE)
 #'
-#' # Encrypted Parquet files (keys live in the catalog)
-#' attach_ducklake("secure_lake", lake_path = "~/data/secure", encrypted = TRUE)
-#'
-#' # A frozen view of the lake as of snapshot 12, e.g. for reproducing a report
-#' attach_ducklake("lake_v12", lake_path = "~/data/lake", snapshot_version = 12)
+#' # A frozen view of the lake as of snapshot 12, e.g. to reproduce a report
+#' attach_ducklake("lake_v12", lake_path = "path/to/lake", snapshot_version = 12)
 #' }
 attach_ducklake <- function(ducklake_name, lake_path,
                              backend = c("duckdb", "postgres", "sqlite", "mysql"),
@@ -223,29 +234,22 @@ normalize_lake_path <- function(lake_path) {
 #'   encrypted files requires the full crypto module from the httpfs
 #'   extension on platforms where the built-in module is read-only
 #'   (notably Windows).
+#' @returns Invisibly, `NULL`. Called for its side effect of loading (and, if
+#'   necessary, installing) the required DuckDB extensions.
 #' @keywords internal
 ensure_extensions <- function(backend, encrypted = FALSE) {
-  tryCatch({
-    db_execute("LOAD ducklake;")
-  }, error = function(e) {
-    db_execute("INSTALL ducklake;")
-    db_execute("LOAD ducklake;")
-  })
+  load_or_install_extension("ducklake")
 
   if (encrypted) {
-    tryCatch({
-      db_execute("LOAD httpfs;")
-    }, error = function(e) {
-      tryCatch({
-        db_execute("INSTALL httpfs;")
-        db_execute("LOAD httpfs;")
-      }, error = function(e2) {
+    tryCatch(
+      load_or_install_extension("httpfs"),
+      error = function(e) {
         cli::cli_warn(c(
-          "Could not load the {.pkg httpfs} extension: {e2$message}",
+          "Could not load the {.pkg httpfs} extension: {e$message}",
           "i" = "Writing encrypted files may fail where DuckDB's built-in crypto module is read-only (e.g., Windows)."
         ))
-      })
-    })
+      }
+    )
   }
 
   ext <- switch(backend,
@@ -256,12 +260,7 @@ ensure_extensions <- function(backend, encrypted = FALSE) {
   )
 
   if (!is.null(ext)) {
-    tryCatch({
-      db_execute(sprintf("LOAD %s;", ext))
-    }, error = function(e) {
-      db_execute(sprintf("INSTALL %s;", ext))
-      db_execute(sprintf("LOAD %s;", ext))
-    })
+    load_or_install_extension(ext)
   }
 }
 

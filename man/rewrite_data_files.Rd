@@ -36,13 +36,27 @@ The rewritten originals are scheduled for deletion once no snapshot
 references them; run \code{\link[=cleanup_old_files]{cleanup_old_files()}} to remove them.
 }
 \examples{
-\dontrun{
+\dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}
+lake_dir <- tempfile("rewrite_lake_")
+dir.create(lake_dir)
+attach_ducklake("rewrite_lake", lake_path = lake_dir)
+create_table(mtcars, "cars")
+
+rows_delete(
+  get_ducklake_table("cars"),
+  data.frame(gear = 3),
+  by = "gear"
+)
+
 # Rewrite any file that is at least half deleted
-rewrite_data_files("my_lake", delete_threshold = 0.5)
+rewrite_data_files("rewrite_lake", delete_threshold = 0.5)
 
 # Just one table, with DuckLake's default threshold
-rewrite_data_files(table_name = "events")
-}
+rewrite_data_files(table_name = "cars")
+
+detach_ducklake("rewrite_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=cleanup_old_files]{cleanup_old_files()}}, \code{\link[=checkpoint_ducklake]{checkpoint_ducklake()}}

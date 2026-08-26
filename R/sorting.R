@@ -33,14 +33,20 @@
 #' @seealso [reset_table_sorting()], [set_ducklake_option()],
 #'   [set_table_partitioning()]
 #'
-#' @examples
-#' \dontrun{
-#' # Order events by time so time-window filters prune files
-#' set_table_sorting("events", "event_time")
+#' @examplesIf ducklake_extension_available()
+#' lake_dir <- tempfile("sort_lake_")
+#' dir.create(lake_dir)
+#' attach_ducklake("sort_lake", lake_path = lake_dir)
+#' create_table(mtcars, "cars")
+#'
+#' # Order rows so range filters can prune files
+#' set_table_sorting("cars", "mpg")
 #'
 #' # Compound key with explicit directions
-#' set_table_sorting("events", c("event_time ASC", "event_type DESC"))
-#' }
+#' set_table_sorting("cars", c("cyl ASC", "mpg DESC"))
+#'
+#' detach_ducklake("sort_lake", shutdown = TRUE)
+#' unlink(lake_dir, recursive = TRUE)
 set_table_sorting <- function(table_name, sort_by) {
   conn <- get_ducklake_connection()
 
@@ -92,10 +98,17 @@ set_table_sorting <- function(table_name, sort_by) {
 #'
 #' @seealso [set_table_sorting()]
 #'
-#' @examples
-#' \dontrun{
-#' reset_table_sorting("events")
-#' }
+#' @examplesIf ducklake_extension_available()
+#' lake_dir <- tempfile("unsort_lake_")
+#' dir.create(lake_dir)
+#' attach_ducklake("unsort_lake", lake_path = lake_dir)
+#' create_table(mtcars, "cars")
+#'
+#' set_table_sorting("cars", "mpg")
+#' reset_table_sorting("cars")
+#'
+#' detach_ducklake("unsort_lake", shutdown = TRUE)
+#' unlink(lake_dir, recursive = TRUE)
 reset_table_sorting <- function(table_name) {
   conn <- get_ducklake_connection()
 

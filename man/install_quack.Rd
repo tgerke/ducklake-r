@@ -9,6 +9,10 @@ install_quack(load = TRUE)
 \arguments{
 \item{load}{If \code{TRUE} (the default), load the extension after installing it.}
 }
+\value{
+Invisibly, \code{NULL}. Called for its side effect of installing the
+\code{quack} DuckDB extension into the local extension cache.
+}
 \description{
 Installs the Quack DuckDB extension, which provides the \verb{quack:} client-server
 protocol. Quack is a core extension from DuckDB 1.5.3 onward, so it is

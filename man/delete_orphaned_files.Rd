@@ -43,11 +43,18 @@ macOS) makes \emph{live} files look orphaned, and deleting them breaks the
 lake.
 }
 \examples{
-\dontrun{
+\dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}
+lake_dir <- tempfile("orphan_lake_")
+dir.create(lake_dir)
+attach_ducklake("orphan_lake", lake_path = lake_dir)
+create_table(mtcars, "cars")
+
 # Always preview orphan deletion first
 delete_orphaned_files(dry_run = TRUE, cleanup_all = TRUE)
-delete_orphaned_files(cleanup_all = TRUE)
-}
+
+detach_ducklake("orphan_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=cleanup_old_files]{cleanup_old_files()}}, \code{\link[=checkpoint_ducklake]{checkpoint_ducklake()}}

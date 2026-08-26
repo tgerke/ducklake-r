@@ -13,26 +13,38 @@
 #'   restores the labels (see [get_table_comments()]), and every other
 #'   client of the lake can read them too. Set to `FALSE` to skip.
 #'
-#' @returns NULL
+#' @returns Invisibly, `NULL`. Called for its side effect of creating the
+#'   table in the lake.
 #' @family table operations
 #' @export
 #'
-#' @examples
-#' \dontrun{
-#' # From URL
-#' create_table("https://example.com/data.csv", "my_table")
-#' 
-#' # From local file
-#' create_table("data.csv", "my_table")
-#' 
+#' @examplesIf ducklake_extension_available()
+#' lake_dir <- tempfile("create_lake_")
+#' dir.create(lake_dir)
+#' attach_ducklake("create_lake", lake_path = lake_dir)
+#'
 #' # From data.frame
-#' create_table(mtcars, "my_table")
-#' 
-#' # From lazy table (pipe-friendly)
-#' get_ducklake_table("source_table") %>% 
-#'   filter(x > 5) %>%
-#'   create_table("filtered_table")
+#' create_table(mtcars, "cars")
+#'
+#' # From a local file
+#' csv_path <- tempfile(fileext = ".csv")
+#' utils::write.csv(mtcars, csv_path, row.names = FALSE)
+#' create_table(csv_path, "cars_from_csv")
+#'
+#' # From a lazy table (pipe-friendly)
+#' get_ducklake_table("cars") |>
+#'   dplyr::filter(cyl > 4) |>
+#'   create_table("big_cars")
+#'
+#' # From a URL -- needs network access and the httpfs extension
+#' \dontrun{
+#' create_table("https://example.com/data.csv", "remote_table")
 #' }
+#'
+#' unlink(csv_path)
+#'
+#' detach_ducklake("create_lake", shutdown = TRUE)
+#' unlink(lake_dir, recursive = TRUE)
 create_table <- function(data_source, table_name, labels = TRUE) {
   # Handle lazy tables (tbl_duckdb_connection, tbl_lazy)
   if (inherits(data_source, "tbl_lazy")) {
@@ -128,12 +140,7 @@ create_table <- function(data_source, table_name, labels = TRUE) {
   
   # If data_source is a URL, ensure httpfs extension is installed and loaded
   if (is.character(data_source) && grepl("^https?://", data_source)) {
-    tryCatch({
-      db_execute("LOAD httpfs;")
-    }, error = function(e) {
-      db_execute("INSTALL httpfs;")
-      db_execute("LOAD httpfs;")
-    })
+    load_or_install_extension("httpfs")
   }
   
   # Handle file paths and URLs

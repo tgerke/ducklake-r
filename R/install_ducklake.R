@@ -11,7 +11,8 @@
 #' @note On Windows the `postgres` and `mysql` extensions are not available
 #'   (MinGW toolchain). See [attach_ducklake()] for details.
 #'
-#' @returns NULL
+#' @returns Invisibly, `NULL`. Called for its side effect of installing the
+#'   DuckDB extensions into the local extension cache.
 #' @family connection management
 #' @export
 #'
@@ -34,6 +35,7 @@ install_ducklake <- function(backend = NULL) {
   }
 
   db_execute("INSTALL ducklake;")
+  reset_extension_available_cache()
   cli::cli_inform("Installed {.pkg ducklake} extension.")
 
   valid_backends <- c("postgres", "sqlite", "mysql")

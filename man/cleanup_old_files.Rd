@@ -39,14 +39,24 @@ once on the catalog with
 after which DuckLake cleans up eligible files automatically.
 }
 \examples{
-\dontrun{
+\dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}
+lake_dir <- tempfile("cleanup_lake_")
+dir.create(lake_dir)
+attach_ducklake("cleanup_lake", lake_path = lake_dir)
+create_table(mtcars, "cars")
+
+expire_snapshots(older_than = Sys.time())
+
 # Preview, then delete everything that is scheduled
 cleanup_old_files(dry_run = TRUE, cleanup_all = TRUE)
 cleanup_old_files(cleanup_all = TRUE)
 
 # Only delete files scheduled more than a week ago
 cleanup_old_files(older_than = Sys.time() - 7 * 24 * 60 * 60)
-}
+
+detach_ducklake("cleanup_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=expire_snapshots]{expire_snapshots()}}, \code{\link[=delete_orphaned_files]{delete_orphaned_files()}},

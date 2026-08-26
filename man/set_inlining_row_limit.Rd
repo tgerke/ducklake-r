@@ -38,9 +38,9 @@ workloads.
 \details{
 The limit can be set at three levels (highest priority first):
 \enumerate{
-\item \strong{Table-level} – persisted in the DuckLake metadata for a specific table
-\item \strong{Schema-level} – persisted for all tables in a schema
-\item \strong{Global (DuckDB setting)} – applies to all DuckLake connections
+\item \strong{Table-level} -- persisted in the DuckLake metadata for a specific table
+\item \strong{Schema-level} -- persisted for all tables in a schema
+\item \strong{Global (DuckDB setting)} -- applies to all DuckLake connections
 }
 
 Data inlining is enabled by default in DuckLake v1.0 with a threshold of 10
@@ -55,16 +55,24 @@ Use \code{\link[=flush_inlined_data]{flush_inlined_data()}} or \code{\link[=chec
 data to Parquet when ready.
 }
 \examples{
-\dontrun{
+\dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}
+lake_dir <- tempfile("inline_set_lake_")
+dir.create(lake_dir)
+attach_ducklake("inline_set_lake", lake_path = lake_dir)
+create_table(mtcars, "cars")
+
 # Change the global default
 set_inlining_row_limit(50)
 
 # Override for a specific table
-set_inlining_row_limit(100, table_name = "readings")
+set_inlining_row_limit(100, table_name = "cars")
 
 # Disable inlining globally
 set_inlining_row_limit(0)
-}
+
+detach_ducklake("inline_set_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=get_inlining_row_limit]{get_inlining_row_limit()}}, \code{\link[=flush_inlined_data]{flush_inlined_data()}},

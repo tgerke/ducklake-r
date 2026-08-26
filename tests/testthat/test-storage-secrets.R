@@ -1,6 +1,9 @@
 # Tests for create_storage_secret()
 
 test_that("create_storage_secret registers a named, scoped s3 secret", {
+  # Probing httpfs can trigger DuckDB's automatic extension install, which
+  # downloads into ~/.duckdb/extensions/. Never do that on a check machine.
+  skip_on_cran()
   skip_if_not_installed("duckdb")
 
   conn <- get_ducklake_connection()

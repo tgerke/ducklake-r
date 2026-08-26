@@ -12,14 +12,10 @@ get_ducklake_env <- function() {
 #' needs network access on first use, so these tests cannot run on CRAN.
 skip_if_no_ducklake <- function() {
   testthat::skip_on_cran()
-  ok <- tryCatch(
-    {
-      DBI::dbExecute(ducklake::get_ducklake_connection(), "LOAD ducklake;")
-      TRUE
-    },
-    error = function(e) FALSE
+  testthat::skip_if_not(
+    ducklake::ducklake_extension_available(),
+    "ducklake extension not available"
   )
-  testthat::skip_if_not(ok, "ducklake extension not available")
   invisible(TRUE)
 }
 

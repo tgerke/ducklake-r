@@ -17,9 +17,21 @@ Removes a view from the lake with \verb{DROP VIEW}. Only the stored query is
 dropped; the tables it reads are untouched.
 }
 \examples{
-\dontrun{
-drop_view("v_safety_population")
-}
+\dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}
+lake_dir <- tempfile("dropview_lake_")
+dir.create(lake_dir)
+attach_ducklake("dropview_lake", lake_path = lake_dir)
+create_table(mtcars, "cars")
+
+get_ducklake_table("cars") |>
+  dplyr::filter(cyl == 4) |>
+  create_view("v_efficient_cars")
+
+drop_view("v_efficient_cars")
+
+detach_ducklake("dropview_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=create_view]{create_view()}}
