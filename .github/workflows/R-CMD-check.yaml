@@ -32,7 +32,7 @@ jobs:
       # duckdb >= 1.5.2 keeps extensions in a per-process tempdir unless given
       # a persistent home; without this, the pre-installed extension is invisible
       # to the check's subprocesses and examples/vignettes silently skip.
-      DUCKDB_R_HOME: ${{ runner.temp }}/duckdb
+      DUCKDB_R_HOME: ~/.duckdb-ci
 
     steps:
       - uses: actions/checkout@v4
