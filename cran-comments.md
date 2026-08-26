@@ -5,6 +5,10 @@
 0 errors | 0 warnings | 1 note
 
 * This is a new release, so the "New submission" note is expected.
+* The same note lists "backends", "inlining", and "lakehouse" as possibly
+  misspelled in DESCRIPTION. All three are spelled as intended: "lakehouse"
+  is the term DuckLake uses for its own format, and the other two are the
+  standard spellings for catalog backends and for inlining small writes.
 
 Checked both with the extension present (all examples, tests, and vignettes
 execute) and with it absent (everything gates itself off and the check is
