@@ -114,12 +114,18 @@ Other row operations:
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+lake_dir <- tempfile("rowsups_lake_")
+dir.create(lake_dir)
+attach_ducklake("rowsups_lake", lake_path = lake_dir)
+create_table(data.frame(id = 1:3, value = c("a", "b", "c")), "items")
+
 # Update id 2, insert id 4 - one statement, one snapshot
 rows_upsert(
-  get_ducklake_table("my_table"),
+  get_ducklake_table("items"),
   data.frame(id = c(2, 4), value = c("updated", "new")),
   by = "id"
 )
-} # }
+
+detach_ducklake("rowsups_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
 ```

@@ -18,6 +18,11 @@ install_ducklake(backend = NULL)
   extension is always installed. Pass `"postgres"`, `"sqlite"`, and/or
   `"mysql"` to install the corresponding backend extensions.
 
+## Value
+
+Invisibly, `NULL`. Called for its side effect of installing the DuckDB
+extensions into the local extension cache.
+
 ## Note
 
 On Windows the `postgres` and `mysql` extensions are not available
@@ -31,6 +36,7 @@ Other connection management:
 [`attach_ducklake()`](https://tgerke.github.io/ducklake-r/reference/attach_ducklake.md),
 [`create_storage_secret()`](https://tgerke.github.io/ducklake-r/reference/create_storage_secret.md),
 [`detach_ducklake()`](https://tgerke.github.io/ducklake-r/reference/detach_ducklake.md),
+[`ducklake_extension_available()`](https://tgerke.github.io/ducklake-r/reference/ducklake_extension_available.md),
 [`get_ducklake_backend()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_backend.md),
 [`get_ducklake_connection()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_connection.md),
 [`set_ducklake_connection()`](https://tgerke.github.io/ducklake-r/reference/set_ducklake_connection.md)

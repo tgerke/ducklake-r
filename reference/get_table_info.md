@@ -69,11 +69,25 @@ Other maintenance:
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+lake_dir <- tempfile("info_lake_")
+dir.create(lake_dir)
+attach_ducklake("info_lake", lake_path = lake_dir)
+create_table(mtcars, "cars")
+
 # File statistics for every table in the lake
 get_table_info()
+#>   table_name schema_id table_id                           table_uuid file_count
+#> 1       cars         0        1 01a03b97-cfc6-786d-8210-283eaa501b21          1
+#>   file_size_bytes delete_file_count delete_file_size_bytes
+#> 1            2911                 0                      0
 
 # Just one table
-get_table_info("my_table")
-} # }
+get_table_info("cars")
+#>   table_name schema_id table_id                           table_uuid file_count
+#> 1       cars         0        1 01a03b97-cfc6-786d-8210-283eaa501b21          1
+#>   file_size_bytes delete_file_count delete_file_size_bytes
+#> 1            2911                 0                      0
+
+detach_ducklake("info_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
 ```

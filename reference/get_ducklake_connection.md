@@ -30,6 +30,7 @@ Other connection management:
 [`attach_ducklake()`](https://tgerke.github.io/ducklake-r/reference/attach_ducklake.md),
 [`create_storage_secret()`](https://tgerke.github.io/ducklake-r/reference/create_storage_secret.md),
 [`detach_ducklake()`](https://tgerke.github.io/ducklake-r/reference/detach_ducklake.md),
+[`ducklake_extension_available()`](https://tgerke.github.io/ducklake-r/reference/ducklake_extension_available.md),
 [`get_ducklake_backend()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_backend.md),
 [`install_ducklake()`](https://tgerke.github.io/ducklake-r/reference/install_ducklake.md),
 [`set_ducklake_connection()`](https://tgerke.github.io/ducklake-r/reference/set_ducklake_connection.md)
@@ -37,8 +38,10 @@ Other connection management:
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
 conn <- get_ducklake_connection()
 DBI::dbGetQuery(conn, "SELECT version()")
-} # }
+#>   "version"()
+#> 1      v1.5.5
+
+detach_ducklake(shutdown = TRUE)
 ```

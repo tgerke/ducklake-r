@@ -67,22 +67,30 @@ Other table operations:
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-# Delete rows that don't match filter (table name inferred)
-get_ducklake_table("my_table") |>
-  filter(status == "inactive") |>
-  ducklake_exec()
+lake_dir <- tempfile("exec_lake_")
+dir.create(lake_dir)
+attach_ducklake("exec_lake", lake_path = lake_dir)
+create_table(data.frame(id = 1:3, status = "pending"), "jobs")
 
 # Update specific rows (table name inferred)
-get_ducklake_table("my_table") |>
-  filter(id == 123) |>
-  mutate(status = "updated") |>
+get_ducklake_table("jobs") |>
+  dplyr::filter(id == 1) |>
+  dplyr::mutate(status = "updated") |>
   ducklake_exec()
+#> [1] 1
 
-# Or provide table name explicitly
-tbl(con, "my_table") |>
-  select(id, name) |>
-  mutate(computed_field = name * 2) |>
-  ducklake_exec("my_table")
-} # }
+# Delete rows matching a filter
+get_ducklake_table("jobs") |>
+  dplyr::filter(status == "pending") |>
+  ducklake_exec()
+#> [1] 1
+
+# Or provide the table name explicitly
+get_ducklake_table("jobs") |>
+  dplyr::mutate(status = "done") |>
+  ducklake_exec("jobs")
+#> [1] 2
+
+detach_ducklake("exec_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
 ```

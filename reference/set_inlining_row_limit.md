@@ -84,14 +84,23 @@ Other data inlining:
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+lake_dir <- tempfile("inline_set_lake_")
+dir.create(lake_dir)
+attach_ducklake("inline_set_lake", lake_path = lake_dir)
+create_table(mtcars, "cars")
+
 # Change the global default
 set_inlining_row_limit(50)
+#> Global data inlining row limit set to 50.
 
 # Override for a specific table
-set_inlining_row_limit(100, table_name = "readings")
+set_inlining_row_limit(100, table_name = "cars")
+#> Data inlining row limit for table {.val cars} set to 100.
 
 # Disable inlining globally
 set_inlining_row_limit(0)
-} # }
+#> Global data inlining row limit set to 0.
+
+detach_ducklake("inline_set_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
 ```

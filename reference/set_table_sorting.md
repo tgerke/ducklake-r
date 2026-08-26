@@ -60,11 +60,23 @@ Other sorting:
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-# Order events by time so time-window filters prune files
-set_table_sorting("events", "event_time")
+lake_dir <- tempfile("sort_lake_")
+dir.create(lake_dir)
+attach_ducklake("sort_lake", lake_path = lake_dir)
+create_table(mtcars, "cars")
+
+# Order rows so range filters can prune files
+set_table_sorting("cars", "mpg")
+#> Table "cars" is now sorted by "mpg".
+#> ℹ Only newly written data is sorted; existing files keep their layout until
+#>   compaction.
 
 # Compound key with explicit directions
-set_table_sorting("events", c("event_time ASC", "event_type DESC"))
-} # }
+set_table_sorting("cars", c("cyl ASC", "mpg DESC"))
+#> Table "cars" is now sorted by "cyl ASC" and "mpg DESC".
+#> ℹ Only newly written data is sorted; existing files keep their layout until
+#>   compaction.
+
+detach_ducklake("sort_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
 ```

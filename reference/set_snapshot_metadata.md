@@ -64,16 +64,24 @@ Other transactions:
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+lake_dir <- tempfile("meta_lake_")
+dir.create(lake_dir)
+attach_ducklake("meta_lake", lake_path = lake_dir)
+
 begin_transaction()
-# ... make changes ...
+#> Transaction started.
+create_table(mtcars, "cars")
 commit_transaction()
+#> Transaction committed.
 
 # Add metadata to the snapshot after the fact
 set_snapshot_metadata(
-  ducklake_name = "my_ducklake",
+  ducklake_name = "meta_lake",
   author = "Data Team",
-  commit_message = "Updated station names for clarity"
+  commit_message = "Added the cars dataset"
 )
-} # }
+#> Snapshot metadata updated.
+
+detach_ducklake("meta_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
 ```

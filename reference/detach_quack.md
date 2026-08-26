@@ -16,6 +16,11 @@ detach_quack(quack_name = NULL)
 
   Name of the remote catalog to detach. If `NULL`, nothing is detached.
 
+## Value
+
+Invisibly, `NULL`. Called for its side effect of detaching the remote
+catalog.
+
 ## See also
 
 [`attach_quack()`](https://tgerke.github.io/ducklake-r/reference/attach_quack.md)

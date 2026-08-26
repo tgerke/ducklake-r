@@ -38,10 +38,23 @@ Other transactions:
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+lake_dir <- tempfile("rollback_lake_")
+dir.create(lake_dir)
+attach_ducklake("rollback_lake", lake_path = lake_dir)
+create_table(mtcars, "cars")
+
 begin_transaction()
-# ... make changes ...
+#> Transaction started.
+rows_delete(
+  get_ducklake_table("cars"),
+  data.frame(gear = 3),
+  by = "gear"
+)
+
 # Something went wrong, rollback
 rollback_transaction()
-} # }
+#> Transaction rolled back.
+
+detach_ducklake("rollback_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
 ```

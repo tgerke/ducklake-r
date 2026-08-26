@@ -57,12 +57,24 @@ Other maintenance:
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+lake_dir <- tempfile("plotfiles_lake_")
+dir.create(lake_dir)
+attach_ducklake("plotfiles_lake", lake_path = lake_dir)
+create_table(mtcars, "cars")
+
+create_table(iris, "flowers")
+#> Converted factor column Species to character (DuckLake does not support ENUM
+#> columns).
+
 # File counts and sizes for every table in the lake
 plot_table_files()
+
 
 # Customize the result like any ggplot
 plot_table_files() +
   ggplot2::theme_classic()
-} # }
+
+
+detach_ducklake("plotfiles_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
 ```

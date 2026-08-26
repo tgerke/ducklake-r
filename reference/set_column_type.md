@@ -55,7 +55,18 @@ Other schema evolution:
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-set_column_type("sales", "order_id", "BIGINT")
-} # }
+lake_dir <- tempfile("coltype_lake_")
+dir.create(lake_dir)
+attach_ducklake("coltype_lake", lake_path = lake_dir)
+create_table(mtcars, "cars")
+
+# Widening promotions only: INTEGER -> BIGINT is fine
+add_table_column("cars", "order_id", "INTEGER")
+#> Added column "order_id" (INTEGER) to "cars".
+#> ℹ Metadata-only change; no data files were rewritten.
+set_column_type("cars", "order_id", "BIGINT")
+#> Column "order_id" in "cars" is now BIGINT.
+
+detach_ducklake("coltype_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
 ```

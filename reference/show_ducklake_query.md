@@ -41,10 +41,21 @@ Other table operations:
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+lake_dir <- tempfile("sql_lake_")
+dir.create(lake_dir)
+attach_ducklake("sql_lake", lake_path = lake_dir)
+create_table(mtcars, "cars")
+
 # Show SQL for an update operation (table name inferred)
-get_ducklake_table("my_table") |>
-  mutate(status = "updated") |>
+get_ducklake_table("cars") |>
+  dplyr::mutate(gear = 5) |>
   show_ducklake_query()
-} # }
+#> 
+#> === DuckLake SQL Preview ===
+#> 
+#> -- Main operation
+#> UPDATE cars SET gear = 5.0 ;
+
+detach_ducklake("sql_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
 ```

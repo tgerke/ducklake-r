@@ -54,15 +54,28 @@ Other table operations:
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-attach_ducklake("my_lake", lake_path = "~/data/lake")
+lake_dir <- tempfile("meta_lake_")
+dir.create(lake_dir)
+attach_ducklake("meta_lake", lake_path = lake_dir)
+create_table(mtcars, "cars")
 
 # Every snapshot ever taken
 get_metadata_table("ducklake_snapshot") |> dplyr::collect()
+#> # A tibble: 2 × 5
+#>   snapshot_id snapshot_time       schema_version next_catalog_id next_file_id
+#>         <dbl> <dttm>                       <dbl>           <dbl>        <dbl>
+#> 1           0 2026-08-26 01:03:18              0               1            0
+#> 2           1 2026-08-26 01:03:18              1               2            1
 
 # Which Parquet files back the lake?
 get_metadata_table("ducklake_data_file") |>
   dplyr::select(data_file_id, path) |>
   dplyr::collect()
-} # }
+#> # A tibble: 1 × 2
+#>   data_file_id path                                                 
+#>          <dbl> <chr>                                                
+#> 1            0 ducklake-01a03b97-c89f-7a9c-bf43-6467d581aa18.parquet
+
+detach_ducklake("meta_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
 ```

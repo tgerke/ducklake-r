@@ -44,7 +44,15 @@ Other schema evolution:
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-rename_ducklake_table("sales", "sales_daily")
-} # }
+lake_dir <- tempfile("renametbl_lake_")
+dir.create(lake_dir)
+attach_ducklake("renametbl_lake", lake_path = lake_dir)
+create_table(mtcars, "cars")
+
+rename_ducklake_table("cars", "cars_daily")
+#> Renamed table "cars" to "cars_daily".
+#> ℹ Snapshots from before the rename remain queryable under the old name.
+
+detach_ducklake("renametbl_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
 ```

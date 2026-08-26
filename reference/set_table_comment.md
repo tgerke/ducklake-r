@@ -37,8 +37,16 @@ Other table documentation:
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-set_table_comment("adsl", "Subject-level analysis dataset, one row per subject")
-set_table_comment("scratch", NULL)  # clear
-} # }
+lake_dir <- tempfile("comment_lake_")
+dir.create(lake_dir)
+attach_ducklake("comment_lake", lake_path = lake_dir)
+create_table(mtcars, "cars")
+
+set_table_comment("cars", "Motor Trend road tests, one row per model")
+#> Commented table "cars".
+set_table_comment("cars", NULL) # clear
+#> Cleared the comment on "cars".
+
+detach_ducklake("comment_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
 ```

@@ -29,7 +29,18 @@ Other sorting:
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-reset_table_sorting("events")
-} # }
+lake_dir <- tempfile("unsort_lake_")
+dir.create(lake_dir)
+attach_ducklake("unsort_lake", lake_path = lake_dir)
+create_table(mtcars, "cars")
+
+set_table_sorting("cars", "mpg")
+#> Table "cars" is now sorted by "mpg".
+#> ℹ Only newly written data is sorted; existing files keep their layout until
+#>   compaction.
+reset_table_sorting("cars")
+#> Sort order removed from table "cars".
+
+detach_ducklake("unsort_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
 ```

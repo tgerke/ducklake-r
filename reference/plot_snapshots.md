@@ -66,15 +66,28 @@ Other time travel:
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+lake_dir <- tempfile("plotsnap_lake_")
+dir.create(lake_dir)
+attach_ducklake("plotsnap_lake", lake_path = lake_dir)
+create_table(mtcars, "cars")
+
+create_table(iris, "flowers")
+#> Converted factor column Species to character (DuckLake does not support ENUM
+#> columns).
+
 # Commit-log timeline of one table's history
-plot_snapshots("my_table")
+plot_snapshots("cars")
+
 
 # Swimlane of every table in the lake
 plot_snapshots()
 
+
 # Customize the result like any ggplot
-plot_snapshots("my_table") +
+plot_snapshots("cars") +
   ggplot2::labs(title = "Audit trail")
-} # }
+
+
+detach_ducklake("plotsnap_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
 ```

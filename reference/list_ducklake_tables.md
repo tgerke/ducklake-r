@@ -44,7 +44,15 @@ Other table operations:
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+lake_dir <- tempfile("list_lake_")
+dir.create(lake_dir)
+attach_ducklake("list_lake", lake_path = lake_dir)
+create_table(mtcars, "cars")
+
 list_ducklake_tables()
-} # }
+#>   schema_name table_name  type
+#> 1        main       cars table
+
+detach_ducklake("list_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
 ```

@@ -41,7 +41,14 @@ Other schema evolution:
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-drop_table_column("adsl", "SCRATCH_FLAG")
-} # }
+lake_dir <- tempfile("dropcol_lake_")
+dir.create(lake_dir)
+attach_ducklake("dropcol_lake", lake_path = lake_dir)
+create_table(mtcars, "cars")
+
+drop_table_column("cars", "carb")
+#> Dropped column "carb" from "cars". Earlier snapshots still contain it.
+
+detach_ducklake("dropcol_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
 ```

@@ -13,3 +13,7 @@ check_quack_version(conn = NULL)
 - conn:
 
   Optional DuckDB connection. Defaults to the ducklake connection.
+
+## Value
+
+Invisibly, `TRUE`. Aborts when the engine is too old.

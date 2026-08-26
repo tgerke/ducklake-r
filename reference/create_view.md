@@ -63,14 +63,35 @@ Other table operations:
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+lake_dir <- tempfile("view_lake_")
+dir.create(lake_dir)
+attach_ducklake("view_lake", lake_path = lake_dir)
+create_table(mtcars, "cars")
+
 # Encapsulate filtering logic the whole team should share
-get_ducklake_table("adsl") |>
-  filter(SAFFL == "Y") |>
-  select(USUBJID, TRT01A, AGE) |>
-  create_view("v_safety_population")
+get_ducklake_table("cars") |>
+  dplyr::filter(cyl == 4) |>
+  dplyr::select(mpg, cyl, gear) |>
+  create_view("v_efficient_cars")
+#> Created view "v_efficient_cars".
 
 # Reads run the stored query against current data
-get_ducklake_table("v_safety_population") |> collect()
-} # }
+get_ducklake_table("v_efficient_cars") |> dplyr::collect()
+#> # A tibble: 11 × 3
+#>      mpg   cyl  gear
+#>    <dbl> <dbl> <dbl>
+#>  1  22.8     4     4
+#>  2  24.4     4     4
+#>  3  22.8     4     4
+#>  4  32.4     4     4
+#>  5  30.4     4     4
+#>  6  33.9     4     4
+#>  7  21.5     4     3
+#>  8  27.3     4     4
+#>  9  26       4     5
+#> 10  30.4     4     5
+#> 11  21.4     4     4
+
+detach_ducklake("view_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
 ```

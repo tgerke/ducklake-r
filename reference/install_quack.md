@@ -18,6 +18,11 @@ install_quack(load = TRUE)
 
   If `TRUE` (the default), load the extension after installing it.
 
+## Value
+
+Invisibly, `NULL`. Called for its side effect of installing the `quack`
+DuckDB extension into the local extension cache.
+
 ## See also
 
 [`attach_quack()`](https://tgerke.github.io/ducklake-r/reference/attach_quack.md),

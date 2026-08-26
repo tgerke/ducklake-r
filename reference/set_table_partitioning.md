@@ -55,14 +55,23 @@ Other partitioning:
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-# Partition new files by year and month of the event timestamp
-set_table_partitioning("events", c("year(event_time)", "month(event_time)"))
+lake_dir <- tempfile("part_lake_")
+dir.create(lake_dir)
+attach_ducklake("part_lake", lake_path = lake_dir)
+create_table(mtcars, "cars")
 
 # Plain column partitioning
-set_table_partitioning("sales", "region")
+set_table_partitioning("cars", "cyl")
+#> Table "cars" is now partitioned by "cyl".
+#> ℹ Only newly written data is partitioned; existing files keep their layout.
 
-# Hash user ids into 8 buckets, then split by month
-set_table_partitioning("visits", c("bucket(8, user_id)", "month(ts)"))
-} # }
+# Compound key
+set_table_partitioning("cars", c("gear", "cyl"))
+#> Table "cars" is now partitioned by "gear" and "cyl".
+#> ℹ Only newly written data is partitioned; existing files keep their layout.
+
+# Timestamp columns can be split by year(), month(), day(), or hour()
+
+detach_ducklake("part_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
 ```

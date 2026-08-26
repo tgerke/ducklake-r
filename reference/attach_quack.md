@@ -35,6 +35,11 @@ attach_quack(quack_name, uri, token = NULL, disable_ssl = FALSE)
   Connect over plain HTTP instead of HTTPS (default `FALSE`). Only
   appropriate on a trusted network.
 
+## Value
+
+Invisibly, `NULL`. Called for its side effect of attaching the remote
+catalog to the package's DuckDB connection.
+
 ## Details
 
 A DuckLake served over Quack lives in its own catalog on the server

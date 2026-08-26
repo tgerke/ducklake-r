@@ -82,11 +82,29 @@ Other maintenance:
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+lake_dir <- tempfile("merge_files_lake_")
+dir.create(lake_dir)
+attach_ducklake("merge_files_lake", lake_path = lake_dir)
+create_table(mtcars, "cars")
+
+rows_insert(
+  get_ducklake_table("cars"),
+  data.frame(mpg = 30, cyl = 4),
+  by = "mpg"
+)
+
 # Compact the whole lake
 merge_adjacent_files()
+#> No adjacent files to merge.
+#> [1] schema_name     table_name      files_processed files_created  
+#> <0 rows> (or 0-length row.names)
 
 # Compact one table, only touching files under 10 MB
-merge_adjacent_files(table_name = "readings", max_file_size = 10e6)
-} # }
+merge_adjacent_files(table_name = "cars", max_file_size = 10e6)
+#> No adjacent files to merge.
+#> [1] schema_name     table_name      files_processed files_created  
+#> <0 rows> (or 0-length row.names)
+
+detach_ducklake("merge_files_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
 ```

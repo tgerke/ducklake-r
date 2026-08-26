@@ -6,6 +6,8 @@ Initialize and manage DuckLake connections
 
 - [`install_ducklake()`](https://tgerke.github.io/ducklake-r/reference/install_ducklake.md)
   : Install the ducklake extension to duckdb
+- [`ducklake_extension_available()`](https://tgerke.github.io/ducklake-r/reference/ducklake_extension_available.md)
+  : Is the ducklake DuckDB extension usable?
 - [`attach_ducklake()`](https://tgerke.github.io/ducklake-r/reference/attach_ducklake.md)
   : Create or attach a ducklake
 - [`detach_ducklake()`](https://tgerke.github.io/ducklake-r/reference/detach_ducklake.md)

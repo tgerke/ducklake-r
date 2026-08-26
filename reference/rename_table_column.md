@@ -42,7 +42,14 @@ Other schema evolution:
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-rename_table_column("adsl", from = "AGEGRP", to = "AGEGR1")
-} # }
+lake_dir <- tempfile("renamecol_lake_")
+dir.create(lake_dir)
+attach_ducklake("renamecol_lake", lake_path = lake_dir)
+create_table(mtcars, "cars")
+
+rename_table_column("cars", from = "mpg", to = "miles_per_gallon")
+#> Renamed column "mpg" to "miles_per_gallon" in "cars".
+
+detach_ducklake("renamecol_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
 ```

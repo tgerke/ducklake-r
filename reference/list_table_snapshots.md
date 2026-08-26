@@ -47,8 +47,20 @@ Other time travel:
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+lake_dir <- tempfile("snaplist_lake_")
+dir.create(lake_dir)
+attach_ducklake("snaplist_lake", lake_path = lake_dir)
+create_table(data.frame(id = 1:3, amount = c(10, 20, 30)), "orders")
+
 # List all snapshots for a table
-list_table_snapshots("my_table")
-} # }
+list_table_snapshots("orders")
+#>   snapshot_id       snapshot_time schema_version
+#> 1           1 2026-08-26 01:03:22              1
+#>                                          changes author commit_message
+#> 1 tables_created, inlined_insert, main.orders, 1   <NA>           <NA>
+#>   commit_extra_info
+#> 1              <NA>
+
+detach_ducklake("snaplist_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
 ```

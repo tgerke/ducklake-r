@@ -45,11 +45,22 @@ Other data inlining:
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+lake_dir <- tempfile("inline_get_lake_")
+dir.create(lake_dir)
+attach_ducklake("inline_get_lake", lake_path = lake_dir)
+create_table(mtcars, "cars")
+
+set_inlining_row_limit(100, table_name = "cars")
+#> Data inlining row limit for table {.val cars} set to 100.
+
 # Global default
 get_inlining_row_limit()
+#> [1] 10
 
 # Table-specific limit
-get_inlining_row_limit(table_name = "readings")
-} # }
+get_inlining_row_limit(table_name = "cars")
+#> [1] 100
+
+detach_ducklake("inline_get_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
 ```

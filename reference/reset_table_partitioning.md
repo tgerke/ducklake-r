@@ -31,7 +31,17 @@ Other partitioning:
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-reset_table_partitioning("events")
-} # }
+lake_dir <- tempfile("unpart_lake_")
+dir.create(lake_dir)
+attach_ducklake("unpart_lake", lake_path = lake_dir)
+create_table(mtcars, "cars")
+
+set_table_partitioning("cars", "cyl")
+#> Table "cars" is now partitioned by "cyl".
+#> ℹ Only newly written data is partitioned; existing files keep their layout.
+reset_table_partitioning("cars")
+#> Partitioning removed from table "cars".
+
+detach_ducklake("unpart_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
 ```

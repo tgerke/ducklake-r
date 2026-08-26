@@ -98,23 +98,46 @@ Other table operations:
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+lake_dir <- tempfile("addfiles_lake_")
+dir.create(lake_dir)
+attach_ducklake("addfiles_lake", lake_path = lake_dir)
+
+# Write a couple of Parquet extracts to register. Cast explicitly: DuckDB
+# reads a bare 1.5 as DECIMAL, which will not map onto a DOUBLE column.
+extract_dir <- tempfile("extracts_")
+dir.create(extract_dir)
+conn <- get_ducklake_connection()
+jan <- file.path(extract_dir, "jan.parquet")
+feb <- file.path(extract_dir, "feb.parquet")
+DBI::dbExecute(conn, sprintf(
+  "COPY (SELECT 1::INTEGER AS id, 1.5::DOUBLE AS value)
+   TO '%s' (FORMAT PARQUET);", jan
+))
+#> [1] 1
+DBI::dbExecute(conn, sprintf(
+  "COPY (SELECT 2::INTEGER AS id, 2.5::DOUBLE AS value)
+   TO '%s' (FORMAT PARQUET);", feb
+))
+#> [1] 1
+
 # Bring an existing Parquet extract into the lake without copying it
 create_table(data.frame(id = integer(), value = numeric()), "readings")
-add_data_files("readings", "extracts/readings_2026.parquet")
+add_data_files("readings", jan)
+#> Added 1 file to table "readings".
+#> ℹ DuckLake now owns the added file; compaction may rewrite or delete it.
 
-# Several files at once, tolerating a column the table doesn't have
-add_data_files(
-  "readings",
-  c("extracts/jan.parquet", "extracts/feb.parquet"),
-  ignore_extra_columns = TRUE
-)
+# Register another, tolerating a column the table doesn't have
+add_data_files("readings", feb, ignore_extra_columns = TRUE)
+#> Added 1 file to table "readings".
+#> ℹ DuckLake now owns the added file; compaction may rewrite or delete it.
 
 # Create a new table and register an existing Parquet batch atomically
-add_data_files(
-  "clinvar_staging",
-  "extracts/clinvar-2026-07.parquet",
-  create = TRUE
-)
-} # }
+add_data_files("staging", feb, create = TRUE)
+#> Added 1 file to table "staging".
+#> ℹ DuckLake now owns the added file; compaction may rewrite or delete it.
+
+unlink(extract_dir, recursive = TRUE)
+
+detach_ducklake("addfiles_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
 ```

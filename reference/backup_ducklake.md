@@ -66,7 +66,6 @@ Other maintenance:
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
 # Create a DuckLake
 lake_dir <- tempfile("my_lake")
 dir.create(lake_dir)
@@ -78,6 +77,8 @@ with_transaction(
   author = "User",
   commit_message = "Initial data"
 )
+#> Transaction started.
+#> Transaction committed.
 
 # Create a backup
 backup_dir <- backup_ducklake(
@@ -85,9 +86,15 @@ backup_dir <- backup_ducklake(
   lake_path = lake_dir,
   backup_path = file.path(lake_dir, "backups")
 )
+#> Catalog backed up successfully.
+#> Data files backed up successfully (1 directory).
+#> Backup completed:
+#> /tmp/RtmptumN4y/my_lake1c7973e9c57d/backups/backup_20260826_010306
 
 # Restore (override_data_path needed when location differs):
 # detach_ducklake("my_lake")
 # attach_ducklake("my_lake", lake_path = backup_dir, override_data_path = TRUE)
-} # }
+
+detach_ducklake("my_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
 ```

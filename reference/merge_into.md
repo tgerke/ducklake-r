@@ -169,23 +169,29 @@ Other row operations:
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+lake_dir <- tempfile("merge_lake_")
+dir.create(lake_dir)
+attach_ducklake("merge_lake", lake_path = lake_dir)
+create_table(data.frame(sls_id = 1:3, sls_amt = c(10, 20, 30)), "sales")
+
 # Update only when the source amount is higher; insert new ids
+new_sales <- data.frame(sls_id = c(2L, 4L), sls_amt = c(25, 40))
 merge_into(
   get_ducklake_table("sales"), new_sales, by = "sls_id",
   matched_condition = "source.sls_amt > target.sls_amt"
 )
 
 # Synchronize to a staging table: upsert + drop rows gone from the source
-merge_into(
-  "sales", staging_sales, by = "sls_id",
-  delete_missing = TRUE
-)
+staging_sales <- data.frame(sls_id = c(1L, 2L), sls_amt = c(11, 26))
+merge_into("sales", staging_sales, by = "sls_id", delete_missing = TRUE)
 
 # Remove rows flagged in the source
+withdrawn <- data.frame(sls_id = 1L, sls_amt = 11)
 merge_into(
   "sales", withdrawn, by = "sls_id",
   when_matched = "delete", when_not_matched = "nothing"
 )
-} # }
+
+detach_ducklake("merge_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
 ```

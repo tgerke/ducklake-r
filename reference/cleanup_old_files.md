@@ -71,12 +71,36 @@ Other maintenance:
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+lake_dir <- tempfile("cleanup_lake_")
+dir.create(lake_dir)
+attach_ducklake("cleanup_lake", lake_path = lake_dir)
+create_table(mtcars, "cars")
+
+expire_snapshots(older_than = Sys.time())
+#> Expired 1 snapshot.
+#> ℹ Unreferenced files are scheduled for deletion; run `cleanup_old_files()` to
+#>   reclaim storage.
+#>   snapshot_id       snapshot_time schema_version               changes author
+#> 1           0 2026-08-26 01:03:08              0 schemas_created, main   <NA>
+#>   commit_message commit_extra_info
+#> 1           <NA>              <NA>
+
 # Preview, then delete everything that is scheduled
 cleanup_old_files(dry_run = TRUE, cleanup_all = TRUE)
+#> Dry run: 0 old file would be deleted.
+#> [1] path
+#> <0 rows> (or 0-length row.names)
 cleanup_old_files(cleanup_all = TRUE)
+#> Deleted 0 old file.
+#> [1] path
+#> <0 rows> (or 0-length row.names)
 
 # Only delete files scheduled more than a week ago
 cleanup_old_files(older_than = Sys.time() - 7 * 24 * 60 * 60)
-} # }
+#> Deleted 0 old file.
+#> [1] path
+#> <0 rows> (or 0-length row.names)
+
+detach_ducklake("cleanup_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
 ```

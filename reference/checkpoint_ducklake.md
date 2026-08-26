@@ -66,11 +66,19 @@ Other maintenance:
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+lake_dir <- tempfile("checkpoint_lake_")
+dir.create(lake_dir)
+attach_ducklake("checkpoint_lake", lake_path = lake_dir)
+create_table(mtcars, "cars")
+
 # Run all maintenance
 checkpoint_ducklake()
+#> Checkpoint completed for "checkpoint_lake".
 
 # Or specify a named lake
-checkpoint_ducklake("my_lake")
-} # }
+checkpoint_ducklake("checkpoint_lake")
+#> Checkpoint completed for "checkpoint_lake".
+
+detach_ducklake("checkpoint_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
 ```

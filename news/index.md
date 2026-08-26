@@ -1,6 +1,39 @@
 # Changelog
 
-## ducklake (development version)
+## ducklake 0.6.0
+
+First CRAN release.
+
+- New
+  [`ducklake_extension_available()`](https://tgerke.github.io/ducklake-r/reference/ducklake_extension_available.md)
+  reports whether the `ducklake` DuckDB extension is installed and
+  loadable. It probes with automatic extension installation switched
+  off, so it never downloads anything, and it is what the package’s own
+  examples, tests, and vignettes gate on.
+
+- Every example that can run against a temporary lake now does, guarded
+  by `@examplesIf ducklake_extension_available()`. Only the cases that
+  need outside infrastructure stay unevaluated: Quack servers,
+  PostgreSQL and MySQL catalogs, and remote URLs.
+
+- [`backup_ducklake()`](https://tgerke.github.io/ducklake-r/reference/backup_ducklake.md)
+  no longer needs the fs package. It was the one place in the package
+  that called a suggested dependency unconditionally, so backups failed
+  for anyone without fs installed.
+
+- The package now tells you before it installs a DuckDB extension for
+  you.
+  [`attach_ducklake()`](https://tgerke.github.io/ducklake-r/reference/attach_ducklake.md)
+  and the functions that load `httpfs`, `quack`, or a backend extension
+  used to download into the extension cache in your home directory
+  without a word.
+
+- Fixed the
+  [`with_transaction()`](https://tgerke.github.io/ducklake-r/reference/with_transaction.md)
+  rollback example, which reused a table name that already existed and
+  so failed before reaching the error it meant to demonstrate.
+
+## ducklake 0.5.0
 
 - New
   [`rows_upsert()`](https://tgerke.github.io/ducklake-r/reference/rows_upsert.md)

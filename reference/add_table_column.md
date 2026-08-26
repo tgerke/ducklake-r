@@ -54,8 +54,18 @@ Other schema evolution:
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-add_table_column("adsl", "AGECAT", "VARCHAR")
-add_table_column("sales", "discount", "DECIMAL(5,2)", default = 0)
-} # }
+lake_dir <- tempfile("addcol_lake_")
+dir.create(lake_dir)
+attach_ducklake("addcol_lake", lake_path = lake_dir)
+create_table(mtcars, "cars")
+
+add_table_column("cars", "grade", "VARCHAR")
+#> Added column "grade" (VARCHAR) to "cars".
+#> ℹ Metadata-only change; no data files were rewritten.
+add_table_column("cars", "discount", "DECIMAL(5,2)", default = 0)
+#> Added column "discount" (DECIMAL(5,2)) to "cars".
+#> ℹ Metadata-only change; no data files were rewritten.
+
+detach_ducklake("addcol_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
 ```

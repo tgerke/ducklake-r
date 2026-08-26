@@ -140,16 +140,8 @@ lake_dir <- file.path(vignette_temp_dir, "storage_demo")
 dir.create(lake_dir, showWarnings = FALSE, recursive = TRUE)
 
 # Install ducklake extension
-install_ducklake()
-#> duckdb keeps downloaded extensions and secrets in a temporary directory:
-#> ℹ /tmp/RtmpvGEkZv/duckdb
-#> This is removed when the R session ends.
-#> • Extensions are re-downloaded each session.
-#> • Secrets are lost.
-#> ℹ Run duckdb(shared_home = TRUE) (or create ~/.duckdb) to keep them (suitable for most users).
-#> ℹ Run duckdb(shared_home = FALSE) to accept the temporary directory (and silence this message).
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> Installed ducklake extension.
+# The ducklake extension only needs installing once per machine:
+# install_ducklake()
 
 # Create and populate a DuckLake
 attach_ducklake(
@@ -194,14 +186,14 @@ The catalog is a single database file containing all metadata:
 ``` r
 
 dir_tree(lake_dir)
-#> /tmp/RtmpvGEkZv/storage_backups_vignette/storage_demo
+#> /tmp/RtmpvkBXgP/storage_backups_vignette/storage_demo
 #> ├── demo_lake.ducklake
 #> ├── demo_lake.ducklake.wal
 #> └── main
 #>     └── cars
-#>         ├── ducklake-019fed14-2eb3-7967-a047-0c3ed6365a78.parquet
-#>         ├── ducklake-019fed14-2fb4-73e7-9154-c3b63910395d.parquet
-#>         └── ducklake-019fed14-3066-768b-8acf-356ee3e7854f.parquet
+#>         ├── ducklake-01a03b98-bb75-7490-a471-21d15349352f.parquet
+#>         ├── ducklake-01a03b98-bc65-79ae-a626-73f0bf7bdc6b.parquet
+#>         └── ducklake-01a03b98-bd4b-7437-b2ff-8b1634154110.parquet
 ```
 
 The catalog files (`demo_lake.ducklake` and `.wal`) contain all metadata
@@ -217,11 +209,11 @@ Data files are stored in Parquet format in a structured directory:
 main_dir <- file.path(lake_dir, "main")
 
 dir_tree(main_dir, recurse = 2)
-#> /tmp/RtmpvGEkZv/storage_backups_vignette/storage_demo/main
+#> /tmp/RtmpvkBXgP/storage_backups_vignette/storage_demo/main
 #> └── cars
-#>     ├── ducklake-019fed14-2eb3-7967-a047-0c3ed6365a78.parquet
-#>     ├── ducklake-019fed14-2fb4-73e7-9154-c3b63910395d.parquet
-#>     └── ducklake-019fed14-3066-768b-8acf-356ee3e7854f.parquet
+#>     ├── ducklake-01a03b98-bb75-7490-a471-21d15349352f.parquet
+#>     ├── ducklake-01a03b98-bc65-79ae-a626-73f0bf7bdc6b.parquet
+#>     └── ducklake-01a03b98-bd4b-7437-b2ff-8b1634154110.parquet
   
 # Get details about parquet files
 parquet_files <- dir_ls(main_dir, recurse = TRUE, regexp = "\\.parquet$")
@@ -230,9 +222,9 @@ for (f in parquet_files) {
               path_file(f), 
               file.size(f)))
 }
-#>   ducklake-019fed14-2eb3-7967-a047-0c3ed6365a78.parquet (2307 bytes)
-#>   ducklake-019fed14-2fb4-73e7-9154-c3b63910395d.parquet (2501 bytes)
-#>   ducklake-019fed14-3066-768b-8acf-356ee3e7854f.parquet (2724 bytes)
+#>   ducklake-01a03b98-bb75-7490-a471-21d15349352f.parquet (2307 bytes)
+#>   ducklake-01a03b98-bc65-79ae-a626-73f0bf7bdc6b.parquet (2501 bytes)
+#>   ducklake-01a03b98-bd4b-7437-b2ff-8b1634154110.parquet (2724 bytes)
 ```
 
 ### Understanding File Organization
@@ -298,13 +290,13 @@ dir_copy(
 
 # Verify the backup was created
 dir_tree(backup_dir)
-#> /tmp/RtmpvGEkZv/storage_backups_vignette/storage_demo/backups
+#> /tmp/RtmpvkBXgP/storage_backups_vignette/storage_demo/backups
 #> ├── demo_lake.ducklake
 #> └── main
 #>     └── cars
-#>         ├── ducklake-019fed14-2eb3-7967-a047-0c3ed6365a78.parquet
-#>         ├── ducklake-019fed14-2fb4-73e7-9154-c3b63910395d.parquet
-#>         └── ducklake-019fed14-3066-768b-8acf-356ee3e7854f.parquet
+#>         ├── ducklake-01a03b98-bb75-7490-a471-21d15349352f.parquet
+#>         ├── ducklake-01a03b98-bc65-79ae-a626-73f0bf7bdc6b.parquet
+#>         └── ducklake-01a03b98-bd4b-7437-b2ff-8b1634154110.parquet
 
 # To work with the backup, attach it. override_data_path is needed because
 # the catalog remembers the original data location, which the backup no
@@ -314,21 +306,13 @@ attach_ducklake(
   lake_path = backup_dir,
   override_data_path = TRUE
 )
-#> duckdb keeps downloaded extensions and secrets in a temporary directory:
-#> ℹ /tmp/RtmpvGEkZv/duckdb
-#> This is removed when the R session ends.
-#> • Extensions are re-downloaded each session.
-#> • Secrets are lost.
-#> ℹ Run duckdb(shared_home = TRUE) (or create ~/.duckdb) to keep them (suitable for most users).
-#> ℹ Run duckdb(shared_home = FALSE) to accept the temporary directory (and silence this message).
-#> ℹ See ?duckdb_storage for details and alternatives.
 
 # Verify you're working with the backup
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-08-10 19:09:10              1
-#> 2           2 2026-08-10 19:09:10              2
-#> 3           3 2026-08-10 19:09:11              3
+#> 1           1 2026-08-26 01:04:20              1
+#> 2           2 2026-08-26 01:04:20              2
+#> 3           3 2026-08-26 01:04:20              3
 #>                                                                 changes
 #> 1                    tables_created, tables_inserted_into, main.cars, 1
 #> 2 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2
@@ -537,22 +521,14 @@ backup_dir <- backup_ducklake(
   lake_path = lake_dir,
   backup_path = file.path(lake_dir, "backups")
 )
-#> duckdb keeps downloaded extensions and secrets in a temporary directory:
-#> ℹ /tmp/RtmpvGEkZv/duckdb
-#> This is removed when the R session ends.
-#> • Extensions are re-downloaded each session.
-#> • Secrets are lost.
-#> ℹ Run duckdb(shared_home = TRUE) (or create ~/.duckdb) to keep them (suitable for most users).
-#> ℹ Run duckdb(shared_home = FALSE) to accept the temporary directory (and silence this message).
-#> ℹ See ?duckdb_storage for details and alternatives.
 #> Catalog backed up successfully.
 #> Data files backed up successfully (1 directory).
 #> Backup completed:
-#> /tmp/RtmpvGEkZv/storage_backups_vignette/storage_demo/backups/backup_20260810_190912
+#> /tmp/RtmpvkBXgP/storage_backups_vignette/storage_demo/backups/backup_20260826_010421
 
 # The function returns the backup directory path
 print(backup_dir)
-#> [1] "/tmp/RtmpvGEkZv/storage_backups_vignette/storage_demo/backups/backup_20260810_190912"
+#> [1] "/tmp/RtmpvkBXgP/storage_backups_vignette/storage_demo/backups/backup_20260826_010421"
 ```
 
 The

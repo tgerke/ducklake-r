@@ -71,14 +71,24 @@ Other maintenance:
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+lake_dir <- tempfile("flush_lake_")
+dir.create(lake_dir)
+attach_ducklake("flush_lake", lake_path = lake_dir,
+                data_inlining_row_limit = 10)
+create_table(head(mtcars, 3), "cars")
+
 # Flush everything
 flush_inlined_data()
+#> Flushed 3 rows from 1 table to Parquet.
+#>   schema_name table_name rows_flushed
+#> 1        main       cars            3
 
 # Flush a specific table
-flush_inlined_data(table_name = "readings")
+flush_inlined_data(table_name = "cars")
+#> No inlined data to flush.
+#> [1] schema_name  table_name   rows_flushed
+#> <0 rows> (or 0-length row.names)
 
-# Flush a specific schema
-flush_inlined_data(schema_name = "staging")
-} # }
+detach_ducklake("flush_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
 ```

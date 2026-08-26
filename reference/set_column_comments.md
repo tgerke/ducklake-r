@@ -49,12 +49,19 @@ Other table documentation:
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+lake_dir <- tempfile("colcomment_lake_")
+dir.create(lake_dir)
+attach_ducklake("colcomment_lake", lake_path = lake_dir)
+create_table(mtcars, "cars")
+
 set_column_comments(
-  "adsl",
-  USUBJID = "Unique subject identifier",
-  AGEGR1 = "Age group 1",
-  SCRATCH = NA  # clear this one
+  "cars",
+  mpg = "Miles per US gallon",
+  cyl = "Number of cylinders",
+  disp = NA # clear this one
 )
-} # }
+#> Commented 3 columns on "cars".
+
+detach_ducklake("colcomment_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
 ```

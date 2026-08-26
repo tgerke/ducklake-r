@@ -64,11 +64,29 @@ Other maintenance:
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+lake_dir <- tempfile("rewrite_lake_")
+dir.create(lake_dir)
+attach_ducklake("rewrite_lake", lake_path = lake_dir)
+create_table(mtcars, "cars")
+
+rows_delete(
+  get_ducklake_table("cars"),
+  data.frame(gear = 3),
+  by = "gear"
+)
+
 # Rewrite any file that is at least half deleted
-rewrite_data_files("my_lake", delete_threshold = 0.5)
+rewrite_data_files("rewrite_lake", delete_threshold = 0.5)
+#> No files needed rewriting.
+#> [1] schema_name     table_name      files_processed files_created  
+#> <0 rows> (or 0-length row.names)
 
 # Just one table, with DuckLake's default threshold
-rewrite_data_files(table_name = "events")
-} # }
+rewrite_data_files(table_name = "cars")
+#> No files needed rewriting.
+#> [1] schema_name     table_name      files_processed files_created  
+#> <0 rows> (or 0-length row.names)
+
+detach_ducklake("rewrite_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
 ```

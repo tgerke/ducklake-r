@@ -56,12 +56,26 @@ Other time travel:
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+lake_dir <- tempfile("plotchg_lake_")
+dir.create(lake_dir)
+attach_ducklake("plotchg_lake", lake_path = lake_dir)
+create_table(mtcars, "cars")
+
+rows_update(
+  get_ducklake_table("cars"),
+  data.frame(mpg = 21, gear = 5),
+  by = "mpg"
+)
+
 # Rows inserted, updated, and deleted per snapshot
-plot_table_changes("my_table")
+plot_table_changes("cars")
+
 
 # Customize the result like any ggplot
-plot_table_changes("my_table") +
+plot_table_changes("cars") +
   ggplot2::theme_classic()
-} # }
+
+
+detach_ducklake("plotchg_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
 ```

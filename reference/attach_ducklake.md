@@ -107,6 +107,11 @@ attach_ducklake(
   Optional POSIXct or UTC timestamp string. Attaches the lake pinned to
   its state at that moment. Mutually exclusive with `snapshot_version`.
 
+## Value
+
+Invisibly, `NULL`. Called for its side effect of attaching the DuckLake
+catalog to the package's DuckDB connection.
+
 ## Details
 
 By default DuckDB is used as the catalog database. Alternative backends
@@ -146,6 +151,7 @@ backends. See <https://github.com/duckdb/duckdb/issues/7892>.
 Other connection management:
 [`create_storage_secret()`](https://tgerke.github.io/ducklake-r/reference/create_storage_secret.md),
 [`detach_ducklake()`](https://tgerke.github.io/ducklake-r/reference/detach_ducklake.md),
+[`ducklake_extension_available()`](https://tgerke.github.io/ducklake-r/reference/ducklake_extension_available.md),
 [`get_ducklake_backend()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_backend.md),
 [`get_ducklake_connection()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_connection.md),
 [`install_ducklake()`](https://tgerke.github.io/ducklake-r/reference/install_ducklake.md),
@@ -154,10 +160,27 @@ Other connection management:
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
 # DuckDB catalog (default)
-attach_ducklake("my_lake", lake_path = "~/data/lake")
+lake_dir <- tempfile("my_lake_")
+dir.create(lake_dir)
+attach_ducklake("my_lake", lake_path = lake_dir)
+detach_ducklake("my_lake")
 
+# Custom inlining threshold for a streaming workload
+stream_dir <- tempfile("streaming_lake_")
+dir.create(stream_dir)
+attach_ducklake(
+  "streaming_lake",
+  lake_path = stream_dir,
+  data_inlining_row_limit = 100
+)
+
+detach_ducklake("streaming_lake", shutdown = TRUE)
+unlink(c(lake_dir, stream_dir), recursive = TRUE)
+
+# The remaining forms need a catalog server, or extensions that are
+# downloaded on first use, so they are not run here.
+if (FALSE) { # \dontrun{
 # PostgreSQL catalog
 attach_ducklake(
   "my_lake",
@@ -182,17 +205,10 @@ attach_ducklake(
   lake_path = "data_files/"
 )
 
-# Custom inlining threshold for streaming workload
-attach_ducklake(
-  "streaming_lake",
-  lake_path = "~/data/streaming",
-  data_inlining_row_limit = 100
-)
+# Encrypted Parquet files (keys live in the catalog); needs httpfs
+attach_ducklake("secure_lake", lake_path = "path/to/lake", encrypted = TRUE)
 
-# Encrypted Parquet files (keys live in the catalog)
-attach_ducklake("secure_lake", lake_path = "~/data/secure", encrypted = TRUE)
-
-# A frozen view of the lake as of snapshot 12, e.g. for reproducing a report
-attach_ducklake("lake_v12", lake_path = "~/data/lake", snapshot_version = 12)
+# A frozen view of the lake as of snapshot 12, e.g. to reproduce a report
+attach_ducklake("lake_v12", lake_path = "path/to/lake", snapshot_version = 12)
 } # }
 ```

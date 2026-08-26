@@ -41,11 +41,27 @@ Other table documentation:
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+lake_dir <- tempfile("readcomment_lake_")
+dir.create(lake_dir)
+attach_ducklake("readcomment_lake", lake_path = lake_dir)
+create_table(mtcars, "cars")
+set_table_comment("cars", "Motor Trend road tests")
+#> Commented table "cars".
+set_column_comments("cars", mpg = "Miles per US gallon")
+#> Commented 1 column on "cars".
+
 # Everything documented in the lake
 get_table_comments()
+#>   object_type table_name column_name                comment
+#> 1      column       cars         mpg    Miles per US gallon
+#> 2       table       cars        <NA> Motor Trend road tests
 
 # One table's documentation
-get_table_comments("adsl")
-} # }
+get_table_comments("cars")
+#>   object_type table_name column_name                comment
+#> 1      column       cars         mpg    Miles per US gallon
+#> 2       table       cars        <NA> Motor Trend road tests
+
+detach_ducklake("readcomment_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
 ```

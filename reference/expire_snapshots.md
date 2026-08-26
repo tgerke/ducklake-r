@@ -76,15 +76,43 @@ Other maintenance:
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+lake_dir <- tempfile("expire_lake_")
+dir.create(lake_dir)
+attach_ducklake("expire_lake", lake_path = lake_dir)
+create_table(mtcars, "cars")
+
+rows_insert(
+  get_ducklake_table("cars"),
+  data.frame(mpg = 30, cyl = 4),
+  by = "mpg"
+)
+
 # Preview what a one-week retention policy would remove
 expire_snapshots(older_than = Sys.time() - 7 * 24 * 60 * 60, dry_run = TRUE)
+#> Dry run: 0 snapshots would be expired.
+#> [1] snapshot_id       snapshot_time     schema_version    changes          
+#> [5] author            commit_message    commit_extra_info
+#> <0 rows> (or 0-length row.names)
 
-# Expire it for real, then reclaim the storage
-expire_snapshots(older_than = Sys.time() - 7 * 24 * 60 * 60)
+# Expire everything older than now, then reclaim the storage
+expire_snapshots(older_than = Sys.time())
+#> Expired 2 snapshots.
+#> ℹ Unreferenced files are scheduled for deletion; run `cleanup_old_files()` to
+#>   reclaim storage.
+#>   snapshot_id       snapshot_time schema_version
+#> 1           0 2026-08-26 01:03:13              0
+#> 2           1 2026-08-26 01:03:14              1
+#>                                              changes author commit_message
+#> 1                              schemas_created, main   <NA>           <NA>
+#> 2 tables_created, tables_inserted_into, main.cars, 1   <NA>           <NA>
+#>   commit_extra_info
+#> 1              <NA>
+#> 2              <NA>
 cleanup_old_files(cleanup_all = TRUE)
+#> Deleted 0 old file.
+#> [1] path
+#> <0 rows> (or 0-length row.names)
 
-# Expire two specific snapshots
-expire_snapshots(versions = c(2, 3))
-} # }
+detach_ducklake("expire_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
 ```

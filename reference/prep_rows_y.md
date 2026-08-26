@@ -23,3 +23,7 @@ prep_rows_y(x, y)
 - y:
 
   Data frame or lazy table
+
+## Value
+
+A lazy table on the same connection as `x`.

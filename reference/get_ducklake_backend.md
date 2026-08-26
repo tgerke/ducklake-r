@@ -26,6 +26,7 @@ Other connection management:
 [`attach_ducklake()`](https://tgerke.github.io/ducklake-r/reference/attach_ducklake.md),
 [`create_storage_secret()`](https://tgerke.github.io/ducklake-r/reference/create_storage_secret.md),
 [`detach_ducklake()`](https://tgerke.github.io/ducklake-r/reference/detach_ducklake.md),
+[`ducklake_extension_available()`](https://tgerke.github.io/ducklake-r/reference/ducklake_extension_available.md),
 [`get_ducklake_connection()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_connection.md),
 [`install_ducklake()`](https://tgerke.github.io/ducklake-r/reference/install_ducklake.md),
 [`set_ducklake_connection()`](https://tgerke.github.io/ducklake-r/reference/set_ducklake_connection.md)
@@ -33,12 +34,17 @@ Other connection management:
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-attach_ducklake("my_lake", lake_path = "~/data/lake")
+lake_dir <- tempfile("backend_lake_")
+dir.create(lake_dir)
+attach_ducklake("backend_lake", lake_path = lake_dir)
+
 get_ducklake_backend()
 #> [1] "duckdb"
 
 # With several lakes attached, look one up by name
-get_ducklake_backend("my_sqlite_lake")
-} # }
+get_ducklake_backend("backend_lake")
+#> [1] "duckdb"
+
+detach_ducklake("backend_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
 ```

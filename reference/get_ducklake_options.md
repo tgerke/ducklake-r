@@ -32,7 +32,32 @@ Other options:
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+lake_dir <- tempfile("getopt_lake_")
+dir.create(lake_dir)
+attach_ducklake("getopt_lake", lake_path = lake_dir)
+
+set_ducklake_option("parquet_compression", "zstd")
+#> Option "parquet_compression" set to "zstd" for lake "getopt_lake".
 get_ducklake_options()
-} # }
+#>           option_name
+#> 1          created_by
+#> 2           data_path
+#> 3           encrypted
+#> 4 parquet_compression
+#> 5             version
+#>                                                                                        description
+#> 1                                                                  Tool used to write the DuckLake
+#> 2                                                                               Path to data files
+#> 3                                 Whether or not to encrypt Parquet files written to the data path
+#> 4 Compression algorithm for Parquet files (uncompressed, snappy, gzip, zstd, brotli, lz4, lz4_raw)
+#> 5                                                                          DuckLake format version
+#>                                       value  scope scope_entry
+#> 1                         DuckDB d8cdaa33fd GLOBAL        <NA>
+#> 2 /tmp/RtmptumN4y/getopt_lake_1c792aa0134d/ GLOBAL        <NA>
+#> 3                                     false GLOBAL        <NA>
+#> 4                                      zstd GLOBAL        <NA>
+#> 5                                       1.0 GLOBAL        <NA>
+
+detach_ducklake("getopt_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
 ```

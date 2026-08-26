@@ -31,7 +31,8 @@ Parquet files with a single call.
 
 ``` r
 
-install_ducklake()
+# The ducklake extension only needs installing once per machine:
+# install_ducklake()
 attach_ducklake("sensor_lake", lake_path = vignette_temp_dir)
 ```
 
@@ -285,10 +286,10 @@ inlined insert or delete creates a snapshot, just like a regular write:
 snapshots <- list_table_snapshots("readings")
 snapshots
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-08-10 19:08:50              1
-#> 2           2 2026-08-10 19:08:50              2
-#> 3           3 2026-08-10 19:08:51              3
-#> 4           5 2026-08-10 19:08:51              4
+#> 1           1 2026-08-26 01:04:00              1
+#> 2           2 2026-08-26 01:04:01              2
+#> 3           3 2026-08-26 01:04:01              3
+#> 4           5 2026-08-26 01:04:02              4
 #>                                                               changes
 #> 1                    tables_created, inlined_insert, main.readings, 1
 #> 2 tables_created, tables_dropped, inlined_insert, main.readings, 1, 2

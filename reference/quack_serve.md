@@ -60,7 +60,7 @@ Other quack:
 
 ``` r
 if (FALSE) { # \dontrun{
-attach_ducklake("trial", lake_path = "~/lakes/trial")
+attach_ducklake("trial", lake_path = "path/to/lake")
 quack_serve(token = "super_secret")
 # ... colleagues connect with attach_quack() ...
 quack_stop()

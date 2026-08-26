@@ -75,11 +75,39 @@ Other maintenance:
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+lake_dir <- tempfile("listfiles_lake_")
+dir.create(lake_dir)
+attach_ducklake("listfiles_lake", lake_path = lake_dir)
+create_table(mtcars, "cars")
+rows_insert(
+  get_ducklake_table("cars"),
+  data.frame(mpg = 30, cyl = 4),
+  by = "mpg"
+)
+
 # Files behind a table right now
-list_ducklake_files("readings")
+list_ducklake_files("cars")
+#>                                                                                                     data_file
+#> 1 /tmp/RtmptumN4y/listfiles_lake_1c795ca8b1d8/main/cars/ducklake-01a03b97-d4d0-7ab4-a2be-11c3f62a0355.parquet
+#>   data_file_size_bytes data_file_footer_size data_file_encryption_key
+#> 1                 2911                  1128                     NULL
+#>   delete_file delete_file_size_bytes delete_file_footer_size
+#> 1        <NA>                     NA                      NA
+#>   delete_file_encryption_key
+#> 1                       NULL
 
 # Files as of an earlier snapshot
-list_ducklake_files("readings", snapshot_version = 3)
-} # }
+first <- min(list_table_snapshots("cars")$snapshot_id)
+list_ducklake_files("cars", snapshot_version = first)
+#>                                                                                                     data_file
+#> 1 /tmp/RtmptumN4y/listfiles_lake_1c795ca8b1d8/main/cars/ducklake-01a03b97-d4d0-7ab4-a2be-11c3f62a0355.parquet
+#>   data_file_size_bytes data_file_footer_size data_file_encryption_key
+#> 1                 2911                  1128                     NULL
+#>   delete_file delete_file_size_bytes delete_file_footer_size
+#> 1        <NA>                     NA                      NA
+#>   delete_file_encryption_key
+#> 1                       NULL
+
+detach_ducklake("listfiles_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
 ```

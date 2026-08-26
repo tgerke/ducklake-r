@@ -74,9 +74,17 @@ Other maintenance:
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+lake_dir <- tempfile("orphan_lake_")
+dir.create(lake_dir)
+attach_ducklake("orphan_lake", lake_path = lake_dir)
+create_table(mtcars, "cars")
+
 # Always preview orphan deletion first
 delete_orphaned_files(dry_run = TRUE, cleanup_all = TRUE)
-delete_orphaned_files(cleanup_all = TRUE)
-} # }
+#> Dry run: 0 orphaned file would be deleted.
+#> [1] path
+#> <0 rows> (or 0-length row.names)
+
+detach_ducklake("orphan_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
 ```

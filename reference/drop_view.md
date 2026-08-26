@@ -37,7 +37,19 @@ Other table operations:
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-drop_view("v_safety_population")
-} # }
+lake_dir <- tempfile("dropview_lake_")
+dir.create(lake_dir)
+attach_ducklake("dropview_lake", lake_path = lake_dir)
+create_table(mtcars, "cars")
+
+get_ducklake_table("cars") |>
+  dplyr::filter(cyl == 4) |>
+  create_view("v_efficient_cars")
+#> Created view "v_efficient_cars".
+
+drop_view("v_efficient_cars")
+#> Dropped view "v_efficient_cars".
+
+detach_ducklake("dropview_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
 ```

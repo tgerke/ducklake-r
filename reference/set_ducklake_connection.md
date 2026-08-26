@@ -42,6 +42,7 @@ Other connection management:
 [`attach_ducklake()`](https://tgerke.github.io/ducklake-r/reference/attach_ducklake.md),
 [`create_storage_secret()`](https://tgerke.github.io/ducklake-r/reference/create_storage_secret.md),
 [`detach_ducklake()`](https://tgerke.github.io/ducklake-r/reference/detach_ducklake.md),
+[`ducklake_extension_available()`](https://tgerke.github.io/ducklake-r/reference/ducklake_extension_available.md),
 [`get_ducklake_backend()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_backend.md),
 [`get_ducklake_connection()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_connection.md),
 [`install_ducklake()`](https://tgerke.github.io/ducklake-r/reference/install_ducklake.md)
@@ -49,9 +50,16 @@ Other connection management:
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-conn <- DBI::dbConnect(duckdb::duckdb(), dbdir = "my_analysis.duckdb")
+db_file <- tempfile(fileext = ".duckdb")
+lake_dir <- tempfile("own_conn_lake_")
+dir.create(lake_dir)
+
+conn <- DBI::dbConnect(duckdb::duckdb(), dbdir = db_file)
 set_ducklake_connection(conn)
-attach_ducklake("my_lake", lake_path = "~/lakes/my_lake")
-} # }
+attach_ducklake("own_conn_lake", lake_path = lake_dir)
+
+# A connection you registered is yours to close
+detach_ducklake("own_conn_lake")
+DBI::dbDisconnect(conn, shutdown = TRUE)
+unlink(c(db_file, lake_dir), recursive = TRUE)
 ```

@@ -60,18 +60,29 @@ Other transactions:
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+lake_dir <- tempfile("commit_lake_")
+dir.create(lake_dir)
+attach_ducklake("commit_lake", lake_path = lake_dir)
+
 # Basic commit
 begin_transaction()
-# ... make changes ...
+#> Transaction started.
+create_table(iris, "flowers")
+#> Converted factor column Species to character (DuckLake does not support ENUM
+#> columns).
 commit_transaction()
+#> Transaction committed.
 
 # Commit with metadata
 begin_transaction()
+#> Transaction started.
 create_table(mtcars, "cars")
 commit_transaction(
   author = "John Doe",
   commit_message = "Add cars dataset"
 )
-} # }
+#> Transaction committed.
+
+detach_ducklake("commit_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
 ```

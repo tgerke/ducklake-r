@@ -72,14 +72,23 @@ Other options:
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+lake_dir <- tempfile("setopt_lake_")
+dir.create(lake_dir)
+attach_ducklake("setopt_lake", lake_path = lake_dir)
+create_table(mtcars, "cars")
+
 # Smaller files at some write cost, lake-wide
 set_ducklake_option("parquet_compression", "zstd")
-
-# Make every snapshot carry a commit message
-set_ducklake_option("require_commit_message", TRUE)
+#> Option "parquet_compression" set to "zstd" for lake "setopt_lake".
 
 # Skip one table during compaction
-set_ducklake_option("auto_compact", FALSE, table_name = "audit_log")
-} # }
+set_ducklake_option("auto_compact", FALSE, table_name = "cars")
+#> Option "auto_compact" set to FALSE for table "cars".
+
+# Make every snapshot carry a commit message (constrains later writes)
+set_ducklake_option("require_commit_message", TRUE)
+#> Option "require_commit_message" set to TRUE for lake "setopt_lake".
+
+detach_ducklake("setopt_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
 ```

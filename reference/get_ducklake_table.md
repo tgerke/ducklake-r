@@ -49,8 +49,9 @@ Other table operations:
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-attach_ducklake("my_lake", lake_path = "~/data/lake")
+lake_dir <- tempfile("cars_lake_")
+dir.create(lake_dir)
+attach_ducklake("cars_lake", lake_path = lake_dir)
 create_table(mtcars, "cars")
 
 # Query lazily with dplyr, then collect
@@ -58,5 +59,15 @@ get_ducklake_table("cars") |>
   dplyr::filter(cyl > 4) |>
   dplyr::summarise(avg_mpg = mean(mpg), .by = cyl) |>
   dplyr::collect()
-} # }
+#> Warning: Missing values are always removed in SQL aggregation functions.
+#> Use `na.rm = TRUE` to silence this warning
+#> This warning is displayed once every 8 hours.
+#> # A tibble: 2 × 2
+#>     cyl avg_mpg
+#>   <dbl>   <dbl>
+#> 1     6    19.7
+#> 2     8    15.1
+
+detach_ducklake("cars_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
 ```
