@@ -35,7 +35,7 @@ for routine use and run full checkpoints from a fresh session, or use a
 PostgreSQL/SQLite catalog.
 }
 \examples{
-\dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}
+\dontshow{if (ducklake_extension_available() && .Platform$OS.type != "windows") withAutoprint(\{ # examplesIf}
 lake_dir <- tempfile("checkpoint_lake_")
 dir.create(lake_dir)
 attach_ducklake("checkpoint_lake", lake_path = lake_dir)

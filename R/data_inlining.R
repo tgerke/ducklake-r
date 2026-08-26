@@ -347,7 +347,7 @@ flush_inlined_data <- function(ducklake_name = NULL,
 #'
 #' @seealso [flush_inlined_data()], [set_inlining_row_limit()]
 #'
-#' @examplesIf ducklake_extension_available()
+#' @examplesIf ducklake_extension_available() && .Platform$OS.type != "windows"
 #' lake_dir <- tempfile("checkpoint_lake_")
 #' dir.create(lake_dir)
 #' attach_ducklake("checkpoint_lake", lake_path = lake_dir)
