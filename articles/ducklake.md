@@ -275,7 +275,7 @@ cars_data |>
   select(mpg, cyl, hp) |>
   head(3)
 #> # A query:  ?? x 3
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmp0j3dZM/ducklake/ducklake2c6e6562fe24.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpFIRybP/ducklake/ducklake2b942efcc1a.duckdb]
 #>     mpg   cyl    hp
 #>   <dbl> <dbl> <dbl>
 #> 1  21       6   110
@@ -305,10 +305,10 @@ head(cars_df, 3)
 # See all snapshots for the cars table
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-08-26 01:04:05              1
-#> 2           2 2026-08-26 01:04:05              2
-#> 3           7 2026-08-26 01:04:07              7
-#> 4           8 2026-08-26 01:04:07              8
+#> 1           1 2026-08-26 21:25:08              1
+#> 2           2 2026-08-26 21:25:09              2
+#> 3           7 2026-08-26 21:25:10              7
+#> 4           8 2026-08-26 21:25:10              8
 #>                                                                 changes
 #> 1                    tables_created, tables_inserted_into, main.cars, 1
 #> 2 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2
@@ -330,7 +330,7 @@ get_ducklake_table_version("cars", version = 1) |>
   select(mpg, cyl, hp) |>
   head(3)
 #> # A query:  ?? x 3
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmp0j3dZM/ducklake/ducklake2c6e6562fe24.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpFIRybP/ducklake/ducklake2b942efcc1a.duckdb]
 #>     mpg   cyl    hp
 #>   <dbl> <dbl> <dbl>
 #> 1  21       6   110
@@ -385,17 +385,17 @@ for guidance on choosing between them.
 
 list_table_snapshots()
 #>    snapshot_id       snapshot_time schema_version
-#> 1            0 2026-08-26 01:04:05              0
-#> 2            1 2026-08-26 01:04:05              1
-#> 3            2 2026-08-26 01:04:05              2
-#> 4            3 2026-08-26 01:04:06              3
-#> 5            4 2026-08-26 01:04:06              4
-#> 6            5 2026-08-26 01:04:06              5
-#> 7            6 2026-08-26 01:04:06              6
-#> 8            7 2026-08-26 01:04:07              7
-#> 9            8 2026-08-26 01:04:07              8
-#> 10           9 2026-08-26 01:04:07              9
-#> 11          10 2026-08-26 01:04:07             10
+#> 1            0 2026-08-26 21:25:08              0
+#> 2            1 2026-08-26 21:25:08              1
+#> 3            2 2026-08-26 21:25:09              2
+#> 4            3 2026-08-26 21:25:09              3
+#> 5            4 2026-08-26 21:25:09              4
+#> 6            5 2026-08-26 21:25:09              5
+#> 7            6 2026-08-26 21:25:10              6
+#> 8            7 2026-08-26 21:25:10              7
+#> 9            8 2026-08-26 21:25:10              8
+#> 10           9 2026-08-26 21:25:10              9
+#> 11          10 2026-08-26 21:25:11             10
 #>                                                                                     changes
 #> 1                                                                     schemas_created, main
 #> 2                                        tables_created, tables_inserted_into, main.cars, 1
@@ -446,12 +446,12 @@ restore_table_version(
 
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-08-26 01:04:05              1
-#> 2           2 2026-08-26 01:04:05              2
-#> 3           7 2026-08-26 01:04:07              7
-#> 4           8 2026-08-26 01:04:07              8
-#> 5          10 2026-08-26 01:04:07             10
-#> 6          11 2026-08-26 01:04:08             11
+#> 1           1 2026-08-26 21:25:08              1
+#> 2           2 2026-08-26 21:25:09              2
+#> 3           7 2026-08-26 21:25:10              7
+#> 4           8 2026-08-26 21:25:10              8
+#> 5          10 2026-08-26 21:25:11             10
+#> 6          11 2026-08-26 21:25:11             11
 #>                                                                                    changes
 #> 1                                       tables_created, tables_inserted_into, main.cars, 1
 #> 2                    tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2
@@ -569,7 +569,7 @@ get_ducklake_table("cars") |>
   mutate(kpl = mpg * 0.425144) |>
   head(3)
 #> # A query:  ?? x 12
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmp0j3dZM/ducklake/ducklake2c6e6562fe24.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpFIRybP/ducklake/ducklake2b942efcc1a.duckdb]
 #>     mpg   cyl  disp    hp  drat    wt  qsec    vs    am  gear  carb   kpl
 #>   <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>
 #> 1  21       6   160   110  3.9   2.62  16.5     0     1     4     4  8.93
@@ -586,7 +586,7 @@ get_ducklake_table("cars") |>
   select(mpg, cyl, hp) |>
   filter(mpg > 25)
 #> # A query:  ?? x 3
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmp0j3dZM/ducklake/ducklake2c6e6562fe24.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpFIRybP/ducklake/ducklake2b942efcc1a.duckdb]
 #>     mpg   cyl    hp
 #>   <dbl> <dbl> <dbl>
 #> 1  32.4     4    66
