@@ -1,5 +1,24 @@
 # ducklake (development version)
 
+* The `"duckdb"` backend now honors `catalog_connection_string` as the path
+  for its catalog file, so a single-writer lake can keep the catalog on
+  local disk while `lake_path` points at object storage. The documentation
+  already promised this argument worked for the duckdb backend; now it does
+  (#44).
+
+* `attach_ducklake()` stops early when the duckdb backend would create its
+  catalog file on object storage, which DuckDB cannot write and which
+  previously surfaced as a confusing IO error. The message points to
+  `catalog_connection_string`, to `read_only = TRUE` (attaching an existing
+  remote catalog stays supported), and to the other backends. httpfs is
+  now loaded up front whenever a remote path is involved instead of relying
+  on DuckDB's mid-statement autoload.
+
+* The `create_storage_secret()` example and the storage vignette attached
+  an S3 lake with the default backend and no catalog path, which would put
+  the catalog file itself on S3. Both now show the split layout, and
+  `backup_ducklake()` finds a catalog that lives outside `lake_path`.
+
 * `create_storage_secret(provider = "credential_chain")` now loads DuckDB's
   aws extension itself for `"s3"`, `"gcs"`, and `"r2"` secrets, installing
   it on first use. The provider lives in that extension, and DuckDB's

@@ -88,6 +88,51 @@ test_that("build_attach_sql generates correct SQL for DuckDB backend", {
   expect_true(grepl("DATA_PATH '/data'", sql, fixed = TRUE))
 })
 
+test_that("build_attach_sql honors catalog_connection_string for DuckDB backend", {
+  sql <- ducklake:::build_attach_sql(
+    "my_lake",
+    "s3://bucket/data",
+    "duckdb",
+    "/lakes/my_lake.ducklake",
+    FALSE
+  )
+  expect_true(grepl("ATTACH 'ducklake:/lakes/my_lake.ducklake'", sql, fixed = TRUE))
+  expect_true(grepl("DATA_PATH 's3://bucket/data'", sql, fixed = TRUE))
+  expect_false(grepl("s3://bucket/data/my_lake.ducklake", sql, fixed = TRUE))
+
+  # NULL still derives the catalog path from lake_path
+  sql2 <- ducklake:::build_attach_sql("my_lake", "/data", "duckdb", NULL, FALSE)
+  expect_true(grepl("ducklake:/data/my_lake.ducklake", sql2, fixed = TRUE))
+})
+
+test_that("attach_ducklake refuses to write a duckdb catalog to object storage", {
+  skip_if_not_installed("duckdb")
+
+  expect_error(
+    attach_ducklake("remote_lake", lake_path = "s3://bucket/data"),
+    "catalog_connection_string"
+  )
+  expect_error(
+    attach_ducklake(
+      "remote_lake",
+      lake_path = "s3://bucket/data",
+      catalog_connection_string = "s3://bucket/remote_lake.ducklake"
+    ),
+    "object storage"
+  )
+
+  # read_only leaves direct remote attach available
+  sql <- ducklake:::build_attach_sql(
+    "remote_lake",
+    "s3://bucket/data",
+    "duckdb",
+    "s3://bucket/remote_lake.ducklake",
+    TRUE
+  )
+  expect_true(grepl("ducklake:s3://bucket/remote_lake.ducklake", sql, fixed = TRUE))
+  expect_true(grepl("READ_ONLY", sql))
+})
+
 test_that("build_attach_sql generates correct SQL for PostgreSQL backend", {
   sql <- ducklake:::build_attach_sql(
     "my_lake",
@@ -228,6 +273,63 @@ test_that("SQLite backend: create table, query, and time travel", {
     },
     finally = {
       unlink(temp_dir, recursive = TRUE)
+    }
+  )
+})
+
+# --- DuckDB backend with a split catalog/data layout ---
+
+test_that("duckdb backend: local catalog with separate data path round-trips", {
+  skip_if_no_ducklake()
+  skip_if_not_installed("duckdb")
+  skip_if_not_installed("dplyr")
+
+  catalog_dir <- tempfile("test_split_catalog")
+  data_dir <- tempfile("test_split_data")
+  backup_root <- tempfile("test_split_backup")
+  for (d in c(catalog_dir, data_dir, backup_root)) {
+    dir.create(d, showWarnings = FALSE, recursive = TRUE)
+  }
+  catalog_file <- file.path(catalog_dir, "split.ducklake")
+
+  tryCatch(
+    {
+      attach_ducklake(
+        "split_lake",
+        lake_path = data_dir,
+        catalog_connection_string = catalog_file
+      )
+
+      create_table(mtcars, "cars")
+
+      expect_true(file.exists(catalog_file))
+      parquet_files <- list.files(
+        data_dir,
+        pattern = "\\.parquet$",
+        recursive = TRUE
+      )
+      expect_gt(length(parquet_files), 0)
+
+      # Survives a full shutdown and re-attach with the same layout
+      detach_ducklake("split_lake", shutdown = TRUE)
+      attach_ducklake(
+        "split_lake",
+        lake_path = data_dir,
+        catalog_connection_string = catalog_file
+      )
+      result <- get_ducklake_table("cars") |> dplyr::collect()
+      expect_equal(nrow(result), 32)
+
+      # backup_ducklake() finds the catalog outside lake_path via the registry
+      backup_dir <- suppressMessages(
+        backup_ducklake("split_lake", lake_path = data_dir, backup_path = backup_root)
+      )
+      expect_true(file.exists(file.path(backup_dir, "split.ducklake")))
+
+      detach_ducklake("split_lake", shutdown = TRUE)
+    },
+    finally = {
+      unlink(c(catalog_dir, data_dir, backup_root), recursive = TRUE)
     }
   )
 })

@@ -37,6 +37,15 @@ load_or_install_extension <- function(ext, conn = get_ducklake_connection()) {
   invisible(NULL)
 }
 
+#' Does a path have a URI scheme (s3://, https://, gs://, ...)?
+#'
+#' @param path A single path string.
+#' @returns `TRUE` for remote URIs, `FALSE` for local paths.
+#' @noRd
+is_remote_path <- function(path) {
+  grepl("^[A-Za-z][A-Za-z0-9+.-]*://", path)
+}
+
 #' Quote a (possibly schema-qualified) identifier for SQL
 #'
 #' Splits `x` on `.` and quotes each part with [DBI::dbQuoteIdentifier()],

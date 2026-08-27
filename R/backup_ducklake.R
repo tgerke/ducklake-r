@@ -62,7 +62,7 @@ backup_ducklake <- function(ducklake_name, lake_path, backup_path) {
   if (!is.character(ducklake_name) || length(ducklake_name) != 1) {
     cli::cli_abort("{.arg ducklake_name} must be a single character string.")
   }
-  if (grepl("^[A-Za-z][A-Za-z0-9+.-]*://", lake_path)) {
+  if (is_remote_path(lake_path)) {
     cli::cli_abort(c(
       "{.fn backup_ducklake} only supports local data paths.",
       "x" = "Got remote {.arg lake_path} {.val {lake_path}}.",
@@ -80,12 +80,16 @@ backup_ducklake <- function(ducklake_name, lake_path, backup_path) {
   backup_dir <- file.path(backup_path, paste0("backup_", timestamp))
   dir.create(backup_dir, recursive = TRUE, showWarnings = FALSE)
 
-  # File-based backends: shut down to release file locks, copy, re-attach
+  # File-based backends: shut down to release file locks, copy, re-attach.
+  # Capture the registry's connection string before detaching (which
+  # unregisters the lake); for duckdb it is set when the catalog lives
+  # outside lake_path, and NULL for the default layout.
   if (backend %in% c("duckdb", "sqlite")) {
-    catalog_file <- if (backend == "duckdb") {
+    stored_catalog <- .ducklake_env$lakes[[ducklake_name]]$catalog_connection_string
+    catalog_file <- if (backend == "duckdb" && is.null(stored_catalog)) {
       file.path(lake_path, paste0(ducklake_name, ".ducklake"))
     } else {
-      .ducklake_env$lakes[[ducklake_name]]$catalog_connection_string
+      stored_catalog
     }
 
     if (!is.null(catalog_file) && file.exists(catalog_file)) {
@@ -96,12 +100,8 @@ backup_ducklake <- function(ducklake_name, lake_path, backup_path) {
         to = file.path(backup_dir, basename(catalog_file))
       )
 
-      if (backend == "duckdb") {
-        attach_ducklake(ducklake_name, lake_path = lake_path, backend = backend)
-      } else {
-        attach_ducklake(ducklake_name, lake_path = lake_path, backend = backend,
-                        catalog_connection_string = catalog_file)
-      }
+      attach_ducklake(ducklake_name, lake_path = lake_path, backend = backend,
+                      catalog_connection_string = stored_catalog)
 
       dest_file <- file.path(backup_dir, basename(catalog_file))
       if (copy_ok && file.size(dest_file) > 0) {

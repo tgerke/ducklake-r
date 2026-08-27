@@ -24,7 +24,8 @@ build_attach_sql(
 
 \item{backend}{Catalog backend type}
 
-\item{catalog_connection_string}{Backend-specific connection string}
+\item{catalog_connection_string}{Backend-specific connection string; for
+the duckdb backend, an optional path for the catalog file}
 
 \item{read_only}{Whether to attach in read-only mode}
 
