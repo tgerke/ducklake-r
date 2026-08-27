@@ -1,3 +1,11 @@
+# ducklake (development version)
+
+* `create_storage_secret(provider = "credential_chain")` now loads DuckDB's
+  aws extension itself for `"s3"`, `"gcs"`, and `"r2"` secrets, installing
+  it on first use. The provider lives in that extension, and DuckDB's
+  automatic mid-statement install of it could fail, leaving `CREATE SECRET`
+  erroring with "Install it first" (#43).
+
 # ducklake 0.6.0
 
 First CRAN release.
