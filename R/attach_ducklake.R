@@ -45,6 +45,17 @@
 #'   loaded automatically: on some platforms (notably Windows) DuckDB's
 #'   built-in crypto module is read-only and httpfs provides the writer.
 #'   Default `FALSE`.
+#' @param meta_encryption_key Optional key that encrypts the catalog
+#'   database file itself, with AES-256-GCM (`"duckdb"` backend only; the
+#'   `META_` prefix is how DuckLake forwards the option to the metadata
+#'   catalog). The key takes effect when the catalog is first created -- an
+#'   existing unencrypted catalog cannot be encrypted after the fact -- and
+#'   the same key is required on every later attach, with no recovery if it
+#'   is lost. Pairs naturally with `encrypted`, whose Parquet keys are
+#'   stored in the catalog. Pass `askpass::askpass()` to be prompted rather
+#'   than putting the key in code. The key is interpolated into the
+#'   `ATTACH` statement text, so it can surface where statements are logged
+#'   or profiled.
 #' @param snapshot_version Optional snapshot id. Attaches the lake pinned to
 #'   that snapshot: queries see the lake exactly as it was then, and writes
 #'   are rejected. Mutually exclusive with `snapshot_time`.
@@ -148,6 +159,15 @@
 #' # Encrypted Parquet files (keys live in the catalog); needs httpfs
 #' attach_ducklake("secure_lake", lake_path = "path/to/lake", encrypted = TRUE)
 #'
+#' # Encrypt the catalog database too -- it is where the Parquet keys live.
+#' # askpass prompts for the key so it never sits in code.
+#' attach_ducklake(
+#'   "secure_lake",
+#'   lake_path = "path/to/lake",
+#'   encrypted = TRUE,
+#'   meta_encryption_key = askpass::askpass("Catalog encryption key")
+#' )
+#'
 #' # A frozen view of the lake as of snapshot 12, e.g. to reproduce a report
 #' attach_ducklake("lake_v12", lake_path = "path/to/lake", snapshot_version = 12)
 #' }
@@ -158,6 +178,7 @@ attach_ducklake <- function(ducklake_name, lake_path,
                              override_data_path = FALSE,
                              data_inlining_row_limit = NULL,
                              encrypted = FALSE,
+                             meta_encryption_key = NULL,
                              snapshot_version = NULL,
                              snapshot_time = NULL) {
   backend <- match.arg(backend)
@@ -167,6 +188,23 @@ attach_ducklake <- function(ducklake_name, lake_path,
     cli::cli_abort(
       "Provide only one of {.arg snapshot_version} and {.arg snapshot_time}."
     )
+  }
+
+  if (!is.null(meta_encryption_key)) {
+    if (backend != "duckdb") {
+      cli::cli_abort(c(
+        "{.arg meta_encryption_key} is only supported for the {.val duckdb} backend.",
+        "i" = "It encrypts the DuckDB catalog database file. A {.val {backend}} catalog is encrypted with that database's own tools."
+      ))
+    }
+    if (!is.character(meta_encryption_key) ||
+        length(meta_encryption_key) != 1 ||
+        is.na(meta_encryption_key) ||
+        !nzchar(meta_encryption_key)) {
+      cli::cli_abort(
+        "{.arg meta_encryption_key} must be a single, non-empty string."
+      )
+    }
   }
 
   if (missing(lake_path) || is.null(lake_path)) {
@@ -232,7 +270,7 @@ attach_ducklake <- function(ducklake_name, lake_path,
   # Load required extensions (ducklake + backend-specific + crypto/remote IO)
   ensure_extensions(
     backend,
-    encrypted = encrypted,
+    encrypted = encrypted || !is.null(meta_encryption_key),
     remote = is_remote_path(lake_path) ||
       (!is.null(catalog_connection_string) &&
          is_remote_path(catalog_connection_string))
@@ -244,6 +282,7 @@ attach_ducklake <- function(ducklake_name, lake_path,
                                   override_data_path,
                                   data_inlining_row_limit,
                                   encrypted,
+                                  meta_encryption_key,
                                   snapshot_version,
                                   snapshot_time)
   db_execute(attach_sql)
@@ -326,6 +365,7 @@ ensure_extensions <- function(backend, encrypted = FALSE, remote = FALSE) {
 #' @param override_data_path Whether to add OVERRIDE_DATA_PATH TRUE
 #' @param data_inlining_row_limit Optional integer for DATA_INLINING_ROW_LIMIT
 #' @param encrypted Whether to add ENCRYPTED TRUE
+#' @param meta_encryption_key Optional key for META_ENCRYPTION_KEY
 #' @param snapshot_version Optional snapshot id for SNAPSHOT_VERSION
 #' @param snapshot_time Optional timestamp for SNAPSHOT_TIME
 #'
@@ -336,6 +376,7 @@ build_attach_sql <- function(ducklake_name, lake_path, backend,
                               override_data_path = FALSE,
                               data_inlining_row_limit = NULL,
                               encrypted = FALSE,
+                              meta_encryption_key = NULL,
                               snapshot_version = NULL,
                               snapshot_time = NULL) {
   connection_string <- switch(backend,
@@ -372,6 +413,13 @@ build_attach_sql <- function(ducklake_name, lake_path, backend,
 
   if (encrypted) {
     options <- c(options, "ENCRYPTED TRUE")
+  }
+
+  if (!is.null(meta_encryption_key)) {
+    options <- c(
+      options,
+      sprintf("META_ENCRYPTION_KEY %s", quote_sql(meta_encryption_key))
+    )
   }
 
   if (!is.null(snapshot_version)) {

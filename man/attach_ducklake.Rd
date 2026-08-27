@@ -13,6 +13,7 @@ attach_ducklake(
   override_data_path = FALSE,
   data_inlining_row_limit = NULL,
   encrypted = FALSE,
+  meta_encryption_key = NULL,
   snapshot_version = NULL,
   snapshot_time = NULL
 )
@@ -61,6 +62,18 @@ lake keeps the setting it was created with. The httpfs extension is
 loaded automatically: on some platforms (notably Windows) DuckDB's
 built-in crypto module is read-only and httpfs provides the writer.
 Default \code{FALSE}.}
+
+\item{meta_encryption_key}{Optional key that encrypts the catalog
+database file itself, with AES-256-GCM (\code{"duckdb"} backend only; the
+\code{META_} prefix is how DuckLake forwards the option to the metadata
+catalog). The key takes effect when the catalog is first created -- an
+existing unencrypted catalog cannot be encrypted after the fact -- and
+the same key is required on every later attach, with no recovery if it
+is lost. Pairs naturally with \code{encrypted}, whose Parquet keys are
+stored in the catalog. Pass \code{askpass::askpass()} to be prompted rather
+than putting the key in code. The key is interpolated into the
+\code{ATTACH} statement text, so it can surface where statements are logged
+or profiled.}
 
 \item{snapshot_version}{Optional snapshot id. Attaches the lake pinned to
 that snapshot: queries see the lake exactly as it was then, and writes
@@ -173,6 +186,15 @@ attach_ducklake(
 
 # Encrypted Parquet files (keys live in the catalog); needs httpfs
 attach_ducklake("secure_lake", lake_path = "path/to/lake", encrypted = TRUE)
+
+# Encrypt the catalog database too -- it is where the Parquet keys live.
+# askpass prompts for the key so it never sits in code.
+attach_ducklake(
+  "secure_lake",
+  lake_path = "path/to/lake",
+  encrypted = TRUE,
+  meta_encryption_key = askpass::askpass("Catalog encryption key")
+)
 
 # A frozen view of the lake as of snapshot 12, e.g. to reproduce a report
 attach_ducklake("lake_v12", lake_path = "path/to/lake", snapshot_version = 12)
