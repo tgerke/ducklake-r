@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ducklake</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -50,6 +50,11 @@
       <small>Source: <a href="https://github.com/tgerke/ducklake-r/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="development version" id="ducklake-development-version">ducklake (development version)<a class="anchor" aria-label="anchor" href="#ducklake-development-version"></a></h2>
+<ul><li>
+<code>create_storage_secret(provider = "credential_chain")</code> now loads DuckDB’s aws extension itself for <code>"s3"</code>, <code>"gcs"</code>, and <code>"r2"</code> secrets, installing it on first use. The provider lives in that extension, and DuckDB’s automatic mid-statement install of it could fail, leaving <code>CREATE SECRET</code> erroring with “Install it first” (<a href="https://github.com/tgerke/ducklake-r/issues/43" class="external-link">#43</a>).</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.6.0" id="ducklake-060">ducklake 0.6.0<a class="anchor" aria-label="anchor" href="#ducklake-060"></a></h2>
 <p>First CRAN release.</p>
