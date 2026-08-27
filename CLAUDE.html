@@ -63,6 +63,7 @@
 <h2 id="reference">Reference<a class="anchor" aria-label="anchor" href="#reference"></a></h2>
 <ul><li>The feature set was cross-checked against “DuckLake: The Definitive Guide” (Martin &amp; Monahan, O’Reilly early release 4, chapters 1-4) in August 2026. Watch items when later chapters publish: one-command Iceberg catalog export (chapter 6), performance-tuning guidance (chapter 5).</li>
 <li>DuckLake limits confirmed empirically (August 2026, DuckDB 1.5.1): one update/delete action per MERGE statement (<code><a href="reference/merge_into.html">merge_into()</a></code> falls back to MERGE + DELETE in one transaction), no MERGE RETURNING, <code>ALTER COLUMN SET TYPE</code> allows widening promotions only, and <code>ADD COLUMN ... DEFAULT</code> backfills existing rows.</li>
+<li>ATTACH behavior confirmed empirically (2026-08-27): <code>META_</code>-prefixed ATTACH options are forwarded to the catalog database, so <code>META_ENCRYPTION_KEY</code> encrypts a duckdb-format catalog (<code>meta_encryption_key</code> in <code><a href="reference/attach_ducklake.html">attach_ducklake()</a></code>). ATTACH cannot take bound parameters – DuckLake re-serializes forwarded options into an internal second ATTACH – so option values interpolate via <code><a href="reference/quote_sql.html">quote_sql()</a></code>.</li>
 </ul></div>
 </div>
 

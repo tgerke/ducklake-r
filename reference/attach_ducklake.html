@@ -72,6 +72,7 @@ an existing one. The lake can be detached with <code><a href="detach_ducklake.ht
 <span>  override_data_path <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  data_inlining_row_limit <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  encrypted <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  meta_encryption_key <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  snapshot_version <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  snapshot_time <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -86,12 +87,12 @@ an existing one. The lake can be detached with <code><a href="detach_ducklake.ht
 
 
 <dt id="arg-lake-path">lake_path<a class="anchor" aria-label="anchor" href="#arg-lake-path"></a></dt>
-<dd><p>Directory path where the lake lives. For <code>"duckdb"</code> this is
-where the catalog file and Parquet data are stored. For other backends this
-sets the Parquet data location (DuckLake's <code>DATA_PATH</code>), which may also be
-an object-storage URI such as <code>"s3://bucket/path"</code> – register credentials
-first with <code><a href="create_storage_secret.html">create_storage_secret()</a></code>. (The <code>"duckdb"</code> backend needs a local
-<code>lake_path</code>, since its catalog is a database file.)</p></dd>
+<dd><p>Directory where the Parquet data files are stored
+(DuckLake's <code>DATA_PATH</code>). May be a local directory or an object-storage
+URI such as <code>"s3://bucket/path"</code> – register credentials first with
+<code><a href="create_storage_secret.html">create_storage_secret()</a></code>. For <code>"duckdb"</code> the catalog file lives in this
+directory too by default; give <code>catalog_connection_string</code> to place it
+elsewhere, which is how a local catalog pairs with remote data.</p></dd>
 
 
 <dt id="arg-backend">backend<a class="anchor" aria-label="anchor" href="#arg-backend"></a></dt>
@@ -101,7 +102,10 @@ first with <code><a href="create_storage_secret.html">create_storage_secret()</a
 
 <dt id="arg-catalog-connection-string">catalog_connection_string<a class="anchor" aria-label="anchor" href="#arg-catalog-connection-string"></a></dt>
 <dd><p>Backend-specific connection string:</p><dl><dt><code>"duckdb"</code></dt>
-<dd><p>Not required. Defaults to <code>{ducklake_name}.ducklake</code>.</p></dd>
+<dd><p>Optional path for the catalog database file.
+Defaults to <code>{lake_path}/{ducklake_name}.ducklake</code>. Set it to keep
+the catalog on local disk while <code>lake_path</code> points at object
+storage.</p></dd>
 
 <dt><code>"postgres"</code></dt>
 <dd><p>libpq string, e.g. <code>"dbname=mydb host=localhost"</code>.</p></dd>
@@ -143,6 +147,20 @@ lake keeps the setting it was created with. The httpfs extension is
 loaded automatically: on some platforms (notably Windows) DuckDB's
 built-in crypto module is read-only and httpfs provides the writer.
 Default <code>FALSE</code>.</p></dd>
+
+
+<dt id="arg-meta-encryption-key">meta_encryption_key<a class="anchor" aria-label="anchor" href="#arg-meta-encryption-key"></a></dt>
+<dd><p>Optional key that encrypts the catalog
+database file itself, with AES-256-GCM (<code>"duckdb"</code> backend only; the
+<code>META_</code> prefix is how DuckLake forwards the option to the metadata
+catalog). The key takes effect when the catalog is first created – an
+existing unencrypted catalog cannot be encrypted after the fact – and
+the same key is required on every later attach, with no recovery if it
+is lost. Pairs naturally with <code>encrypted</code>, whose Parquet keys are
+stored in the catalog. Pass <code><a href="https://r-lib.r-universe.dev/askpass/reference/askpass.html" class="external-link">askpass::askpass()</a></code> to be prompted rather
+than putting the key in code. The key is interpolated into the
+<code>ATTACH</code> statement text, so it can surface where statements are logged
+or profiled.</p></dd>
 
 
 <dt id="arg-snapshot-version">snapshot_version<a class="anchor" aria-label="anchor" href="#arg-snapshot-version"></a></dt>
@@ -249,8 +267,33 @@ See <a href="https://github.com/duckdb/duckdb/issues/7892" class="external-link"
 <span class="r-in"><span>  lake_path <span class="op">=</span> <span class="st">"data_files/"</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># DuckDB catalog on local disk, Parquet data on S3</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="create_storage_secret.html">create_storage_secret</a></span><span class="op">(</span><span class="st">"s3"</span>, provider <span class="op">=</span> <span class="st">"credential_chain"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">attach_ducklake</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="st">"trial_lake"</span>,</span></span>
+<span class="r-in"><span>  lake_path <span class="op">=</span> <span class="st">"s3://my-trial-lake/data"</span>,</span></span>
+<span class="r-in"><span>  catalog_connection_string <span class="op">=</span> <span class="st">"trial_lake.ducklake"</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Read-only attach of a .ducklake catalog straight from object storage</span></span></span>
+<span class="r-in"><span><span class="fu">attach_ducklake</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="st">"trial_lake"</span>,</span></span>
+<span class="r-in"><span>  lake_path <span class="op">=</span> <span class="st">"s3://my-trial-lake/data"</span>,</span></span>
+<span class="r-in"><span>  catalog_connection_string <span class="op">=</span> <span class="st">"s3://my-trial-lake/trial_lake.ducklake"</span>,</span></span>
+<span class="r-in"><span>  read_only <span class="op">=</span> <span class="cn">TRUE</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Encrypted Parquet files (keys live in the catalog); needs httpfs</span></span></span>
 <span class="r-in"><span><span class="fu">attach_ducklake</span><span class="op">(</span><span class="st">"secure_lake"</span>, lake_path <span class="op">=</span> <span class="st">"path/to/lake"</span>, encrypted <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Encrypt the catalog database too -- it is where the Parquet keys live.</span></span></span>
+<span class="r-in"><span><span class="co"># askpass prompts for the key so it never sits in code.</span></span></span>
+<span class="r-in"><span><span class="fu">attach_ducklake</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="st">"secure_lake"</span>,</span></span>
+<span class="r-in"><span>  lake_path <span class="op">=</span> <span class="st">"path/to/lake"</span>,</span></span>
+<span class="r-in"><span>  encrypted <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
+<span class="r-in"><span>  meta_encryption_key <span class="op">=</span> <span class="fu">askpass</span><span class="fu">::</span><span class="fu"><a href="https://r-lib.r-universe.dev/askpass/reference/askpass.html" class="external-link">askpass</a></span><span class="op">(</span><span class="st">"Catalog encryption key"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># A frozen view of the lake as of snapshot 12, e.g. to reproduce a report</span></span></span>
 <span class="r-in"><span><span class="fu">attach_ducklake</span><span class="op">(</span><span class="st">"lake_v12"</span>, lake_path <span class="op">=</span> <span class="st">"path/to/lake"</span>, snapshot_version <span class="op">=</span> <span class="fl">12</span><span class="op">)</span></span></span>

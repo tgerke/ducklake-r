@@ -66,6 +66,7 @@
 <span>  override_data_path <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  data_inlining_row_limit <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  encrypted <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  meta_encryption_key <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  snapshot_version <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  snapshot_time <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -88,7 +89,8 @@
 
 
 <dt id="arg-catalog-connection-string">catalog_connection_string<a class="anchor" aria-label="anchor" href="#arg-catalog-connection-string"></a></dt>
-<dd><p>Backend-specific connection string</p></dd>
+<dd><p>Backend-specific connection string; for
+the duckdb backend, an optional path for the catalog file</p></dd>
 
 
 <dt id="arg-read-only">read_only<a class="anchor" aria-label="anchor" href="#arg-read-only"></a></dt>
@@ -105,6 +107,10 @@
 
 <dt id="arg-encrypted">encrypted<a class="anchor" aria-label="anchor" href="#arg-encrypted"></a></dt>
 <dd><p>Whether to add ENCRYPTED TRUE</p></dd>
+
+
+<dt id="arg-meta-encryption-key">meta_encryption_key<a class="anchor" aria-label="anchor" href="#arg-meta-encryption-key"></a></dt>
+<dd><p>Optional key for META_ENCRYPTION_KEY</p></dd>
 
 
 <dt id="arg-snapshot-version">snapshot_version<a class="anchor" aria-label="anchor" href="#arg-snapshot-version"></a></dt>

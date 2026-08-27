@@ -18,6 +18,7 @@ attach_ducklake(
   override_data_path = FALSE,
   data_inlining_row_limit = NULL,
   encrypted = FALSE,
+  meta_encryption_key = NULL,
   snapshot_version = NULL,
   snapshot_time = NULL
 )
@@ -31,14 +32,13 @@ attach_ducklake(
 
 - lake_path:
 
-  Directory path where the lake lives. For `"duckdb"` this is where the
-  catalog file and Parquet data are stored. For other backends this sets
-  the Parquet data location (DuckLake's `DATA_PATH`), which may also be
-  an object-storage URI such as `"s3://bucket/path"` – register
-  credentials first with
+  Directory where the Parquet data files are stored (DuckLake's
+  `DATA_PATH`). May be a local directory or an object-storage URI such
+  as `"s3://bucket/path"` – register credentials first with
   [`create_storage_secret()`](https://tgerke.github.io/ducklake-r/reference/create_storage_secret.md).
-  (The `"duckdb"` backend needs a local `lake_path`, since its catalog
-  is a database file.)
+  For `"duckdb"` the catalog file lives in this directory too by
+  default; give `catalog_connection_string` to place it elsewhere, which
+  is how a local catalog pairs with remote data.
 
 - backend:
 
@@ -51,7 +51,9 @@ attach_ducklake(
 
   `"duckdb"`
 
-  :   Not required. Defaults to `{ducklake_name}.ducklake`.
+  :   Optional path for the catalog database file. Defaults to
+      `{lake_path}/{ducklake_name}.ducklake`. Set it to keep the catalog
+      on local disk while `lake_path` points at object storage.
 
   `"postgres"`
 
@@ -95,6 +97,21 @@ attach_ducklake(
   loaded automatically: on some platforms (notably Windows) DuckDB's
   built-in crypto module is read-only and httpfs provides the writer.
   Default `FALSE`.
+
+- meta_encryption_key:
+
+  Optional key that encrypts the catalog database file itself, with
+  AES-256-GCM (`"duckdb"` backend only; the `META_` prefix is how
+  DuckLake forwards the option to the metadata catalog). The key takes
+  effect when the catalog is first created – an existing unencrypted
+  catalog cannot be encrypted after the fact – and the same key is
+  required on every later attach, with no recovery if it is lost. Pairs
+  naturally with `encrypted`, whose Parquet keys are stored in the
+  catalog. Pass
+  [`askpass::askpass()`](https://r-lib.r-universe.dev/askpass/reference/askpass.html)
+  to be prompted rather than putting the key in code. The key is
+  interpolated into the `ATTACH` statement text, so it can surface where
+  statements are logged or profiled.
 
 - snapshot_version:
 
@@ -205,8 +222,33 @@ attach_ducklake(
   lake_path = "data_files/"
 )
 
+# DuckDB catalog on local disk, Parquet data on S3
+create_storage_secret("s3", provider = "credential_chain")
+attach_ducklake(
+  "trial_lake",
+  lake_path = "s3://my-trial-lake/data",
+  catalog_connection_string = "trial_lake.ducklake"
+)
+
+# Read-only attach of a .ducklake catalog straight from object storage
+attach_ducklake(
+  "trial_lake",
+  lake_path = "s3://my-trial-lake/data",
+  catalog_connection_string = "s3://my-trial-lake/trial_lake.ducklake",
+  read_only = TRUE
+)
+
 # Encrypted Parquet files (keys live in the catalog); needs httpfs
 attach_ducklake("secure_lake", lake_path = "path/to/lake", encrypted = TRUE)
+
+# Encrypt the catalog database too -- it is where the Parquet keys live.
+# askpass prompts for the key so it never sits in code.
+attach_ducklake(
+  "secure_lake",
+  lake_path = "path/to/lake",
+  encrypted = TRUE,
+  meta_encryption_key = askpass::askpass("Catalog encryption key")
+)
 
 # A frozen view of the lake as of snapshot 12, e.g. to reproduce a report
 attach_ducklake("lake_v12", lake_path = "path/to/lake", snapshot_version = 12)

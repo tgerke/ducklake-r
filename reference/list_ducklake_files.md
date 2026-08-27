@@ -87,8 +87,8 @@ rows_insert(
 
 # Files behind a table right now
 list_ducklake_files("cars")
-#>                                                                                                     data_file
-#> 1 /tmp/RtmpF9EtGR/listfiles_lake_1b9f7c71a22a/main/cars/ducklake-01a04530-eeb7-726a-8dd8-5c7730914aed.parquet
+#>                                                                                                    data_file
+#> 1 /tmp/RtmpmgziTg/listfiles_lake_1b89d36eafa/main/cars/ducklake-01a04534-feed-7ac6-b228-4ec103f3c75a.parquet
 #>   data_file_size_bytes data_file_footer_size data_file_encryption_key
 #> 1                 2911                  1128                     NULL
 #>   delete_file delete_file_size_bytes delete_file_footer_size
@@ -99,8 +99,8 @@ list_ducklake_files("cars")
 # Files as of an earlier snapshot
 first <- min(list_table_snapshots("cars")$snapshot_id)
 list_ducklake_files("cars", snapshot_version = first)
-#>                                                                                                     data_file
-#> 1 /tmp/RtmpF9EtGR/listfiles_lake_1b9f7c71a22a/main/cars/ducklake-01a04530-eeb7-726a-8dd8-5c7730914aed.parquet
+#>                                                                                                    data_file
+#> 1 /tmp/RtmpmgziTg/listfiles_lake_1b89d36eafa/main/cars/ducklake-01a04534-feed-7ac6-b228-4ec103f3c75a.parquet
 #>   data_file_size_bytes data_file_footer_size data_file_encryption_key
 #> 1                 2911                  1128                     NULL
 #>   delete_file delete_file_size_bytes delete_file_footer_size

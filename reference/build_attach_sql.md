@@ -14,6 +14,7 @@ build_attach_sql(
   override_data_path = FALSE,
   data_inlining_row_limit = NULL,
   encrypted = FALSE,
+  meta_encryption_key = NULL,
   snapshot_version = NULL,
   snapshot_time = NULL
 )
@@ -35,7 +36,8 @@ build_attach_sql(
 
 - catalog_connection_string:
 
-  Backend-specific connection string
+  Backend-specific connection string; for the duckdb backend, an
+  optional path for the catalog file
 
 - read_only:
 
@@ -52,6 +54,10 @@ build_attach_sql(
 - encrypted:
 
   Whether to add ENCRYPTED TRUE
+
+- meta_encryption_key:
+
+  Optional key for META_ENCRYPTION_KEY
 
 - snapshot_version:
 

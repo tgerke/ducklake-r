@@ -2,6 +2,42 @@
 
 ## ducklake (development version)
 
+- New `meta_encryption_key` argument in
+  [`attach_ducklake()`](https://tgerke.github.io/ducklake-r/reference/attach_ducklake.md)
+  encrypts the DuckDB catalog database file itself with AES-256-GCM
+  (DuckLake forwards `META_`-prefixed options to the metadata catalog).
+  The key is set when the catalog is created and required on every later
+  attach. The catalog is where `encrypted = TRUE` stores its Parquet
+  keys, so encrypting it closes that loop; pass
+  [`askpass::askpass()`](https://r-lib.r-universe.dev/askpass/reference/askpass.html)
+  as the value to be prompted instead of writing the key in code
+  ([\#46](https://github.com/tgerke/ducklake-r/issues/46), suggested by
+  [@frankpopham](https://github.com/frankpopham)).
+
+- The `"duckdb"` backend now honors `catalog_connection_string` as the
+  path for its catalog file, so a single-writer lake can keep the
+  catalog on local disk while `lake_path` points at object storage. The
+  documentation already promised this argument worked for the duckdb
+  backend; now it does
+  ([\#44](https://github.com/tgerke/ducklake-r/issues/44)).
+
+- [`attach_ducklake()`](https://tgerke.github.io/ducklake-r/reference/attach_ducklake.md)
+  stops early when the duckdb backend would create its catalog file on
+  object storage, which DuckDB cannot write and which previously
+  surfaced as a confusing IO error. The message points to
+  `catalog_connection_string`, to `read_only = TRUE` (attaching an
+  existing remote catalog stays supported), and to the other backends.
+  httpfs is now loaded up front whenever a remote path is involved
+  instead of relying on DuckDB’s mid-statement autoload.
+
+- The
+  [`create_storage_secret()`](https://tgerke.github.io/ducklake-r/reference/create_storage_secret.md)
+  example and the storage vignette attached an S3 lake with the default
+  backend and no catalog path, which would put the catalog file itself
+  on S3. Both now show the split layout, and
+  [`backup_ducklake()`](https://tgerke.github.io/ducklake-r/reference/backup_ducklake.md)
+  finds a catalog that lives outside `lake_path`.
+
 - `create_storage_secret(provider = "credential_chain")` now loads
   DuckDB’s aws extension itself for `"s3"`, `"gcs"`, and `"r2"` secrets,
   installing it on first use. The provider lives in that extension, and
