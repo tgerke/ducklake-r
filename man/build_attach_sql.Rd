@@ -13,6 +13,7 @@ build_attach_sql(
   override_data_path = FALSE,
   data_inlining_row_limit = NULL,
   encrypted = FALSE,
+  meta_encryption_key = NULL,
   snapshot_version = NULL,
   snapshot_time = NULL
 )
@@ -34,6 +35,8 @@ the duckdb backend, an optional path for the catalog file}
 \item{data_inlining_row_limit}{Optional integer for DATA_INLINING_ROW_LIMIT}
 
 \item{encrypted}{Whether to add ENCRYPTED TRUE}
+
+\item{meta_encryption_key}{Optional key for META_ENCRYPTION_KEY}
 
 \item{snapshot_version}{Optional snapshot id for SNAPSHOT_VERSION}
 

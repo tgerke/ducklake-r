@@ -1,5 +1,13 @@
 # ducklake (development version)
 
+* New `meta_encryption_key` argument in `attach_ducklake()` encrypts the
+  DuckDB catalog database file itself with AES-256-GCM (DuckLake forwards
+  `META_`-prefixed options to the metadata catalog). The key is set when
+  the catalog is created and required on every later attach. The catalog
+  is where `encrypted = TRUE` stores its Parquet keys, so encrypting it
+  closes that loop; pass `askpass::askpass()` as the value to be prompted
+  instead of writing the key in code (#46, suggested by @frankpopham).
+
 * The `"duckdb"` backend now honors `catalog_connection_string` as the path
   for its catalog file, so a single-writer lake can keep the catalog on
   local disk while `lake_path` points at object storage. The documentation

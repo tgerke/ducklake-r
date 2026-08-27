@@ -28,6 +28,7 @@ Imports:
     duckdb (>= 1.5.1)
 Suggests:
     admiral,
+    askpass,
     DiagrammeR,
     fs,
     ggplot2,
