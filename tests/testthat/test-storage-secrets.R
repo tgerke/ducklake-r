@@ -55,6 +55,33 @@ test_that("create_storage_secret validates its inputs", {
   )
 })
 
+test_that("create_storage_secret loads the aws extension for credential_chain", {
+  loaded <- character()
+  local_mocked_bindings(
+    db_execute = function(sql, ...) invisible(NULL),
+    load_or_install_extension = function(ext, ...) {
+      loaded <<- c(loaded, ext)
+      invisible(NULL)
+    }
+  )
+
+  for (type in c("s3", "gcs", "r2")) {
+    loaded <- character()
+    suppressMessages(create_storage_secret(type, provider = "credential_chain"))
+    expect_equal(loaded, c("httpfs", "aws"))
+  }
+
+  # azure's credential chain comes from the azure extension itself
+  loaded <- character()
+  suppressMessages(create_storage_secret("azure", provider = "credential_chain"))
+  expect_equal(loaded, "azure")
+
+  # explicit keys don't need aws
+  loaded <- character()
+  suppressMessages(create_storage_secret("s3", key_id = "k", secret = "s"))
+  expect_equal(loaded, "httpfs")
+})
+
 test_that("render_secret_value renders logicals, numbers, and strings", {
   expect_equal(render_secret_value(TRUE), "true")
   expect_equal(render_secret_value(443), "443")

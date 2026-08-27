@@ -25,7 +25,9 @@ Character values are quoted; logicals become \code{true}/\code{false}.}
 \item{provider}{Optional credential provider. The common one is
 \code{"credential_chain"}, which picks up credentials the way AWS SDKs do
 (environment variables, profiles, instance metadata) so no key needs to
-be passed in code.}
+be passed in code. For \code{"s3"}, \code{"gcs"}, and \code{"r2"} secrets this provider
+lives in DuckDB's aws extension, which is loaded (and installed on first
+use) automatically.}
 
 \item{scope}{Optional URI prefix (e.g. \code{"s3://my-bucket"}) limiting which
 paths the secret applies to. Useful when different buckets need
@@ -51,7 +53,12 @@ and friends). Wraps \verb{CREATE SECRET}.
 }
 \details{
 The httpfs extension (or the azure extension for \code{type = "azure"}) is
-loaded automatically.
+loaded automatically. With \code{provider = "credential_chain"}, the aws
+extension is loaded too: it supplies that provider for \code{"s3"}, \code{"gcs"},
+and \code{"r2"} secrets, and DuckDB's automatic mid-statement install of it
+can fail, so the package loads it up front instead. If you pre-install
+extensions (say, when baking a container image), include \code{aws} alongside
+\code{httpfs}. The azure extension provides its own credential chain.
 
 Prefer \code{provider = "credential_chain"} over embedding long-lived keys in
 scripts. The secret's values are visible in the session via
