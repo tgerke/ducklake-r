@@ -1,3 +1,5 @@
+# ducklake (development version)
+
 # ducklake 0.6.0
 
 First CRAN release.
