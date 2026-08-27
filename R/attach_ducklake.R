@@ -10,17 +10,20 @@
 #' See \url{https://ducklake.select/docs/stable/duckdb/usage/choosing_a_catalog_database}.
 #'
 #' @param ducklake_name Name for the ducklake, used as the database alias in DuckDB
-#' @param lake_path Directory path where the lake lives. For `"duckdb"` this is
-#'   where the catalog file and Parquet data are stored. For other backends this
-#'   sets the Parquet data location (DuckLake's `DATA_PATH`), which may also be
-#'   an object-storage URI such as `"s3://bucket/path"` -- register credentials
-#'   first with [create_storage_secret()]. (The `"duckdb"` backend needs a local
-#'   `lake_path`, since its catalog is a database file.)
+#' @param lake_path Directory where the Parquet data files are stored
+#'   (DuckLake's `DATA_PATH`). May be a local directory or an object-storage
+#'   URI such as `"s3://bucket/path"` -- register credentials first with
+#'   [create_storage_secret()]. For `"duckdb"` the catalog file lives in this
+#'   directory too by default; give `catalog_connection_string` to place it
+#'   elsewhere, which is how a local catalog pairs with remote data.
 #' @param backend Catalog backend: `"duckdb"` (default), `"postgres"`,
 #'   `"sqlite"`, or `"mysql"`.
 #' @param catalog_connection_string Backend-specific connection string:
 #'   \describe{
-#'     \item{`"duckdb"`}{Not required. Defaults to `{ducklake_name}.ducklake`.}
+#'     \item{`"duckdb"`}{Optional path for the catalog database file.
+#'       Defaults to `{lake_path}/{ducklake_name}.ducklake`. Set it to keep
+#'       the catalog on local disk while `lake_path` points at object
+#'       storage.}
 #'     \item{`"postgres"`}{libpq string, e.g. `"dbname=mydb host=localhost"`.}
 #'     \item{`"sqlite"`}{Path to the SQLite file, e.g. `"metadata.sqlite"`.}
 #'     \item{`"mysql"`}{MySQL connection string, e.g. `"db=mydb host=localhost"`.}
@@ -126,6 +129,22 @@
 #'   lake_path = "data_files/"
 #' )
 #'
+#' # DuckDB catalog on local disk, Parquet data on S3
+#' create_storage_secret("s3", provider = "credential_chain")
+#' attach_ducklake(
+#'   "trial_lake",
+#'   lake_path = "s3://my-trial-lake/data",
+#'   catalog_connection_string = "trial_lake.ducklake"
+#' )
+#'
+#' # Read-only attach of a .ducklake catalog straight from object storage
+#' attach_ducklake(
+#'   "trial_lake",
+#'   lake_path = "s3://my-trial-lake/data",
+#'   catalog_connection_string = "s3://my-trial-lake/trial_lake.ducklake",
+#'   read_only = TRUE
+#' )
+#'
 #' # Encrypted Parquet files (keys live in the catalog); needs httpfs
 #' attach_ducklake("secure_lake", lake_path = "path/to/lake", encrypted = TRUE)
 #'
@@ -169,6 +188,25 @@ attach_ducklake <- function(ducklake_name, lake_path,
     }
   }
   
+  # DuckDB cannot create or write a database file on object storage, so a
+  # writable duckdb-backend lake needs its catalog on local disk
+  if (backend == "duckdb" && !read_only) {
+    catalog_path <- if (!is.null(catalog_connection_string)) {
+      catalog_connection_string
+    } else {
+      file.path(lake_path, paste0(ducklake_name, ".ducklake"))
+    }
+    if (is_remote_path(catalog_path)) {
+      cli::cli_abort(c(
+        "DuckDB cannot write its catalog file to object storage.",
+        "x" = "The catalog would live at {.val {catalog_path}}.",
+        "i" = "Pass {.arg catalog_connection_string} with a local path for the catalog file; {.arg lake_path} then only sets where the Parquet data goes.",
+        "i" = "Or attach an existing remote catalog with {.code read_only = TRUE}.",
+        "i" = "Or pick a {.arg backend} whose catalog lives elsewhere, such as {.val sqlite} or {.val postgres}."
+      ))
+    }
+  }
+
   if (backend == "mysql") {
     cli::cli_warn(c(
       "MySQL has known issues as a DuckLake catalog backend.",
@@ -191,8 +229,14 @@ attach_ducklake <- function(ducklake_name, lake_path,
     return(invisible(NULL))
   }
 
-  # Load required extensions (ducklake + backend-specific + crypto)
-  ensure_extensions(backend, encrypted = encrypted)
+  # Load required extensions (ducklake + backend-specific + crypto/remote IO)
+  ensure_extensions(
+    backend,
+    encrypted = encrypted,
+    remote = is_remote_path(lake_path) ||
+      (!is.null(catalog_connection_string) &&
+         is_remote_path(catalog_connection_string))
+  )
 
   # Build and run the ATTACH command
   attach_sql <- build_attach_sql(ducklake_name, lake_path, backend,
@@ -221,7 +265,7 @@ attach_ducklake <- function(ducklake_name, lake_path,
 #' @returns The path with runs of `/` collapsed to one.
 #' @noRd
 normalize_lake_path <- function(lake_path) {
-  if (grepl("^[A-Za-z][A-Za-z0-9+.-]*://", lake_path)) {
+  if (is_remote_path(lake_path)) {
     return(lake_path)
   }
   gsub("/{2,}", "/", lake_path)
@@ -234,19 +278,26 @@ normalize_lake_path <- function(lake_path) {
 #'   encrypted files requires the full crypto module from the httpfs
 #'   extension on platforms where the built-in module is read-only
 #'   (notably Windows).
+#' @param remote Whether the data path or catalog path is a remote URI, in
+#'   which case httpfs handles the IO. Loading it up front beats relying on
+#'   DuckDB's mid-statement autoload, which can fail.
 #' @returns Invisibly, `NULL`. Called for its side effect of loading (and, if
 #'   necessary, installing) the required DuckDB extensions.
 #' @keywords internal
-ensure_extensions <- function(backend, encrypted = FALSE) {
+ensure_extensions <- function(backend, encrypted = FALSE, remote = FALSE) {
   load_or_install_extension("ducklake")
 
-  if (encrypted) {
+  if (encrypted || remote) {
     tryCatch(
       load_or_install_extension("httpfs"),
       error = function(e) {
         cli::cli_warn(c(
           "Could not load the {.pkg httpfs} extension: {e$message}",
-          "i" = "Writing encrypted files may fail where DuckDB's built-in crypto module is read-only (e.g., Windows)."
+          "i" = if (encrypted) {
+            "Writing encrypted files may fail where DuckDB's built-in crypto module is read-only (e.g., Windows)."
+          } else {
+            "Remote paths will only work if DuckDB manages to autoload httpfs itself."
+          }
         ))
       }
     )
@@ -269,7 +320,8 @@ ensure_extensions <- function(backend, encrypted = FALSE) {
 #' @param ducklake_name Name for the ducklake alias
 #' @param lake_path Path for data files
 #' @param backend Catalog backend type
-#' @param catalog_connection_string Backend-specific connection string
+#' @param catalog_connection_string Backend-specific connection string; for
+#'   the duckdb backend, an optional path for the catalog file
 #' @param read_only Whether to attach in read-only mode
 #' @param override_data_path Whether to add OVERRIDE_DATA_PATH TRUE
 #' @param data_inlining_row_limit Optional integer for DATA_INLINING_ROW_LIMIT
@@ -288,7 +340,11 @@ build_attach_sql <- function(ducklake_name, lake_path, backend,
                               snapshot_time = NULL) {
   connection_string <- switch(backend,
     duckdb = {
-      ducklake_path <- file.path(lake_path, paste0(ducklake_name, ".ducklake"))
+      ducklake_path <- if (!is.null(catalog_connection_string)) {
+        catalog_connection_string
+      } else {
+        file.path(lake_path, paste0(ducklake_name, ".ducklake"))
+      }
       sprintf("ducklake:%s", ducklake_path)
     },
     postgres = sprintf("ducklake:postgres:%s", catalog_connection_string),

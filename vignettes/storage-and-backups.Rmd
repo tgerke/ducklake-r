@@ -116,8 +116,15 @@ create_storage_secret(
 # instance metadata) -- no keys in code
 create_storage_secret("s3", provider = "credential_chain")
 
-# Then attach as usual
-attach_ducklake("shared_lake", lake_path = "s3://my-bucket/ducklake/data")
+# Then attach. With the default duckdb backend the catalog file must stay
+# on local disk (DuckDB cannot write a database file to object storage), so
+# name its location with catalog_connection_string; lake_path only sets
+# where the Parquet data goes.
+attach_ducklake(
+  "shared_lake",
+  lake_path = "s3://my-bucket/ducklake/data",
+  catalog_connection_string = "shared_lake.ducklake"
+)
 ```
 
 Secrets are in-memory by default and disappear with the session; pass

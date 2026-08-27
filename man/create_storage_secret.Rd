@@ -73,8 +73,13 @@ create_storage_secret(
 # Let the AWS credential chain find credentials
 create_storage_secret("s3", provider = "credential_chain")
 
-# Then attach a lake whose data lives on S3
-attach_ducklake("trial_lake", lake_path = "s3://my-trial-lake/data")
+# Then attach a lake whose data lives on S3. The catalog file stays on
+# local disk; lake_path only sets where the Parquet data goes.
+attach_ducklake(
+  "trial_lake",
+  lake_path = "s3://my-trial-lake/data",
+  catalog_connection_string = "trial_lake.ducklake"
+)
 }
 }
 \seealso{

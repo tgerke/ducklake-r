@@ -20,19 +20,22 @@ attach_ducklake(
 \arguments{
 \item{ducklake_name}{Name for the ducklake, used as the database alias in DuckDB}
 
-\item{lake_path}{Directory path where the lake lives. For \code{"duckdb"} this is
-where the catalog file and Parquet data are stored. For other backends this
-sets the Parquet data location (DuckLake's \code{DATA_PATH}), which may also be
-an object-storage URI such as \code{"s3://bucket/path"} -- register credentials
-first with \code{\link[=create_storage_secret]{create_storage_secret()}}. (The \code{"duckdb"} backend needs a local
-\code{lake_path}, since its catalog is a database file.)}
+\item{lake_path}{Directory where the Parquet data files are stored
+(DuckLake's \code{DATA_PATH}). May be a local directory or an object-storage
+URI such as \code{"s3://bucket/path"} -- register credentials first with
+\code{\link[=create_storage_secret]{create_storage_secret()}}. For \code{"duckdb"} the catalog file lives in this
+directory too by default; give \code{catalog_connection_string} to place it
+elsewhere, which is how a local catalog pairs with remote data.}
 
 \item{backend}{Catalog backend: \code{"duckdb"} (default), \code{"postgres"},
 \code{"sqlite"}, or \code{"mysql"}.}
 
 \item{catalog_connection_string}{Backend-specific connection string:
 \describe{
-\item{\code{"duckdb"}}{Not required. Defaults to \verb{\{ducklake_name\}.ducklake}.}
+\item{\code{"duckdb"}}{Optional path for the catalog database file.
+Defaults to \verb{\{lake_path\}/\{ducklake_name\}.ducklake}. Set it to keep
+the catalog on local disk while \code{lake_path} points at object
+storage.}
 \item{\code{"postgres"}}{libpq string, e.g. \code{"dbname=mydb host=localhost"}.}
 \item{\code{"sqlite"}}{Path to the SQLite file, e.g. \code{"metadata.sqlite"}.}
 \item{\code{"mysql"}}{MySQL connection string, e.g. \code{"db=mydb host=localhost"}.}
@@ -150,6 +153,22 @@ attach_ducklake(
   backend = "mysql",
   catalog_connection_string = "db=ducklake_catalog host=localhost",
   lake_path = "data_files/"
+)
+
+# DuckDB catalog on local disk, Parquet data on S3
+create_storage_secret("s3", provider = "credential_chain")
+attach_ducklake(
+  "trial_lake",
+  lake_path = "s3://my-trial-lake/data",
+  catalog_connection_string = "trial_lake.ducklake"
+)
+
+# Read-only attach of a .ducklake catalog straight from object storage
+attach_ducklake(
+  "trial_lake",
+  lake_path = "s3://my-trial-lake/data",
+  catalog_connection_string = "s3://my-trial-lake/trial_lake.ducklake",
+  read_only = TRUE
 )
 
 # Encrypted Parquet files (keys live in the catalog); needs httpfs

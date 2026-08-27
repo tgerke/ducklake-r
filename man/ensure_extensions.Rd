@@ -4,7 +4,7 @@
 \alias{ensure_extensions}
 \title{Install and load required DuckDB extensions for a given backend}
 \usage{
-ensure_extensions(backend, encrypted = FALSE)
+ensure_extensions(backend, encrypted = FALSE, remote = FALSE)
 }
 \arguments{
 \item{backend}{Catalog backend type}
@@ -13,6 +13,10 @@ ensure_extensions(backend, encrypted = FALSE)
 encrypted files requires the full crypto module from the httpfs
 extension on platforms where the built-in module is read-only
 (notably Windows).}
+
+\item{remote}{Whether the data path or catalog path is a remote URI, in
+which case httpfs handles the IO. Loading it up front beats relying on
+DuckDB's mid-statement autoload, which can fail.}
 }
 \value{
 Invisibly, \code{NULL}. Called for its side effect of loading (and, if
