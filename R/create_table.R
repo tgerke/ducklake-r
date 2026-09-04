@@ -107,7 +107,7 @@ create_table <- function(data_source, table_name, labels = TRUE) {
       committed <- TRUE
     }
     if (length(column_labels) > 0) {
-      cli::cli_inform(
+      dl_inform(
         "Stored {length(column_labels)} column label{?s} as column comment{?s}."
       )
     }
@@ -149,7 +149,7 @@ prepare_data_frame <- function(data, labels = TRUE) {
   factor_cols <- vapply(data, is.factor, logical(1))
   if (any(factor_cols)) {
     data[factor_cols] <- lapply(data[factor_cols], as.character)
-    cli::cli_inform(
+    dl_inform(
       "Converted factor column{?s} {.field {names(data)[factor_cols]}} to character (DuckLake does not support ENUM columns)."
     )
   }
@@ -259,7 +259,7 @@ create_table_from_query <- function(.data, table_name, labels, conn) {
     committed <- TRUE
   }
   if (length(column_comments) > 0) {
-    cli::cli_inform(
+    dl_inform(
       "Stored {length(column_comments)} column label{?s} as column comment{?s}."
     )
   }

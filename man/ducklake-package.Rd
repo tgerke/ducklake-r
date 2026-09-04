@@ -10,6 +10,18 @@
 
 A 'tidyverse'-friendly interface to 'DuckLake' \url{https://ducklake.select/}, the 'DuckDB' lakehouse format. Attach versioned data lakes from R and work with them using familiar 'dplyr' verbs, with support for ACID transactions, time travel queries, snapshot audit trails, data inlining, encrypted storage, multiple catalog backends ('DuckDB', 'PostgreSQL', 'SQLite', 'MySQL'), and remote access over the 'Quack' protocol from 'DuckDB'.
 }
+\section{Package options}{
+
+\describe{
+\item{\code{ducklake.verbose}}{When \code{FALSE}, the confirmations the package
+emits after each operation ("Transaction committed.", "Added column
+...") are suppressed, which keeps pipeline logs quiet. Warnings,
+errors, and notices about extension downloads are unaffected. The
+messages carry the condition class \code{ducklake_message}. Default
+\code{TRUE}.}
+}
+}
+
 \seealso{
 Useful links:
 \itemize{

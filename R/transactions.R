@@ -45,7 +45,7 @@ begin_transaction <- function(conn = NULL) {
   }
 
   DBI::dbExecute(conn, "BEGIN TRANSACTION;")
-  cli::cli_inform("Transaction started.")
+  dl_inform("Transaction started.")
   invisible(TRUE)
 }
 
@@ -155,7 +155,7 @@ commit_transaction <- function(
   }
 
   DBI::dbExecute(conn, "COMMIT;")
-  cli::cli_inform("Transaction committed.")
+  dl_inform("Transaction committed.")
 
   invisible(TRUE)
 }
@@ -279,7 +279,7 @@ set_snapshot_metadata <- function(
   tryCatch(
     {
       DBI::dbExecute(conn, update_sql, params = unname(provided))
-      cli::cli_inform("Snapshot metadata updated.")
+      dl_inform("Snapshot metadata updated.")
       invisible(TRUE)
     },
     error = function(e) {
@@ -433,6 +433,6 @@ rollback_transaction <- function(conn = NULL) {
   }
 
   DBI::dbExecute(conn, "ROLLBACK;")
-  cli::cli_inform("Transaction rolled back.")
+  dl_inform("Transaction rolled back.")
   invisible(TRUE)
 }

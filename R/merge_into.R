@@ -275,7 +275,7 @@ merge_into <- function(target, source, by,
   }
 
   if (!.quiet) {
-    cli::cli_inform(
+    dl_inform(
       "Merged {.arg source} into {.val {target_name}}: {n} row{?s} affected."
     )
   }

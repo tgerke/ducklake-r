@@ -1,5 +1,21 @@
 # ducklake (development version)
 
+* `backup_ducklake()` copies the catalog with DuckDB's `COPY FROM DATABASE`
+  while the lake stays attached, a consistent snapshot taken inside one
+  transaction, instead of shutting the connection down to release file
+  locks and copying the file. Nothing is detached any more: other attached
+  lakes, in-memory secrets, and a connection registered with
+  `set_ducklake_connection()` (whose locks the old approach could not
+  release, leaving a 0-byte catalog) are left as they are. A SQLite catalog
+  is copied into a SQLite file. Restoring a backup is documented with
+  `create = FALSE`, so a mistyped path is an error rather than a new lake.
+
+* New package option `ducklake.verbose`: set it to `FALSE` to silence the
+  confirmations the package emits after each operation ("Transaction
+  committed.", "Added column ..."). Warnings, errors, and notices about
+  extension downloads stay on. The messages carry the condition class
+  `ducklake_message`.
+
 * Schema-qualified table names work end to end. Every function that takes
   a table name accepts `"schema.table"`: `get_ducklake_table()` hands
   dbplyr a proper table path for it (the duckdb driver's `tbl()` turned a

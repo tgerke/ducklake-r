@@ -214,3 +214,46 @@ test_that("checkpoint expires snapshots only under a retention policy", {
   })
   expect_false(first_id %in% list_table_snapshots()$snapshot_id)
 })
+
+test_that("backup_ducklake() keeps every lake attached and copies a consistent catalog", {
+  skip_if_not_installed("duckdb")
+  skip_if_not_installed("dplyr")
+
+  lake <- create_temp_ducklake()
+  on.exit(cleanup_temp_ducklake(lake), add = TRUE)
+  other_dir <- tempfile("other_lake_")
+  dir.create(other_dir)
+  on.exit(unlink(other_dir, recursive = TRUE), add = TRUE)
+  backup_root <- tempfile("backup_root_")
+  on.exit(unlink(backup_root, recursive = TRUE), add = TRUE)
+
+  create_table(mtcars, "cars")
+  attach_ducklake("other_lake", lake_path = other_dir)
+  create_table(iris[1:5, 1:4], "flowers")
+  on.exit(detach_ducklake("other_lake"), add = TRUE)
+  conn <- get_ducklake_connection()
+  DBI::dbExecute(conn, sprintf("USE %s;", lake$ducklake_name))
+
+  backup_dir <- suppressMessages(
+    backup_ducklake(lake$ducklake_name, lake_path = lake$lake_path, backup_path = backup_root)
+  )
+
+  # Nothing was detached or shut down
+  attached <- DBI::dbGetQuery(conn, "SELECT database_name FROM duckdb_databases()")$database_name
+  expect_true(all(c(lake$ducklake_name, "other_lake") %in% attached))
+  expect_identical(get_ducklake_connection(), conn)
+  expect_equal(nrow(dplyr::collect(get_ducklake_table("cars"))), 32)
+
+  # A write after the backup is not in the copy
+  suppressMessages(rows_insert(get_ducklake_table("cars"), data.frame(mpg = 1), by = "mpg"))
+  catalog_copy <- file.path(backup_dir, paste0(lake$ducklake_name, ".ducklake"))
+  expect_true(file.size(catalog_copy) > 0)
+  attach_ducklake(
+    "restored_lake", lake_path = backup_dir,
+    catalog_connection_string = catalog_copy,
+    override_data_path = TRUE, create = FALSE
+  )
+  on.exit(detach_ducklake("restored_lake"), add = TRUE)
+  expect_equal(nrow(dplyr::collect(get_ducklake_table("cars"))), 32)
+})
+

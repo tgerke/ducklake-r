@@ -347,7 +347,7 @@ rows_upsert.tbl_ducklake <- function(x, y, by = NULL, ...,
 
   if (is.null(by)) {
     by <- y_cols[[1]]
-    cli::cli_inform('Matching, by = "{by}"')
+    dl_inform('Matching, by = "{by}"')
   }
   if (!is.character(by) || length(by) == 0 || anyNA(by)) {
     cli::cli_abort("{.arg by} must be a character vector of column names.")

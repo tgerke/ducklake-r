@@ -60,7 +60,7 @@ create_view <- function(.data, view_name, replace = TRUE) {
     ),
     conn = conn
   )
-  cli::cli_inform("Created view {.val {view_name}}.")
+  dl_inform("Created view {.val {view_name}}.")
 
   invisible(NULL)
 }
@@ -99,7 +99,7 @@ drop_view <- function(view_name) {
     sprintf("DROP VIEW %s;", quote_ident(view_name, conn)),
     conn = conn
   )
-  cli::cli_inform("Dropped view {.val {view_name}}.")
+  dl_inform("Dropped view {.val {view_name}}.")
 
   invisible(NULL)
 }

@@ -361,7 +361,7 @@ restore_table_version <- function(table_name, version = NULL, timestamp = NULL,
       conn = conn
     )
     reapply_table_options(meta, conn)
-    cli::cli_inform("Table {.val {table_name}} restored to {restore_point} (recorded as a new snapshot).")
+    dl_inform("Table {.val {table_name}} restored to {restore_point} (recorded as a new snapshot).")
     invisible(TRUE)
   }, error = function(e) {
     cli::cli_abort(c(

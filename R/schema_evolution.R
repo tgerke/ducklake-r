@@ -53,7 +53,7 @@ add_table_column <- function(table_name, column_name, type, default = NULL) {
     ),
     conn = conn
   )
-  cli::cli_inform(c(
+  dl_inform(c(
     "Added column {.val {column_name}} ({type}) to {.val {table_name}}.",
     "i" = "Metadata-only change; no data files were rewritten."
   ))
@@ -100,7 +100,7 @@ drop_table_column <- function(table_name, column_name) {
     ),
     conn = conn
   )
-  cli::cli_inform(
+  dl_inform(
     "Dropped column {.val {column_name}} from {.val {table_name}}. Earlier snapshots still contain it."
   )
 
@@ -145,7 +145,7 @@ rename_table_column <- function(table_name, from, to) {
     ),
     conn = conn
   )
-  cli::cli_inform(
+  dl_inform(
     "Renamed column {.val {from}} to {.val {to}} in {.val {table_name}}."
   )
 
@@ -193,7 +193,7 @@ rename_ducklake_table <- function(from, to) {
     ),
     conn = conn
   )
-  cli::cli_inform(c(
+  dl_inform(c(
     "Renamed table {.val {from}} to {.val {to}}.",
     "i" = "Snapshots from before the rename remain queryable under the old name."
   ))
@@ -264,7 +264,7 @@ set_column_type <- function(table_name, column_name, type) {
       stop(e)
     }
   )
-  cli::cli_inform(
+  dl_inform(
     "Column {.val {column_name}} in {.val {table_name}} is now {type}."
   )
 
