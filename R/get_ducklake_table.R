@@ -5,7 +5,8 @@
 #' `filter()`/`mutate()`/`summarise()` pipeline first and DuckDB executes it
 #' as a single query, only pulling the rows you asked for into R.
 #'
-#' @param tbl_name Character string, name of the table to retrieve.
+#' @param tbl_name Character string, name of the table to retrieve. A
+#'   table outside the `main` schema is named `"schema.table"`.
 #'
 #' @returns A lazy table (class `tbl_ducklake`) that works with dplyr verbs.
 #'   The table name is stored in the `ducklake_table_name` attribute.
@@ -30,7 +31,20 @@
 #' detach_ducklake("cars_lake", shutdown = TRUE)
 #' unlink(lake_dir, recursive = TRUE)
 get_ducklake_table <- function(tbl_name) {
-  as_ducklake_tbl(dplyr::tbl(get_ducklake_connection(), tbl_name), tbl_name)
+  conn <- get_ducklake_connection()
+  if (grepl(".", tbl_name, fixed = TRUE)) {
+    # The duckdb driver's tbl() method turns a dotted name it cannot find
+    # as a literal table name into raw SQL, which reads fine but has no
+    # table identity for rows_*() to write to. Hand dbplyr the quoted path.
+    tbl <- dbplyr::tbl_sql(
+      "duckdb_connection",
+      src = dbplyr::src_dbi(conn),
+      from = I(quote_ident(tbl_name, conn))
+    )
+  } else {
+    tbl <- dplyr::tbl(conn, tbl_name)
+  }
+  as_ducklake_tbl(tbl, tbl_name)
 }
 
 #' Mark a lazy table as a DuckLake table

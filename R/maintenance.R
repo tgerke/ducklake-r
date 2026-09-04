@@ -117,8 +117,8 @@ expire_snapshots <- function(ducklake_name = NULL,
 #'
 #' @param ducklake_name Name of the attached DuckLake catalog. If `NULL`, the
 #'   current database is used.
-#' @param table_name Optional table name. When provided, only that table is
-#'   compacted.
+#' @param table_name Optional table name, optionally qualified as
+#'   `"schema.table"`. When provided, only that table is compacted.
 #' @param schema_name Optional schema name. When provided, only tables in
 #'   that schema are compacted.
 #' @param max_compacted_files Optional cap on the number of compaction
@@ -170,6 +170,11 @@ merge_adjacent_files <- function(ducklake_name = NULL,
   conn <- get_ducklake_connection()
   ducklake_name <- infer_ducklake_name(ducklake_name, conn)
 
+  if (!is.null(table_name)) {
+    ref <- resolve_table_ref(table_name, schema_name)
+    table_name <- ref$table
+    schema_name <- ref$schema
+  }
   args <- quote_sql(ducklake_name)
   if (!is.null(table_name)) {
     args <- c(args, quote_sql(table_name))
@@ -367,10 +372,11 @@ delete_orphaned_files <- function(ducklake_name = NULL,
 #'
 #' @param ducklake_name Name of the attached DuckLake catalog. If `NULL`, the
 #'   current database is used.
-#' @param table_name Optional table name. When provided, only that table's
-#'   files are rewritten.
+#' @param table_name Optional table name, optionally qualified as
+#'   `"schema.table"`. When provided, only that table's files are rewritten.
 #' @param delete_threshold Optional fraction of deleted rows (between 0 and
 #'   1) above which a file is rewritten. DuckLake's default is 0.95.
+#' @param schema_name Optional schema containing `table_name`.
 #'
 #' @details
 #' The rewritten originals are scheduled for deletion once no snapshot
@@ -405,13 +411,22 @@ delete_orphaned_files <- function(ducklake_name = NULL,
 #' unlink(lake_dir, recursive = TRUE)
 rewrite_data_files <- function(ducklake_name = NULL,
                                table_name = NULL,
-                               delete_threshold = NULL) {
+                               delete_threshold = NULL,
+                               schema_name = NULL) {
   conn <- get_ducklake_connection()
   ducklake_name <- infer_ducklake_name(ducklake_name, conn)
 
+  if (!is.null(table_name)) {
+    ref <- resolve_table_ref(table_name, schema_name)
+    table_name <- ref$table
+    schema_name <- ref$schema
+  }
   args <- quote_sql(ducklake_name)
   if (!is.null(table_name)) {
     args <- c(args, quote_sql(table_name))
+  }
+  if (!is.null(schema_name)) {
+    args <- c(args, sprintf("schema => %s", quote_sql(schema_name)))
   }
   if (!is.null(delete_threshold)) {
     delete_threshold <- as.numeric(delete_threshold)

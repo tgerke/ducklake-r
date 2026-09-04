@@ -188,6 +188,22 @@ with_transaction(
 list_ducklake_tables()
 ```
 
+### Organize tables in schemas
+
+Schemas group tables inside the lake. They suit medallion layers
+(`bronze`, `silver`, `gold`) or one area per study, and every function that
+takes a table name accepts `"schema.table"`:
+
+```{r schemas}
+create_schema("staging")
+create_table(mtcars, "staging.cars_raw")
+
+get_ducklake_table("staging.cars_raw") |>
+  count(cyl)
+
+list_ducklake_tables()
+```
+
 ## Shared logic and documentation recipes
 
 ### Store a pipeline as a view

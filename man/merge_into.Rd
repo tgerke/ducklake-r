@@ -18,7 +18,7 @@ merge_into(
 }
 \arguments{
 \item{target}{The table to modify: a table from \code{\link[=get_ducklake_table]{get_ducklake_table()}} or
-a table name.}
+a table name, optionally qualified as \code{"schema.table"}.}
 
 \item{source}{The rows to merge in: a data frame or a lazy table on the
 same connection.}

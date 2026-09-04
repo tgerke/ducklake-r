@@ -22,7 +22,8 @@ for the full list.}
 \item{value}{The value to set. Logicals are rendered as \code{true}/\code{false},
 numbers as numeric literals, and everything else as a quoted string.}
 
-\item{table_name}{Optional table name to scope the option to one table.}
+\item{table_name}{Optional table name to scope the option to one table,
+optionally qualified as \code{"schema.table"}.}
 
 \item{schema_name}{Optional schema name to scope the option to one schema
 (or, together with \code{table_name}, to qualify the table).}

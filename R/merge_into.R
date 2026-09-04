@@ -14,7 +14,7 @@
 #' synchronizing a table with a staging source.
 #'
 #' @param target The table to modify: a table from [get_ducklake_table()] or
-#'   a table name.
+#'   a table name, optionally qualified as `"schema.table"`.
 #' @param source The rows to merge in: a data frame or a lazy table on the
 #'   same connection.
 #' @param by Character vector of key column(s) to match on. Rows with `NULL`
@@ -131,7 +131,7 @@ merge_into <- function(target, source, by,
   if (is.character(target) && length(target) == 1 && !is.na(target)) {
     conn <- get_ducklake_connection()
     target_name <- target
-    target_tbl <- dplyr::tbl(conn, target)
+    target_tbl <- get_ducklake_table(target)
   } else if (inherits(target, "tbl_lazy")) {
     conn <- dbplyr::remote_con(target)
     target_name <- merge_target_name(target, arg = "target")

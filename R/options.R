@@ -11,7 +11,8 @@
 #'   for the full list.
 #' @param value The value to set. Logicals are rendered as `true`/`false`,
 #'   numbers as numeric literals, and everything else as a quoted string.
-#' @param table_name Optional table name to scope the option to one table.
+#' @param table_name Optional table name to scope the option to one table,
+#'   optionally qualified as `"schema.table"`.
 #' @param schema_name Optional schema name to scope the option to one schema
 #'   (or, together with `table_name`, to qualify the table).
 #' @param ducklake_name Optional name of the attached DuckLake catalog. If
@@ -57,6 +58,11 @@ set_ducklake_option <- function(option,
                                 ducklake_name = NULL) {
   conn <- get_ducklake_connection()
   ducklake_name <- infer_ducklake_name(ducklake_name, conn)
+  if (!is.null(table_name)) {
+    ref <- resolve_table_ref(table_name, schema_name)
+    table_name <- ref$table
+    schema_name <- ref$schema
+  }
 
   if (!is.character(option) || length(option) != 1 ||
       !grepl("^[a-z][a-z0-9_]*$", option)) {

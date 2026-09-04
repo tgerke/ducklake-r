@@ -16,7 +16,9 @@ build_attach_sql(
   meta_encryption_key = NULL,
   snapshot_version = NULL,
   snapshot_time = NULL,
-  automatic_migration = FALSE
+  automatic_migration = FALSE,
+  create = TRUE,
+  metadata_schema = NULL
 )
 }
 \arguments{
@@ -44,6 +46,10 @@ the duckdb backend, an optional path for the catalog file}
 \item{snapshot_time}{Optional timestamp for SNAPSHOT_TIME}
 
 \item{automatic_migration}{Whether to add AUTOMATIC_MIGRATION}
+
+\item{create}{Whether to allow creating the lake (CREATE_IF_NOT_EXISTS)}
+
+\item{metadata_schema}{Optional schema for METADATA_SCHEMA}
 }
 \value{
 A SQL ATTACH statement string

@@ -4,7 +4,8 @@
 #' between two snapshots (inclusive), using DuckLake's data change feed.
 #' Useful for auditing and for change-data-capture style pipelines.
 #'
-#' @param table_name The name of the table to inspect.
+#' @param table_name The name of the table to inspect, optionally
+#'   qualified as `"schema.table"` (default schema `main`).
 #' @param start The first snapshot to include: either a snapshot id (see
 #'   [list_table_snapshots()]) or a timestamp (POSIXct or character).
 #' @param end The last snapshot to include, in the same form as `start`.
@@ -89,9 +90,11 @@ get_table_changes <- function(table_name, start, end,
     )
   }
 
+  ref <- resolve_table_ref(table_name)
+  schema <- if (is.null(ref$schema)) "main" else ref$schema
   query <- sprintf(
-    "SELECT * FROM %s.table_changes(%s, %s)",
-    ducklake_name, quote_sql(table_name), bounds
+    "SELECT * FROM ducklake_table_changes(%s, %s, %s, %s)",
+    quote_sql(ducklake_name), quote_sql(schema), quote_sql(ref$table), bounds
   )
 
   dplyr::tbl(conn, dplyr::sql(query))

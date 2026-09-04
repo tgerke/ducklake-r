@@ -7,16 +7,17 @@
 get_table_sorting(table_name = NULL, ducklake_name = NULL)
 }
 \arguments{
-\item{table_name}{Optional table name to filter to a single table.}
+\item{table_name}{Optional table name to filter to a single table,
+optionally qualified as \code{"schema.table"}.}
 
 \item{ducklake_name}{Optional name of the attached DuckLake catalog. If
 \code{NULL}, the current database is used.}
 }
 \value{
-A data frame with one row per sort key: \code{table_name},
-\code{sort_key_index}, \code{expression}, \code{sort_direction} (\code{"ASC"} or \code{"DESC"}),
-and \code{null_order} (\code{"NULLS_FIRST"} or \code{"NULLS_LAST"}). Zero rows when
-nothing is sorted.
+A data frame with one row per sort key: \code{schema_name},
+\code{table_name}, \code{sort_key_index}, \code{expression}, \code{sort_direction}
+(\code{"ASC"} or \code{"DESC"}), and \code{null_order} (\code{"NULLS_FIRST"} or
+\code{"NULLS_LAST"}). Zero rows when nothing is sorted.
 }
 \description{
 Reads the current sort order from the DuckLake metadata catalog, the

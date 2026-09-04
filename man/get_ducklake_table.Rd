@@ -7,7 +7,8 @@
 get_ducklake_table(tbl_name)
 }
 \arguments{
-\item{tbl_name}{Character string, name of the table to retrieve.}
+\item{tbl_name}{Character string, name of the table to retrieve. A
+table outside the \code{main} schema is named \code{"schema.table"}.}
 }
 \value{
 A lazy table (class \code{tbl_ducklake}) that works with dplyr verbs.
@@ -42,8 +43,10 @@ and \code{\link[=get_ducklake_table_version]{get_ducklake_table_version()}} for 
 
 Other table operations:
 \code{\link[=add_data_files]{add_data_files()}},
+\code{\link[=create_schema]{create_schema()}},
 \code{\link[=create_table]{create_table()}},
 \code{\link[=create_view]{create_view()}},
+\code{\link[=drop_schema]{drop_schema()}},
 \code{\link[=drop_view]{drop_view()}},
 \code{\link[=ducklake_exec]{ducklake_exec()}},
 \code{\link[=get_metadata_table]{get_metadata_table()}},

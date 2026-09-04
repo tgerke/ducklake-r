@@ -11,7 +11,8 @@ get_inlining_row_limit(
 )
 }
 \arguments{
-\item{table_name}{Optional table name to query the table-level override.}
+\item{table_name}{Optional table name to query the table-level override,
+optionally qualified as \code{"schema.table"}.}
 
 \item{schema_name}{Optional schema name to query the schema-level override.}
 

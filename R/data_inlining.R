@@ -14,9 +14,9 @@
 #'
 #' @param limit Integer. The maximum number of rows that will be inlined.
 #'   Set to `0` to disable inlining entirely.
-#' @param table_name Optional table name. When provided the limit is persisted
-#'   for that table in the DuckLake metadata (takes priority over the global
-#'   setting).
+#' @param table_name Optional table name, optionally qualified as
+#'   `"schema.table"`. When provided the limit is persisted for that table
+#'   in the DuckLake metadata (takes priority over the global setting).
 #' @param schema_name Optional schema name. When provided (without
 #'   `table_name`) the limit is persisted for all tables in that schema.
 #' @param ducklake_name Optional name of the attached DuckLake catalog.
@@ -66,6 +66,11 @@ set_inlining_row_limit <- function(limit,
   limit <- as.integer(limit)
   if (is.na(limit) || limit < 0L) {
     cli::cli_abort("{.arg limit} must be a non-negative integer.")
+  }
+  if (!is.null(table_name)) {
+    ref <- resolve_table_ref(table_name, schema_name)
+    table_name <- ref$table
+    schema_name <- ref$schema
   }
 
   conn <- get_ducklake_connection()
@@ -120,7 +125,8 @@ set_inlining_row_limit <- function(limit,
 #' Returns the effective data inlining row limit. When no table- or schema-level
 #' override is configured, the global DuckDB default is returned.
 #'
-#' @param table_name Optional table name to query the table-level override.
+#' @param table_name Optional table name to query the table-level override,
+#'   optionally qualified as `"schema.table"`.
 #' @param schema_name Optional schema name to query the schema-level override.
 #' @param ducklake_name Optional name of the attached DuckLake catalog. If
 #'   `NULL`, the current database is used.
@@ -151,6 +157,11 @@ get_inlining_row_limit <- function(table_name = NULL,
                                    schema_name = NULL,
                                    ducklake_name = NULL) {
   conn <- get_ducklake_connection()
+  if (!is.null(table_name)) {
+    ref <- resolve_table_ref(table_name, schema_name)
+    table_name <- ref$table
+    schema_name <- ref$schema
+  }
 
   if (is.null(table_name) && is.null(schema_name)) {
     result <- DBI::dbGetQuery(
@@ -217,8 +228,9 @@ get_inlining_row_limit <- function(table_name = NULL,
 #'
 #' @param ducklake_name Name of the attached DuckLake catalog. If `NULL`, the
 #'   current database is used.
-#' @param table_name Optional table name. When provided, only flushes inlined
-#'   data for that table.
+#' @param table_name Optional table name, optionally qualified as
+#'   `"schema.table"`. When provided, only flushes inlined data for that
+#'   table.
 #' @param schema_name Optional schema name. When provided, only flushes inlined
 #'   data for tables in that schema.
 #'
@@ -260,6 +272,11 @@ flush_inlined_data <- function(ducklake_name = NULL,
                                table_name = NULL,
                                schema_name = NULL) {
   conn <- get_ducklake_connection()
+  if (!is.null(table_name)) {
+    ref <- resolve_table_ref(table_name, schema_name)
+    table_name <- ref$table
+    schema_name <- ref$schema
+  }
 
   if (is.null(ducklake_name)) {
     ducklake_name <- tryCatch(

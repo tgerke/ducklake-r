@@ -63,6 +63,7 @@ unlink(lake_dir, recursive = TRUE)
 Other transactions:
 \code{\link[=begin_transaction]{begin_transaction()}},
 \code{\link[=rollback_transaction]{rollback_transaction()}},
+\code{\link[=set_ducklake_retry]{set_ducklake_retry()}},
 \code{\link[=set_snapshot_metadata]{set_snapshot_metadata()}},
 \code{\link[=with_transaction]{with_transaction()}}
 }

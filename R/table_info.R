@@ -4,8 +4,9 @@
 #' Parquet data files each table has and their total size, plus the same for
 #' delete files.
 #'
-#' @param table_name Optional table name. When provided, only that table's
-#'   row is returned.
+#' @param table_name Optional table name, optionally qualified as
+#'   `"schema.table"`. When provided, only that table's row is returned (a
+#'   bare name matches it in every schema).
 #' @param ducklake_name Name of the attached DuckLake catalog. If `NULL`, the
 #'   current database is used.
 #' @param conn Optional DuckDB connection object. If not provided, uses the
@@ -13,7 +14,7 @@
 #'
 #' @returns A data frame with one row per table and columns `table_name`,
 #'   `schema_id`, `table_id`, `table_uuid`, `file_count`, `file_size_bytes`,
-#'   `delete_file_count`, and `delete_file_size_bytes`.
+#'   `delete_file_count`, `delete_file_size_bytes`, and `schema_name`.
 #' @family maintenance
 #' @export
 #'
@@ -52,11 +53,22 @@ get_table_info <- function(table_name = NULL, ducklake_name = NULL, conn = NULL)
 
   result <- DBI::dbGetQuery(
     conn,
-    sprintf("SELECT * FROM ducklake_table_info(%s)", quote_sql(ducklake_name))
+    sprintf(
+      "SELECT ti.*, s.schema_name
+       FROM ducklake_table_info(%s) ti
+       LEFT JOIN %s.ducklake_schema s
+         ON ti.schema_id = s.schema_id AND s.end_snapshot IS NULL",
+      quote_sql(ducklake_name), metadata_prefix(ducklake_name, conn)
+    )
   )
 
   if (!is.null(table_name)) {
-    result <- result[result$table_name == table_name, ]
+    ref <- resolve_table_ref(table_name)
+    keep <- result$table_name == ref$table
+    if (!is.null(ref$schema)) {
+      keep <- keep & !is.na(result$schema_name) & result$schema_name == ref$schema
+    }
+    result <- result[keep, , drop = FALSE]
     rownames(result) <- NULL
   }
   result

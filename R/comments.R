@@ -146,14 +146,16 @@ set_column_comments <- function(table_name, ...) {
 #' [set_table_comment()], [set_column_comments()], [create_table()]'s label
 #' sync, or any other client -- as a tidy data frame.
 #'
-#' @param table_name Optional table (or view) name to filter to.
+#' @param table_name Optional table (or view) name to filter to, optionally
+#'   qualified as `"schema.table"`; a bare name matches that table in every
+#'   schema.
 #' @param ducklake_name Optional name of the attached DuckLake catalog. If
 #'   `NULL`, the current database is used.
 #'
 #' @returns A data frame with one row per comment: `object_type`
-#'   (`"table"`, `"view"`, or `"column"`), `table_name`, `column_name`
-#'   (`NA` for tables and views), and `comment`. Zero rows when nothing is
-#'   commented.
+#'   (`"table"`, `"view"`, or `"column"`), `schema_name`, `table_name`,
+#'   `column_name` (`NA` for tables and views), and `comment`. Zero rows
+#'   when nothing is commented.
 #' @family table documentation
 #' @export
 #'
@@ -179,49 +181,53 @@ set_column_comments <- function(table_name, ...) {
 get_table_comments <- function(table_name = NULL, ducklake_name = NULL) {
   conn <- get_ducklake_connection()
   ducklake_name <- infer_ducklake_name(ducklake_name, conn)
-
   prefix <- metadata_prefix(ducklake_name, conn)
 
-  filter_table <- if (is.null(table_name)) "" else "AND t.table_name = ?"
-  filter_view <- if (is.null(table_name)) "" else "AND v.view_name = ?"
+  tables <- table_filter(table_name, "t.table_name")
+  views <- table_filter(table_name, "v.view_name")
 
   # Cleared comments are NULL-valued rows; current rows have
   # end_snapshot IS NULL
   sql <- sprintf(
-    "SELECT 'table' AS object_type, t.table_name, NULL AS column_name,
-            tag.value AS comment
-     FROM %s.ducklake_tag tag
-     JOIN %s.ducklake_table t
+    "SELECT 'table' AS object_type, s.schema_name, t.table_name,
+            NULL AS column_name, tag.value AS comment
+     FROM %1$s.ducklake_tag tag
+     JOIN %1$s.ducklake_table t
        ON tag.object_id = t.table_id AND t.end_snapshot IS NULL
+     JOIN %1$s.ducklake_schema s
+       ON t.schema_id = s.schema_id AND s.end_snapshot IS NULL
      WHERE tag.end_snapshot IS NULL AND tag.key = 'comment'
-       AND tag.value IS NOT NULL %s
+       AND tag.value IS NOT NULL %2$s
      UNION ALL
-     SELECT 'view', v.view_name, NULL, tag.value
-     FROM %s.ducklake_tag tag
-     JOIN %s.ducklake_view v
+     SELECT 'view', s.schema_name, v.view_name, NULL, tag.value
+     FROM %1$s.ducklake_tag tag
+     JOIN %1$s.ducklake_view v
        ON tag.object_id = v.view_id AND v.end_snapshot IS NULL
+     JOIN %1$s.ducklake_schema s
+       ON v.schema_id = s.schema_id AND s.end_snapshot IS NULL
      WHERE tag.end_snapshot IS NULL AND tag.key = 'comment'
-       AND tag.value IS NOT NULL %s
+       AND tag.value IS NOT NULL %3$s
      UNION ALL
-     SELECT 'column', t.table_name, c.column_name, ct.value
-     FROM %s.ducklake_column_tag ct
-     JOIN %s.ducklake_table t
+     SELECT 'column', s.schema_name, t.table_name, c.column_name, ct.value
+     FROM %1$s.ducklake_column_tag ct
+     JOIN %1$s.ducklake_table t
        ON ct.table_id = t.table_id AND t.end_snapshot IS NULL
-     JOIN %s.ducklake_column c
+     JOIN %1$s.ducklake_schema s
+       ON t.schema_id = s.schema_id AND s.end_snapshot IS NULL
+     JOIN %1$s.ducklake_column c
        ON ct.table_id = c.table_id AND ct.column_id = c.column_id
        AND c.end_snapshot IS NULL
      WHERE ct.end_snapshot IS NULL AND ct.key = 'comment'
-       AND ct.value IS NOT NULL %s
-     ORDER BY object_type, table_name, column_name",
-    prefix, prefix, filter_table,
-    prefix, prefix, filter_view,
-    prefix, prefix, prefix, filter_table
+       AND ct.value IS NOT NULL %2$s
+     ORDER BY object_type, schema_name, table_name, column_name",
+    prefix, tables$sql, views$sql
   )
 
-  if (is.null(table_name)) {
+  params <- c(tables$params, views$params, tables$params)
+  if (length(params) == 0) {
     DBI::dbGetQuery(conn, sql)
   } else {
-    DBI::dbGetQuery(conn, sql, params = list(table_name, table_name, table_name))
+    DBI::dbGetQuery(conn, sql, params = params)
   }
 }
 

@@ -68,8 +68,10 @@ unlink(lake_dir, recursive = TRUE)
 \seealso{
 Other table operations:
 \code{\link[=add_data_files]{add_data_files()}},
+\code{\link[=create_schema]{create_schema()}},
 \code{\link[=create_table]{create_table()}},
 \code{\link[=create_view]{create_view()}},
+\code{\link[=drop_schema]{drop_schema()}},
 \code{\link[=drop_view]{drop_view()}},
 \code{\link[=get_ducklake_table]{get_ducklake_table()}},
 \code{\link[=get_metadata_table]{get_metadata_table()}},

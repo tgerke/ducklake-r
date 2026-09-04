@@ -7,15 +7,17 @@
 get_table_partitions(table_name = NULL, ducklake_name = NULL)
 }
 \arguments{
-\item{table_name}{Optional table name to filter to a single table.}
+\item{table_name}{Optional table name to filter to a single table,
+optionally qualified as \code{"schema.table"}.}
 
 \item{ducklake_name}{Optional name of the attached DuckLake catalog. If
 \code{NULL}, the current database is used.}
 }
 \value{
-A data frame with one row per partition key: \code{table_name},
-\code{partition_key_index}, \code{column_name}, and \code{transform} (e.g.
-\code{"identity"} or \code{"year"}). Zero rows when nothing is partitioned.
+A data frame with one row per partition key: \code{schema_name},
+\code{table_name}, \code{partition_key_index}, \code{column_name}, and \code{transform}
+(e.g. \code{"identity"}, \code{"year"}, or \code{"bucket(4)"}). Zero rows when
+nothing is partitioned.
 }
 \description{
 Reads the current partitioning keys from the DuckLake metadata catalog.

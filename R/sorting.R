@@ -129,14 +129,15 @@ reset_table_sorting <- function(table_name) {
 #' Reads the current sort order from the DuckLake metadata catalog, the
 #' counterpart of [get_table_partitions()] for [set_table_sorting()].
 #'
-#' @param table_name Optional table name to filter to a single table.
+#' @param table_name Optional table name to filter to a single table,
+#'   optionally qualified as `"schema.table"`.
 #' @param ducklake_name Optional name of the attached DuckLake catalog. If
 #'   `NULL`, the current database is used.
 #'
-#' @returns A data frame with one row per sort key: `table_name`,
-#'   `sort_key_index`, `expression`, `sort_direction` (`"ASC"` or `"DESC"`),
-#'   and `null_order` (`"NULLS_FIRST"` or `"NULLS_LAST"`). Zero rows when
-#'   nothing is sorted.
+#' @returns A data frame with one row per sort key: `schema_name`,
+#'   `table_name`, `sort_key_index`, `expression`, `sort_direction`
+#'   (`"ASC"` or `"DESC"`), and `null_order` (`"NULLS_FIRST"` or
+#'   `"NULLS_LAST"`). Zero rows when nothing is sorted.
 #' @family sorting
 #' @export
 #'
@@ -163,25 +164,27 @@ get_table_sorting <- function(table_name = NULL, ducklake_name = NULL) {
   ducklake_name <- infer_ducklake_name(ducklake_name, conn)
   prefix <- metadata_prefix(ducklake_name, conn)
 
-  filter_clause <- if (is.null(table_name)) "" else "AND t.table_name = ?"
+  filter <- table_filter(table_name)
 
   # Current (non-superseded) metadata rows have end_snapshot IS NULL
   sql <- sprintf(
-    "SELECT t.table_name, se.sort_key_index, se.expression,
+    "SELECT s.schema_name, t.table_name, se.sort_key_index, se.expression,
             se.sort_direction, se.null_order
-     FROM %s.ducklake_sort_info si
-     JOIN %s.ducklake_sort_expression se
+     FROM %1$s.ducklake_sort_info si
+     JOIN %1$s.ducklake_sort_expression se
        ON si.sort_id = se.sort_id AND si.table_id = se.table_id
-     JOIN %s.ducklake_table t
+     JOIN %1$s.ducklake_table t
        ON si.table_id = t.table_id AND t.end_snapshot IS NULL
-     WHERE si.end_snapshot IS NULL %s
-     ORDER BY t.table_name, se.sort_key_index",
-    prefix, prefix, prefix, filter_clause
+     JOIN %1$s.ducklake_schema s
+       ON t.schema_id = s.schema_id AND s.end_snapshot IS NULL
+     WHERE si.end_snapshot IS NULL %2$s
+     ORDER BY s.schema_name, t.table_name, se.sort_key_index",
+    prefix, filter$sql
   )
 
-  if (is.null(table_name)) {
+  if (length(filter$params) == 0) {
     DBI::dbGetQuery(conn, sql)
   } else {
-    DBI::dbGetQuery(conn, sql, params = list(split_table_name(table_name)$table))
+    DBI::dbGetQuery(conn, sql, params = filter$params)
   }
 }

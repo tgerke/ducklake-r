@@ -134,13 +134,15 @@ reset_table_partitioning <- function(table_name) {
 #'
 #' Reads the current partitioning keys from the DuckLake metadata catalog.
 #'
-#' @param table_name Optional table name to filter to a single table.
+#' @param table_name Optional table name to filter to a single table,
+#'   optionally qualified as `"schema.table"`.
 #' @param ducklake_name Optional name of the attached DuckLake catalog. If
 #'   `NULL`, the current database is used.
 #'
-#' @returns A data frame with one row per partition key: `table_name`,
-#'   `partition_key_index`, `column_name`, and `transform` (e.g.
-#'   `"identity"` or `"year"`). Zero rows when nothing is partitioned.
+#' @returns A data frame with one row per partition key: `schema_name`,
+#'   `table_name`, `partition_key_index`, `column_name`, and `transform`
+#'   (e.g. `"identity"`, `"year"`, or `"bucket(4)"`). Zero rows when
+#'   nothing is partitioned.
 #' @family partitioning
 #' @export
 #'
@@ -168,27 +170,30 @@ get_table_partitions <- function(table_name = NULL, ducklake_name = NULL) {
 
   prefix <- metadata_prefix(ducklake_name, conn)
 
-  filter_clause <- if (is.null(table_name)) "" else "AND t.table_name = ?"
+  filter <- table_filter(table_name)
 
   # Current (non-superseded) metadata rows have end_snapshot IS NULL
   sql <- sprintf(
-    "SELECT t.table_name, pc.partition_key_index, c.column_name, pc.transform
-     FROM %s.ducklake_partition_info pi
-     JOIN %s.ducklake_partition_column pc
+    "SELECT s.schema_name, t.table_name, pc.partition_key_index,
+            c.column_name, pc.transform
+     FROM %1$s.ducklake_partition_info pi
+     JOIN %1$s.ducklake_partition_column pc
        ON pi.partition_id = pc.partition_id AND pi.table_id = pc.table_id
-     JOIN %s.ducklake_table t
+     JOIN %1$s.ducklake_table t
        ON pi.table_id = t.table_id AND t.end_snapshot IS NULL
-     JOIN %s.ducklake_column c
+     JOIN %1$s.ducklake_schema s
+       ON t.schema_id = s.schema_id AND s.end_snapshot IS NULL
+     JOIN %1$s.ducklake_column c
        ON pc.column_id = c.column_id AND pc.table_id = c.table_id
        AND c.end_snapshot IS NULL
-     WHERE pi.end_snapshot IS NULL %s
-     ORDER BY t.table_name, pc.partition_key_index",
-    prefix, prefix, prefix, prefix, filter_clause
+     WHERE pi.end_snapshot IS NULL %2$s
+     ORDER BY s.schema_name, t.table_name, pc.partition_key_index",
+    prefix, filter$sql
   )
 
-  if (is.null(table_name)) {
+  if (length(filter$params) == 0) {
     DBI::dbGetQuery(conn, sql)
   } else {
-    DBI::dbGetQuery(conn, sql, params = list(table_name))
+    DBI::dbGetQuery(conn, sql, params = filter$params)
   }
 }

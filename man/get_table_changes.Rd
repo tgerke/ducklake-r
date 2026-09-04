@@ -7,7 +7,8 @@
 get_table_changes(table_name, start, end, ducklake_name = NULL, conn = NULL)
 }
 \arguments{
-\item{table_name}{The name of the table to inspect.}
+\item{table_name}{The name of the table to inspect, optionally
+qualified as \code{"schema.table"} (default schema \code{main}).}
 
 \item{start}{The first snapshot to include: either a snapshot id (see
 \code{\link[=list_table_snapshots]{list_table_snapshots()}}) or a timestamp (POSIXct or character).}
