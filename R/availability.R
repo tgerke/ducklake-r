@@ -11,6 +11,13 @@
 #' The package's own examples are gated on it. To install the extension, call
 #' [install_ducklake()].
 #'
+#' A `FALSE` on a machine where [install_ducklake()] has already run usually
+#' means the extension went into a temporary directory: from duckdb 1.5.2
+#' on, extensions are kept under a "home" directory that defaults to a
+#' per-session temporary directory unless `DUCKDB_R_HOME` (or the
+#' `duckdb.home` option, or an existing `~/.duckdb`) points somewhere
+#' durable. See [install_ducklake()].
+#'
 #' The result is cached for the rest of the session, since spinning up DuckDB
 #' to re-answer the same question is wasteful when dozens of examples ask it.
 #' [install_ducklake()] clears the cache, so a `FALSE` answer becomes `TRUE`

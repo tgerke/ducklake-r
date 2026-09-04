@@ -15,7 +15,8 @@ attach_ducklake(
   encrypted = FALSE,
   meta_encryption_key = NULL,
   snapshot_version = NULL,
-  snapshot_time = NULL
+  snapshot_time = NULL,
+  automatic_migration = FALSE
 )
 }
 \arguments{
@@ -82,6 +83,13 @@ are rejected. Mutually exclusive with \code{snapshot_time}.}
 \item{snapshot_time}{Optional POSIXct or UTC timestamp string. Attaches
 the lake pinned to its state at that moment. Mutually exclusive with
 \code{snapshot_version}.}
+
+\item{automatic_migration}{If \code{TRUE}, let DuckLake upgrade a catalog
+written in an earlier format version to the one the installed
+extension uses (the \code{AUTOMATIC_MIGRATION} option). Needed once for a
+lake created with DuckDB 1.5.1, whose extension wrote the 0.4 format,
+after upgrading to 1.5.2 or later. The upgrade is permanent, so take a
+backup first. Default \code{FALSE}, in which case a mismatch is an error.}
 }
 \value{
 Invisibly, \code{NULL}. Called for its side effect of attaching the
@@ -119,7 +127,10 @@ the rest from the secret. See
 \strong{Windows limitation:} The \code{postgres} and \code{mysql} DuckDB extensions are not
 available on Windows (MinGW toolchain). Only \code{duckdb} and \code{sqlite} backends
 work there. Use Linux, macOS, or WSL for PostgreSQL/MySQL backends.
-See \url{https://github.com/duckdb/duckdb/issues/7892}.
+See \url{https://github.com/duckdb/duckdb/issues/7892}. The \code{aws} and
+\code{azure} extensions are missing on Windows too, so
+\code{\link[=create_storage_secret]{create_storage_secret()}} with \code{provider = "credential_chain"} or
+\code{type = "azure"} does not work there; explicit S3 keys do.
 }
 \examples{
 \dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}
@@ -198,6 +209,10 @@ attach_ducklake(
 
 # A frozen view of the lake as of snapshot 12, e.g. to reproduce a report
 attach_ducklake("lake_v12", lake_path = "path/to/lake", snapshot_version = 12)
+
+# A lake created with DuckDB 1.5.1 (catalog format 0.4), opened after
+# upgrading: migrate it once, then attach as usual
+attach_ducklake("old_lake", lake_path = "path/to/lake", automatic_migration = TRUE)
 }
 \dontshow{\}) # examplesIf}
 }

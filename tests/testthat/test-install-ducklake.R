@@ -17,12 +17,12 @@ test_that("install_ducklake issues INSTALL statements for backends", {
   )
 })
 
-test_that("install_ducklake aborts on DuckDB engines older than 1.5.1", {
+test_that("install_ducklake aborts on DuckDB engines older than 1.5.2", {
   local_mocked_bindings(
     duckdb_version_at_least = function(version, minimum) FALSE
   )
 
-  expect_error(install_ducklake(), "requires DuckDB version 1.5.1")
+  expect_error(install_ducklake(), "requires DuckDB version 1.5.2")
 })
 
 test_that("install_ducklake rejects unknown backends", {

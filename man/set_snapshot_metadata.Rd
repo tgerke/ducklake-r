@@ -9,7 +9,8 @@ set_snapshot_metadata(
   author = NULL,
   commit_message = NULL,
   commit_extra_info = NULL,
-  conn = NULL
+  conn = NULL,
+  overwrite = FALSE
 )
 }
 \arguments{
@@ -22,20 +23,32 @@ set_snapshot_metadata(
 \item{commit_extra_info}{Optional extra information about the commit}
 
 \item{conn}{Optional DuckDB connection object. If not provided, uses the default ducklake connection.}
+
+\item{overwrite}{Replace values the snapshot already carries (default
+\code{FALSE}). By default only empty fields are filled in, and the call
+stops when a supplied field already has a value.}
 }
 \value{
 Invisibly returns TRUE on success
 }
 \description{
-Sets the author, commit message, and/or extra info for the most recent
-snapshot in a DuckLake catalog by updating the \code{ducklake_snapshot_changes}
-metadata table directly.
+Fills in the author, commit message, and/or extra info of the most
+recent snapshot in a DuckLake catalog after it was committed, by
+updating the \code{ducklake_snapshot_changes} metadata table directly.
 }
 \details{
-This function retroactively updates metadata on the most recent snapshot.
-To set metadata at commit time, use the \code{author}, \code{commit_message},
-and \code{commit_extra_info} arguments in \code{commit_transaction()} or
-\code{with_transaction()} instead.
+Metadata belongs on the commit: pass \code{author}, \code{commit_message}, and
+\code{commit_extra_info} to \code{\link[=with_transaction]{with_transaction()}} or \code{\link[=commit_transaction]{commit_transaction()}},
+which record them through DuckLake's \code{set_commit_message()} as part of
+the transaction itself. This function is the escape hatch for a snapshot
+that was committed without them, such as one made interactively or by a
+client that could not set them.
+
+It writes to the catalog's metadata table outside DuckLake's transaction
+and conflict model, and an overwrite leaves no trace of the previous
+value. That is why it fills blanks only unless \code{overwrite = TRUE}. Where
+the snapshot history is the audit trail (GxP, 21 CFR Part 11), set
+metadata at commit time and leave \code{overwrite} alone.
 }
 \examples{
 \dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}
@@ -47,12 +60,16 @@ begin_transaction()
 create_table(mtcars, "cars")
 commit_transaction()
 
-# Add metadata to the snapshot after the fact
+# The snapshot has no author or message yet: fill them in
 set_snapshot_metadata(
   ducklake_name = "meta_lake",
   author = "Data Team",
   commit_message = "Added the cars dataset"
 )
+
+# A second call refuses to replace them unless told to
+try(set_snapshot_metadata("meta_lake", commit_message = "Reworded"))
+set_snapshot_metadata("meta_lake", commit_message = "Reworded", overwrite = TRUE)
 
 detach_ducklake("meta_lake", shutdown = TRUE)
 unlink(lake_dir, recursive = TRUE)

@@ -167,3 +167,50 @@ test_that("naive local POSIXct timestamps resolve as the correct instant", {
   expect_true(restore_table_version("utc_asof", timestamp = Sys.time()))
   expect_equal(nrow(dplyr::collect(get_ducklake_table("utc_asof"))), 2)
 })
+
+test_that("time-travel readers are DuckLake tables that restore labels", {
+  skip_if_not_installed("duckdb")
+  skip_if_not_installed("dplyr")
+
+  lake <- create_temp_ducklake()
+  on.exit(cleanup_temp_ducklake(lake), add = TRUE)
+
+  df <- data.frame(id = 1:3, v = c(1, 2, 3))
+  attr(df$v, "label") <- "Value"
+  suppressMessages(create_table(df, "tt_labels"))
+  snapshots <- list_table_snapshots("tt_labels")
+
+  by_version <- get_ducklake_table_version("tt_labels", snapshots$snapshot_id[[1]])
+  expect_s3_class(by_version, "tbl_ducklake")
+  expect_equal(attr(by_version, "ducklake_table_name"), "tt_labels")
+  expect_equal(attr(dplyr::collect(by_version)$v, "label"), "Value")
+
+  as_of <- get_ducklake_table_asof("tt_labels", snapshots$snapshot_time[[1]] + 1)
+  expect_s3_class(as_of, "tbl_ducklake")
+  expect_equal(attr(dplyr::collect(as_of)$v, "label"), "Value")
+})
+
+test_that("list_table_snapshots matches id-only snapshots and survives a rewrite", {
+  skip_if_not_installed("duckdb")
+  skip_if_not_installed("dplyr")
+
+  lake <- create_temp_ducklake()
+  on.exit(cleanup_temp_ducklake(lake), add = TRUE)
+
+  create_table(data.frame(id = 1:3), "snap_ids")
+  # Row-level changes reference the table by id only
+  suppressMessages(
+    rows_insert(get_ducklake_table("snap_ids"), data.frame(id = 4L), by = "id")
+  )
+  # replace_table() gives the table a new id
+  suppressMessages(
+    get_ducklake_table("snap_ids") |>
+      dplyr::filter(id > 1) |>
+      replace_table("snap_ids")
+  )
+  create_table(data.frame(id = 1L), "snap_other")
+
+  expect_equal(nrow(list_table_snapshots("snap_ids")), 3)
+  expect_equal(nrow(list_table_snapshots("snap_other")), 1)
+  expect_equal(nrow(list_table_snapshots("no_such_table")), 0)
+})

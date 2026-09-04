@@ -30,12 +30,23 @@
 #' detach_ducklake("cars_lake", shutdown = TRUE)
 #' unlink(lake_dir, recursive = TRUE)
 get_ducklake_table <- function(tbl_name) {
-  tbl <- dplyr::tbl(get_ducklake_connection(), tbl_name)
-  attr(tbl, "ducklake_table_name") <- tbl_name
-  # Subclass so dplyr::rows_insert()/rows_update()/rows_delete() dispatch to
-  # the DuckLake-appropriate defaults regardless of package load order
-  class(tbl) <- c("tbl_ducklake", class(tbl))
-  return(tbl)
+  as_ducklake_tbl(dplyr::tbl(get_ducklake_connection(), tbl_name), tbl_name)
+}
+
+#' Mark a lazy table as a DuckLake table
+#'
+#' Records the table name (for [ducklake_exec()] and for restoring labels
+#' on [dplyr::collect()]) and adds the `tbl_ducklake` class so the
+#' package's `rows_*()` methods dispatch regardless of package load order.
+#'
+#' @param tbl A lazy table.
+#' @param table_name The DuckLake table it reads.
+#' @returns `tbl` with the class and attribute set.
+#' @noRd
+as_ducklake_tbl <- function(tbl, table_name) {
+  attr(tbl, "ducklake_table_name") <- table_name
+  class(tbl) <- c("tbl_ducklake", setdiff(class(tbl), "tbl_ducklake"))
+  tbl
 }
 
 #' Get a DuckLake metadata table
@@ -93,7 +104,7 @@ get_metadata_table <- function(tbl_name, ducklake_name = NULL) {
   
   # Metadata tables are in the __ducklake_metadata_[ducklake_name] database.
   # DuckDB and SQLite use a .main. schema qualifier; PostgreSQL and MySQL do not.
-  backend <- get_ducklake_backend()
+  backend <- get_ducklake_backend(ducklake_name)
   if (backend %in% c("postgres", "mysql")) {
     metadata_tbl_name <- paste0("__ducklake_metadata_", ducklake_name, ".", tbl_name)
   } else {

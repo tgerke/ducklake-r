@@ -60,30 +60,28 @@ test_that("ducklake_exec respects .quiet parameter", {
   initial_data <- data.frame(id = 1:3, value = c(1, 2, 3), stringsAsFactors = FALSE)
   create_table(initial_data, "test_quiet")
   
-  # Capture output with .quiet = FALSE
-  output_verbose <- capture.output({
+  # The SQL trace is emitted as messages with .quiet = FALSE
+  msgs_verbose <- testthat::capture_messages({
     with_transaction({
       get_ducklake_table("test_quiet") |>
         dplyr::mutate(value = value * 2) |>
         ducklake_exec(.quiet = FALSE)
     })
   })
-  
-  # Should have debug output
-  expect_true(any(grepl("SQL", paste(output_verbose, collapse = " "))))
-  
-  # Capture output with .quiet = TRUE
-  output_quiet <- capture.output({
+  expect_true(any(grepl("Translated DuckLake SQL", msgs_verbose)))
+  expect_true(any(grepl("UPDATE", msgs_verbose)))
+
+  # ... and not with .quiet = TRUE (only the transaction messages remain)
+  msgs_quiet <- testthat::capture_messages({
     with_transaction({
       get_ducklake_table("test_quiet") |>
         dplyr::mutate(value = value * 2) |>
         ducklake_exec(.quiet = TRUE)
     })
   })
-  
-  # Should have minimal or no output
-  expect_true(length(output_quiet) < length(output_verbose))
-  
+  expect_false(any(grepl("SQL", msgs_quiet)))
+  expect_true(length(msgs_quiet) < length(msgs_verbose))
+
   cleanup_temp_ducklake(lake)
 })
 

@@ -17,8 +17,20 @@ DuckDB extensions into the local extension cache.
 }
 \description{
 Installs the ducklake DuckDB extension and optionally the extensions for
-alternative catalog backends (postgres, sqlite, mysql). Only needs to be
-run once per DuckDB version.
+alternative catalog backends (postgres, sqlite, mysql). Needs to run once
+per DuckDB version, provided DuckDB's extension directory survives the
+session (see Details).
+}
+\details{
+Where the extension lands depends on the duckdb R package. From duckdb
+1.5.2 on, extensions live under a "home" directory that defaults to a
+per-session temporary directory unless something durable is configured:
+the \code{DUCKDB_R_HOME} environment variable (set it in \verb{~/.Renviron} so every
+session sees it), the \code{duckdb.home} option, or an existing \verb{~/.duckdb}
+directory. With the temporary default, the extension is gone when R
+exits and the next session downloads it again. \code{install_ducklake()}
+reports the directory it installed into and says so when that directory
+is temporary.
 }
 \note{
 On Windows the \code{postgres} and \code{mysql} extensions are not available

@@ -15,8 +15,10 @@ show_ducklake_query(.data, table_name = NULL)
 The first argument, invisibly (following show_query convention)
 }
 \description{
-This function shows the SQL that would be generated and executed by ducklake.
-This is useful for debugging and understanding what SQL is being sent to DuckDB.
+Prints the statement \code{\link[=ducklake_exec]{ducklake_exec()}} would run for a pipeline, without
+running it. Like \code{\link[dplyr:show_query]{dplyr::show_query()}}, the SQL is written to the console
+and the input is returned invisibly, so it can sit in the middle of a
+pipe.
 }
 \examples{
 \dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}

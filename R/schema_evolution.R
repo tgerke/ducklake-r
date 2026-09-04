@@ -10,10 +10,11 @@
 #' @param type SQL type for the new column, e.g. `"INTEGER"`,
 #'   `"DECIMAL(10,2)"`, or `"TIMESTAMP WITH TIME ZONE"`.
 #' @param default Optional default value (an R scalar: character, numeric,
-#'   logical, Date, or POSIXct). In DuckLake the default applies to
-#'   existing rows as well as future inserts, so the new column appears
-#'   filled everywhere. Without a default, the column reads `NA` for
-#'   existing rows.
+#'   logical, Date, or POSIXct, the last rendered in UTC). In DuckLake the
+#'   default applies to existing rows as well as future inserts, so the new
+#'   column appears filled everywhere. Without a default, the column reads
+#'   `NA` for existing rows. DuckLake accepts constant defaults only;
+#'   an expression such as `now()` is not supported.
 #'
 #' @returns Invisibly returns `NULL`.
 #' @family schema evolution
@@ -42,7 +43,7 @@ add_table_column <- function(table_name, column_name, type, default = NULL) {
   } else {
     sprintf(" DEFAULT %s", render_sql_literal(default))
   }
-  db_execute(
+  db_execute_ddl(
     sprintf(
       "ALTER TABLE %s ADD COLUMN %s %s%s;",
       quote_ident(table_name, conn),
@@ -91,7 +92,7 @@ add_table_column <- function(table_name, column_name, type, default = NULL) {
 drop_table_column <- function(table_name, column_name) {
   conn <- get_ducklake_connection()
 
-  db_execute(
+  db_execute_ddl(
     sprintf(
       "ALTER TABLE %s DROP COLUMN %s;",
       quote_ident(table_name, conn),
@@ -135,7 +136,7 @@ drop_table_column <- function(table_name, column_name) {
 rename_table_column <- function(table_name, from, to) {
   conn <- get_ducklake_connection()
 
-  db_execute(
+  db_execute_ddl(
     sprintf(
       "ALTER TABLE %s RENAME COLUMN %s TO %s;",
       quote_ident(table_name, conn),
@@ -184,7 +185,7 @@ rename_table_column <- function(table_name, from, to) {
 rename_ducklake_table <- function(from, to) {
   conn <- get_ducklake_connection()
 
-  db_execute(
+  db_execute_ddl(
     sprintf(
       "ALTER TABLE %s RENAME TO %s;",
       quote_ident(from, conn),
@@ -248,7 +249,7 @@ set_column_type <- function(table_name, column_name, type) {
     type
   )
   tryCatch(
-    db_execute(sql, conn = conn),
+    db_execute_ddl(sql, conn = conn),
     error = function(e) {
       if (grepl("widening type promotions", conditionMessage(e))) {
         cli::cli_abort(

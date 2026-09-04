@@ -14,14 +14,25 @@ current database is used.}
 Invisibly returns \code{NULL}.
 }
 \description{
-Runs all maintenance operations on the DuckLake catalog: flushes inlined
-data, expires old snapshots, merges small files, and cleans up unreferenced
-files.
+Runs DuckLake's maintenance operations on the catalog in one call:
+flushes inlined data, merges small files, rewrites heavily deleted files,
+and, when the lake carries a retention policy, expires old snapshots and
+deletes the files they released.
 }
 \details{
-\code{CHECKPOINT} is the recommended one-stop maintenance command. It internally
-calls \code{\link[=flush_inlined_data]{flush_inlined_data()}} along with compaction, snapshot expiration, and
-file cleanup.
+\code{CHECKPOINT} runs, in order, the equivalents of \code{\link[=flush_inlined_data]{flush_inlined_data()}},
+\code{\link[=expire_snapshots]{expire_snapshots()}}, \code{\link[=merge_adjacent_files]{merge_adjacent_files()}}, \code{\link[=rewrite_data_files]{rewrite_data_files()}},
+\code{\link[=cleanup_old_files]{cleanup_old_files()}}, and \code{\link[=delete_orphaned_files]{delete_orphaned_files()}}. The two retention
+steps do nothing until the lake carries a policy: snapshots are expired
+only when the \code{expire_older_than} option is set, and released files are
+deleted only when \code{delete_older_than} is set. A lake with neither keeps
+every snapshot and every file however often it is checkpointed.
+
+A typical policy, set once with \code{\link[=set_ducklake_option]{set_ducklake_option()}} and persisted in
+the catalog:
+
+\preformatted{set_ducklake_option("expire_older_than", "90 days")
+set_ducklake_option("delete_older_than", "7 days")}
 
 Run checkpoints periodically (e.g., after a batch of streaming inserts) to
 consolidate inlined data and keep query performance optimal.
@@ -52,7 +63,8 @@ unlink(lake_dir, recursive = TRUE)
 \dontshow{\}) # examplesIf}
 }
 \seealso{
-\code{\link[=flush_inlined_data]{flush_inlined_data()}}, \code{\link[=set_inlining_row_limit]{set_inlining_row_limit()}}
+\code{\link[=flush_inlined_data]{flush_inlined_data()}}, \code{\link[=set_ducklake_option]{set_ducklake_option()}},
+\code{\link[=expire_snapshots]{expire_snapshots()}}
 
 Other data inlining:
 \code{\link[=flush_inlined_data]{flush_inlined_data()}},

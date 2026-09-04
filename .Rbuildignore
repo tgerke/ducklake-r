@@ -12,3 +12,4 @@
 ^CLAUDE\.md$
 ^Rplots\.pdf$
 ^CRAN-SUBMISSION$
+^.*\.tar\.gz$

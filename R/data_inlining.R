@@ -318,17 +318,28 @@ flush_inlined_data <- function(ducklake_name = NULL,
 
 #' Run a DuckLake checkpoint
 #'
-#' Runs all maintenance operations on the DuckLake catalog: flushes inlined
-#' data, expires old snapshots, merges small files, and cleans up unreferenced
-#' files.
+#' Runs DuckLake's maintenance operations on the catalog in one call:
+#' flushes inlined data, merges small files, rewrites heavily deleted files,
+#' and, when the lake carries a retention policy, expires old snapshots and
+#' deletes the files they released.
 #'
 #' @param ducklake_name Name of the attached DuckLake catalog. If `NULL`, the
 #'   current database is used.
 #'
 #' @details
-#' `CHECKPOINT` is the recommended one-stop maintenance command. It internally
-#' calls [flush_inlined_data()] along with compaction, snapshot expiration, and
-#' file cleanup.
+#' `CHECKPOINT` runs, in order, the equivalents of [flush_inlined_data()],
+#' [expire_snapshots()], [merge_adjacent_files()], [rewrite_data_files()],
+#' [cleanup_old_files()], and [delete_orphaned_files()]. The two retention
+#' steps do nothing until the lake carries a policy: snapshots are expired
+#' only when the `expire_older_than` option is set, and released files are
+#' deleted only when `delete_older_than` is set. A lake with neither keeps
+#' every snapshot and every file however often it is checkpointed.
+#'
+#' A typical policy, set once with [set_ducklake_option()] and persisted in
+#' the catalog:
+#'
+#' \preformatted{set_ducklake_option("expire_older_than", "90 days")
+#' set_ducklake_option("delete_older_than", "7 days")}
 #'
 #' Run checkpoints periodically (e.g., after a batch of streaming inserts) to
 #' consolidate inlined data and keep query performance optimal.
@@ -345,7 +356,8 @@ flush_inlined_data <- function(ducklake_name = NULL,
 #' @family maintenance
 #' @export
 #'
-#' @seealso [flush_inlined_data()], [set_inlining_row_limit()]
+#' @seealso [flush_inlined_data()], [set_ducklake_option()],
+#'   [expire_snapshots()]
 #'
 #' @examplesIf ducklake_extension_available() && .Platform$OS.type != "windows"
 #' lake_dir <- tempfile("checkpoint_lake_")

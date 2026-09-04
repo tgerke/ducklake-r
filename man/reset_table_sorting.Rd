@@ -34,6 +34,7 @@ unlink(lake_dir, recursive = TRUE)
 \code{\link[=set_table_sorting]{set_table_sorting()}}
 
 Other sorting:
+\code{\link[=get_table_sorting]{get_table_sorting()}},
 \code{\link[=set_table_sorting]{set_table_sorting()}}
 }
 \concept{sorting}

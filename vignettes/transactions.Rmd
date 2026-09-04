@@ -78,18 +78,20 @@ The `with_transaction()` function provides automatic error handling and cleanup,
 ### Single Operation with Metadata
 
 ```{r with-transaction-single}
-# Add a new column with automatic metadata tracking
+# Correct values in place, with automatic metadata tracking: the filter
+# becomes the WHERE clause of a single UPDATE
 with_transaction(
   get_ducklake_table("cars") |>
-    mutate(kpl = mpg * 0.425144) |>
-    replace_table("cars"),
+    filter(cyl == 4) |>
+    mutate(mpg = mpg * 1.05) |>
+    ducklake_exec(),
   author = "Data Team",
-  commit_message = "Add kilometers per liter column"
+  commit_message = "Apply the revised 4-cylinder efficiency factor"
 )
 
 # Verify the change
 get_ducklake_table("cars") |>
-  select(mpg, kpl) |>
+  select(mpg, cyl) |>
   head()
 ```
 
@@ -177,10 +179,11 @@ For advanced use cases where you need explicit control over transaction boundari
 # Start a transaction
 begin_transaction()
 
-# Make changes
+# Make changes: declare a column, then fill it in place
+add_table_column("cars", "weight_kg", "DOUBLE")
 get_ducklake_table("cars") |>
   mutate(weight_kg = wt * 453.592) |>
-  replace_table("cars")
+  ducklake_exec()
 
 # Commit the changes with metadata
 commit_transaction(
@@ -204,9 +207,7 @@ Sometimes you may want to inspect data before deciding whether to commit:
 begin_transaction()
 
 # Make a test change
-get_ducklake_table("cars") |>
-  mutate(test_flag = TRUE) |>
-  replace_table("cars")
+add_table_column("cars", "test_flag", "BOOLEAN", default = TRUE)
 
 # Check the result
 test_result <- get_ducklake_table("cars") |>
@@ -214,7 +215,7 @@ test_result <- get_ducklake_table("cars") |>
   head() |>
   collect()
 
-print(test_result)
+test_result
 
 # Decide to rollback
 rollback_transaction()
@@ -236,9 +237,10 @@ DuckLake supports two ways to attach metadata (author, commit message, and optio
 # Metadata set at commit time (preferred approach)
 begin_transaction()
 
+add_table_column("cars", "hp_per_liter", "DOUBLE")
 get_ducklake_table("cars") |>
   mutate(hp_per_liter = hp / (cyl * 0.5)) |>
-  replace_table("cars")
+  ducklake_exec()
 
 commit_transaction(
   author = "Performance Team",
@@ -251,18 +253,33 @@ get_ducklake_table("cars") |>
   head()
 ```
 
-**After the fact**: Use `set_snapshot_metadata()` to retroactively update the metadata on the most recent snapshot. This directly updates the `ducklake_snapshot_changes` metadata table.
+**After the fact**: `set_snapshot_metadata()` fills in the metadata of a snapshot that was committed without any, such as a quick interactive change. It updates the `ducklake_snapshot_changes` metadata table directly, outside DuckLake's transaction model, so by default it only fills empty fields and refuses to replace a value that is already there:
 
 ```{r metadata-after-fact}
-# Retrospectively update metadata on the last snapshot
+# A quick interactive change, committed without metadata
+begin_transaction()
+rows_update(
+  get_ducklake_table("cars"),
+  data.frame(mpg = 21, hp_per_liter = 36.7),
+  by = "mpg"
+)
+commit_transaction()
+
+# Fill in the metadata afterwards
 set_snapshot_metadata(
   ducklake_name = "transactions_lake",
-  author = "Performance Team (reviewed)",
-  commit_message = "Add horsepower per liter metric (approved)"
+  author = "Performance Team",
+  commit_message = "Correct hp_per_liter for the 21 mpg cars"
+)
+
+# Replacing an existing value takes overwrite = TRUE, and leaves no trace
+# of the previous value
+try(
+  set_snapshot_metadata("transactions_lake", commit_message = "Reworded")
 )
 ```
 
-Both approaches result in the same metadata fields being populated — the choice is about workflow. Use at-commit-time metadata for automated pipelines where metadata is known upfront. Use after-the-fact metadata for interactive workflows where you want to annotate a snapshot after reviewing the results.
+Both approaches populate the same fields. Set metadata at commit time whenever you can: it is recorded inside the transaction, by DuckLake itself. Keep `set_snapshot_metadata()` for the occasional snapshot that was committed without it. Where the snapshot history is the audit trail, treat `overwrite = TRUE` as what it is: an edit to that trail.
 
 ## Viewing Transaction History
 
@@ -281,7 +298,7 @@ list_table_snapshots("cars") |>
 |---------|---------------------|----------------------------------|
 | **Ease of use** | ✅ Simple, one function | ❌ Requires multiple function calls |
 | **Error handling** | ✅ Automatic rollback | ❌ Must handle manually |
-| **Metadata** | ✅ Inline with transaction | ✅ Inline via parameter, or retroactive via `set_snapshot_metadata()` |
+| **Metadata** | ✅ Inline with transaction | ✅ Inline via parameter, or filled in later via `set_snapshot_metadata()` |
 | **Safety** | ✅ Can't forget to commit | ❌ Risk of open transactions |
 | **Use case** | Most production workflows | Interactive/conditional workflows |
 | **Code clarity** | ✅ Clear transaction scope | ⚠ Scope can be unclear |
@@ -300,7 +317,7 @@ list_table_snapshots("cars") |>
 - **`begin_transaction()`**: Start a manual transaction
 - **`commit_transaction(author, commit_message, commit_extra_info)`**: Apply changes from a manual transaction, with optional metadata set at commit time via the DuckLake v1.0 API
 - **`rollback_transaction()`**: Discard changes from a manual transaction
-- **`set_snapshot_metadata()`**: Retroactively update metadata on the most recent snapshot
+- **`set_snapshot_metadata()`**: Fill in metadata the most recent snapshot was committed without (`overwrite = TRUE` to replace a value)
 
 Transactions ensure data integrity and provide complete audit trails for all changes in your DuckLake.
 

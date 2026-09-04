@@ -189,15 +189,74 @@ test_that("render_sql_literal covers the DEFAULT value types", {
   expect_equal(render_sql_literal("new"), "'new'")
   expect_equal(render_sql_literal("it's"), "'it''s'")
   expect_equal(render_sql_literal(1.5), "1.5")
-  expect_equal(render_sql_literal(TRUE), "TRUE")
+  expect_equal(render_sql_literal(TRUE), "'true'")
   expect_equal(render_sql_literal(NA), "NULL")
   expect_equal(
     render_sql_literal(as.Date("2026-01-15")),
-    "DATE '2026-01-15'"
+    "'2026-01-15'"
   )
   expect_match(
     render_sql_literal(as.POSIXct("2026-01-15 10:00:00", tz = "UTC")),
-    "^TIMESTAMP '2026-01-15 10:00:00"
+    "^'2026-01-15 10:00:00"
   )
   expect_error(render_sql_literal(list(1)), "SQL literal")
 })
+
+test_that("add_table_column renders logical, Date, and timestamp defaults as DuckLake accepts them", {
+  skip_if_not_installed("duckdb")
+  skip_if_not_installed("dplyr")
+
+  lake <- create_temp_ducklake()
+  on.exit(cleanup_temp_ducklake(lake), add = TRUE)
+
+  create_table(data.frame(id = 1:3), "typed_defaults")
+  suppressMessages({
+    add_table_column("typed_defaults", "flag", "BOOLEAN", default = TRUE)
+    add_table_column("typed_defaults", "off", "BOOLEAN", default = FALSE)
+    add_table_column("typed_defaults", "day", "DATE", default = as.Date("2026-01-15"))
+    add_table_column(
+      "typed_defaults", "at", "TIMESTAMP",
+      default = as.POSIXct("2026-01-15 10:30:00", tz = "UTC")
+    )
+    add_table_column("typed_defaults", "n", "DOUBLE", default = -2.5)
+  })
+
+  result <- dplyr::collect(get_ducklake_table("typed_defaults"))
+  expect_true(all(result$flag))
+  expect_false(any(result$off))
+  expect_equal(result$day, rep(as.Date("2026-01-15"), 3))
+  expect_equal(
+    format(result$at, "%Y-%m-%d %H:%M:%S", tz = "UTC"),
+    rep("2026-01-15 10:30:00", 3)
+  )
+  expect_equal(result$n, rep(-2.5, 3))
+})
+
+test_that("a failed DDL statement leaves the connection usable", {
+  skip_if_not_installed("duckdb")
+  skip_if_not_installed("dplyr")
+
+  lake <- create_temp_ducklake()
+  on.exit(cleanup_temp_ducklake(lake), add = TRUE)
+
+  create_table(data.frame(id = 1:3), "ddl_recovery")
+  conn <- get_ducklake_connection()
+
+  # DuckLake rejects this DEFAULT as non-literal and leaves an aborted
+  # transaction behind; the helper rolls it back before re-raising
+  expect_error(
+    ducklake:::db_execute_ddl(
+      "ALTER TABLE ddl_recovery ADD COLUMN zz BOOLEAN DEFAULT TRUE", conn
+    ),
+    "non-literal"
+  )
+  expect_equal(nrow(dplyr::collect(get_ducklake_table("ddl_recovery"))), 3)
+  expect_false(ducklake:::in_transaction(conn))
+
+  # Inside a caller's transaction the rollback is the caller's
+  begin_transaction()
+  expect_error(add_table_column("ddl_recovery", "id", "INTEGER"))
+  rollback_transaction()
+  expect_equal(nrow(dplyr::collect(get_ducklake_table("ddl_recovery"))), 3)
+})
+

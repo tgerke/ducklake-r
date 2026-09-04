@@ -180,14 +180,7 @@ get_table_comments <- function(table_name = NULL, ducklake_name = NULL) {
   conn <- get_ducklake_connection()
   ducklake_name <- infer_ducklake_name(ducklake_name, conn)
 
-  # Metadata tables live in the __ducklake_metadata_[name] database.
-  # DuckDB and SQLite use a .main. schema qualifier; PostgreSQL and MySQL do not.
-  meta_db <- paste0("__ducklake_metadata_", ducklake_name)
-  prefix <- if (get_ducklake_backend() %in% c("postgres", "mysql")) {
-    quote_ident(meta_db, conn)
-  } else {
-    paste0(quote_ident(meta_db, conn), ".main")
-  }
+  prefix <- metadata_prefix(ducklake_name, conn)
 
   filter_table <- if (is.null(table_name)) "" else "AND t.table_name = ?"
   filter_view <- if (is.null(table_name)) "" else "AND v.view_name = ?"

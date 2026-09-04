@@ -2,7 +2,9 @@
 #'
 #' @param .data A dplyr query object (tbl_lazy) with accumulated operations
 #' @param table_name The target table name for the operation. If not provided, will be extracted from the table attribute (set by get_ducklake_table())
-#' @param .quiet Logical, whether to suppress debug output (default TRUE)
+#' @param .quiet Logical, whether to suppress the SQL trace (default TRUE).
+#'   With `.quiet = FALSE` the original dplyr SQL, the translated statement,
+#'   and the number of rows affected are emitted as messages.
 #'
 #' @returns The result from db_execute()
 #' @family table operations
@@ -48,7 +50,7 @@
 #' detach_ducklake("exec_lake", shutdown = TRUE)
 #' unlink(lake_dir, recursive = TRUE)
 ducklake_exec <- function(.data, table_name = NULL, .quiet = TRUE) {
-  
+
   # Extract table name from attribute if not provided
   if (is.null(table_name)) {
     table_name <- attr(.data, "ducklake_table_name", exact = TRUE)
@@ -58,24 +60,23 @@ ducklake_exec <- function(.data, table_name = NULL, .quiet = TRUE) {
   }
 
   if (!.quiet) {
-    # Show the original dplyr SQL
-    cat("\n=== Original dplyr SQL ===\n")
-    print(dplyr::show_query(.data))
+    cli::cli_text("Original dplyr SQL:")
+    cli::cli_verbatim(as.character(dbplyr::remote_query(.data)))
   }
 
   # Generate (but do not run) the DuckLake SQL; it is executed once below
   sql_string <- update_table(.data, table_name, .quiet = TRUE, .execute = FALSE)
 
   if (!.quiet) {
-    cat("\n=== Translated DuckLake SQL ===\n")
-    cat(sql_string, "\n")
+    cli::cli_text("Translated DuckLake SQL:")
+    cli::cli_verbatim(sql_string)
   }
 
   # Execute and return result
   result <- db_execute(sql_string)
 
   if (!.quiet) {
-    cat("\nRows affected:", result, "\n")
+    cli::cli_text("Rows affected: {result}")
   }
 
   return(result)

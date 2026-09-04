@@ -220,7 +220,7 @@ snapshots |>
   select(snapshot_id, author, commit_message)
 ```
 
-The key insight is that **DuckLake never modifies or deletes existing Parquet files**. Each change creates new files, preserving the complete history for time travel queries.
+The key insight is that **DuckLake never modifies existing Parquet files**. Each change creates new files, preserving the complete history for time travel queries; files are only ever deleted by the maintenance functions described below, once no snapshot needs them.
 
 ## Backup Strategies
 
@@ -372,11 +372,28 @@ dir_copy(
 ## Routine Maintenance
 
 A lake that sees regular writes accumulates small Parquet files (one per
-insert) and old snapshots whose files can no longer be reclaimed until the
-snapshots are expired. The one-stop command is `checkpoint_ducklake()`, which
-flushes inlined data, merges small files, expires old snapshots, and cleans
-up unreferenced files in a single call. For finer control, each step has its
-own function:
+insert) and old snapshots whose files cannot be reclaimed until the
+snapshots are expired. `checkpoint_ducklake()` runs DuckLake's maintenance
+steps in one call: it flushes inlined data, merges small files, and
+rewrites heavily deleted files. Two steps only happen under a retention
+policy: snapshots are expired when the lake carries an `expire_older_than`
+option, and released files are deleted when it carries `delete_older_than`.
+Without them a checkpoint keeps every snapshot and every file, so the
+policy is the first thing to decide. It is set once, persists in the
+catalog, and applies to every client of the lake:
+
+```{r retention-policy, eval=FALSE}
+# Keep 90 days of time travel; delete released files a week after release
+set_ducklake_option("expire_older_than", "90 days")
+set_ducklake_option("delete_older_than", "7 days")
+
+# From now on every checkpoint applies the policy
+checkpoint_ducklake()
+```
+
+Choose `expire_older_than` to match how far back you need to audit or
+restore, since expiring a snapshot gives up time travel to it. For finer
+control, each step has its own function:
 
 ```{r routine-maintenance, eval=FALSE}
 # Compact small adjacent Parquet files into larger ones

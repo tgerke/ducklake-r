@@ -24,6 +24,10 @@
 #'
 #' The most recent snapshot can never be expired.
 #'
+#' For a standing policy, set `set_ducklake_option("expire_older_than", "90
+#' days")` once; [checkpoint_ducklake()] then expires eligible snapshots on
+#' every run. Without that option a checkpoint expires nothing.
+#'
 #' @returns A data frame listing the expired (or, with `dry_run = TRUE`,
 #'   expirable) snapshots.
 #' @family maintenance
@@ -271,10 +275,10 @@ run_file_cleanup <- function(sql_function, what,
 #' @param dry_run If `TRUE`, only lists the files that would be deleted.
 #'
 #' @details
-#' As an alternative to calling this manually, a retention policy can be set
-#' once on the catalog with
-#' `DBI::dbExecute(get_ducklake_connection(), "CALL my_lake.set_option('delete_older_than', '1 week')")`,
-#' after which DuckLake cleans up eligible files automatically.
+#' As an alternative to calling this manually, set a retention policy once
+#' with `set_ducklake_option("delete_older_than", "7 days")`; every later
+#' [checkpoint_ducklake()] then deletes the files that have been released
+#' for at least that long.
 #'
 #' @returns A data frame listing the deleted (or deletable) files.
 #' @family maintenance

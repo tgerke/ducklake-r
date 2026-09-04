@@ -123,3 +123,65 @@ reset_table_sorting <- function(table_name) {
 
   invisible(NULL)
 }
+
+#' List the sort keys of tables in a lake
+#'
+#' Reads the current sort order from the DuckLake metadata catalog, the
+#' counterpart of [get_table_partitions()] for [set_table_sorting()].
+#'
+#' @param table_name Optional table name to filter to a single table.
+#' @param ducklake_name Optional name of the attached DuckLake catalog. If
+#'   `NULL`, the current database is used.
+#'
+#' @returns A data frame with one row per sort key: `table_name`,
+#'   `sort_key_index`, `expression`, `sort_direction` (`"ASC"` or `"DESC"`),
+#'   and `null_order` (`"NULLS_FIRST"` or `"NULLS_LAST"`). Zero rows when
+#'   nothing is sorted.
+#' @family sorting
+#' @export
+#'
+#' @seealso [set_table_sorting()], [get_table_partitions()]
+#'
+#' @examplesIf ducklake_extension_available()
+#' lake_dir <- tempfile("getsort_lake_")
+#' dir.create(lake_dir)
+#' attach_ducklake("getsort_lake", lake_path = lake_dir)
+#' create_table(mtcars, "cars")
+#'
+#' set_table_sorting("cars", c("cyl ASC", "mpg DESC"))
+#'
+#' # All sorted tables in the lake
+#' get_table_sorting()
+#'
+#' # Keys for one table
+#' get_table_sorting("cars")
+#'
+#' detach_ducklake("getsort_lake", shutdown = TRUE)
+#' unlink(lake_dir, recursive = TRUE)
+get_table_sorting <- function(table_name = NULL, ducklake_name = NULL) {
+  conn <- get_ducklake_connection()
+  ducklake_name <- infer_ducklake_name(ducklake_name, conn)
+  prefix <- metadata_prefix(ducklake_name, conn)
+
+  filter_clause <- if (is.null(table_name)) "" else "AND t.table_name = ?"
+
+  # Current (non-superseded) metadata rows have end_snapshot IS NULL
+  sql <- sprintf(
+    "SELECT t.table_name, se.sort_key_index, se.expression,
+            se.sort_direction, se.null_order
+     FROM %s.ducklake_sort_info si
+     JOIN %s.ducklake_sort_expression se
+       ON si.sort_id = se.sort_id AND si.table_id = se.table_id
+     JOIN %s.ducklake_table t
+       ON si.table_id = t.table_id AND t.end_snapshot IS NULL
+     WHERE si.end_snapshot IS NULL %s
+     ORDER BY t.table_name, se.sort_key_index",
+    prefix, prefix, prefix, filter_clause
+  )
+
+  if (is.null(table_name)) {
+    DBI::dbGetQuery(conn, sql)
+  } else {
+    DBI::dbGetQuery(conn, sql, params = list(split_table_name(table_name)$table))
+  }
+}
