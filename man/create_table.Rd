@@ -12,17 +12,24 @@ create_table(data_source, table_name, labels = TRUE)
 \item A URL (http:// or https://)
 \item A file path (e.g., "data.csv", "data.parquet")
 \item An R data.frame or tibble
-\item A lazy table (tbl_duckdb_connection or tbl_lazy)
+\item A lazy table (tbl_duckdb_connection or tbl_lazy). A lazy table on
+the package's connection, such as a dplyr pipeline built on
+\code{\link[=get_ducklake_table]{get_ducklake_table()}}, is written with \verb{CREATE TABLE ... AS} inside
+DuckDB, so its rows never pass through R. A lazy table on another
+connection is collected first.
 }}
 
 \item{table_name}{Name of the new table}
 
-\item{labels}{When \code{TRUE} (the default) and the data has haven/labelled
-variable labels (\code{label} attributes on columns), store them in the
-lake as column comments -- in the same transaction as the table
-creation, so both land as one snapshot. Collecting the table later
-restores the labels (see \code{\link[=get_table_comments]{get_table_comments()}}), and every other
-client of the lake can read them too. Set to \code{FALSE} to skip.}
+\item{labels}{When \code{TRUE} (the default), store variable labels in the
+lake as column comments, in the same transaction as the table
+creation, so both land as one snapshot. For a data frame the labels
+are its haven/labelled \code{label} attributes; for a lazy table, each
+output column keeps the comment of the same-named column in the tables
+the query reads, so labels follow the data through a pipeline (a
+renamed or derived column starts without one). Collecting the table
+later restores the labels (see \code{\link[=get_table_comments]{get_table_comments()}}), and every
+other client of the lake can read them too. Set to \code{FALSE} to skip.}
 }
 \value{
 Invisibly, \code{NULL}. Called for its side effect of creating the
@@ -45,7 +52,8 @@ csv_path <- tempfile(fileext = ".csv")
 utils::write.csv(mtcars, csv_path, row.names = FALSE)
 create_table(csv_path, "cars_from_csv")
 
-# From a lazy table (pipe-friendly)
+# From a lazy table: the query runs inside DuckDB and writes straight
+# into the lake, without collecting into R
 get_ducklake_table("cars") |>
   dplyr::filter(cyl > 4) |>
   create_table("big_cars")

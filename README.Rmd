@@ -208,6 +208,7 @@ Check out the [pkgdown site](https://tgerke.github.io/ducklake-r/) for detailed 
 - **Variable labels survive the lake**: `create_table()` stores haven/labelled column labels as catalog comments and `collect()` restores them, so gtsummary and gt keep displaying them; `set_table_comment()`, `set_column_comments()`, and `get_table_comments()` manage documentation any client of the lake can read
 - **Views**: `create_view()` stores a dplyr pipeline as a SQL view in the lake — shared logic that always reads current data; `list_ducklake_tables()` shows what's there
 - **Tidyverse interface**: Familiar dplyr syntax for data manipulation
+- **In-database writes**: `create_table()` and `replace_table()` run dplyr pipelines inside DuckDB and write the result straight into the lake, so derived layers never pass through R memory
 - **Encryption**: Opt-in Parquet encryption with `attach_ducklake(encrypted = TRUE)`
 - **A write style for every job**: `rows_insert()`, `rows_update()`, `rows_delete()`, and `rows_upsert()` for incremental changes; `merge_into()` for conditional merges and staging-table syncs; `replace_table()` pipelines for bulk rewrites — all fully versioned
 - **Complete audit trails**: Who changed what, when, and why—suitable for regulated industries

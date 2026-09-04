@@ -138,9 +138,12 @@ frame. On a lazy lake table it has no effect, because nothing has been read
 into R yet, so we keep the conversion inside DuckDB instead. The helper
 below reads the table's column types from a zero-row query (a lazy table
 cannot inspect its own types) and translates the conversion into SQL that
-runs where the data lives. The pharmaverse test data already stores missing
-values as `NA`, so on these tables the step changes nothing; XPT exports
-read with haven do carry blanks, and there it does.
+runs where the data lives. `create_table()` then runs the whole pipeline
+as `CREATE TABLE ... AS` inside DuckDB and writes the result straight into
+the lake, so a silver table is derived without its rows ever entering R.
+The pharmaverse test data already stores missing values as `NA`, so on
+these tables the conversion changes nothing; XPT exports read with haven do
+carry blanks, and there it does.
 
 ```{r blanks-helper}
 # Convert SDTM blanks to NA inside the database: dbplyr translates na_if()

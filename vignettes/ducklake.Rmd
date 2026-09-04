@@ -164,6 +164,23 @@ with_transaction(
 )
 ```
 
+### Derive a table from another table, inside the database
+
+A pipeline built on `get_ducklake_table()` is written with
+`CREATE TABLE ... AS` in DuckDB: the rows never pass through R, and column
+labels follow the columns into the new table.
+
+```{r derive_in_db}
+with_transaction(
+  get_ducklake_table("cars") |>
+    filter(cyl == 4) |>
+    select(mpg, cyl, hp, wt) |>
+    create_table("small_cars"),
+  author = "Data Analyst",
+  commit_message = "Four-cylinder subset"
+)
+```
+
 ### List all tables in the lake
 
 ```{r list_all_tables}

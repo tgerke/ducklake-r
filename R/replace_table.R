@@ -9,12 +9,14 @@
 #' @export
 #'
 #' @details
-#' This function is designed for schema changes or bulk transformations that should
-#' create a new versioned snapshot. It:
-#' 1. Collects the transformed data
-#' 2. Drops the existing table
-#' 3. Creates a new table with the updated schema/data
-#' 4. Puts back the metadata DuckLake keeps against the table
+#' This function is designed for bulk transformations that should create a
+#' new versioned snapshot. A dplyr pipeline on the package's connection
+#' runs inside DuckDB: its result is materialized in DuckDB's temporary
+#' storage (the query may read the table being replaced), the table is
+#' dropped and recreated from it, and the metadata DuckLake keeps against
+#' the table is put back. No rows pass through R. A data frame, or a lazy
+#' table on another connection, is loaded the way [create_table()] loads
+#' it.
 #'
 #' The drop and create run atomically: when no transaction is open,
 #' `replace_table()` wraps them in one of its own, so a failed create never
@@ -97,15 +99,6 @@ replace_table <- function(.data, table_name, .quiet = TRUE) {
     cli::cli_inform("Replacing table {.val {table_name}}...")
   }
 
-  # Collect the transformed data
-  new_data <- dplyr::collect(.data)
-
-  if (!.quiet) {
-    cli::cli_inform(
-      "Collected {nrow(new_data)} row{?s} with {ncol(new_data)} column{?s}."
-    )
-  }
-
   conn <- get_ducklake_connection()
 
   # DROP + CREATE assigns a new table id, and DuckLake keys comments,
@@ -113,12 +106,31 @@ replace_table <- function(.data, table_name, .quiet = TRUE) {
   # them first so they can be put back on the new table
   meta <- capture_table_metadata(table_name, conn = conn)
 
-  prepared <- prepare_data_frame(new_data)
-  temp_view_name <- register_temp_view(prepared$data, table_name, conn)
-  on.exit(
-    duckdb::duckdb_unregister(get_ducklake_connection(), temp_view_name),
-    add = TRUE
-  )
+  if (inherits(.data, "tbl_lazy") && same_connection(.data, conn)) {
+    # In-database path: the query's result waits in a temporary table
+    # while the target is rebuilt, since the query may read the target
+    comments <- source_column_comments(.data, conn)
+    source_ref <- materialize_query(.data, table_name, conn)
+    on.exit(
+      try(db_execute(sprintf("DROP TABLE IF EXISTS %s;", source_ref), conn = conn), silent = TRUE),
+      add = TRUE
+    )
+  } else {
+    # Data frames, and lazy tables on other connections, come through R
+    prepared <- prepare_data_frame(dplyr::collect(.data))
+    comments <- prepared$labels
+    temp_view_name <- register_temp_view(prepared$data, table_name, conn)
+    source_ref <- quote_ident(temp_view_name, conn)
+    on.exit(
+      duckdb::duckdb_unregister(get_ducklake_connection(), temp_view_name),
+      add = TRUE
+    )
+  }
+
+  if (!.quiet) {
+    n <- DBI::dbGetQuery(conn, sprintf("SELECT count(*) AS n FROM %s", source_ref))$n
+    cli::cli_inform("Prepared {n} row{?s} for {.val {table_name}}.")
+  }
 
   # The drop and create must land together: outside a transaction they
   # autocommit separately, so a failed create would leave the table gone.
@@ -128,35 +140,18 @@ replace_table <- function(.data, table_name, .quiet = TRUE) {
   committed <- FALSE
   if (own_txn) {
     DBI::dbExecute(conn, "BEGIN TRANSACTION;")
+    # Runs before the cleanup handlers above: DuckDB temp tables are
+    # transactional, so a rollback after the temp DROP would bring the
+    # temporary copy back
     on.exit(
       if (!committed) {
         tryCatch(DBI::dbExecute(conn, "ROLLBACK;"), error = function(e) NULL)
       },
-      add = TRUE
+      add = TRUE, after = FALSE
     )
   }
 
-  quoted_table <- quote_ident(table_name, conn)
-  quoted_view <- quote_ident(temp_view_name, conn)
-
-  # Drop the existing table
-  db_execute(sprintf("DROP TABLE IF EXISTS %s", quoted_table), conn = conn)
-
-  # Create the table empty, put the partition and sort keys on it, then
-  # insert: DuckLake refuses to alter a table that already holds inlined
-  # rows from the open transaction, and keys set first shape the new files
-  db_execute(
-    sprintf("CREATE TABLE %s AS SELECT * FROM %s LIMIT 0;", quoted_table, quoted_view),
-    conn = conn
-  )
-  columns <- names(prepared$data)
-  reapply_table_keys(meta, columns, conn)
-  db_execute(
-    sprintf("INSERT INTO %s SELECT * FROM %s;", quoted_table, quoted_view),
-    conn = conn
-  )
-  store_column_labels(table_name, prepared$labels, conn)
-  reapply_table_comments(meta, columns, names(prepared$labels), conn)
+  rebuild_table_from(table_name, source_ref, meta, comments, conn)
 
   if (own_txn) {
     DBI::dbExecute(conn, "COMMIT;")

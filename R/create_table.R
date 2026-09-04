@@ -4,14 +4,21 @@
 #'   - A URL (http:// or https://)
 #'   - A file path (e.g., "data.csv", "data.parquet")
 #'   - An R data.frame or tibble
-#'   - A lazy table (tbl_duckdb_connection or tbl_lazy)
+#'   - A lazy table (tbl_duckdb_connection or tbl_lazy). A lazy table on
+#'     the package's connection, such as a dplyr pipeline built on
+#'     [get_ducklake_table()], is written with `CREATE TABLE ... AS` inside
+#'     DuckDB, so its rows never pass through R. A lazy table on another
+#'     connection is collected first.
 #' @param table_name Name of the new table
-#' @param labels When `TRUE` (the default) and the data has haven/labelled
-#'   variable labels (`label` attributes on columns), store them in the
-#'   lake as column comments -- in the same transaction as the table
-#'   creation, so both land as one snapshot. Collecting the table later
-#'   restores the labels (see [get_table_comments()]), and every other
-#'   client of the lake can read them too. Set to `FALSE` to skip.
+#' @param labels When `TRUE` (the default), store variable labels in the
+#'   lake as column comments, in the same transaction as the table
+#'   creation, so both land as one snapshot. For a data frame the labels
+#'   are its haven/labelled `label` attributes; for a lazy table, each
+#'   output column keeps the comment of the same-named column in the tables
+#'   the query reads, so labels follow the data through a pipeline (a
+#'   renamed or derived column starts without one). Collecting the table
+#'   later restores the labels (see [get_table_comments()]), and every
+#'   other client of the lake can read them too. Set to `FALSE` to skip.
 #'
 #' @returns Invisibly, `NULL`. Called for its side effect of creating the
 #'   table in the lake.
@@ -31,7 +38,8 @@
 #' utils::write.csv(mtcars, csv_path, row.names = FALSE)
 #' create_table(csv_path, "cars_from_csv")
 #'
-#' # From a lazy table (pipe-friendly)
+#' # From a lazy table: the query runs inside DuckDB and writes straight
+#' # into the lake, without collecting into R
 #' get_ducklake_table("cars") |>
 #'   dplyr::filter(cyl > 4) |>
 #'   create_table("big_cars")
@@ -46,9 +54,12 @@
 #' detach_ducklake("create_lake", shutdown = TRUE)
 #' unlink(lake_dir, recursive = TRUE)
 create_table <- function(data_source, table_name, labels = TRUE) {
-  # Handle lazy tables (tbl_duckdb_connection, tbl_lazy)
   if (inherits(data_source, "tbl_lazy")) {
-    # Materialize the lazy table to a data.frame
+    conn <- get_ducklake_connection()
+    if (same_connection(data_source, conn)) {
+      return(create_table_from_query(data_source, table_name, labels, conn))
+    }
+    # A lazy table on another connection has to come through R
     data_source <- dplyr::collect(data_source)
   }
 
@@ -196,4 +207,114 @@ store_column_labels <- function(table_name, column_labels, conn) {
     )
   }
   invisible(NULL)
+}
+
+#' Is a lazy table backed by this connection?
+#' @noRd
+same_connection <- function(tbl, conn) {
+  remote <- tryCatch(dbplyr::remote_con(tbl), error = function(e) NULL)
+  !is.null(remote) && identical(remote, conn)
+}
+
+#' Create a table from a lazy query, inside DuckDB
+#'
+#' `CREATE TABLE ... AS` with the rendered dbplyr SQL, so the rows never
+#' pass through R. Column comments inherited from the source tables are
+#' stored in the same transaction, as the data-frame path does for labels.
+#'
+#' @param .data A lazy table on `conn`.
+#' @param table_name Name of the new table.
+#' @param labels Whether to carry source column comments over.
+#' @param conn The package connection.
+#' @returns Invisibly, `NULL`.
+#' @noRd
+create_table_from_query <- function(.data, table_name, labels, conn) {
+  column_comments <- if (isTRUE(labels)) {
+    source_column_comments(.data, conn)
+  } else {
+    character()
+  }
+  sql <- dbplyr::sql_render(.data, conn)
+
+  own_txn <- length(column_comments) > 0 && !in_transaction(conn)
+  committed <- FALSE
+  if (own_txn) {
+    DBI::dbExecute(conn, "BEGIN TRANSACTION;")
+    on.exit(
+      if (!committed) {
+        tryCatch(DBI::dbExecute(conn, "ROLLBACK;"), error = function(e) NULL)
+      },
+      add = TRUE
+    )
+  }
+
+  db_execute(
+    sprintf("CREATE TABLE %s AS\n%s;", quote_ident(table_name, conn), sql),
+    conn = conn
+  )
+  store_column_labels(table_name, column_comments, conn)
+
+  if (own_txn) {
+    DBI::dbExecute(conn, "COMMIT;")
+    committed <- TRUE
+  }
+  if (length(column_comments) > 0) {
+    cli::cli_inform(
+      "Stored {length(column_comments)} column label{?s} as column comment{?s}."
+    )
+  }
+
+  invisible(NULL)
+}
+
+#' Column comments a query's output columns inherit from the tables it reads
+#'
+#' An output column keeps the comment of a same-named column in any base
+#' table of the query (first source wins); renamed or derived columns get
+#' none. The table a [get_ducklake_table()] pipeline started from is always
+#' consulted, even when the built query hides it behind raw SQL (a
+#' time-travel read, for example).
+#'
+#' @param .data A lazy table.
+#' @param conn A DBI connection.
+#' @returns A named character vector, column name to comment.
+#' @noRd
+source_column_comments <- function(.data, conn) {
+  out_cols <- colnames(.data)
+
+  sources <- attr(.data, "ducklake_table_name", exact = TRUE)
+  bases <- tryCatch(
+    query_base_tables(dbplyr::sql_build(.data)),
+    error = function(e) character()
+  )
+  bases <- vapply(bases[!is.na(bases)], table_ref_name, character(1))
+  sources <- unique(c(sources, bases[!is.na(bases)]))
+
+  comments <- character()
+  for (src in sources) {
+    found <- tryCatch(get_table_comments(src), error = function(e) NULL)
+    if (is.null(found) || nrow(found) == 0) {
+      next
+    }
+    found <- found[
+      found$object_type == "column" & found$column_name %in% out_cols &
+        !(found$column_name %in% names(comments)), ,
+      drop = FALSE
+    ]
+    comments[found$column_name] <- found$comment
+  }
+  comments
+}
+
+#' Reduce a base-table reference from `query_base_tables()` to a name
+#'
+#' dbplyr hands back a table path (`cars`, `"main"."cars"`) or, for a
+#' dotted name the duckdb driver wrapped in SQL, `FROM main.cars`. Returns
+#' the name with its qualification and case intact, or `NA` for anything
+#' that is not a plain identifier path.
+#' @noRd
+table_ref_name <- function(x) {
+  x <- gsub('"', "", as.character(x)[[1]])
+  x <- sub("^FROM\\s+", "", x)
+  if (grepl("^[A-Za-z_][A-Za-z0-9_.]*$", x)) x else NA_character_
 }

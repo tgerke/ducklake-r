@@ -334,9 +334,8 @@ restore_table_version <- function(table_name, version = NULL, timestamp = NULL,
   # dropped inside the transaction, time travel can no longer resolve it,
   # and CREATE OR REPLACE followed by INSERT in one transaction loses the
   # inserted rows in DuckLake 1.0
-  temp_table <- quote_ident(
-    paste0("__ducklake_restore_", gsub("[^a-zA-Z0-9]", "_", table_name)), conn
-  )
+  temp_name <- paste0("__ducklake_restore_", gsub("[^a-zA-Z0-9]", "_", table_name))
+  temp_table <- quote_ident(paste("temp", "main", temp_name, sep = "."), conn)
   db_execute(sprintf("DROP TABLE IF EXISTS %s;", temp_table), conn = conn)
   on.exit(
     try(
@@ -350,28 +349,13 @@ restore_table_version <- function(table_name, version = NULL, timestamp = NULL,
     db_execute(
       sprintf(
         "CREATE TEMP TABLE %s AS SELECT * FROM %s AT (%s);",
-        temp_table, quoted_table, at_clause
+        quote_ident(temp_name, conn), quoted_table, at_clause
       ),
       conn = conn
     )
-    columns <- names(DBI::dbGetQuery(
-      conn, sprintf("SELECT * FROM %s LIMIT 0", temp_table)
-    ))
 
     with_transaction(
-      {
-        db_execute(sprintf("DROP TABLE %s;", quoted_table), conn = conn)
-        db_execute(
-          sprintf("CREATE TABLE %s AS SELECT * FROM %s LIMIT 0;", quoted_table, temp_table),
-          conn = conn
-        )
-        reapply_table_keys(meta, columns, conn)
-        db_execute(
-          sprintf("INSERT INTO %s SELECT * FROM %s;", quoted_table, temp_table),
-          conn = conn
-        )
-        reapply_table_comments(meta, columns, conn = conn)
-      },
+      rebuild_table_from(table_name, temp_table, meta, character(), conn),
       author = author,
       commit_message = commit_message,
       conn = conn

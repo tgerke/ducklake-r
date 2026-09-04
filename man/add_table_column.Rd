@@ -28,7 +28,7 @@ Invisibly returns \code{NULL}.
 Adds a column in place with \verb{ALTER TABLE ... ADD COLUMN}. This is a
 metadata-only change: no data files are rewritten, history is preserved,
 and earlier snapshots still show the old schema. Compare
-\code{\link[=replace_table]{replace_table()}}, which collects the table into R and rewrites it.
+\code{\link[=replace_table]{replace_table()}}, which rewrites the whole table.
 }
 \examples{
 \dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}
