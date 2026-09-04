@@ -25,9 +25,9 @@ attach_ducklake(
 \item{ducklake_name}{Name for the ducklake, used as the database alias in DuckDB}
 
 \item{lake_path}{Directory where the Parquet data files are stored
-(DuckLake's \code{DATA_PATH}). May be a local directory or an object-storage
-URI such as \code{"s3://bucket/path"} -- register credentials first with
-\code{\link[=create_storage_secret]{create_storage_secret()}}. For \code{"duckdb"} the catalog file lives in this
+(DuckLake's \code{DATA_PATH}). May be a local directory, created if it does
+not exist yet, or an object-storage URI such as \code{"s3://bucket/path"}
+-- register credentials first with \code{\link[=create_storage_secret]{create_storage_secret()}}. For \code{"duckdb"} the catalog file lives in this
 directory too by default; give \code{catalog_connection_string} to place it
 elsewhere, which is how a local catalog pairs with remote data.}
 
@@ -249,6 +249,7 @@ Other connection management:
 \code{\link[=ducklake_extension_available]{ducklake_extension_available()}},
 \code{\link[=get_ducklake_backend]{get_ducklake_backend()}},
 \code{\link[=get_ducklake_connection]{get_ducklake_connection()}},
+\code{\link[=get_ducklake_info]{get_ducklake_info()}},
 \code{\link[=install_ducklake]{install_ducklake()}},
 \code{\link[=set_ducklake_connection]{set_ducklake_connection()}}
 }

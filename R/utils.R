@@ -419,3 +419,12 @@ dl_inform <- function(message, ..., .envir = parent.frame()) {
   cli::cli_inform(message, ..., class = "ducklake_message", .envir = .envir)
   invisible(NULL)
 }
+
+#' Create a local directory if it is missing; leave remote URIs alone
+#' @noRd
+ensure_local_dir <- function(path) {
+  if (!is_remote_path(path) && !dir.exists(path)) {
+    dir.create(path, recursive = TRUE, showWarnings = FALSE)
+  }
+  invisible(path)
+}

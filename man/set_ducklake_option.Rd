@@ -43,11 +43,32 @@ survive detach/attach cycles and apply to every client of the lake.
 Table-scoped settings override schema-scoped ones, which override the
 lake-wide default. Runs \verb{CALL <lake>.set_option(...)}.
 
-Commonly tuned options include \code{parquet_compression} (default
-\code{"snappy"}; \code{"zstd"} trades write speed for smaller files),
-\code{target_file_size} (default \code{"512MB"}), \code{sort_on_insert} (default
-\code{TRUE}; see \code{\link[=set_table_sorting]{set_table_sorting()}}), and \code{require_commit_message}
-(default \code{FALSE}).
+The options DuckLake 1.0 persists, with their defaults:\tabular{lll}{
+   Option \tab Default \tab What it controls \cr
+   \code{auto_compact} \tab \code{true} \tab Whether maintenance calls made without a table argument include the table \cr
+   \code{data_inlining_row_limit} \tab \code{10} \tab Rows below which an insert or delete is stored in the catalog instead of a file (see \code{\link[=set_inlining_row_limit]{set_inlining_row_limit()}}) \cr
+   \code{delete_older_than} \tab unset \tab How long a released file waits before \code{\link[=cleanup_old_files]{cleanup_old_files()}} and checkpoints delete it \cr
+   \code{expire_older_than} \tab unset \tab How old a snapshot must be before checkpoints expire it \cr
+   \code{encrypted} \tab \code{false} \tab Encrypt the Parquet files written to the data path (set at creation; see \code{attach_ducklake(encrypted = )}) \cr
+   \code{hive_file_pattern} \tab \code{true} \tab Write partitioned data in Hive-style directories \cr
+   \code{parquet_compression} \tab \code{snappy} \tab Codec: \code{uncompressed}, \code{snappy}, \code{gzip}, \code{zstd}, \code{brotli}, \code{lz4}, or \code{lz4_raw} \cr
+   \code{parquet_compression_level} \tab \code{3} \tab Level for codecs that have one \cr
+   \code{parquet_row_group_size} \tab \code{122880} \tab Rows per row group \cr
+   \code{parquet_row_group_size_bytes} \tab unset \tab Bytes per row group, as an alternative to rows \cr
+   \code{parquet_version} \tab \code{1} \tab Parquet format version, \code{1} or \code{2} \cr
+   \code{per_thread_output} \tab \code{false} \tab One output file per thread during a parallel insert \cr
+   \code{require_commit_message} \tab \code{false} \tab Refuse to commit a snapshot without a commit message \cr
+   \code{rewrite_delete_threshold} \tab \code{0.95} \tab Deleted fraction of a file above which \code{\link[=rewrite_data_files]{rewrite_data_files()}} rewrites it \cr
+   \code{sort_on_insert} \tab \code{true} \tab Sort inserted rows by the table's sort keys (see \code{\link[=set_table_sorting]{set_table_sorting()}}) \cr
+   \code{target_file_size} \tab \verb{512MB} \tab Target data file size for inserts and compaction \cr
+   \code{write_deletion_vectors} \tab \code{false} \tab Write Iceberg V3 deletion vectors instead of positional delete files \cr
+}
+
+
+\code{created_by}, \code{data_path}, and \code{version} also appear in
+\code{\link[=get_ducklake_options]{get_ducklake_options()}} but describe the lake rather than configure it.
+Retention settings (\code{expire_older_than}, \code{delete_older_than}) take
+interval strings such as \code{"90 days"}.
 }
 \examples{
 \dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}

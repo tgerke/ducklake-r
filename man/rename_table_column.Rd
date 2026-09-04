@@ -41,6 +41,7 @@ Other schema evolution:
 \code{\link[=add_table_column]{add_table_column()}},
 \code{\link[=drop_table_column]{drop_table_column()}},
 \code{\link[=rename_ducklake_table]{rename_ducklake_table()}},
+\code{\link[=set_column_not_null]{set_column_not_null()}},
 \code{\link[=set_column_type]{set_column_type()}}
 }
 \concept{schema evolution}

@@ -11,9 +11,9 @@
 #'
 #' @param ducklake_name Name for the ducklake, used as the database alias in DuckDB
 #' @param lake_path Directory where the Parquet data files are stored
-#'   (DuckLake's `DATA_PATH`). May be a local directory or an object-storage
-#'   URI such as `"s3://bucket/path"` -- register credentials first with
-#'   [create_storage_secret()]. For `"duckdb"` the catalog file lives in this
+#'   (DuckLake's `DATA_PATH`). May be a local directory, created if it does
+#'   not exist yet, or an object-storage URI such as `"s3://bucket/path"`
+#'   -- register credentials first with [create_storage_secret()]. For `"duckdb"` the catalog file lives in this
 #'   directory too by default; give `catalog_connection_string` to place it
 #'   elsewhere, which is how a local catalog pairs with remote data.
 #' @param backend Catalog backend: `"duckdb"` (default), `"postgres"`,
@@ -251,7 +251,17 @@ attach_ducklake <- function(ducklake_name, lake_path,
     ))
   }
   lake_path <- normalize_lake_path(lake_path)
-  
+
+  # DuckDB cannot create a database file in a directory that does not
+  # exist, so when creating the lake is allowed, create the local lake
+  # directory (and the directory of a local catalog file) on demand
+  if (isTRUE(create)) {
+    ensure_local_dir(lake_path)
+    if (backend %in% c("duckdb", "sqlite") && !is.null(catalog_connection_string)) {
+      ensure_local_dir(dirname(catalog_connection_string))
+    }
+  }
+
   # Non-DuckDB backends also need a connection string
   if (backend != "duckdb") {
     if (is.null(catalog_connection_string)) {

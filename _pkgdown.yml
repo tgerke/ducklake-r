@@ -22,6 +22,8 @@ navbar:
       menu:
       - text: Getting Started
         href: articles/ducklake.html
+      - text: Choosing a Deployment
+        href: articles/deployment.html
       - text: -------
       - text: Use Cases
       - text: Clinical Trial Data Lake
@@ -56,6 +58,7 @@ reference:
     - get_ducklake_connection
     - set_ducklake_connection
     - get_ducklake_backend
+    - get_ducklake_info
     - create_storage_secret
 
   - title: "Table Operations"
@@ -87,6 +90,7 @@ reference:
     - drop_table_column
     - rename_table_column
     - set_column_type
+    - set_column_not_null
     - rename_ducklake_table
 
   - title: "Query Execution"

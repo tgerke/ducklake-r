@@ -190,6 +190,7 @@ dplyneage's [ducklake lineage vignette](https://tgerke.github.io/dplyneage/artic
 Check out the [pkgdown site](https://tgerke.github.io/ducklake-r/) for detailed vignettes:
 
 - [Getting Started](https://tgerke.github.io/ducklake-r/articles/ducklake.html) - Quick recipes for common operations
+- [Choosing a Deployment](https://tgerke.github.io/ducklake-r/articles/deployment.html) - Which catalog, where the data goes, who can reach it, and what to set up on day one
 - [Clinical Trial Data Lake](https://tgerke.github.io/ducklake-r/articles/clinical-trial-datalake.html) - Complete workflow from SDTM to ADaM with regulatory artifacts
 - [Modifying Tables](https://tgerke.github.io/ducklake-r/articles/modifying-tables.html) - Choosing how to change a table: joins vs. `rows_*`, upserts, `merge_into()`, and `replace_table()`
 - [Data Inlining](https://tgerke.github.io/ducklake-r/articles/data-inlining.html) - Streaming-friendly small writes

@@ -35,6 +35,7 @@ Other connection management:
 \code{\link[=detach_ducklake]{detach_ducklake()}},
 \code{\link[=ducklake_extension_available]{ducklake_extension_available()}},
 \code{\link[=get_ducklake_backend]{get_ducklake_backend()}},
+\code{\link[=get_ducklake_info]{get_ducklake_info()}},
 \code{\link[=install_ducklake]{install_ducklake()}},
 \code{\link[=set_ducklake_connection]{set_ducklake_connection()}}
 }

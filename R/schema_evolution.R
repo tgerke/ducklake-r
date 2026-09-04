@@ -300,3 +300,61 @@ check_column_type <- function(type, arg = "type") {
   }
   invisible(type)
 }
+
+#' Require or allow NULL values in a column
+#'
+#' Sets or drops a `NOT NULL` constraint with
+#' `ALTER TABLE ... ALTER COLUMN ... SET NOT NULL` (or `DROP NOT NULL`), a
+#' metadata-only change. `NOT NULL` is the one constraint DuckLake
+#' supports: there are no primary keys, unique constraints, or check
+#' constraints, which is why [rows_upsert()] matches on its `by` columns
+#' instead of a key. Existing rows must already satisfy the constraint, and
+#' from then on an insert or update that would leave the column `NULL` is
+#' refused.
+#'
+#' @param table_name The table to change.
+#' @param column_name Name of the column.
+#' @param not_null `TRUE` (the default) to require a value in every row,
+#'   `FALSE` to allow `NULL` again.
+#'
+#' @returns Invisibly returns `NULL`.
+#' @family schema evolution
+#' @export
+#'
+#' @seealso [add_table_column()], [set_column_type()]
+#'
+#' @examplesIf ducklake_extension_available()
+#' lake_dir <- tempfile("notnull_lake_")
+#' dir.create(lake_dir)
+#' attach_ducklake("notnull_lake", lake_path = lake_dir)
+#' create_table(data.frame(id = 1:3, code = c("A", "B", "C")), "sites")
+#'
+#' set_column_not_null("sites", "code")
+#'
+#' # A row without a code is now refused
+#' try(rows_insert(get_ducklake_table("sites"), data.frame(id = 4L), by = "id"))
+#'
+#' set_column_not_null("sites", "code", not_null = FALSE)
+#'
+#' detach_ducklake("notnull_lake", shutdown = TRUE)
+#' unlink(lake_dir, recursive = TRUE)
+set_column_not_null <- function(table_name, column_name, not_null = TRUE) {
+  conn <- get_ducklake_connection()
+
+  db_execute_ddl(
+    sprintf(
+      "ALTER TABLE %s ALTER COLUMN %s %s NOT NULL;",
+      quote_ident(table_name, conn),
+      quote_column(column_name, conn),
+      if (isTRUE(not_null)) "SET" else "DROP"
+    ),
+    conn = conn
+  )
+  if (isTRUE(not_null)) {
+    dl_inform("Column {.val {column_name}} in {.val {table_name}} now requires a value.")
+  } else {
+    dl_inform("Column {.val {column_name}} in {.val {table_name}} allows NULL again.")
+  }
+
+  invisible(NULL)
+}
