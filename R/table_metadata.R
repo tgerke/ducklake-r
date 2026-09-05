@@ -190,6 +190,71 @@ reapply_table_options <- function(meta, conn = get_ducklake_connection()) {
   invisible(NULL)
 }
 
+#' Rebuild a table from a copy of its new contents, inside the open transaction
+#'
+#' The sequence DuckLake accepts in one transaction: drop, create empty
+#' with the copy's schema, put the partition and sort keys on, insert, then
+#' comment. `source_ref` is a quoted reference to the copy (a registered
+#' data-frame view or a temporary table).
+#'
+#' @param table_name The table to rebuild.
+#' @param source_ref Quoted SQL reference to the new contents.
+#' @param meta The list from `capture_table_metadata()`.
+#' @param comments Named character vector of column comments to store
+#'   first (labels from a data frame, or comments inherited from source
+#'   tables); captured comments fill the remaining columns.
+#' @param conn A DBI connection.
+#' @returns Invisibly, the column names of the rebuilt table.
+#' @noRd
+rebuild_table_from <- function(table_name, source_ref, meta, comments,
+                               conn = get_ducklake_connection()) {
+  quoted <- quote_ident(table_name, conn)
+  columns <- names(DBI::dbGetQuery(
+    conn, sprintf("SELECT * FROM %s LIMIT 0", source_ref)
+  ))
+
+  db_execute(sprintf("DROP TABLE IF EXISTS %s;", quoted), conn = conn)
+  db_execute(
+    sprintf("CREATE TABLE %s AS SELECT * FROM %s LIMIT 0;", quoted, source_ref),
+    conn = conn
+  )
+  reapply_table_keys(meta, columns, conn)
+  db_execute(
+    sprintf("INSERT INTO %s SELECT * FROM %s;", quoted, source_ref),
+    conn = conn
+  )
+  store_column_labels(table_name, comments, conn)
+  reapply_table_comments(meta, columns, names(comments), conn)
+
+  invisible(columns)
+}
+
+#' Materialize a lazy query into a temporary DuckDB table
+#'
+#' Used before a rewrite whose query may read the table being replaced:
+#' the copy lives in DuckDB's temp catalog (spilling to disk as needed), so
+#' nothing passes through R. The caller drops it, typically with
+#' `on.exit()`.
+#'
+#' @param .data A lazy table on `conn`.
+#' @param table_name The target table, used to derive the temp name.
+#' @param conn A DBI connection.
+#' @returns The quoted reference to the temporary table.
+#' @noRd
+materialize_query <- function(.data, table_name, conn = get_ducklake_connection()) {
+  name <- paste0("__ducklake_rewrite_", gsub("[^a-zA-Z0-9]", "_", table_name))
+  ref <- quote_ident(paste("temp", "main", name, sep = "."), conn)
+  db_execute(sprintf("DROP TABLE IF EXISTS %s;", ref), conn = conn)
+  db_execute(
+    sprintf(
+      "CREATE TEMP TABLE %s AS\n%s;",
+      quote_ident(name, conn), dbplyr::sql_render(.data, conn)
+    ),
+    conn = conn
+  )
+  ref
+}
+
 #' Rebuild `SET PARTITIONED BY` expressions from `get_table_partitions()` rows
 #'
 #' The catalog stores the transform separately from the column:

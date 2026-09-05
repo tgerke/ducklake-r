@@ -20,14 +20,14 @@ Invisibly returns NULL
 Replace a table with modified data and create a new snapshot
 }
 \details{
-This function is designed for schema changes or bulk transformations that should
-create a new versioned snapshot. It:
-\enumerate{
-\item Collects the transformed data
-\item Drops the existing table
-\item Creates a new table with the updated schema/data
-\item Puts back the metadata DuckLake keeps against the table
-}
+This function is designed for bulk transformations that should create a
+new versioned snapshot. A dplyr pipeline on the package's connection
+runs inside DuckDB: its result is materialized in DuckDB's temporary
+storage (the query may read the table being replaced), the table is
+dropped and recreated from it, and the metadata DuckLake keeps against
+the table is put back. No rows pass through R. A data frame, or a lazy
+table on another connection, is loaded the way \code{\link[=create_table]{create_table()}} loads
+it.
 
 The drop and create run atomically: when no transaction is open,
 \code{replace_table()} wraps them in one of its own, so a failed create never

@@ -178,8 +178,8 @@ with_transaction(
 )
 ```
 
-`replace_table()` collects the transformed data into R and rewrites the
-table -- the right tool for a bulk rewrite, wasteful for touching three
+`replace_table()` rewrites the whole table inside DuckDB (no rows pass
+through R): the right tool for a bulk rewrite, wasteful for touching three
 rows in a million-row table, and unnecessary for pure schema changes now
 that the in-place functions above exist.
 

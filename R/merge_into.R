@@ -55,7 +55,7 @@
 #'   ([add_table_column()] and friends): metadata-only changes that rewrite
 #'   nothing.
 #' - For bulk transformations that touch most rows, use [replace_table()]. It
-#'   collects the transformed data into R and rewrites the whole table --
+#'   rewrites the whole table inside DuckDB --
 #'   heavier than the row operations, and it resets the row lineage that the
 #'   in-place operations preserve in the change feed.
 #'

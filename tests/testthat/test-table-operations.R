@@ -301,3 +301,155 @@ test_that("restore_table_version keeps comments and partition keys", {
   comments <- get_table_comments("restore_meta")
   expect_equal(comments$comment[comments$column_name %in% "id"], "Identifier")
 })
+
+test_that("create_table() from a lazy table runs in DuckDB and carries labels", {
+  skip_if_not_installed("duckdb")
+  skip_if_not_installed("dplyr")
+
+  lake <- create_temp_ducklake()
+  on.exit(cleanup_temp_ducklake(lake), add = TRUE)
+
+  df <- data.frame(
+    id = 1:5, v = c(10, 20, 30, 40, 50), grp = c("a", "b", "a", "b", "a")
+  )
+  attr(df$v, "label") <- "Value"
+  attr(df$grp, "label") <- "Group"
+  suppressMessages(create_table(df, "lazy_src"))
+
+  # The query must run as CREATE TABLE ... AS: collecting would be a bug
+  local_mocked_bindings(
+    collect = function(x, ...) stop("collected into R"),
+    .package = "dplyr"
+  )
+  suppressMessages(
+    get_ducklake_table("lazy_src") |>
+      dplyr::filter(v > 10) |>
+      dplyr::mutate(w = v * 2) |>
+      dplyr::select(id, v, w, category = grp) |>
+      create_table("lazy_dst")
+  )
+
+  result <- DBI::dbGetQuery(
+    get_ducklake_connection(), "SELECT * FROM lazy_dst ORDER BY id"
+  )
+  expect_equal(result$id, 2:5)
+  expect_equal(result$w, c(40, 60, 80, 100))
+
+  comments <- get_table_comments("lazy_dst")
+  expect_equal(comments$comment[comments$column_name %in% "v"], "Value")
+  # renamed and derived columns start without a label
+  expect_false("category" %in% comments$column_name)
+  expect_false("w" %in% comments$column_name)
+})
+
+test_that("create_table() from a join copies comments from every source", {
+  skip_if_not_installed("duckdb")
+  skip_if_not_installed("dplyr")
+
+  lake <- create_temp_ducklake()
+  on.exit(cleanup_temp_ducklake(lake), add = TRUE)
+
+  a <- data.frame(id = 1:3, x = c(1, 2, 3))
+  attr(a$x, "label") <- "X value"
+  b <- data.frame(id = 1:3, y = c(4, 5, 6))
+  attr(b$y, "label") <- "Y value"
+  suppressMessages({
+    create_table(a, "join_a")
+    create_table(b, "join_b")
+    get_ducklake_table("join_a") |>
+      dplyr::inner_join(get_ducklake_table("join_b"), by = "id") |>
+      create_table("join_ab")
+  })
+
+  comments <- get_table_comments("join_ab")
+  expect_equal(comments$comment[comments$column_name %in% "x"], "X value")
+  expect_equal(comments$comment[comments$column_name %in% "y"], "Y value")
+  expect_equal(nrow(dplyr::collect(get_ducklake_table("join_ab"))), 3)
+})
+
+test_that("lazy tables on another connection still load through R", {
+  skip_if_not_installed("duckdb")
+  skip_if_not_installed("dplyr")
+
+  lake <- create_temp_ducklake()
+  on.exit(cleanup_temp_ducklake(lake), add = TRUE)
+
+  other <- DBI::dbConnect(duckdb::duckdb())
+  on.exit(DBI::dbDisconnect(other, shutdown = TRUE), add = TRUE)
+  DBI::dbWriteTable(other, "remote", data.frame(id = 1:4, v = c(1, 2, 3, 4)))
+
+  suppressMessages(
+    dplyr::tbl(other, "remote") |>
+      dplyr::filter(v > 1) |>
+      create_table("from_other")
+  )
+  expect_equal(nrow(dplyr::collect(get_ducklake_table("from_other"))), 3)
+
+  suppressMessages(dplyr::tbl(other, "remote") |> replace_table("from_other"))
+  expect_equal(nrow(dplyr::collect(get_ducklake_table("from_other"))), 4)
+})
+
+test_that("replace_table() from a lazy table rewrites inside DuckDB", {
+  skip_if_not_installed("duckdb")
+  skip_if_not_installed("dplyr")
+
+  lake <- create_temp_ducklake()
+  on.exit(cleanup_temp_ducklake(lake), add = TRUE)
+
+  df <- data.frame(id = 1:6, grp = rep(c("a", "b"), 3), v = 1:6 * 10)
+  attr(df$v, "label") <- "Value"
+  suppressMessages({
+    create_table(df, "inplace")
+    set_table_partitioning("inplace", "grp")
+  })
+
+  local_mocked_bindings(
+    collect = function(x, ...) stop("collected into R"),
+    .package = "dplyr"
+  )
+  suppressMessages(
+    get_ducklake_table("inplace") |>
+      dplyr::filter(id > 2) |>
+      dplyr::mutate(w = v * 2) |>
+      replace_table("inplace")
+  )
+
+  conn <- get_ducklake_connection()
+  result <- DBI::dbGetQuery(conn, "SELECT * FROM inplace ORDER BY id")
+  expect_equal(result$id, 3:6)
+  expect_equal(result$w, c(60, 80, 100, 120))
+  comments <- get_table_comments("inplace")
+  expect_equal(comments$comment[comments$column_name %in% "v"], "Value")
+  expect_equal(get_table_partitions("inplace")$column_name, "grp")
+
+  # The temporary copy of the result is gone
+  temp_tables <- DBI::dbGetQuery(
+    conn, "SELECT table_name FROM duckdb_tables() WHERE temporary"
+  )
+  expect_equal(nrow(temp_tables), 0)
+})
+
+test_that("replace_table() from a lazy table inside with_transaction() is one snapshot", {
+  skip_if_not_installed("duckdb")
+  skip_if_not_installed("dplyr")
+
+  lake <- create_temp_ducklake()
+  on.exit(cleanup_temp_ducklake(lake), add = TRUE)
+
+  create_table(data.frame(id = 1:3, v = c(1, 2, 3)), "txn_lazy")
+  before <- nrow(list_table_snapshots())
+
+  suppressMessages(with_transaction(
+    get_ducklake_table("txn_lazy") |>
+      dplyr::mutate(v = v * 10) |>
+      replace_table("txn_lazy"),
+    author = "Tester",
+    commit_message = "times ten"
+  ))
+
+  expect_equal(nrow(list_table_snapshots()) - before, 1)
+  expect_equal(sort(dplyr::collect(get_ducklake_table("txn_lazy"))$v), c(10, 20, 30))
+  snapshots <- list_table_snapshots("txn_lazy")
+  expect_equal(snapshots$commit_message[[nrow(snapshots)]], "times ten")
+})
+

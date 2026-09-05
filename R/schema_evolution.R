@@ -3,7 +3,7 @@
 #' Adds a column in place with `ALTER TABLE ... ADD COLUMN`. This is a
 #' metadata-only change: no data files are rewritten, history is preserved,
 #' and earlier snapshots still show the old schema. Compare
-#' [replace_table()], which collects the table into R and rewrites it.
+#' [replace_table()], which rewrites the whole table.
 #'
 #' @param table_name The table to change.
 #' @param column_name Name of the new column.
