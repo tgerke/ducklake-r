@@ -1,7 +1,7 @@
 # Create a DuckLake backup
 
 Creates a timestamped backup of the Parquet data files and, for
-file-based backends (DuckDB, SQLite), the catalog database file. For
+file-based backends (DuckDB, SQLite), the catalog database. For
 PostgreSQL/MySQL backends only data files are copied; use `pg_dump` /
 `mysqldump` for the catalog.
 
@@ -33,9 +33,21 @@ Invisibly returns the path to the created backup directory
 
 ## Details
 
-For file-based backends the DuckLake is temporarily detached during
-backup to release file locks and ensure a consistent copy. It is
-automatically re-attached afterwards.
+The catalog is copied with DuckDB's `COPY FROM DATABASE` while the lake
+stays attached. The copy is taken inside one transaction, so it is a
+consistent snapshot of the metadata, and nothing is detached or shut
+down along the way: other attached lakes, in-memory secrets, and a
+connection you registered with
+[`set_ducklake_connection()`](https://tgerke.github.io/ducklake-r/reference/set_ducklake_connection.md)
+are left as they are. The data directories (one per schema) are copied
+as files.
+
+To work with the backup, attach it with `lake_path` pointing at the
+backup directory. Pass `override_data_path = TRUE`, since the copied
+catalog remembers the original data location, and `create = FALSE`, so a
+mistyped path is an error rather than a new, empty lake. When the
+catalog file was not named after the lake (a split layout), name it with
+`catalog_connection_string`.
 
 **Important notes:**
 
@@ -43,8 +55,8 @@ automatically re-attached afterwards.
   recovering. The data will exist in the Parquet files, but the backup
   will point to an earlier snapshot.
 
-- Consider coordinating backups with maintenance operations (compaction
-  and cleanup) for optimal storage efficiency.
+- Run compaction and cleanup before a backup, not after: they rewrite
+  and remove data files that the copied catalog refers to.
 
 - For production systems, schedule backups using `{cronR}` or
   `{taskscheduleR}`.
@@ -80,7 +92,7 @@ with_transaction(
 #> Transaction started.
 #> Transaction committed.
 
-# Create a backup
+# Create a backup; the lake stays attached throughout
 backup_dir <- backup_ducklake(
   ducklake_name = "my_lake",
   lake_path = lake_dir,
@@ -89,11 +101,12 @@ backup_dir <- backup_ducklake(
 #> Catalog backed up successfully.
 #> Data files backed up successfully (1 directory).
 #> Backup completed:
-#> /tmp/RtmpeVOfQc/my_lake1ad3c89c433/backups/backup_20260905_012310
+#> /tmp/Rtmp2ZJGyU/my_lake1a905afd3d35/backups/backup_20260905_015154
 
 # Restore (override_data_path needed when location differs):
 # detach_ducklake("my_lake")
-# attach_ducklake("my_lake", lake_path = backup_dir, override_data_path = TRUE)
+# attach_ducklake("my_lake", lake_path = backup_dir,
+#                 override_data_path = TRUE, create = FALSE)
 
 detach_ducklake("my_lake", shutdown = TRUE)
 unlink(lake_dir, recursive = TRUE)

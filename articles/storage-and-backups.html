@@ -286,14 +286,14 @@ generates:</p>
 <p>The catalog is a single database file containing all metadata:</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://fs.r-lib.org/reference/dir_tree.html" class="external-link">dir_tree</a></span><span class="op">(</span><span class="va">lake_dir</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #0000BB; font-weight: bold;">/tmp/RtmpApzVNG/storage_backups_vignette/storage_demo</span></span></span>
+<span><span class="co">#&gt; <span style="color: #0000BB; font-weight: bold;">/tmp/RtmpvZqxlS/storage_backups_vignette/storage_demo</span></span></span>
 <span><span class="co">#&gt; ├── demo_lake.ducklake</span></span>
 <span><span class="co">#&gt; ├── demo_lake.ducklake.wal</span></span>
 <span><span class="co">#&gt; └── <span style="color: #0000BB; font-weight: bold;">main</span></span></span>
 <span><span class="co">#&gt;     └── <span style="color: #0000BB; font-weight: bold;">cars</span></span></span>
-<span><span class="co">#&gt;         ├── ducklake-01a06f2a-c8fb-7867-b79b-96ed0f382faa.parquet</span></span>
-<span><span class="co">#&gt;         ├── ducklake-01a06f2a-ca11-799f-8743-3ca92e823b1f.parquet</span></span>
-<span><span class="co">#&gt;         └── ducklake-01a06f2a-cb1d-796d-aa28-5ccac643ebcf.parquet</span></span></code></pre></div>
+<span><span class="co">#&gt;         ├── ducklake-01a06f45-155c-7f20-93f0-4c41fc378cf9.parquet</span></span>
+<span><span class="co">#&gt;         ├── ducklake-01a06f45-166b-7f0c-b032-4c92cf85b28c.parquet</span></span>
+<span><span class="co">#&gt;         └── ducklake-01a06f45-178c-71c0-aaad-d175b4fe2a57.parquet</span></span></code></pre></div>
 <p>The catalog files (<code>demo_lake.ducklake</code> and
 <code>.wal</code>) contain all metadata about tables, snapshots, and
 transactions.</p>
@@ -308,11 +308,11 @@ directory:</p>
 <span><span class="va">main_dir</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">lake_dir</span>, <span class="st">"main"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://fs.r-lib.org/reference/dir_tree.html" class="external-link">dir_tree</a></span><span class="op">(</span><span class="va">main_dir</span>, recurse <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #0000BB; font-weight: bold;">/tmp/RtmpApzVNG/storage_backups_vignette/storage_demo/main</span></span></span>
+<span><span class="co">#&gt; <span style="color: #0000BB; font-weight: bold;">/tmp/RtmpvZqxlS/storage_backups_vignette/storage_demo/main</span></span></span>
 <span><span class="co">#&gt; └── <span style="color: #0000BB; font-weight: bold;">cars</span></span></span>
-<span><span class="co">#&gt;     ├── ducklake-01a06f2a-c8fb-7867-b79b-96ed0f382faa.parquet</span></span>
-<span><span class="co">#&gt;     ├── ducklake-01a06f2a-ca11-799f-8743-3ca92e823b1f.parquet</span></span>
-<span><span class="co">#&gt;     └── ducklake-01a06f2a-cb1d-796d-aa28-5ccac643ebcf.parquet</span></span>
+<span><span class="co">#&gt;     ├── ducklake-01a06f45-155c-7f20-93f0-4c41fc378cf9.parquet</span></span>
+<span><span class="co">#&gt;     ├── ducklake-01a06f45-166b-7f0c-b032-4c92cf85b28c.parquet</span></span>
+<span><span class="co">#&gt;     └── ducklake-01a06f45-178c-71c0-aaad-d175b4fe2a57.parquet</span></span>
 <span>  </span>
 <span><span class="co"># Get details about parquet files</span></span>
 <span><span class="va">parquet_files</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://fs.r-lib.org/reference/dir_ls.html" class="external-link">dir_ls</a></span><span class="op">(</span><span class="va">main_dir</span>, recurse <span class="op">=</span> <span class="cn">TRUE</span>, regexp <span class="op">=</span> <span class="st">"\\.parquet$"</span><span class="op">)</span></span>
@@ -321,9 +321,9 @@ directory:</p>
 <span>              <span class="fu"><a href="https://fs.r-lib.org/reference/path_file.html" class="external-link">path_file</a></span><span class="op">(</span><span class="va">f</span><span class="op">)</span>, </span>
 <span>              <span class="fu"><a href="https://rdrr.io/r/base/file.info.html" class="external-link">file.size</a></span><span class="op">(</span><span class="va">f</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="op">}</span></span>
-<span><span class="co">#&gt;   ducklake-01a06f2a-c8fb-7867-b79b-96ed0f382faa.parquet (2307 bytes)</span></span>
-<span><span class="co">#&gt;   ducklake-01a06f2a-ca11-799f-8743-3ca92e823b1f.parquet (2501 bytes)</span></span>
-<span><span class="co">#&gt;   ducklake-01a06f2a-cb1d-796d-aa28-5ccac643ebcf.parquet (2724 bytes)</span></span></code></pre></div>
+<span><span class="co">#&gt;   ducklake-01a06f45-155c-7f20-93f0-4c41fc378cf9.parquet (2307 bytes)</span></span>
+<span><span class="co">#&gt;   ducklake-01a06f45-166b-7f0c-b032-4c92cf85b28c.parquet (2501 bytes)</span></span>
+<span><span class="co">#&gt;   ducklake-01a06f45-178c-71c0-aaad-d175b4fe2a57.parquet (2724 bytes)</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="understanding-file-organization">Understanding File Organization<a class="anchor" aria-label="anchor" href="#understanding-file-organization"></a>
@@ -355,29 +355,29 @@ them.</p>
 <p>The catalog is the most critical component—it maps snapshots to data
 files. Regular backups are essential.</p>
 <div class="section level4">
-<h4 id="simple-file-copy">Simple File Copy<a class="anchor" aria-label="anchor" href="#simple-file-copy"></a>
+<h4 id="copying-the-catalog">Copying the Catalog<a class="anchor" aria-label="anchor" href="#copying-the-catalog"></a>
 </h4>
-<p>For local databases, the simplest backup is a file copy. One rule
-matters: <strong>release the file locks first</strong>. DuckDB holds the
-catalog file open while a lake is attached, and copying a live catalog
-produces a corrupt (or, on Windows, unreadable) backup. Detach with
-<code>shutdown = TRUE</code>, copy, then re-attach — or skip the manual
-steps entirely and use <code><a href="../reference/backup_ducklake.html">backup_ducklake()</a></code>, which does
-exactly this dance for you:</p>
+<p><code><a href="../reference/backup_ducklake.html">backup_ducklake()</a></code> copies the catalog with DuckDB’s
+<code>COPY FROM DATABASE</code> while the lake stays attached. The copy
+is taken inside one transaction, so it is a consistent snapshot of the
+metadata, and nothing is detached or shut down along the way. The same
+statement works by hand:</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Create backup directory</span></span>
 <span><span class="va">backup_dir</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">lake_dir</span>, <span class="st">"backups"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/files2.html" class="external-link">dir.create</a></span><span class="op">(</span><span class="va">backup_dir</span>, showWarnings <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Release file locks before copying the catalog</span></span>
-<span><span class="fu"><a href="../reference/detach_ducklake.html">detach_ducklake</a></span><span class="op">(</span><span class="st">"demo_lake"</span>, shutdown <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Copy the catalog file to create a backup</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/files.html" class="external-link">file.copy</a></span><span class="op">(</span></span>
-<span>  from <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">lake_dir</span>, <span class="st">"demo_lake.ducklake"</span><span class="op">)</span>,</span>
-<span>  to <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">backup_dir</span>, <span class="st">"demo_lake.ducklake"</span><span class="op">)</span></span>
-<span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] TRUE</span></span>
+<span><span class="co"># Copy the catalog through DuckDB: the metadata catalog of an attached lake</span></span>
+<span><span class="co"># is the database __ducklake_metadata_&lt;name&gt;</span></span>
+<span><span class="va">conn</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_ducklake_connection.html">get_ducklake_connection</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="fu">DBI</span><span class="fu">::</span><span class="fu"><a href="https://dbi.r-dbi.org/reference/dbExecute.html" class="external-link">dbExecute</a></span><span class="op">(</span><span class="va">conn</span>, <span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span></span>
+<span>  <span class="st">"ATTACH '%s' AS backup;"</span>, <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">backup_dir</span>, <span class="st">"demo_lake.ducklake"</span><span class="op">)</span></span>
+<span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 0</span></span>
+<span><span class="fu">DBI</span><span class="fu">::</span><span class="fu"><a href="https://dbi.r-dbi.org/reference/dbExecute.html" class="external-link">dbExecute</a></span><span class="op">(</span><span class="va">conn</span>, <span class="st">"COPY FROM DATABASE __ducklake_metadata_demo_lake TO backup;"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 0</span></span>
+<span><span class="fu">DBI</span><span class="fu">::</span><span class="fu"><a href="https://dbi.r-dbi.org/reference/dbExecute.html" class="external-link">dbExecute</a></span><span class="op">(</span><span class="va">conn</span>, <span class="st">"DETACH backup;"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 0</span></span>
 <span></span>
 <span><span class="co"># Copy the data directory as well</span></span>
 <span><span class="fu"><a href="https://fs.r-lib.org/reference/copy.html" class="external-link">dir_copy</a></span><span class="op">(</span></span>
@@ -387,29 +387,36 @@ exactly this dance for you:</p>
 <span></span>
 <span><span class="co"># Verify the backup was created</span></span>
 <span><span class="fu"><a href="https://fs.r-lib.org/reference/dir_tree.html" class="external-link">dir_tree</a></span><span class="op">(</span><span class="va">backup_dir</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #0000BB; font-weight: bold;">/tmp/RtmpApzVNG/storage_backups_vignette/storage_demo/backups</span></span></span>
+<span><span class="co">#&gt; <span style="color: #0000BB; font-weight: bold;">/tmp/RtmpvZqxlS/storage_backups_vignette/storage_demo/backups</span></span></span>
 <span><span class="co">#&gt; ├── demo_lake.ducklake</span></span>
 <span><span class="co">#&gt; └── <span style="color: #0000BB; font-weight: bold;">main</span></span></span>
 <span><span class="co">#&gt;     └── <span style="color: #0000BB; font-weight: bold;">cars</span></span></span>
-<span><span class="co">#&gt;         ├── ducklake-01a06f2a-c8fb-7867-b79b-96ed0f382faa.parquet</span></span>
-<span><span class="co">#&gt;         ├── ducklake-01a06f2a-ca11-799f-8743-3ca92e823b1f.parquet</span></span>
-<span><span class="co">#&gt;         └── ducklake-01a06f2a-cb1d-796d-aa28-5ccac643ebcf.parquet</span></span>
-<span></span>
-<span><span class="co"># To work with the backup, attach it. override_data_path is needed because</span></span>
-<span><span class="co"># the catalog remembers the original data location, which the backup no</span></span>
-<span><span class="co"># longer matches.</span></span>
+<span><span class="co">#&gt;         ├── ducklake-01a06f45-155c-7f20-93f0-4c41fc378cf9.parquet</span></span>
+<span><span class="co">#&gt;         ├── ducklake-01a06f45-166b-7f0c-b032-4c92cf85b28c.parquet</span></span>
+<span><span class="co">#&gt;         └── ducklake-01a06f45-178c-71c0-aaad-d175b4fe2a57.parquet</span></span></code></pre></div>
+<p>A plain file copy of the <code>.ducklake</code> file works too, but
+only after releasing DuckDB’s lock on it: detach with
+<code>shutdown = TRUE</code>, copy, then re-attach. Copying a live
+catalog produces a corrupt (or, on Windows, unreadable) file.</p>
+<p>To work with the backup, attach it. <code>override_data_path</code>
+is needed because the catalog remembers the original data location,
+which the backup no longer matches, and <code>create = FALSE</code>
+turns a mistyped path into an error instead of a new, empty lake:</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/detach_ducklake.html">detach_ducklake</a></span><span class="op">(</span><span class="st">"demo_lake"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/attach_ducklake.html">attach_ducklake</a></span><span class="op">(</span></span>
 <span>  ducklake_name <span class="op">=</span> <span class="st">"demo_lake"</span>,</span>
 <span>  lake_path <span class="op">=</span> <span class="va">backup_dir</span>,</span>
-<span>  override_data_path <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span>  override_data_path <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  create <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Verify you're working with the backup</span></span>
 <span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 1           1 2026-09-05 01:24:30              1</span></span>
-<span><span class="co">#&gt; 2           2 2026-09-05 01:24:30              2</span></span>
-<span><span class="co">#&gt; 3           3 2026-09-05 01:24:30              3</span></span>
+<span><span class="co">#&gt; 1           1 2026-09-05 01:53:13              1</span></span>
+<span><span class="co">#&gt; 2           2 2026-09-05 01:53:13              2</span></span>
+<span><span class="co">#&gt; 3           3 2026-09-05 01:53:13              3</span></span>
 <span><span class="co">#&gt;                                                                 changes</span></span>
 <span><span class="co">#&gt; 1                    tables_created, tables_inserted_into, main.cars, 1</span></span>
 <span><span class="co">#&gt; 2 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2</span></span>
@@ -442,7 +449,7 @@ straightforward.</p>
 <div class="section level4">
 <h4 id="local-storage-backup">Local Storage Backup<a class="anchor" aria-label="anchor" href="#local-storage-backup"></a>
 </h4>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Use file system tools to copy the entire data directory</span></span>
 <span><span class="va">backup_data_dir</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">lake_dir</span>, <span class="st">"backups"</span>, <span class="st">"main_backup"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://fs.r-lib.org/reference/copy.html" class="external-link">dir_copy</a></span><span class="op">(</span></span>
@@ -461,7 +468,7 @@ objects)</p>
 <p><strong>Google Cloud Storage:</strong> - Cross-bucket replication -
 Backup and DR service - Object versioning with soft deletes</p>
 <p>When using cross-bucket replication, update your data path:</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Original</span></span>
 <span><span class="fu"><a href="../reference/attach_ducklake.html">attach_ducklake</a></span><span class="op">(</span></span>
 <span>  ducklake_name <span class="op">=</span> <span class="st">"prod_lake"</span>,</span>
@@ -484,7 +491,7 @@ Backup and DR service - Object versioning with soft deletes</p>
 <h3 id="recovering-from-catalog-backup">Recovering from Catalog Backup<a class="anchor" aria-label="anchor" href="#recovering-from-catalog-backup"></a>
 </h3>
 <p>If your catalog is corrupted or lost:</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Restore from backup by copying the backup file</span></span>
 <span><span class="co"># (backup_dir here is a directory created earlier, e.g. by backup_ducklake())</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/files.html" class="external-link">file.copy</a></span><span class="op">(</span></span>
@@ -493,8 +500,9 @@ Backup and DR service - Object versioning with soft deletes</p>
 <span>  overwrite <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Reattach to the restored database</span></span>
-<span><span class="fu"><a href="../reference/attach_ducklake.html">attach_ducklake</a></span><span class="op">(</span><span class="st">"demo_lake"</span>, lake_path <span class="op">=</span> <span class="va">lake_dir</span><span class="op">)</span></span>
+<span><span class="co"># Reattach to the restored database (detach with shutdown = TRUE before</span></span>
+<span><span class="co"># overwriting the file, so DuckDB is not holding it open)</span></span>
+<span><span class="fu"><a href="../reference/attach_ducklake.html">attach_ducklake</a></span><span class="op">(</span><span class="st">"demo_lake"</span>, lake_path <span class="op">=</span> <span class="va">lake_dir</span>, create <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Verify recovery by listing snapshots</span></span>
 <span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span></span></code></pre></div>
@@ -503,7 +511,7 @@ Backup and DR service - Object versioning with soft deletes</p>
 <h3 id="recovering-from-data-file-loss">Recovering from Data File Loss<a class="anchor" aria-label="anchor" href="#recovering-from-data-file-loss"></a>
 </h3>
 <p>If data files are lost but the catalog is intact:</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Restore data files from backup</span></span>
 <span><span class="fu"><a href="https://fs.r-lib.org/reference/copy.html" class="external-link">dir_copy</a></span><span class="op">(</span></span>
 <span>  path <span class="op">=</span> <span class="va">backup_data_dir</span>,</span>
@@ -529,7 +537,7 @@ deleted when it carries <code>delete_older_than</code>. Without them a
 checkpoint keeps every snapshot and every file, so the policy is the
 first thing to decide. It is set once, persists in the catalog, and
 applies to every client of the lake:</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Keep 90 days of time travel; delete released files a week after release</span></span>
 <span><span class="fu"><a href="../reference/set_ducklake_option.html">set_ducklake_option</a></span><span class="op">(</span><span class="st">"expire_older_than"</span>, <span class="st">"90 days"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/set_ducklake_option.html">set_ducklake_option</a></span><span class="op">(</span><span class="st">"delete_older_than"</span>, <span class="st">"7 days"</span><span class="op">)</span></span>
@@ -539,7 +547,7 @@ applies to every client of the lake:</p>
 <p>Choose <code>expire_older_than</code> to match how far back you need
 to audit or restore, since expiring a snapshot gives up time travel to
 it. For finer control, each step has its own function:</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Compact small adjacent Parquet files into larger ones</span></span>
 <span><span class="fu"><a href="../reference/merge_adjacent_files.html">merge_adjacent_files</a></span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
@@ -577,7 +585,7 @@ backups to ensure consistent file layout</li>
 <strong>Cleanup</strong> (removing obsolete files): Run before
 backups to avoid backing up unnecessary files</li>
 </ul>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Recommended backup sequence</span></span>
 <span></span>
 <span><span class="co"># 1. Run maintenance operations (if needed)</span></span>
@@ -588,32 +596,20 @@ backups to avoid backing up unnecessary files</li>
 <span><span class="co"># 2. Ensure all transactions are committed</span></span>
 <span><span class="co"># (no pending work)</span></span>
 <span></span>
-<span><span class="co"># 3. Release file locks before copying the catalog</span></span>
-<span><span class="fu"><a href="../reference/detach_ducklake.html">detach_ducklake</a></span><span class="op">(</span><span class="st">"demo_lake"</span>, shutdown <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># 4. Back up catalog</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/files2.html" class="external-link">dir.create</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">lake_dir</span>, <span class="st">"backups"</span><span class="op">)</span>, showWarnings <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/files.html" class="external-link">file.copy</a></span><span class="op">(</span></span>
-<span>  from <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">lake_dir</span>, <span class="st">"demo_lake.ducklake"</span><span class="op">)</span>,</span>
-<span>  to <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">lake_dir</span>, <span class="st">"backups"</span>,</span>
-<span>                 <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"backup_"</span>, <span class="fu"><a href="https://rdrr.io/r/base/format.html" class="external-link">format</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Sys.time.html" class="external-link">Sys.time</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"%Y%m%d_%H%M%S"</span><span class="op">)</span>, <span class="st">".ducklake"</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># 5. Back up data files</span></span>
-<span><span class="fu"><a href="https://fs.r-lib.org/reference/copy.html" class="external-link">dir_copy</a></span><span class="op">(</span></span>
-<span>  path <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">lake_dir</span>, <span class="st">"main"</span><span class="op">)</span>,</span>
-<span>  new_path <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">lake_dir</span>, <span class="st">"backups"</span>, <span class="st">"main_latest"</span><span class="op">)</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># 6. Re-attach and continue working</span></span>
-<span><span class="fu"><a href="../reference/attach_ducklake.html">attach_ducklake</a></span><span class="op">(</span><span class="st">"demo_lake"</span>, lake_path <span class="op">=</span> <span class="va">lake_dir</span><span class="op">)</span></span></code></pre></div>
+<span><span class="co"># 3. Back up: the catalog through COPY FROM DATABASE, the data files by</span></span>
+<span><span class="co">#    copy, with the lake still attached</span></span>
+<span><span class="fu"><a href="../reference/backup_ducklake.html">backup_ducklake</a></span><span class="op">(</span></span>
+<span>  <span class="st">"demo_lake"</span>,</span>
+<span>  lake_path <span class="op">=</span> <span class="va">lake_dir</span>,</span>
+<span>  backup_path <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">lake_dir</span>, <span class="st">"backups"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="complete-backup-example">Complete Backup Example<a class="anchor" aria-label="anchor" href="#complete-backup-example"></a>
 </h2>
 <p>DuckLake provides a convenient <code><a href="../reference/backup_ducklake.html">backup_ducklake()</a></code>
 function for creating timestamped backups:</p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Create a complete backup with timestamp</span></span>
 <span><span class="va">backup_dir</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/backup_ducklake.html">backup_ducklake</a></span><span class="op">(</span></span>
 <span>  ducklake_name <span class="op">=</span> <span class="st">"demo_lake"</span>,</span>
@@ -623,20 +619,21 @@ function for creating timestamped backups:</p>
 <span><span class="co">#&gt; Catalog backed up successfully.</span></span>
 <span><span class="co">#&gt; Data files backed up successfully (1 directory).</span></span>
 <span><span class="co">#&gt; Backup completed:</span></span>
-<span><span class="co">#&gt; <span style="color: #0000BB;">/tmp/RtmpApzVNG/storage_backups_vignette/storage_demo/backups/backup_20260905_012431</span></span></span>
+<span><span class="co">#&gt; <span style="color: #0000BB;">/tmp/RtmpvZqxlS/storage_backups_vignette/storage_demo/backups/backup_20260905_015315</span></span></span>
 <span></span>
 <span><span class="co"># The function returns the backup directory path</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">backup_dir</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "/tmp/RtmpApzVNG/storage_backups_vignette/storage_demo/backups/backup_20260905_012431"</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "/tmp/RtmpvZqxlS/storage_backups_vignette/storage_demo/backups/backup_20260905_015315"</span></span></code></pre></div>
 <p>The <code><a href="../reference/backup_ducklake.html">backup_ducklake()</a></code> function: - Creates a timestamped
-backup directory - Copies the catalog database file (releasing file
-locks first) - Copies the data files from every schema directory in the
-lake - Returns the backup directory path for reference</p>
+backup directory - Copies the catalog through
+<code>COPY FROM DATABASE</code>, with the lake still attached - Copies
+the data files from every schema directory in the lake - Returns the
+backup directory path for reference</p>
 </div>
 <div class="section level2">
 <h2 id="cleanup">Cleanup<a class="anchor" aria-label="anchor" href="#cleanup"></a>
 </h2>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Detach the demo lake</span></span>
 <span><span class="fu"><a href="../reference/detach_ducklake.html">detach_ducklake</a></span><span class="op">(</span><span class="st">"demo_lake"</span><span class="op">)</span></span>
 <span></span>
