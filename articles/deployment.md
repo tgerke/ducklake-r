@@ -1,0 +1,238 @@
+# Choosing a Deployment
+
+``` r
+
+library(ducklake)
+library(dplyr)
+```
+
+A DuckLake is two things. A catalog database records every table,
+column, snapshot, and data file, and a directory of Parquet files holds
+the rows. Where you put each of those decides who can use the lake, how
+many people can write to it at once, and what you have to run. This
+article takes the choices in the order they come up: which catalog,
+where the data goes, who can reach it, and what to set up on day one.
+The other articles then cover each topic in depth.
+
+## What a lake looks like
+
+After `attach_ducklake("trial", lake_path = "~/lakes/trial")` and a few
+tables, the directory holds:
+
+    ~/lakes/trial/
+    ├── trial.ducklake          # the catalog: a DuckDB database file
+    ├── main/                   # one directory per schema
+    │   ├── adsl/               # one directory per table
+    │   │   └── ducklake-....parquet
+    │   └── adae/
+    └── bronze/
+        └── dm/
+
+The catalog is small and changes on every commit. The data files never
+change once written, which is what makes them simple to copy, cache, and
+replicate. Very small writes do not even reach the data directory:
+DuckLake keeps them inline in the catalog until they are flushed
+([`vignette("data-inlining")`](https://tgerke.github.io/ducklake-r/articles/data-inlining.md)).
+
+That split is the whole design. Every deployment below is a choice of
+where the catalog lives and where the files live.
+
+## Which catalog
+
+The catalog backend sets the concurrency model. The DuckDB file that
+[`attach_ducklake()`](https://tgerke.github.io/ducklake-r/reference/attach_ducklake.md)
+uses by default is the right start for one person on one machine; it is
+also the one that cannot be shared.
+
+| Situation | Catalog | Why |
+|----|----|----|
+| One person, one machine | DuckDB file (the default) | Nothing to install or run. One writer at a time: DuckDB locks the file while the lake is attached, and a second session cannot open it. |
+| A team on a shared drive | SQLite | Several sessions write to the same lake. SQLite serializes them and DuckLake retries when it meets a lock. No server to run. |
+| Many users, remote storage | PostgreSQL | Row-level locking for concurrent writers, database roles for access control, `pg_dump` for backups. Needs a server (PostgreSQL 12 or newer). |
+| Sharing without shared storage | Any of the above, served with Quack | Clients connect to one DuckDB process over the network; only the server touches the catalog and files. |
+| A published, read-only lake | DuckDB file on an HTTPS host | Readers attach the catalog straight from the URL; you update it by replacing the file. |
+
+MySQL works but is not recommended upstream because of limitations in
+the DuckDB MySQL connector, and
+[`attach_ducklake()`](https://tgerke.github.io/ducklake-r/reference/attach_ducklake.md)
+warns when you pick it.
+
+The three shapes in code:
+
+``` r
+
+# One person: catalog and data side by side in one directory
+attach_ducklake("trial", lake_path = "~/lakes/trial")
+
+# A team on a shared drive: SQLite catalog next to the data
+attach_ducklake(
+  "trial",
+  backend = "sqlite",
+  catalog_connection_string = "/shared/lakes/trial/catalog.sqlite",
+  lake_path = "/shared/lakes/trial/data"
+)
+
+# Many users: PostgreSQL catalog, data on object storage
+create_storage_secret("s3", provider = "credential_chain")
+attach_ducklake(
+  "trial",
+  backend = "postgres",
+  catalog_connection_string = "dbname=lakes host=db.example.org",
+  lake_path = "s3://acme-lakes/trial",
+  metadata_schema = "trial"
+)
+```
+
+`metadata_schema` gives each lake its own schema inside one PostgreSQL
+database, so a department’s studies can share a server without sharing
+catalog tables.
+
+When you mean to open a lake that already exists, say so with
+`create = FALSE`. A mistyped path then fails instead of quietly creating
+a new, empty lake:
+
+``` r
+
+attach_ducklake("trial", lake_path = "/shared/lakes/trial/data",
+                backend = "sqlite",
+                catalog_connection_string = "/shared/lakes/trial/catalog.sqlite",
+                create = FALSE)
+```
+
+## Where the data goes
+
+`lake_path` accepts a local directory, a network mount, or an
+object-storage URI (`s3://`, `gs://`, `r2://`, `az://`). Object storage
+needs credentials registered first with
+[`create_storage_secret()`](https://tgerke.github.io/ducklake-r/reference/create_storage_secret.md);
+the `credential_chain` provider picks them up the way the AWS SDKs do,
+so nothing sensitive sits in a script.
+
+Two constraints shape the layout:
+
+- DuckDB cannot write a database file to object storage, so with the
+  default DuckDB catalog and a remote `lake_path`, put the catalog on
+  local disk with `catalog_connection_string`.
+  [`attach_ducklake()`](https://tgerke.github.io/ducklake-r/reference/attach_ducklake.md)
+  stops with that advice when the layout would not work.
+- On Windows, the duckdb R package can load the `ducklake`, `httpfs`,
+  `sqlite`, and `quack` extensions but not `postgres`, `mysql`, `aws`,
+  or `azure`. A Windows session can be a reader or writer of a SQLite or
+  DuckDB-catalog lake on S3 with explicit keys; PostgreSQL catalogs,
+  `credential_chain`, and Azure need Linux, macOS, or WSL.
+
+Storage choice is also a performance choice. Local disk is fastest and
+private; a shared drive is convenient for a small team and slow across a
+WAN; object storage scales and is reachable from anywhere at the cost of
+latency per file. Sorting and partitioning large tables
+([`set_table_sorting()`](https://tgerke.github.io/ducklake-r/reference/set_table_sorting.md),
+[`set_table_partitioning()`](https://tgerke.github.io/ducklake-r/reference/set_table_partitioning.md))
+matter most on object storage, where every file skipped is a request
+avoided.
+
+## Who can reach it
+
+DuckLake has no user accounts of its own. Access control lives in the
+two layers you already chose: the catalog database and the storage. The
+DuckLake documentation describes three roles built from those layers,
+and they map onto R sessions directly.
+
+| Role | Catalog | Storage | In R |
+|----|----|----|----|
+| Reader | `SELECT` on the metadata tables | read on the schema or table paths | `attach_ducklake(..., read_only = TRUE)` |
+| Writer | `SELECT`, `INSERT`, `UPDATE`, `DELETE` on the metadata tables | read, write, and delete on its schemas’ paths | ordinary [`attach_ducklake()`](https://tgerke.github.io/ducklake-r/reference/attach_ducklake.md) |
+| Superuser | also `CREATE` on the database | everything | ordinary [`attach_ducklake()`](https://tgerke.github.io/ducklake-r/reference/attach_ducklake.md) |
+
+Because DuckLake writes each schema’s files under a directory of their
+own, schemas are the unit of storage permissions: a bucket policy that
+grants `bronze/*` to the ingestion role and `gold/*` to analysts works
+without touching the catalog. Organizing a lake by schema
+([`create_schema()`](https://tgerke.github.io/ducklake-r/reference/create_schema.md))
+is therefore worth doing before the first table lands. The upstream
+guide has the PostgreSQL grants and S3 policies spelled out:
+<https://ducklake.select/docs/stable/duckdb/guides/access_control>.
+
+For a frozen view, attach the lake pinned to a snapshot
+(`attach_ducklake(snapshot_version = ...)`): every read sees that moment
+and writes are refused, which is how a report is reproduced months
+later.
+
+## Day-one setup
+
+A few settings pay for themselves later. Set them when you create the
+lake, and they persist in the catalog for every client.
+
+``` r
+
+# 1. Keep DuckDB's downloaded extensions between sessions (duckdb >= 1.5.2
+#    keeps them in a per-session temporary directory otherwise). Put this
+#    in ~/.Renviron, not in a script:
+#    DUCKDB_R_HOME=~/.duckdb
+
+# 2. Create the lake, and its schemas, in one snapshot
+attach_ducklake("trial", lake_path = "~/lakes/trial")
+with_transaction({
+  create_schema("bronze")
+  create_schema("silver")
+  create_schema("gold")
+}, author = "Data Engineer", commit_message = "Create the trial lake")
+
+# 3. Retention: how far back time travel reaches, and when released files
+#    are deleted. Without these a checkpoint keeps every snapshot and file.
+set_ducklake_option("expire_older_than", "90 days")
+set_ducklake_option("delete_older_than", "7 days")
+
+# 4. Make every commit explain itself
+set_ducklake_option("require_commit_message", TRUE)
+
+# 5. Compression for files that are read far more often than written
+set_ducklake_option("parquet_compression", "zstd")
+```
+
+Then two habits. Run
+[`checkpoint_ducklake()`](https://tgerke.github.io/ducklake-r/reference/checkpoint_ducklake.md)
+on a schedule (after the nightly load, say) to flush inlined data,
+compact small files, and apply the retention policy. And back up:
+[`backup_ducklake()`](https://tgerke.github.io/ducklake-r/reference/backup_ducklake.md)
+copies a DuckDB or SQLite catalog with `COPY FROM DATABASE` while the
+lake stays attached, plus the data directories; a PostgreSQL catalog is
+backed up with `pg_dump`, and object storage with the provider’s
+replication. Restore one backup before you need to, so the procedure is
+known to work
+([`vignette("storage-and-backups")`](https://tgerke.github.io/ducklake-r/articles/storage-and-backups.md)).
+
+When several sessions write to the same lake, DuckLake retries
+transactions that race each other and reports only real conflicts. Keep
+transactions short, and if a busy catalog produces conflict errors, give
+[`set_ducklake_retry()`](https://tgerke.github.io/ducklake-r/reference/set_ducklake_retry.md)
+more attempts
+([`vignette("transactions")`](https://tgerke.github.io/ducklake-r/articles/transactions.md)).
+
+## Upgrading
+
+Two things change under a lake over time. Upgrading the duckdb R package
+brings a new DuckDB engine, and the DuckLake extension is downloaded
+again for it on first use. And a lake created with an older extension
+may carry an older catalog format: DuckDB 1.5.1 wrote DuckLake 0.4,
+while 1.5.2 and later write 1.0. Attaching such a lake stops with a
+version mismatch until it is migrated, which is a one-time, permanent
+change, so take a backup first:
+
+``` r
+
+backup_ducklake("trial", lake_path = "~/lakes/trial", backup_path = "~/lakes/backups")
+attach_ducklake("trial", lake_path = "~/lakes/trial", automatic_migration = TRUE)
+```
+
+## Where to next
+
+- [`vignette("ducklake")`](https://tgerke.github.io/ducklake-r/articles/ducklake.md)
+  for recipes covering the everyday operations
+- [`vignette("storage-and-backups")`](https://tgerke.github.io/ducklake-r/articles/storage-and-backups.md)
+  for the file layout, backups, and maintenance
+- [`vignette("transactions")`](https://tgerke.github.io/ducklake-r/articles/transactions.md)
+  for commit metadata and working with several writers
+- [`vignette("quack-remote-access")`](https://tgerke.github.io/ducklake-r/articles/quack-remote-access.md)
+  for serving a lake over the network
+- [`vignette("clinical-trial-datalake")`](https://tgerke.github.io/ducklake-r/articles/clinical-trial-datalake.md)
+  for a complete regulated workflow

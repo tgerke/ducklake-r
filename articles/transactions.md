@@ -54,7 +54,7 @@ get_ducklake_table("cars") |>
   select(mpg, cyl, hp, wt) |>
   head()
 #> # A query:  ?? x 4
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmp54labD/ducklake/ducklake2d4f385b47bf.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpPpKg5t/ducklake/ducklake2e2051396be.duckdb]
 #>     mpg   cyl    hp    wt
 #>   <dbl> <dbl> <dbl> <dbl>
 #> 1  21       6   110  2.62
@@ -107,7 +107,7 @@ get_ducklake_table("cars") |>
   select(mpg, cyl) |>
   head()
 #> # A query:  ?? x 2
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmp54labD/ducklake/ducklake2d4f385b47bf.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpPpKg5t/ducklake/ducklake2e2051396be.duckdb]
 #>     mpg   cyl
 #>   <dbl> <dbl>
 #> 1  21       6
@@ -156,7 +156,7 @@ get_ducklake_table("cars") |>
   select(mpg, cyl, efficiency) |>
   head()
 #> # A query:  ?? x 3
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmp54labD/ducklake/ducklake2d4f385b47bf.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpPpKg5t/ducklake/ducklake2e2051396be.duckdb]
 #>     mpg   cyl efficiency
 #>   <dbl> <dbl> <chr>     
 #> 1  21       6 medium    
@@ -213,9 +213,9 @@ get_ducklake_table("cars") |>
 # View all versioned changes
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-09-05 01:53:23              1
-#> 2           2 2026-09-05 01:53:23              1
-#> 3           3 2026-09-05 01:53:23              2
+#> 1           1 2026-09-05 01:59:44              1
+#> 2           2 2026-09-05 01:59:44              1
+#> 3           3 2026-09-05 01:59:45              2
 #>                                                                                                       changes
 #> 1                                                          tables_created, tables_inserted_into, main.cars, 1
 #> 2                                                             tables_inserted_into, tables_deleted_from, 1, 1
@@ -271,7 +271,7 @@ get_ducklake_table("cars") |>
   select(wt, weight_kg) |>
   head()
 #> # A query:  ?? x 2
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmp54labD/ducklake/ducklake2d4f385b47bf.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpPpKg5t/ducklake/ducklake2e2051396be.duckdb]
 #>      wt weight_kg
 #>   <dbl>     <dbl>
 #> 1  2.32     1052.
@@ -326,10 +326,10 @@ rollback_transaction()
 # View all versioned changes
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-09-05 01:53:23              1
-#> 2           2 2026-09-05 01:53:23              1
-#> 3           3 2026-09-05 01:53:23              2
-#> 4           4 2026-09-05 01:53:24              3
+#> 1           1 2026-09-05 01:59:44              1
+#> 2           2 2026-09-05 01:59:44              1
+#> 3           3 2026-09-05 01:59:45              2
+#> 4           4 2026-09-05 01:59:45              3
 #>                                                                                                       changes
 #> 1                                                          tables_created, tables_inserted_into, main.cars, 1
 #> 2                                                             tables_inserted_into, tables_deleted_from, 1, 1
@@ -381,7 +381,7 @@ get_ducklake_table("cars") |>
   select(hp, cyl, hp_per_liter) |>
   head()
 #> # A query:  ?? x 3
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmp54labD/ducklake/ducklake2d4f385b47bf.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpPpKg5t/ducklake/ducklake2e2051396be.duckdb]
 #>      hp   cyl hp_per_liter
 #>   <dbl> <dbl>        <dbl>
 #> 1   110     6         36.7
@@ -453,11 +453,11 @@ list_table_snapshots("cars") |>
   select(snapshot_id, snapshot_time, author, commit_message) |>
   tail(5)
 #>   snapshot_id       snapshot_time           author
-#> 2           2 2026-09-05 01:53:23        Data Team
-#> 3           3 2026-09-05 01:53:23        Data Team
-#> 4           4 2026-09-05 01:53:24        Data Team
-#> 5           5 2026-09-05 01:53:24 Performance Team
-#> 6           6 2026-09-05 01:53:25 Performance Team
+#> 2           2 2026-09-05 01:59:44        Data Team
+#> 3           3 2026-09-05 01:59:45        Data Team
+#> 4           4 2026-09-05 01:59:45        Data Team
+#> 5           5 2026-09-05 01:59:46 Performance Team
+#> 6           6 2026-09-05 01:59:46 Performance Team
 #>                                   commit_message
 #> 2 Apply the revised 4-cylinder efficiency factor
 #> 3       Add efficiency ratings and summary table

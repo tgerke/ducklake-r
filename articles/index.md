@@ -6,6 +6,8 @@
   ducklake](https://tgerke.github.io/ducklake-r/articles/clinical-trial-datalake.md):
 - [Data
   Inlining](https://tgerke.github.io/ducklake-r/articles/data-inlining.md):
+- [Choosing a
+  Deployment](https://tgerke.github.io/ducklake-r/articles/deployment.md):
 - [ducklake
   Cookbook](https://tgerke.github.io/ducklake-r/articles/ducklake.md):
 - [Modifying Tables with Version

@@ -152,6 +152,72 @@ add_data_files(
 list_ducklake_files("readings")
 ```
 
+### Migrate an existing DuckDB database
+
+A DuckDB database file moves into the lake with one statement: attach it
+read-only and copy every schema and table across. The copy lands as a
+single snapshot.
+
+``` r
+
+legacy_db <- file.path(vignette_temp_dir, "legacy.duckdb")
+legacy <- DBI::dbConnect(duckdb::duckdb(dbdir = legacy_db))
+DBI::dbWriteTable(
+  legacy, "sites",
+  data.frame(site_id = 1:3, country = c("US", "DE", "JP"))
+)
+DBI::dbDisconnect(legacy, shutdown = TRUE)
+
+conn <- get_ducklake_connection()
+DBI::dbExecute(conn, sprintf("ATTACH '%s' AS legacy (READ_ONLY);", legacy_db))
+#> [1] 0
+DBI::dbExecute(conn, "COPY FROM DATABASE legacy TO my_lake;")
+#> [1] 0
+DBI::dbExecute(conn, "DETACH legacy;")
+#> [1] 0
+
+get_ducklake_table("sites") |> collect()
+#> # A tibble: 3 × 2
+#>   site_id country
+#>     <int> <chr>  
+#> 1       1 US     
+#> 2       2 DE     
+#> 3       3 JP
+```
+
+Types DuckLake does not support (`ENUM`, `UNION`, `VARINT`, fixed-size
+arrays) need converting first; the DuckLake documentation has a
+migration script for those cases:
+<https://ducklake.select/docs/stable/duckdb/migrations/duckdb_to_ducklake>.
+
+### Exchange data with Iceberg
+
+With DuckDB’s iceberg extension attached to an Iceberg REST catalog,
+`COPY FROM DATABASE` moves tables in either direction. Copying into
+Iceberg needs the schemas to exist there first, and the copy adds tables
+rather than replacing them.
+
+``` r
+
+DBI::dbExecute(conn, "INSTALL iceberg; LOAD iceberg;")
+DBI::dbExecute(conn, "
+  ATTACH '' AS iceberg_catalog (
+    TYPE iceberg,
+    CLIENT_ID 'admin',
+    CLIENT_SECRET 'password',
+    ENDPOINT 'http://iceberg.example.org:8181'
+  );
+")
+
+# Lake to Iceberg
+DBI::dbExecute(conn, "COPY FROM DATABASE my_lake TO iceberg_catalog;")
+
+# Iceberg to lake: the data itself, or only the metadata, so that Iceberg
+# tables read as lake tables where they are
+DBI::dbExecute(conn, "COPY FROM DATABASE iceberg_catalog TO my_lake;")
+DBI::dbExecute(conn, "CALL iceberg_to_ducklake('iceberg_catalog', 'my_lake');")
+```
+
 ### Load with a dplyr pipeline
 
 ``` r
@@ -198,7 +264,8 @@ list_ducklake_tables()
 #> 1        main           cars table
 #> 2        main efficient_cars table
 #> 3        main    iris_sample table
-#> 4        main     small_cars table
+#> 4        main          sites table
+#> 5        main     small_cars table
 ```
 
 ### Organize tables in schemas
@@ -216,20 +283,21 @@ create_table(mtcars, "staging.cars_raw")
 get_ducklake_table("staging.cars_raw") |>
   count(cyl)
 #> # A query:  ?? x 2
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpBS2D1g/ducklake/ducklake2b0363892483.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpyKocdG/ducklake/ducklake2bb6c9cf742.duckdb]
 #>     cyl     n
 #>   <dbl> <dbl>
-#> 1     6     7
-#> 2     8    14
-#> 3     4    11
+#> 1     4    11
+#> 2     6     7
+#> 3     8    14
 
 list_ducklake_tables()
 #>   schema_name     table_name  type
 #> 1        main           cars table
 #> 2        main efficient_cars table
 #> 3        main    iris_sample table
-#> 4        main     small_cars table
-#> 5     staging       cars_raw table
+#> 4        main          sites table
+#> 5        main     small_cars table
+#> 6     staging       cars_raw table
 ```
 
 ## Shared logic and documentation recipes
@@ -337,7 +405,7 @@ cars_data |>
   select(mpg, cyl, hp) |>
   head(3)
 #> # A query:  ?? x 3
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpBS2D1g/ducklake/ducklake2b0363892483.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpyKocdG/ducklake/ducklake2bb6c9cf742.duckdb]
 #>     mpg   cyl    hp
 #>   <dbl> <dbl> <dbl>
 #> 1  21       6   110
@@ -367,10 +435,10 @@ head(cars_df, 3)
 # See all snapshots for the cars table
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-09-05 01:52:58              1
-#> 2           2 2026-09-05 01:52:58              2
-#> 3          10 2026-09-05 01:52:59             10
-#> 4          11 2026-09-05 01:52:59             11
+#> 1           1 2026-09-05 01:59:19              1
+#> 2           2 2026-09-05 01:59:19              2
+#> 3          11 2026-09-05 01:59:21             11
+#> 4          12 2026-09-05 01:59:21             12
 #>                                                              changes
 #> 1                 tables_created, tables_inserted_into, main.cars, 1
 #> 2 tables_altered, tables_inserted_into, tables_deleted_from, 1, 1, 1
@@ -392,7 +460,7 @@ get_ducklake_table_version("cars", version = 1) |>
   select(mpg, cyl, hp) |>
   head(3)
 #> # A query:  ?? x 3
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpBS2D1g/ducklake/ducklake2b0363892483.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpyKocdG/ducklake/ducklake2bb6c9cf742.duckdb]
 #>     mpg   cyl    hp
 #>   <dbl> <dbl> <dbl>
 #> 1  21       6   110
@@ -469,53 +537,56 @@ for guidance on choosing between them.
 
 list_table_snapshots()
 #>    snapshot_id       snapshot_time schema_version
-#> 1            0 2026-09-05 01:52:57              0
-#> 2            1 2026-09-05 01:52:58              1
-#> 3            2 2026-09-05 01:52:58              2
-#> 4            3 2026-09-05 01:52:58              3
-#> 5            4 2026-09-05 01:52:58              4
-#> 6            5 2026-09-05 01:52:59              5
-#> 7            6 2026-09-05 01:52:59              6
-#> 8            7 2026-09-05 01:52:59              7
-#> 9            8 2026-09-05 01:52:59              8
-#> 10           9 2026-09-05 01:52:59              9
-#> 11          10 2026-09-05 01:52:59             10
-#> 12          11 2026-09-05 01:52:59             11
-#> 13          12 2026-09-05 01:52:59             12
-#> 14          13 2026-09-05 01:53:00             12
-#> 15          14 2026-09-05 01:53:00             13
-#>                                                                                     changes
-#> 1                                                                     schemas_created, main
-#> 2                                        tables_created, tables_inserted_into, main.cars, 1
-#> 3                        tables_altered, tables_inserted_into, tables_deleted_from, 1, 1, 1
-#> 4                                 tables_created, tables_inserted_into, main.iris_sample, 2
-#> 5                              tables_created, tables_inserted_into, main.efficient_cars, 3
-#> 6                                  tables_created, tables_inserted_into, main.small_cars, 4
-#> 7                                                                  schemas_created, staging
-#> 8                                 tables_created, tables_inserted_into, staging.cars_raw, 6
-#> 9                                                      views_created, main.v_efficient_cars
-#> 10                                                                         views_dropped, 7
-#> 11                                                                        tables_altered, 1
-#> 12                                                                        tables_altered, 1
-#> 13                        tables_created, tables_altered, inlined_insert, main.visits, 8, 8
-#> 14                                          tables_inserted_into, tables_deleted_from, 1, 1
-#> 15 tables_created, tables_dropped, tables_altered, tables_inserted_into, main.cars, 1, 9, 9
+#> 1            0 2026-09-05 01:59:19              0
+#> 2            1 2026-09-05 01:59:19              1
+#> 3            2 2026-09-05 01:59:19              2
+#> 4            3 2026-09-05 01:59:19              3
+#> 5            4 2026-09-05 01:59:20              4
+#> 6            5 2026-09-05 01:59:20              5
+#> 7            6 2026-09-05 01:59:20              6
+#> 8            7 2026-09-05 01:59:20              7
+#> 9            8 2026-09-05 01:59:20              8
+#> 10           9 2026-09-05 01:59:21              9
+#> 11          10 2026-09-05 01:59:21             10
+#> 12          11 2026-09-05 01:59:21             11
+#> 13          12 2026-09-05 01:59:21             12
+#> 14          13 2026-09-05 01:59:21             13
+#> 15          14 2026-09-05 01:59:22             13
+#> 16          15 2026-09-05 01:59:22             14
+#>                                                                                       changes
+#> 1                                                                       schemas_created, main
+#> 2                                          tables_created, tables_inserted_into, main.cars, 1
+#> 3                          tables_altered, tables_inserted_into, tables_deleted_from, 1, 1, 1
+#> 4                                   tables_created, tables_inserted_into, main.iris_sample, 2
+#> 5                                               tables_created, inlined_insert, main.sites, 3
+#> 6                                tables_created, tables_inserted_into, main.efficient_cars, 4
+#> 7                                    tables_created, tables_inserted_into, main.small_cars, 5
+#> 8                                                                    schemas_created, staging
+#> 9                                   tables_created, tables_inserted_into, staging.cars_raw, 7
+#> 10                                                       views_created, main.v_efficient_cars
+#> 11                                                                           views_dropped, 8
+#> 12                                                                          tables_altered, 1
+#> 13                                                                          tables_altered, 1
+#> 14                          tables_created, tables_altered, inlined_insert, main.visits, 9, 9
+#> 15                                            tables_inserted_into, tables_deleted_from, 1, 1
+#> 16 tables_created, tables_dropped, tables_altered, tables_inserted_into, main.cars, 1, 10, 10
 #>           author                          commit_message commit_extra_info
 #> 1           <NA>                                    <NA>              <NA>
 #> 2  Data Engineer                   Initial car data load              <NA>
 #> 3  Data Engineer           Add km/L metric to cars table              <NA>
 #> 4  Data Engineer               Load iris sample from CSV              <NA>
-#> 5   Data Analyst                  Load filtered car data              <NA>
-#> 6   Data Analyst                    Four-cylinder subset              <NA>
-#> 7           <NA>                                    <NA>              <NA>
+#> 5           <NA>                                    <NA>              <NA>
+#> 6   Data Analyst                  Load filtered car data              <NA>
+#> 7   Data Analyst                    Four-cylinder subset              <NA>
 #> 8           <NA>                                    <NA>              <NA>
 #> 9           <NA>                                    <NA>              <NA>
 #> 10          <NA>                                    <NA>              <NA>
 #> 11          <NA>                                    <NA>              <NA>
 #> 12          <NA>                                    <NA>              <NA>
 #> 13          <NA>                                    <NA>              <NA>
-#> 14 Data Engineer Apply the dyno correction to V8 engines              <NA>
-#> 15 Data Engineer           Round fuel efficiency metrics              <NA>
+#> 14          <NA>                                    <NA>              <NA>
+#> 15 Data Engineer Apply the dyno correction to V8 engines              <NA>
+#> 16 Data Engineer           Round fuel efficiency metrics              <NA>
 ```
 
 ### View snapshots for a specific table
@@ -542,21 +613,21 @@ restore_table_version(
 
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-09-05 01:52:58              1
-#> 2           2 2026-09-05 01:52:58              2
-#> 3          10 2026-09-05 01:52:59             10
-#> 4          11 2026-09-05 01:52:59             11
-#> 5          13 2026-09-05 01:53:00             12
-#> 6          14 2026-09-05 01:53:00             13
-#> 7          15 2026-09-05 01:53:01             14
-#>                                                                                      changes
-#> 1                                         tables_created, tables_inserted_into, main.cars, 1
-#> 2                         tables_altered, tables_inserted_into, tables_deleted_from, 1, 1, 1
-#> 3                                                                          tables_altered, 1
-#> 4                                                                          tables_altered, 1
-#> 5                                            tables_inserted_into, tables_deleted_from, 1, 1
-#> 6   tables_created, tables_dropped, tables_altered, tables_inserted_into, main.cars, 1, 9, 9
-#> 7 tables_created, tables_dropped, tables_altered, tables_inserted_into, main.cars, 9, 10, 10
+#> 1           1 2026-09-05 01:59:19              1
+#> 2           2 2026-09-05 01:59:19              2
+#> 3          11 2026-09-05 01:59:21             11
+#> 4          12 2026-09-05 01:59:21             12
+#> 5          14 2026-09-05 01:59:22             13
+#> 6          15 2026-09-05 01:59:22             14
+#> 7          16 2026-09-05 01:59:22             15
+#>                                                                                       changes
+#> 1                                          tables_created, tables_inserted_into, main.cars, 1
+#> 2                          tables_altered, tables_inserted_into, tables_deleted_from, 1, 1, 1
+#> 3                                                                           tables_altered, 1
+#> 4                                                                           tables_altered, 1
+#> 5                                             tables_inserted_into, tables_deleted_from, 1, 1
+#> 6  tables_created, tables_dropped, tables_altered, tables_inserted_into, main.cars, 1, 10, 10
+#> 7 tables_created, tables_dropped, tables_altered, tables_inserted_into, main.cars, 10, 11, 11
 #>          author                          commit_message commit_extra_info
 #> 1 Data Engineer                   Initial car data load              <NA>
 #> 2 Data Engineer           Add km/L metric to cars table              <NA>
@@ -665,7 +736,7 @@ get_ducklake_table("cars") |>
   mutate(kpl = mpg * 0.425144) |>
   head(3)
 #> # A query:  ?? x 12
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpBS2D1g/ducklake/ducklake2b0363892483.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpyKocdG/ducklake/ducklake2bb6c9cf742.duckdb]
 #>     mpg   cyl  disp    hp  drat    wt  qsec    vs    am  gear  carb   kpl
 #>   <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>
 #> 1  21       6   160   110  3.9   2.62  16.5     0     1     4     4  8.93
@@ -682,7 +753,7 @@ get_ducklake_table("cars") |>
   select(mpg, cyl, hp) |>
   filter(mpg > 25)
 #> # A query:  ?? x 3
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpBS2D1g/ducklake/ducklake2b0363892483.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpyKocdG/ducklake/ducklake2bb6c9cf742.duckdb]
 #>     mpg   cyl    hp
 #>   <dbl> <dbl> <dbl>
 #> 1  32.4     4    66

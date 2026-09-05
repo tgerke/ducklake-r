@@ -36,8 +36,9 @@ attach_ducklake(
 - lake_path:
 
   Directory where the Parquet data files are stored (DuckLake's
-  `DATA_PATH`). May be a local directory or an object-storage URI such
-  as `"s3://bucket/path"` – register credentials first with
+  `DATA_PATH`). May be a local directory, created if it does not exist
+  yet, or an object-storage URI such as `"s3://bucket/path"` – register
+  credentials first with
   [`create_storage_secret()`](https://tgerke.github.io/ducklake-r/reference/create_storage_secret.md).
   For `"duckdb"` the catalog file lives in this directory too by
   default; give `catalog_connection_string` to place it elsewhere, which
@@ -200,6 +201,7 @@ Other connection management:
 [`ducklake_extension_available()`](https://tgerke.github.io/ducklake-r/reference/ducklake_extension_available.md),
 [`get_ducklake_backend()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_backend.md),
 [`get_ducklake_connection()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_connection.md),
+[`get_ducklake_info()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_info.md),
 [`install_ducklake()`](https://tgerke.github.io/ducklake-r/reference/install_ducklake.md),
 [`set_ducklake_connection()`](https://tgerke.github.io/ducklake-r/reference/set_ducklake_connection.md)
 

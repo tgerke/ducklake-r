@@ -5,6 +5,7 @@
 <url><loc>https://tgerke.github.io/ducklake-r/LICENSE.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/articles/clinical-trial-datalake.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/articles/data-inlining.html</loc></url>
+<url><loc>https://tgerke.github.io/ducklake-r/articles/deployment.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/articles/ducklake.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/articles/index.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/articles/modifying-tables.html</loc></url>
@@ -49,6 +50,7 @@
 <url><loc>https://tgerke.github.io/ducklake-r/reference/flush_inlined_data.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/get_ducklake_backend.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/get_ducklake_connection.html</loc></url>
+<url><loc>https://tgerke.github.io/ducklake-r/reference/get_ducklake_info.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/get_ducklake_options.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/get_ducklake_table.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/get_ducklake_table_asof.html</loc></url>
@@ -90,6 +92,7 @@
 <url><loc>https://tgerke.github.io/ducklake-r/reference/rows_update.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/rows_upsert.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/set_column_comments.html</loc></url>
+<url><loc>https://tgerke.github.io/ducklake-r/reference/set_column_not_null.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/set_column_type.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/set_ducklake_connection.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/set_ducklake_option.html</loc></url>

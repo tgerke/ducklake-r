@@ -55,12 +55,34 @@ Invisibly returns `NULL`.
 Table-scoped settings override schema-scoped ones, which override the
 lake-wide default. Runs `CALL <lake>.set_option(...)`.
 
-Commonly tuned options include `parquet_compression` (default
-`"snappy"`; `"zstd"` trades write speed for smaller files),
-`target_file_size` (default `"512MB"`), `sort_on_insert` (default
-`TRUE`; see
-[`set_table_sorting()`](https://tgerke.github.io/ducklake-r/reference/set_table_sorting.md)),
-and `require_commit_message` (default `FALSE`).
+The options DuckLake 1.0 persists, with their defaults:
+
+|  |  |  |
+|----|----|----|
+| Option | Default | What it controls |
+| `auto_compact` | `true` | Whether maintenance calls made without a table argument include the table |
+| `data_inlining_row_limit` | `10` | Rows below which an insert or delete is stored in the catalog instead of a file (see [`set_inlining_row_limit()`](https://tgerke.github.io/ducklake-r/reference/set_inlining_row_limit.md)) |
+| `delete_older_than` | unset | How long a released file waits before [`cleanup_old_files()`](https://tgerke.github.io/ducklake-r/reference/cleanup_old_files.md) and checkpoints delete it |
+| `expire_older_than` | unset | How old a snapshot must be before checkpoints expire it |
+| `encrypted` | `false` | Encrypt the Parquet files written to the data path (set at creation; see `attach_ducklake(encrypted = )`) |
+| `hive_file_pattern` | `true` | Write partitioned data in Hive-style directories |
+| `parquet_compression` | `snappy` | Codec: `uncompressed`, `snappy`, `gzip`, `zstd`, `brotli`, `lz4`, or `lz4_raw` |
+| `parquet_compression_level` | `3` | Level for codecs that have one |
+| `parquet_row_group_size` | `122880` | Rows per row group |
+| `parquet_row_group_size_bytes` | unset | Bytes per row group, as an alternative to rows |
+| `parquet_version` | `1` | Parquet format version, `1` or `2` |
+| `per_thread_output` | `false` | One output file per thread during a parallel insert |
+| `require_commit_message` | `false` | Refuse to commit a snapshot without a commit message |
+| `rewrite_delete_threshold` | `0.95` | Deleted fraction of a file above which [`rewrite_data_files()`](https://tgerke.github.io/ducklake-r/reference/rewrite_data_files.md) rewrites it |
+| `sort_on_insert` | `true` | Sort inserted rows by the table's sort keys (see [`set_table_sorting()`](https://tgerke.github.io/ducklake-r/reference/set_table_sorting.md)) |
+| `target_file_size` | `512MB` | Target data file size for inserts and compaction |
+| `write_deletion_vectors` | `false` | Write Iceberg V3 deletion vectors instead of positional delete files |
+
+`created_by`, `data_path`, and `version` also appear in
+[`get_ducklake_options()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_options.md)
+but describe the lake rather than configure it. Retention settings
+(`expire_older_than`, `delete_older_than`) take interval strings such as
+`"90 days"`.
 
 ## See also
 

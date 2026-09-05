@@ -18,6 +18,8 @@ Initialize and manage DuckLake connections
   : Use your own DuckDB connection with ducklake
 - [`get_ducklake_backend()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_backend.md)
   : Get the catalog backend type of an attached lake
+- [`get_ducklake_info()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_info.md)
+  : Describe an attached DuckLake
 - [`create_storage_secret()`](https://tgerke.github.io/ducklake-r/reference/create_storage_secret.md)
   : Store object storage credentials for a session
 
@@ -71,6 +73,8 @@ Change a table’s shape in place, preserving history
   : Rename a column in a DuckLake table
 - [`set_column_type()`](https://tgerke.github.io/ducklake-r/reference/set_column_type.md)
   : Change the type of a DuckLake table column
+- [`set_column_not_null()`](https://tgerke.github.io/ducklake-r/reference/set_column_not_null.md)
+  : Require or allow NULL values in a column
 - [`rename_ducklake_table()`](https://tgerke.github.io/ducklake-r/reference/rename_ducklake_table.md)
   : Rename a DuckLake table
 

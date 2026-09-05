@@ -20,6 +20,7 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="articles/ducklake.html">Getting Started</a></li>
+    <li><a class="dropdown-item" href="articles/deployment.html">Choosing a Deployment</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Use Cases</h6></li>
     <li><a class="dropdown-item" href="articles/clinical-trial-datalake.html">Clinical Trial Data Lake</a></li>
@@ -64,6 +65,29 @@
 <ul><li>The feature set was cross-checked against “DuckLake: The Definitive Guide” (Martin &amp; Monahan, O’Reilly early release 4, chapters 1-4) in August 2026. Watch items when later chapters publish: one-command Iceberg catalog export (chapter 6), performance-tuning guidance (chapter 5).</li>
 <li>DuckLake limits confirmed empirically (August 2026, DuckDB 1.5.1): one update/delete action per MERGE statement (<code><a href="reference/merge_into.html">merge_into()</a></code> falls back to MERGE + DELETE in one transaction), no MERGE RETURNING, <code>ALTER COLUMN SET TYPE</code> allows widening promotions only, and <code>ADD COLUMN ... DEFAULT</code> backfills existing rows.</li>
 <li>ATTACH behavior confirmed empirically (2026-08-27): <code>META_</code>-prefixed ATTACH options are forwarded to the catalog database, so <code>META_ENCRYPTION_KEY</code> encrypts a duckdb-format catalog (<code>meta_encryption_key</code> in <code><a href="reference/attach_ducklake.html">attach_ducklake()</a></code>). ATTACH cannot take bound parameters – DuckLake re-serializes forwarded options into an internal second ATTACH – so option values interpolate via <code><a href="reference/quote_sql.html">quote_sql()</a></code>.</li>
+</ul></div>
+<div class="section level2">
+<h2 id="decisions-from-the-september-2026-review">Decisions from the September 2026 review<a class="anchor" aria-label="anchor" href="#decisions-from-the-september-2026-review"></a></h2>
+<ul><li>
+<strong>Writes from lazy tables run in-engine</strong> (2026-09-04). <code><a href="reference/create_table.html">create_table()</a></code> runs <code>CREATE TABLE ... AS</code>; <code><a href="reference/replace_table.html">replace_table()</a></code> materializes the query in a DuckDB temp table, then rebuilds the target. Column comments are copied by name from the query’s base tables so labels survive pipelines.</li>
+<li>
+<strong>DuckLake in-transaction rules, confirmed empirically on DuckDB 1.5.5</strong> (2026-09-04): <code>ALTER TABLE ... SET PARTITIONED BY / SORTED BY</code> is refused on a table holding inlined rows written in the open transaction, so keys go on the empty table before the rows are inserted; <code>set_option()</code> is refused for a table created in the open transaction, so table options are re-set after the commit; <code>CREATE OR REPLACE TABLE</code> followed by <code>INSERT</code> in one transaction commits an empty table, so rewrites use <code>DROP</code> + <code>CREATE</code>; a <code>DEFAULT</code> accepts plain constants only (no <code>TRUE</code>, <code>DATE '...'</code>, casts); some failed DDL leaves an aborted transaction even in autocommit mode, which <code>db_execute_ddl()</code> rolls back; DuckDB temp tables are transactional, so the rollback handler must run before the temp-table cleanup.</li>
+<li>
+<strong><code><a href="reference/replace_table.html">replace_table()</a></code> and <code><a href="reference/restore_table_version.html">restore_table_version()</a></code> change the table id</strong> (DuckLake has no in-place replace); every piece of metadata DuckLake keys to the id is captured first and put back.</li>
+<li>
+<strong><code><a href="reference/set_snapshot_metadata.html">set_snapshot_metadata()</a></code> fills blanks only</strong> unless <code>overwrite = TRUE</code>; at-commit metadata is the audited path, and an overwrite is an edit to the audit trail.</li>
+<li>
+<strong>Minimum duckdb is 1.5.2</strong>, the release that ships DuckLake 1.0. The extension for 1.5.1 wrote 0.4-format catalogs; <code>automatic_migration</code> upgrades them.</li>
+<li>
+<strong><code>CHECKPOINT</code> expires and deletes nothing without a policy</strong> (<code>expire_older_than</code>, <code>delete_older_than</code>); verified 2026-09-04.</li>
+<li>
+<strong>Schema-qualified names go through <code><a href="https://dbplyr.tidyverse.org/reference/tbl_sql.html" class="external-link">dbplyr::tbl_sql()</a></code> with a quoted <code><a href="https://rdrr.io/r/base/AsIs.html" class="external-link">I()</a></code> path</strong>, because the duckdb driver’s <code>tbl()</code> method wraps any dotted name it cannot find as a literal table name in raw SQL, which <code>rows_*()</code> cannot write to.</li>
+<li>
+<strong>Windows (<code>windows_amd64_mingw</code>, what duckdb-r uses)</strong>: <code>sqlite_scanner</code>, <code>httpfs</code>, <code>quack</code>, and <code>ducklake</code> exist; <code>postgres</code>, <code>mysql</code>, <code>aws</code>, and <code>azure</code> do not (checked 2026-09-04 for v1.5.1 and v1.5.5).</li>
+<li>
+<strong>Extension persistence</strong>: duckdb-r 1.5.2+ keeps extensions in a per-session temp directory unless <code>DUCKDB_R_HOME</code> (or <code>duckdb.home</code>, or an existing <code>~/.duckdb</code>) is set; local development and CI set <code>DUCKDB_R_HOME</code>.</li>
+<li>
+<strong>Iceberg interop is documented, not wrapped</strong> (2026-09-04): <code>COPY FROM DATABASE lake TO iceberg_catalog</code> and <code>iceberg_to_ducklake()</code> live in DuckDB’s iceberg extension; the cookbook shows them. This closes the “one-command Iceberg catalog export” watch item above.</li>
 </ul></div>
 </div>
 

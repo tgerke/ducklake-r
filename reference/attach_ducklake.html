@@ -24,6 +24,7 @@ an existing one. The lake can be detached with detach_ducklake()."><meta propert
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/ducklake.html">Getting Started</a></li>
+    <li><a class="dropdown-item" href="../articles/deployment.html">Choosing a Deployment</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Use Cases</h6></li>
     <li><a class="dropdown-item" href="../articles/clinical-trial-datalake.html">Clinical Trial Data Lake</a></li>
@@ -91,9 +92,9 @@ an existing one. The lake can be detached with <code><a href="detach_ducklake.ht
 
 <dt id="arg-lake-path">lake_path<a class="anchor" aria-label="anchor" href="#arg-lake-path"></a></dt>
 <dd><p>Directory where the Parquet data files are stored
-(DuckLake's <code>DATA_PATH</code>). May be a local directory or an object-storage
-URI such as <code>"s3://bucket/path"</code> – register credentials first with
-<code><a href="create_storage_secret.html">create_storage_secret()</a></code>. For <code>"duckdb"</code> the catalog file lives in this
+(DuckLake's <code>DATA_PATH</code>). May be a local directory, created if it does
+not exist yet, or an object-storage URI such as <code>"s3://bucket/path"</code>
+– register credentials first with <code><a href="create_storage_secret.html">create_storage_secret()</a></code>. For <code>"duckdb"</code> the catalog file lives in this
 directory too by default; give <code>catalog_connection_string</code> to place it
 elsewhere, which is how a local catalog pairs with remote data.</p></dd>
 
@@ -245,6 +246,7 @@ See <a href="https://github.com/duckdb/duckdb/issues/7892" class="external-link"
 <code><a href="ducklake_extension_available.html">ducklake_extension_available()</a></code>,
 <code><a href="get_ducklake_backend.html">get_ducklake_backend()</a></code>,
 <code><a href="get_ducklake_connection.html">get_ducklake_connection()</a></code>,
+<code><a href="get_ducklake_info.html">get_ducklake_info()</a></code>,
 <code><a href="install_ducklake.html">install_ducklake()</a></code>,
 <code><a href="set_ducklake_connection.html">set_ducklake_connection()</a></code></p></div>
     </div>

@@ -50,7 +50,8 @@ Other schema evolution:
 [`add_table_column()`](https://tgerke.github.io/ducklake-r/reference/add_table_column.md),
 [`drop_table_column()`](https://tgerke.github.io/ducklake-r/reference/drop_table_column.md),
 [`rename_ducklake_table()`](https://tgerke.github.io/ducklake-r/reference/rename_ducklake_table.md),
-[`rename_table_column()`](https://tgerke.github.io/ducklake-r/reference/rename_table_column.md)
+[`rename_table_column()`](https://tgerke.github.io/ducklake-r/reference/rename_table_column.md),
+[`set_column_not_null()`](https://tgerke.github.io/ducklake-r/reference/set_column_not_null.md)
 
 ## Examples
 

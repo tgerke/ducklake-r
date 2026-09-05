@@ -2,6 +2,40 @@
 
 ## ducklake (development version)
 
+- New article “Choosing a Deployment”
+  ([`vignette("deployment")`](https://tgerke.github.io/ducklake-r/articles/deployment.md)):
+  what a lake looks like on disk, which catalog backend fits one person,
+  a team on a shared drive, or many users on object storage, where data
+  can go and the Windows limits, how reader and writer roles map onto
+  catalog grants and storage permissions, the day-one settings
+  (extension persistence, schemas, retention policy, commit messages),
+  and upgrading.
+
+- New
+  [`get_ducklake_info()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_info.md)
+  describes an attached lake in one row: backend, catalog, data path,
+  DuckLake format version, extension version, encryption, and current
+  snapshot.
+
+- New
+  [`set_column_not_null()`](https://tgerke.github.io/ducklake-r/reference/set_column_not_null.md)
+  sets or drops a `NOT NULL` constraint, the one constraint DuckLake
+  supports.
+
+- [`attach_ducklake()`](https://tgerke.github.io/ducklake-r/reference/attach_ducklake.md)
+  creates a local `lake_path` (and the directory of a local catalog
+  file) when it does not exist and creating the lake is allowed, instead
+  of failing with DuckDB’s “Cannot open file” error.
+
+- [`?set_ducklake_option`](https://tgerke.github.io/ducklake-r/reference/set_ducklake_option.md)
+  lists every option DuckLake 1.0 persists, with its default and what it
+  controls.
+
+- New cookbook recipes migrate an existing DuckDB database into a lake
+  with `COPY FROM DATABASE` and exchange tables with an Iceberg catalog;
+  the time-travel vignette documents the `rowid` and `snapshot_id`
+  hidden columns.
+
 - [`backup_ducklake()`](https://tgerke.github.io/ducklake-r/reference/backup_ducklake.md)
   copies the catalog with DuckDB’s `COPY FROM DATABASE` while the lake
   stays attached, a consistent snapshot taken inside one transaction,
