@@ -13,7 +13,8 @@ list_ducklake_files(
 )
 }
 \arguments{
-\item{table_name}{The table whose files to list.}
+\item{table_name}{The table whose files to list, optionally qualified as
+\code{"schema.table"}.}
 
 \item{schema_name}{Optional schema containing the table (defaults to the
 lake's \code{main} schema).}

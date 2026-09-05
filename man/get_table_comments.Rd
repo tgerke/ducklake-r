@@ -7,16 +7,18 @@
 get_table_comments(table_name = NULL, ducklake_name = NULL)
 }
 \arguments{
-\item{table_name}{Optional table (or view) name to filter to.}
+\item{table_name}{Optional table (or view) name to filter to, optionally
+qualified as \code{"schema.table"}; a bare name matches that table in every
+schema.}
 
 \item{ducklake_name}{Optional name of the attached DuckLake catalog. If
 \code{NULL}, the current database is used.}
 }
 \value{
 A data frame with one row per comment: \code{object_type}
-(\code{"table"}, \code{"view"}, or \code{"column"}), \code{table_name}, \code{column_name}
-(\code{NA} for tables and views), and \code{comment}. Zero rows when nothing is
-commented.
+(\code{"table"}, \code{"view"}, or \code{"column"}), \code{schema_name}, \code{table_name},
+\code{column_name} (\code{NA} for tables and views), and \code{comment}. Zero rows
+when nothing is commented.
 }
 \description{
 Returns the current comments stored in the lake -- via

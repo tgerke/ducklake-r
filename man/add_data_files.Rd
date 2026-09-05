@@ -15,9 +15,10 @@ add_data_files(
 )
 }
 \arguments{
-\item{table_name}{The table to add the files to. Unless \code{create = TRUE}, it
-must already exist with a schema compatible with the files (see
-\code{allow_missing} and \code{ignore_extra_columns} for the permitted mismatches).}
+\item{table_name}{The table to add the files to, optionally qualified as
+\code{"schema.table"}. Unless \code{create = TRUE}, it must already exist with a
+schema compatible with the files (see \code{allow_missing} and
+\code{ignore_extra_columns} for the permitted mismatches).}
 
 \item{files}{Character vector of Parquet file paths or URIs.}
 
@@ -103,8 +104,10 @@ unlink(lake_dir, recursive = TRUE)
 \code{\link[=list_ducklake_files]{list_ducklake_files()}}, \code{\link[=create_table]{create_table()}}
 
 Other table operations:
+\code{\link[=create_schema]{create_schema()}},
 \code{\link[=create_table]{create_table()}},
 \code{\link[=create_view]{create_view()}},
+\code{\link[=drop_schema]{drop_schema()}},
 \code{\link[=drop_view]{drop_view()}},
 \code{\link[=ducklake_exec]{ducklake_exec()}},
 \code{\link[=get_ducklake_table]{get_ducklake_table()}},

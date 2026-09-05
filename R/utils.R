@@ -346,3 +346,56 @@ extension_persistence_hint <- function(dir) {
     "i" = "To keep extensions between sessions, set {.envvar DUCKDB_R_HOME} to a durable directory (for example in {.file ~/.Renviron}) before duckdb is loaded."
   )
 }
+
+#' Resolve a table name and an optional schema argument to their parts
+#'
+#' Functions that take `table_name` and `schema_name` accept either a bare
+#' name plus a schema or a qualified `"schema.table"` name. A qualified name
+#' fills a `NULL` schema argument; naming two different schemas is an
+#' error.
+#'
+#' @param table_name A table name, optionally qualified.
+#' @param schema_name A schema name, or `NULL`.
+#' @returns A list with `schema` (`NULL` when neither was given) and
+#'   `table`.
+#' @noRd
+resolve_table_ref <- function(table_name, schema_name = NULL) {
+  parts <- split_table_name(table_name)
+  if (!is.null(parts$schema) && !is.null(schema_name) &&
+      !identical(parts$schema, schema_name)) {
+    cli::cli_abort(c(
+      "{.arg table_name} names schema {.val {parts$schema}} but {.arg schema_name} is {.val {schema_name}}.",
+      "i" = "Give the schema once, either in the name or in {.arg schema_name}."
+    ))
+  }
+  list(
+    schema = if (!is.null(schema_name)) schema_name else parts$schema,
+    table = parts$table
+  )
+}
+
+#' WHERE fragment and parameters that select one table in a metadata query
+#'
+#' The query must alias `ducklake_table` as `t` (or pass another
+#' `table_col`) and `ducklake_schema` as `s`. With no schema in the name
+#' the filter matches the table name in every schema.
+#'
+#' @param table_name A table name, optionally qualified, or `NULL` for no
+#'   filter.
+#' @param table_col The SQL column holding the object name.
+#' @returns A list with `sql` (starting with `AND`, or empty) and `params`.
+#' @noRd
+table_filter <- function(table_name, table_col = "t.table_name") {
+  if (is.null(table_name)) {
+    return(list(sql = "", params = list()))
+  }
+  ref <- resolve_table_ref(table_name)
+  if (is.null(ref$schema)) {
+    list(sql = sprintf("AND %s = ?", table_col), params = list(ref$table))
+  } else {
+    list(
+      sql = sprintf("AND %s = ? AND s.schema_name = ?", table_col),
+      params = list(ref$table, ref$schema)
+    )
+  }
+}

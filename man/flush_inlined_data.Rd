@@ -10,8 +10,9 @@ flush_inlined_data(ducklake_name = NULL, table_name = NULL, schema_name = NULL)
 \item{ducklake_name}{Name of the attached DuckLake catalog. If \code{NULL}, the
 current database is used.}
 
-\item{table_name}{Optional table name. When provided, only flushes inlined
-data for that table.}
+\item{table_name}{Optional table name, optionally qualified as
+\code{"schema.table"}. When provided, only flushes inlined data for that
+table.}
 
 \item{schema_name}{Optional schema name. When provided, only flushes inlined
 data for tables in that schema.}

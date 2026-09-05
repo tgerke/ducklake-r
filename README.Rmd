@@ -87,25 +87,33 @@ install_ducklake()
 # Create a data lake in a temporary directory
 attach_ducklake("my_data_lake", lake_path = tempdir())
 
+# One schema per medallion layer, created in a single snapshot
+with_transaction({
+  create_schema("bronze")
+  create_schema("silver")
+  create_schema("gold")
+}, author = "Data Engineer", commit_message = "Create medallion layers")
+
 # Bronze layer: Load raw data exactly as received
 with_transaction(
-  create_table(mtcars, "vehicles_raw"),
+  create_table(mtcars, "bronze.vehicles"),
   author = "Data Engineer",
   commit_message = "Initial load of raw vehicle data"
 )
 
-# Silver layer: Apply cleaning transformations
+# Silver layer: Apply cleaning transformations. The pipeline runs inside
+# DuckDB and writes straight into the lake
 with_transaction(
-  get_ducklake_table("vehicles_raw") |>
+  get_ducklake_table("bronze.vehicles") |>
     mutate(cyl = as.character(cyl)) |>
-    create_table("vehicles_clean"),
+    create_table("silver.vehicles"),
   author = "Data Engineer", 
   commit_message = "Clean and standardize vehicle data"
 )
 
 # Gold layer: Create analysis dataset with business logic
 with_transaction(
-  get_ducklake_table("vehicles_clean") |>
+  get_ducklake_table("silver.vehicles") |>
     mutate(
       efficiency = case_when(
         mpg < 15 ~ "Low",
@@ -113,30 +121,30 @@ with_transaction(
         TRUE ~ "High"
       )
     ) |>
-    create_table("vehicles_analysis"),
+    create_table("gold.vehicle_efficiency"),
   author = "Data Analyst",
   commit_message = "Create analysis-ready dataset with efficiency categories"
 )
 
 # Update the silver layer with additional transformations
 with_transaction(
-  get_ducklake_table("vehicles_clean") |>
+  get_ducklake_table("silver.vehicles") |>
     mutate(gear = as.integer(gear)) |>
-    replace_table("vehicles_clean"),
+    replace_table("silver.vehicles"),
   author = "Data Engineer",
   commit_message = "Add gear type conversion to silver layer"
 )
 
 # View the analysis dataset
-get_ducklake_table("vehicles_analysis") |>
+get_ducklake_table("gold.vehicle_efficiency") |>
   select(mpg, cyl, efficiency) |>
   head(3)
 
 # View complete audit trail across all layers with author and commit messages
 list_table_snapshots()
 
-# Time travel: Query the silver layer as it existed at snapshot 2 (before updates)
-get_ducklake_table_version("vehicles_clean", version = 2) |>
+# Time travel: Query the silver layer as it existed at snapshot 3 (before updates)
+get_ducklake_table_version("silver.vehicles", version = 3) |>
   select(mpg, cyl, gear) |>
   head(3)
 
@@ -152,7 +160,7 @@ ducklake implements a layered data architecture (medallion pattern) that ensures
 - **Silver layer** (cleaned): Standardized, cleaned data with transformations and validations—the trusted source for analysis
 - **Gold layer** (analytics): Business-logic datasets optimized for specific analyses, dashboards, or reports
 
-Each layer is automatically versioned, providing complete data lineage from raw source through to analysis-ready datasets. This approach enables:
+Each layer is automatically versioned, providing complete data lineage from raw source through to analysis-ready datasets. Each layer can live in a schema of its own (`create_schema()`), which keeps `bronze.vehicles`, `silver.vehicles`, and `gold.vehicle_efficiency` one lineage under three roofs, and lets access to raw data be restricted at the schema level. This approach enables:
 
 - **Complete audit trail**: Original data preserved alongside all transformations
 - **Reprocessability**: Reprocess from bronze if cleaning logic changes without re-extracting from source
@@ -198,7 +206,7 @@ Check out the [pkgdown site](https://tgerke.github.io/ducklake-r/) for detailed 
 - **Remote access over Quack**: Serve a DuckLake to other R sessions over the network and let several people read and write it at once, using DuckDB's Quack protocol (requires DuckDB 1.5.3 or newer)
 - **Lightweight snapshots**: Create unlimited snapshots without frequent compacting steps
 - **Medallion architecture**: Bronze/silver/gold layers for data lineage and quality
-- **ACID transactions**: Atomic updates with concurrent access and transactional guarantees over multi-table operations
+- **ACID transactions**: Atomic updates with concurrent access and transactional guarantees over multi-table operations; `set_ducklake_retry()` tunes how DuckLake retries transactions that race with another writer
 - **Time travel**: Query data exactly as it existed at any point in time—essential for reproducibility. Pin a whole session to a snapshot with `attach_ducklake(snapshot_version = ...)`
 - **Performance-oriented**: Uses Parquet columnar storage with statistics for filter pushdown, enabling fast queries on large datasets. Partitioning (`set_table_partitioning()`) and sorted tables (`set_table_sorting()`) prune files on large tables
 - **Migrate Parquet in place**: `add_data_files()` registers existing Parquet files with the lake without copying or rewriting them
@@ -207,6 +215,7 @@ Check out the [pkgdown site](https://tgerke.github.io/ducklake-r/) for detailed 
 - **Schema evolution in place**: `add_table_column()`, `drop_table_column()`, `rename_table_column()`, `set_column_type()`, and `rename_ducklake_table()` change a table's shape as metadata-only operations — no data rewrite, and every earlier schema stays reachable through time travel
 - **Variable labels survive the lake**: `create_table()` stores haven/labelled column labels as catalog comments and `collect()` restores them, so gtsummary and gt keep displaying them; `set_table_comment()`, `set_column_comments()`, and `get_table_comments()` manage documentation any client of the lake can read
 - **Views**: `create_view()` stores a dplyr pipeline as a SQL view in the lake — shared logic that always reads current data; `list_ducklake_tables()` shows what's there
+- **Schemas**: Organize layers or studies with `create_schema()`; every function accepts `"schema.table"`
 - **Tidyverse interface**: Familiar dplyr syntax for data manipulation
 - **In-database writes**: `create_table()` and `replace_table()` run dplyr pipelines inside DuckDB and write the result straight into the lake, so derived layers never pass through R memory
 - **Encryption**: Opt-in Parquet encryption with `attach_ducklake(encrypted = TRUE)`

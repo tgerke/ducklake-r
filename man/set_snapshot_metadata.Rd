@@ -80,6 +80,7 @@ Other transactions:
 \code{\link[=begin_transaction]{begin_transaction()}},
 \code{\link[=commit_transaction]{commit_transaction()}},
 \code{\link[=rollback_transaction]{rollback_transaction()}},
+\code{\link[=set_ducklake_retry]{set_ducklake_retry()}},
 \code{\link[=with_transaction]{with_transaction()}}
 }
 \concept{transactions}

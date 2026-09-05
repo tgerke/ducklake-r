@@ -67,6 +67,8 @@ reference:
     - add_data_files
     - create_view
     - drop_view
+    - create_schema
+    - drop_schema
     - list_ducklake_tables
     
   - title: "Row Operations"
@@ -100,6 +102,7 @@ reference:
     - begin_transaction
     - commit_transaction
     - rollback_transaction
+    - set_ducklake_retry
     
   - title: "Time Travel"
     desc: "Query and restore historical data"

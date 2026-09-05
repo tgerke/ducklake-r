@@ -5,9 +5,10 @@
 #' path for data that is already in Parquet: the files are recorded in the
 #' catalog in place.
 #'
-#' @param table_name The table to add the files to. Unless `create = TRUE`, it
-#'   must already exist with a schema compatible with the files (see
-#'   `allow_missing` and `ignore_extra_columns` for the permitted mismatches).
+#' @param table_name The table to add the files to, optionally qualified as
+#'   `"schema.table"`. Unless `create = TRUE`, it must already exist with a
+#'   schema compatible with the files (see `allow_missing` and
+#'   `ignore_extra_columns` for the permitted mismatches).
 #' @param files Character vector of Parquet file paths or URIs.
 #' @param schema_name Optional schema containing the table (defaults to the
 #'   lake's `main` schema).
@@ -90,6 +91,9 @@ add_data_files <- function(table_name,
   if (!is.character(files) || length(files) == 0 || anyNA(files)) {
     cli::cli_abort("{.arg files} must be a character vector of file paths.")
   }
+  ref <- resolve_table_ref(table_name, schema_name)
+  table_name <- ref$table
+  schema_name <- ref$schema
   if (!is.logical(create) || length(create) != 1 || is.na(create)) {
     cli::cli_abort("{.arg create} must be `TRUE` or `FALSE`.")
   }
@@ -171,7 +175,8 @@ add_data_files <- function(table_name,
 #' Returns the Parquet data files (and any delete files) that make up a
 #' table, optionally as of a past snapshot.
 #'
-#' @param table_name The table whose files to list.
+#' @param table_name The table whose files to list, optionally qualified as
+#'   `"schema.table"`.
 #' @param schema_name Optional schema containing the table (defaults to the
 #'   lake's `main` schema).
 #' @param snapshot_version Optional snapshot id: list the files as of that
@@ -227,6 +232,9 @@ list_ducklake_files <- function(table_name,
       "Provide only one of {.arg snapshot_version} and {.arg snapshot_time}."
     )
   }
+  ref <- resolve_table_ref(table_name, schema_name)
+  table_name <- ref$table
+  schema_name <- ref$schema
 
   extra <- paste0(
     if (!is.null(schema_name)) {

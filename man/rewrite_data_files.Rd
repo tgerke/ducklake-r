@@ -7,20 +7,23 @@
 rewrite_data_files(
   ducklake_name = NULL,
   table_name = NULL,
-  delete_threshold = NULL
+  delete_threshold = NULL,
+  schema_name = NULL
 )
 }
 \arguments{
 \item{ducklake_name}{Name of the attached DuckLake catalog. If \code{NULL}, the
 current database is used.}
 
-\item{table_name}{Optional table name. When provided, only that table's
-files are rewritten.}
+\item{table_name}{Optional table name, optionally qualified as
+\code{"schema.table"}. When provided, only that table's files are rewritten.}
 
 \item{delete_threshold}{Optional fraction of deleted rows (between 0 and
 \enumerate{
 \item above which a file is rewritten. DuckLake's default is 0.95.
 }}
+
+\item{schema_name}{Optional schema containing \code{table_name}.}
 }
 \value{
 A data frame with one row per output file (columns

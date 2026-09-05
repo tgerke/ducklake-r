@@ -217,6 +217,41 @@ test_that("build_attach_sql includes AUTOMATIC_MIGRATION when requested", {
   expect_false(grepl("AUTOMATIC_MIGRATION", sql2, fixed = TRUE))
 })
 
+test_that("build_attach_sql renders CREATE_IF_NOT_EXISTS and METADATA_SCHEMA", {
+  sql <- ducklake:::build_attach_sql(
+    "my_lake", "/data", "duckdb", NULL, FALSE, create = FALSE
+  )
+  expect_true(grepl("CREATE_IF_NOT_EXISTS false", sql, fixed = TRUE))
+
+  sql2 <- ducklake:::build_attach_sql(
+    "my_lake", "/data", "postgres", "dbname=x", FALSE, metadata_schema = "study_a"
+  )
+  expect_true(grepl("METADATA_SCHEMA 'study_a'", sql2, fixed = TRUE))
+  expect_error(
+    ducklake:::build_attach_sql(
+      "my_lake", "/data", "postgres", "dbname=x", FALSE, metadata_schema = "bad name"
+    ),
+    "simple identifier"
+  )
+
+  sql3 <- ducklake:::build_attach_sql("my_lake", "/data", "duckdb", NULL, FALSE)
+  expect_false(grepl("CREATE_IF_NOT_EXISTS|METADATA_SCHEMA", sql3))
+})
+
+test_that("attach_ducklake(create = FALSE) refuses to create a missing lake", {
+  skip_if_no_ducklake()
+
+  lake_dir <- tempfile("nolake_")
+  dir.create(lake_dir)
+  on.exit(unlink(lake_dir, recursive = TRUE), add = TRUE)
+
+  expect_error(
+    attach_ducklake("missing_lake", lake_path = lake_dir, create = FALSE),
+    "explicitly disabled"
+  )
+  expect_false("missing_lake" %in% names(get_ducklake_env()$lakes))
+})
+
 # --- SQLite backend end-to-end ---
 
 test_that("SQLite backend: create table, query, and time travel", {

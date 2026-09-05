@@ -7,8 +7,9 @@
 get_table_info(table_name = NULL, ducklake_name = NULL, conn = NULL)
 }
 \arguments{
-\item{table_name}{Optional table name. When provided, only that table's
-row is returned.}
+\item{table_name}{Optional table name, optionally qualified as
+\code{"schema.table"}. When provided, only that table's row is returned (a
+bare name matches it in every schema).}
 
 \item{ducklake_name}{Name of the attached DuckLake catalog. If \code{NULL}, the
 current database is used.}
@@ -19,7 +20,7 @@ default ducklake connection.}
 \value{
 A data frame with one row per table and columns \code{table_name},
 \code{schema_id}, \code{table_id}, \code{table_uuid}, \code{file_count}, \code{file_size_bytes},
-\code{delete_file_count}, and \code{delete_file_size_bytes}.
+\code{delete_file_count}, \code{delete_file_size_bytes}, and \code{schema_name}.
 }
 \description{
 Returns per-table storage statistics from the DuckLake catalog: how many

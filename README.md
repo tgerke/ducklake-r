@@ -93,25 +93,33 @@ install_ducklake()
 # Create a data lake in a temporary directory
 attach_ducklake("my_data_lake", lake_path = tempdir())
 
+# One schema per medallion layer, created in a single snapshot
+with_transaction({
+  create_schema("bronze")
+  create_schema("silver")
+  create_schema("gold")
+}, author = "Data Engineer", commit_message = "Create medallion layers")
+
 # Bronze layer: Load raw data exactly as received
 with_transaction(
-  create_table(mtcars, "vehicles_raw"),
+  create_table(mtcars, "bronze.vehicles"),
   author = "Data Engineer",
   commit_message = "Initial load of raw vehicle data"
 )
 
-# Silver layer: Apply cleaning transformations
+# Silver layer: Apply cleaning transformations. The pipeline runs inside
+# DuckDB and writes straight into the lake
 with_transaction(
-  get_ducklake_table("vehicles_raw") |>
+  get_ducklake_table("bronze.vehicles") |>
     mutate(cyl = as.character(cyl)) |>
-    create_table("vehicles_clean"),
+    create_table("silver.vehicles"),
   author = "Data Engineer", 
   commit_message = "Clean and standardize vehicle data"
 )
 
 # Gold layer: Create analysis dataset with business logic
 with_transaction(
-  get_ducklake_table("vehicles_clean") |>
+  get_ducklake_table("silver.vehicles") |>
     mutate(
       efficiency = case_when(
         mpg < 15 ~ "Low",
@@ -119,26 +127,26 @@ with_transaction(
         TRUE ~ "High"
       )
     ) |>
-    create_table("vehicles_analysis"),
+    create_table("gold.vehicle_efficiency"),
   author = "Data Analyst",
   commit_message = "Create analysis-ready dataset with efficiency categories"
 )
 
 # Update the silver layer with additional transformations
 with_transaction(
-  get_ducklake_table("vehicles_clean") |>
+  get_ducklake_table("silver.vehicles") |>
     mutate(gear = as.integer(gear)) |>
-    replace_table("vehicles_clean"),
+    replace_table("silver.vehicles"),
   author = "Data Engineer",
   commit_message = "Add gear type conversion to silver layer"
 )
 
 # View the analysis dataset
-get_ducklake_table("vehicles_analysis") |>
+get_ducklake_table("gold.vehicle_efficiency") |>
   select(mpg, cyl, efficiency) |>
   head(3)
 #> # A query:  ?? x 3
-#> # Database: DuckDB 1.5.5 [tgerke@Darwin 25.6.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/Rtmpb9iHiJ/ducklake/ducklake2207158651a5.duckdb]
+#> # Database: DuckDB 1.5.5 [tgerke@Darwin 25.6.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpCYT2KE/ducklake/ducklake4c0a63b6e101.duckdb]
 #>     mpg cyl   efficiency
 #>   <dbl> <chr> <chr>     
 #> 1  21   6.0   Medium    
@@ -148,36 +156,40 @@ get_ducklake_table("vehicles_analysis") |>
 # View complete audit trail across all layers with author and commit messages
 list_table_snapshots()
 #>   snapshot_id       snapshot_time schema_version
-#> 1           0 2026-09-04 22:48:21              0
-#> 2           1 2026-09-04 22:48:21              1
-#> 3           2 2026-09-04 22:48:21              2
-#> 4           3 2026-09-04 22:48:21              3
-#> 5           4 2026-09-04 22:48:21              4
-#>                                                                           changes
-#> 1                                                           schemas_created, main
-#> 2                      tables_created, tables_inserted_into, main.vehicles_raw, 1
-#> 3                    tables_created, tables_inserted_into, main.vehicles_clean, 2
-#> 4                 tables_created, tables_inserted_into, main.vehicles_analysis, 3
-#> 5 tables_created, tables_dropped, tables_inserted_into, main.vehicles_clean, 2, 4
+#> 1           0 2026-09-04 23:13:29              0
+#> 2           1 2026-09-04 23:13:29              1
+#> 3           2 2026-09-04 23:13:29              2
+#> 4           3 2026-09-04 23:13:29              3
+#> 5           4 2026-09-04 23:13:30              4
+#> 6           5 2026-09-04 23:13:30              5
+#>                                                                       changes
+#> 1                                                       schemas_created, main
+#> 2                                       schemas_created, bronze, silver, gold
+#> 3                    tables_created, tables_inserted_into, bronze.vehicles, 4
+#> 4                    tables_created, tables_inserted_into, silver.vehicles, 5
+#> 5            tables_created, tables_inserted_into, gold.vehicle_efficiency, 6
+#> 6 tables_created, tables_dropped, tables_inserted_into, silver.vehicles, 5, 7
 #>          author                                           commit_message
 #> 1          <NA>                                                     <NA>
-#> 2 Data Engineer                         Initial load of raw vehicle data
-#> 3 Data Engineer                       Clean and standardize vehicle data
-#> 4  Data Analyst Create analysis-ready dataset with efficiency categories
-#> 5 Data Engineer                 Add gear type conversion to silver layer
+#> 2 Data Engineer                                  Create medallion layers
+#> 3 Data Engineer                         Initial load of raw vehicle data
+#> 4 Data Engineer                       Clean and standardize vehicle data
+#> 5  Data Analyst Create analysis-ready dataset with efficiency categories
+#> 6 Data Engineer                 Add gear type conversion to silver layer
 #>   commit_extra_info
 #> 1              <NA>
 #> 2              <NA>
 #> 3              <NA>
 #> 4              <NA>
 #> 5              <NA>
+#> 6              <NA>
 
-# Time travel: Query the silver layer as it existed at snapshot 2 (before updates)
-get_ducklake_table_version("vehicles_clean", version = 2) |>
+# Time travel: Query the silver layer as it existed at snapshot 3 (before updates)
+get_ducklake_table_version("silver.vehicles", version = 3) |>
   select(mpg, cyl, gear) |>
   head(3)
 #> # A query:  ?? x 3
-#> # Database: DuckDB 1.5.5 [tgerke@Darwin 25.6.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/Rtmpb9iHiJ/ducklake/ducklake2207158651a5.duckdb]
+#> # Database: DuckDB 1.5.5 [tgerke@Darwin 25.6.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpCYT2KE/ducklake/ducklake4c0a63b6e101.duckdb]
 #>     mpg cyl    gear
 #>   <dbl> <chr> <dbl>
 #> 1  21   6.0       4
@@ -201,8 +213,11 @@ ensures data quality and traceability:
   specific analyses, dashboards, or reports
 
 Each layer is automatically versioned, providing complete data lineage
-from raw source through to analysis-ready datasets. This approach
-enables:
+from raw source through to analysis-ready datasets. Each layer can live
+in a schema of its own (`create_schema()`), which keeps
+`bronze.vehicles`, `silver.vehicles`, and `gold.vehicle_efficiency` one
+lineage under three roofs, and lets access to raw data be restricted at
+the schema level. This approach enables:
 
 - **Complete audit trail**: Original data preserved alongside all
   transformations
@@ -288,7 +303,9 @@ detailed vignettes:
 - **Medallion architecture**: Bronze/silver/gold layers for data lineage
   and quality
 - **ACID transactions**: Atomic updates with concurrent access and
-  transactional guarantees over multi-table operations
+  transactional guarantees over multi-table operations;
+  `set_ducklake_retry()` tunes how DuckLake retries transactions that
+  race with another writer
 - **Time travel**: Query data exactly as it existed at any point in
   time—essential for reproducibility. Pin a whole session to a snapshot
   with `attach_ducklake(snapshot_version = ...)`
@@ -317,7 +334,12 @@ detailed vignettes:
 - **Views**: `create_view()` stores a dplyr pipeline as a SQL view in
   the lake — shared logic that always reads current data;
   `list_ducklake_tables()` shows what’s there
+- **Schemas**: Organize layers or studies with `create_schema()`; every
+  function accepts `"schema.table"`
 - **Tidyverse interface**: Familiar dplyr syntax for data manipulation
+- **In-database writes**: `create_table()` and `replace_table()` run
+  dplyr pipelines inside DuckDB and write the result straight into the
+  lake, so derived layers never pass through R memory
 - **Encryption**: Opt-in Parquet encryption with
   `attach_ducklake(encrypted = TRUE)`
 - **A write style for every job**: `rows_insert()`, `rows_update()`,

@@ -17,8 +17,8 @@ merge_adjacent_files(
 \item{ducklake_name}{Name of the attached DuckLake catalog. If \code{NULL}, the
 current database is used.}
 
-\item{table_name}{Optional table name. When provided, only that table is
-compacted.}
+\item{table_name}{Optional table name, optionally qualified as
+\code{"schema.table"}. When provided, only that table is compacted.}
 
 \item{schema_name}{Optional schema name. When provided, only tables in
 that schema are compacted.}

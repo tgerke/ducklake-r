@@ -16,7 +16,9 @@ attach_ducklake(
   meta_encryption_key = NULL,
   snapshot_version = NULL,
   snapshot_time = NULL,
-  automatic_migration = FALSE
+  automatic_migration = FALSE,
+  create = TRUE,
+  metadata_schema = NULL
 )
 }
 \arguments{
@@ -90,6 +92,16 @@ extension uses (the \code{AUTOMATIC_MIGRATION} option). Needed once for a
 lake created with DuckDB 1.5.1, whose extension wrote the 0.4 format,
 after upgrading to 1.5.2 or later. The upgrade is permanent, so take a
 backup first. Default \code{FALSE}, in which case a mismatch is an error.}
+
+\item{create}{Create the lake when none exists at the catalog location
+(default \code{TRUE}, DuckLake's \code{CREATE_IF_NOT_EXISTS}). Pass \code{FALSE} when
+you mean to open an existing lake, so a mistyped path or name is an
+error rather than a new, empty lake.}
+
+\item{metadata_schema}{Optional schema inside the catalog database that
+holds this lake's metadata tables (DuckLake's \code{METADATA_SCHEMA},
+default \code{main}). Lets several lakes share one PostgreSQL database,
+each in its own schema.}
 }
 \value{
 Invisibly, \code{NULL}. Called for its side effect of attaching the
@@ -213,6 +225,18 @@ attach_ducklake("lake_v12", lake_path = "path/to/lake", snapshot_version = 12)
 # A lake created with DuckDB 1.5.1 (catalog format 0.4), opened after
 # upgrading: migrate it once, then attach as usual
 attach_ducklake("old_lake", lake_path = "path/to/lake", automatic_migration = TRUE)
+
+# Open an existing lake, and error if it is not there
+attach_ducklake("prod_lake", lake_path = "/lakes/prod", create = FALSE)
+
+# Several lakes in one PostgreSQL database, one schema each
+attach_ducklake(
+  "study_a",
+  backend = "postgres",
+  catalog_connection_string = "dbname=lakes host=db.example.org",
+  lake_path = "s3://lakes/study_a",
+  metadata_schema = "study_a"
+)
 }
 \dontshow{\}) # examplesIf}
 }

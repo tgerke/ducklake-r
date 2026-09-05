@@ -1,5 +1,27 @@
 # ducklake (development version)
 
+* Schema-qualified table names work end to end. Every function that takes
+  a table name accepts `"schema.table"`: `get_ducklake_table()` hands
+  dbplyr a proper table path for it (the duckdb driver's `tbl()` turned a
+  dotted name into raw SQL that `rows_*()` could not write to), and the
+  metadata readers (`get_table_comments()`, `get_table_partitions()`,
+  `get_table_sorting()`, `get_table_info()`, `list_table_snapshots()`,
+  `get_table_changes()`, `list_ducklake_files()`) resolve the schema
+  instead of matching the bare name. Functions with a `schema_name`
+  argument take the schema from either place. The readers gain a
+  `schema_name` column. New `create_schema()` and `drop_schema()` manage
+  schemas, the natural home for medallion layers; the README example now
+  keeps bronze, silver, and gold in schemas of their own.
+
+* `attach_ducklake()` gains `create` (`FALSE` opens an existing lake and
+  errors on a wrong path or name instead of creating a new, empty lake)
+  and `metadata_schema` (several lakes in one PostgreSQL database, each in
+  its own schema).
+
+* New `set_ducklake_retry()` sets how DuckLake retries a transaction that
+  races with another writer, and the transactions vignette explains which
+  concurrent changes conflict and which are retried.
+
 * `create_table()` and `replace_table()` now run dplyr pipelines inside
   DuckDB. A lazy table on the package's connection is written with
   `CREATE TABLE ... AS`; a replacement is materialized in DuckDB's

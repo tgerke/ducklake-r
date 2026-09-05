@@ -15,9 +15,9 @@ set_inlining_row_limit(
 \item{limit}{Integer. The maximum number of rows that will be inlined.
 Set to \code{0} to disable inlining entirely.}
 
-\item{table_name}{Optional table name. When provided the limit is persisted
-for that table in the DuckLake metadata (takes priority over the global
-setting).}
+\item{table_name}{Optional table name, optionally qualified as
+\code{"schema.table"}. When provided the limit is persisted for that table
+in the DuckLake metadata (takes priority over the global setting).}
 
 \item{schema_name}{Optional schema name. When provided (without
 \code{table_name}) the limit is persisted for all tables in that schema.}

@@ -292,6 +292,16 @@ list_table_snapshots("cars") |>
   tail(5)
 ```
 
+## Working with several writers
+
+When a lake has more than one writer (a PostgreSQL or SQLite catalog shared by several sessions, or a Quack server), two transactions can race to commit the next snapshot. DuckLake resolves the race itself: the transaction that lost checks whether its changes conflict with the winner's, and when they do not, it is retried against the new snapshot. Two sessions appending to the same table, or editing different tables, both commit. Real conflicts surface as an error in the losing session, whose changes are rolled back: two transactions deleting from the same data file, an insert into a table the other transaction dropped or altered, or two creates of the same name. Re-run that transaction on the current data.
+
+The retry policy is a per-session DuckDB setting: 10 attempts, 100 ms apart, with the wait growing by 1.5 each time. `set_ducklake_retry()` adjusts it for a busy catalog:
+
+```{r retry, eval=FALSE}
+set_ducklake_retry(max_retries = 20, wait_ms = 250, backoff = 2)
+```
+
 ## Comparison: with_transaction() vs Manual Control
 
 | Feature | `with_transaction()` | Manual (`begin/commit/rollback`) |
@@ -307,7 +317,7 @@ list_table_snapshots("cars") |>
 
 1. **Default to `with_transaction()`**: Use it for all standard workflows
 2. **Always add metadata**: Include `author` and `commit_message` for audit trails
-3. **Keep transactions focused**: Group related changes, but avoid overly long transactions
+3. **Keep transactions focused**: Group related changes, but avoid overly long transactions; when other sessions write to the same lake, a long-open transaction is the one most likely to conflict
 4. **Handle errors gracefully**: When using manual transactions, always use `tryCatch()` to ensure rollback
 5. **Test rollback behavior**: Verify that your error handling works correctly
 

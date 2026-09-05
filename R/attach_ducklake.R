@@ -68,6 +68,14 @@
 #'   lake created with DuckDB 1.5.1, whose extension wrote the 0.4 format,
 #'   after upgrading to 1.5.2 or later. The upgrade is permanent, so take a
 #'   backup first. Default `FALSE`, in which case a mismatch is an error.
+#' @param create Create the lake when none exists at the catalog location
+#'   (default `TRUE`, DuckLake's `CREATE_IF_NOT_EXISTS`). Pass `FALSE` when
+#'   you mean to open an existing lake, so a mistyped path or name is an
+#'   error rather than a new, empty lake.
+#' @param metadata_schema Optional schema inside the catalog database that
+#'   holds this lake's metadata tables (DuckLake's `METADATA_SCHEMA`,
+#'   default `main`). Lets several lakes share one PostgreSQL database,
+#'   each in its own schema.
 #'
 #' @details
 #' For credential management with PostgreSQL or MySQL, consider DuckDB's
@@ -183,6 +191,18 @@
 #' # A lake created with DuckDB 1.5.1 (catalog format 0.4), opened after
 #' # upgrading: migrate it once, then attach as usual
 #' attach_ducklake("old_lake", lake_path = "path/to/lake", automatic_migration = TRUE)
+#'
+#' # Open an existing lake, and error if it is not there
+#' attach_ducklake("prod_lake", lake_path = "/lakes/prod", create = FALSE)
+#'
+#' # Several lakes in one PostgreSQL database, one schema each
+#' attach_ducklake(
+#'   "study_a",
+#'   backend = "postgres",
+#'   catalog_connection_string = "dbname=lakes host=db.example.org",
+#'   lake_path = "s3://lakes/study_a",
+#'   metadata_schema = "study_a"
+#' )
 #' }
 attach_ducklake <- function(ducklake_name, lake_path,
                              backend = c("duckdb", "postgres", "sqlite", "mysql"),
@@ -194,7 +214,9 @@ attach_ducklake <- function(ducklake_name, lake_path,
                              meta_encryption_key = NULL,
                              snapshot_version = NULL,
                              snapshot_time = NULL,
-                             automatic_migration = FALSE) {
+                             automatic_migration = FALSE,
+                             create = TRUE,
+                             metadata_schema = NULL) {
   backend <- match.arg(backend)
   check_identifier(ducklake_name)
 
@@ -299,7 +321,9 @@ attach_ducklake <- function(ducklake_name, lake_path,
                                   meta_encryption_key,
                                   snapshot_version,
                                   snapshot_time,
-                                  automatic_migration)
+                                  automatic_migration,
+                                  create,
+                                  metadata_schema)
   db_execute(attach_sql)
   db_execute(sprintf("USE %s;", quote_ident(ducklake_name, conn)))
   register_lake(ducklake_name, backend, catalog_connection_string)
@@ -384,6 +408,8 @@ ensure_extensions <- function(backend, encrypted = FALSE, remote = FALSE) {
 #' @param snapshot_version Optional snapshot id for SNAPSHOT_VERSION
 #' @param snapshot_time Optional timestamp for SNAPSHOT_TIME
 #' @param automatic_migration Whether to add AUTOMATIC_MIGRATION
+#' @param create Whether to allow creating the lake (CREATE_IF_NOT_EXISTS)
+#' @param metadata_schema Optional schema for METADATA_SCHEMA
 #'
 #' @returns A SQL ATTACH statement string
 #' @keywords internal
@@ -395,7 +421,9 @@ build_attach_sql <- function(ducklake_name, lake_path, backend,
                               meta_encryption_key = NULL,
                               snapshot_version = NULL,
                               snapshot_time = NULL,
-                              automatic_migration = FALSE) {
+                              automatic_migration = FALSE,
+                              create = TRUE,
+                              metadata_schema = NULL) {
   connection_string <- switch(backend,
     duckdb = {
       ducklake_path <- if (!is.null(catalog_connection_string)) {
@@ -455,6 +483,15 @@ build_attach_sql <- function(ducklake_name, lake_path, backend,
 
   if (automatic_migration) {
     options <- c(options, "AUTOMATIC_MIGRATION")
+  }
+
+  if (!isTRUE(create)) {
+    options <- c(options, "CREATE_IF_NOT_EXISTS false")
+  }
+
+  if (!is.null(metadata_schema)) {
+    check_identifier(metadata_schema, arg = "metadata_schema")
+    options <- c(options, sprintf("METADATA_SCHEMA %s", quote_sql(metadata_schema)))
   }
 
   if (length(options) > 0) {
