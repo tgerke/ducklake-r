@@ -185,14 +185,15 @@ test_that("replace_table keeps the original table when the create fails", {
   lake <- create_temp_ducklake()
   create_table(mtcars[1:5, ], "replace_atomic")
 
+  # Fail after the DROP and CREATE have run: the transaction must roll back
   local_mocked_bindings(
-    create_table = function(...) stop("simulated create failure")
+    reapply_table_comments = function(...) stop("simulated failure after drop")
   )
   expect_error(
     get_ducklake_table("replace_atomic") |>
       dplyr::filter(mpg > 0) |>
       replace_table("replace_atomic"),
-    "simulated create failure"
+    "simulated failure after drop"
   )
 
   result <- get_ducklake_table("replace_atomic") |> dplyr::collect()
@@ -221,4 +222,82 @@ test_that("create_table unregisters its temp view when the CREATE fails", {
   expect_equal(nrow(views), 0)
 
   cleanup_temp_ducklake(lake)
+})
+
+test_that("replace_table carries comments, partition keys, sort order, and options over", {
+  skip_if_not_installed("duckdb")
+  skip_if_not_installed("dplyr")
+
+  lake <- create_temp_ducklake()
+  on.exit(cleanup_temp_ducklake(lake), add = TRUE)
+
+  df <- data.frame(
+    id = 1:6, grp = rep(c("a", "b"), 3), v = c(10, 20, 30, 40, 50, 60)
+  )
+  attr(df$v, "label") <- "Value (units)"
+  suppressMessages({
+    create_table(df, "keep_meta")
+    set_table_comment("keep_meta", "Six rows")
+    set_table_partitioning("keep_meta", "grp")
+    set_table_sorting("keep_meta", "id DESC")
+    set_ducklake_option("parquet_compression", "zstd", table_name = "keep_meta")
+
+    get_ducklake_table("keep_meta") |>
+      dplyr::mutate(w = v * 2) |>
+      replace_table("keep_meta")
+  })
+
+  comments <- get_table_comments("keep_meta")
+  expect_equal(comments$comment[comments$object_type == "table"], "Six rows")
+  expect_equal(comments$comment[comments$column_name %in% "v"], "Value (units)")
+  expect_equal(get_table_partitions("keep_meta")$column_name, "grp")
+  sorting <- get_table_sorting("keep_meta")
+  expect_equal(sorting$expression, "id")
+  expect_equal(sorting$sort_direction, "DESC")
+  opts <- get_ducklake_options(lake$ducklake_name)
+  expect_true(any(
+    opts$option_name == "parquet_compression" & opts$scope == "TABLE" &
+      opts$scope_entry %in% "main.keep_meta" & opts$value == "zstd"
+  ))
+
+  # A rewrite that drops the partition column drops that key, keeps the rest
+  suppressMessages(
+    get_ducklake_table("keep_meta") |>
+      dplyr::select(-grp) |>
+      replace_table("keep_meta")
+  )
+  expect_equal(nrow(get_table_partitions("keep_meta")), 0)
+  expect_equal(get_table_sorting("keep_meta")$expression, "id")
+  expect_equal(
+    get_table_comments("keep_meta")$comment[
+      get_table_comments("keep_meta")$object_type == "table"
+    ],
+    "Six rows"
+  )
+})
+
+test_that("restore_table_version keeps comments and partition keys", {
+  skip_if_not_installed("duckdb")
+  skip_if_not_installed("dplyr")
+
+  lake <- create_temp_ducklake()
+  on.exit(cleanup_temp_ducklake(lake), add = TRUE)
+
+  df <- data.frame(id = 1:4, grp = c("a", "a", "b", "b"))
+  attr(df$id, "label") <- "Identifier"
+  suppressMessages({
+    create_table(df, "restore_meta")
+    set_table_partitioning("restore_meta", "grp")
+  })
+  first <- min(list_table_snapshots("restore_meta")$snapshot_id)
+
+  suppressMessages(
+    rows_delete(get_ducklake_table("restore_meta"), data.frame(id = 1L), by = "id")
+  )
+  suppressMessages(restore_table_version("restore_meta", version = first))
+
+  expect_equal(nrow(dplyr::collect(get_ducklake_table("restore_meta"))), 4)
+  expect_equal(get_table_partitions("restore_meta")$column_name, "grp")
+  comments <- get_table_comments("restore_meta")
+  expect_equal(comments$comment[comments$column_name %in% "id"], "Identifier")
 })

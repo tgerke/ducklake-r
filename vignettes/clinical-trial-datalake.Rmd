@@ -97,7 +97,7 @@ list.files(trial_lake_path, pattern = "clinical_trial_lake")
 Before loading data, it's important to understand the layered architecture we'll use. This follows the **medallion architecture** pattern common in modern data lakes:
 
 - **Bronze Layer (Raw)**: Data exactly as received from source systems, with no transformations. This preserves the original data for audit trails and reprocessing.
-- **Silver Layer (Cleaned)**: Standardized and cleaned data with transformations like `convert_blanks_to_na()`, type conversions, and validation. This is the trusted source for deriving analysis datasets.
+- **Silver Layer (Cleaned)**: Standardized and cleaned data: SDTM blanks converted to `NA`, type conversions, validation. This is the trusted source for deriving analysis datasets.
 - **Gold Layer (Analytics)**: Business-logic datasets optimized for specific analyses, such as ADaM datasets. This is where analysis happens.
 
 This approach provides:
@@ -131,6 +131,27 @@ For each domain, we'll:
 1. Load raw data into the **bronze layer** (as received)
 2. Apply cleaning transformations to create the **silver layer** (analysis-ready)
 
+The cleaning step here is the one every SDTM pipeline starts with: SDTM
+character variables use the empty string for missing values, and R analysis
+code expects `NA`. admiral's `convert_blanks_to_na()` does that on a data
+frame. On a lazy lake table it has no effect, because nothing has been read
+into R yet, so we keep the conversion inside DuckDB instead. The helper
+below reads the table's column types from a zero-row query (a lazy table
+cannot inspect its own types) and translates the conversion into SQL that
+runs where the data lives. The pharmaverse test data already stores missing
+values as `NA`, so on these tables the step changes nothing; XPT exports
+read with haven do carry blanks, and there it does.
+
+```{r blanks-helper}
+# Convert SDTM blanks to NA inside the database: dbplyr translates na_if()
+# to NULLIF(), and the zero-row read supplies the character column names
+blanks_to_na <- function(tbl) {
+  types <- tbl |> head(0) |> collect()
+  chr_cols <- names(types)[vapply(types, is.character, logical(1))]
+  tbl |> mutate(across(all_of(chr_cols), ~ na_if(.x, "")))
+}
+```
+
 ### Demographics (DM)
 
 The Demographics domain contains baseline characteristics for each subject.
@@ -146,7 +167,7 @@ with_transaction(
 # Silver layer: Apply cleaning transformations
 with_transaction(
   get_ducklake_table("dm_raw") |> 
-    admiral::convert_blanks_to_na() |> 
+    blanks_to_na() |> 
     create_table("dm"),
   author = "T Gerke",
   commit_message = "Clean demographics data"
@@ -200,7 +221,7 @@ with_transaction(
 # Silver layer: Cleaned data
 with_transaction(
   get_ducklake_table("suppdm_raw") |> 
-    admiral::convert_blanks_to_na() |> 
+    blanks_to_na() |> 
     create_table("suppdm"),
   author = "T Gerke",
   commit_message = "Clean supplemental demographics"
@@ -221,8 +242,8 @@ with_transaction(
 
 # Silver layer
 with_transaction(
-  ds <- get_ducklake_table("ds_raw") |> 
-    admiral::convert_blanks_to_na() |> 
+  get_ducklake_table("ds_raw") |> 
+    blanks_to_na() |> 
     create_table("ds"),
   author = "T Gerke",
   commit_message = "Clean disposition data"
@@ -243,8 +264,8 @@ with_transaction(
 
 # Silver layer
 with_transaction(
-  ex <- get_ducklake_table("ex_raw") |> 
-    admiral::convert_blanks_to_na() |> 
+  get_ducklake_table("ex_raw") |> 
+    blanks_to_na() |> 
     create_table("ex"),
   author = "T Gerke",
   commit_message = "Clean exposure data"
@@ -265,8 +286,8 @@ with_transaction(
 
 # Silver layer
 with_transaction(
-  ae <- get_ducklake_table("ae_raw") |> 
-    admiral::convert_blanks_to_na() |> 
+  get_ducklake_table("ae_raw") |> 
+    blanks_to_na() |> 
     create_table("ae"),
   author = "T Gerke",
   commit_message = "Clean adverse events"
@@ -287,8 +308,8 @@ with_transaction(
 
 # Silver layer
 with_transaction(
-  vs <- get_ducklake_table("vs_raw") |> 
-    admiral::convert_blanks_to_na() |> 
+  get_ducklake_table("vs_raw") |> 
+    blanks_to_na() |> 
     create_table("vs"),
   author = "T Gerke",
   commit_message = "Clean vital signs"
@@ -309,8 +330,8 @@ with_transaction(
 
 # Silver layer
 with_transaction(
-  pc <- get_ducklake_table("pc_raw") |> 
-    admiral::convert_blanks_to_na() |> 
+  get_ducklake_table("pc_raw") |> 
+    blanks_to_na() |> 
     create_table("pc"),
   author = "T Gerke",
   commit_message = "Clean PK concentrations"
@@ -821,7 +842,7 @@ This approach provides traditional data warehouse capabilities for clinical tria
 ```{r warehouse-benefits}
 # 1. Single source of truth - all datasets in one repository
 # List all tables in the data lake
-DBI::dbListTables(get_ducklake_connection())
+list_ducklake_tables()
 
 # 2. Efficient filtering before loading into R
 # Only load subjects with adverse events
@@ -869,7 +890,7 @@ Let's explore how our datasets are connected:
 
 ```{r explore-structure}
 # List all tables in the data lake
-DBI::dbListTables(get_ducklake_connection())
+list_ducklake_tables()
 
 # View snapshot history for key tables
 metadata_tables <- c("dm", "ex", "ae", "pc", 
@@ -904,9 +925,13 @@ This relational approach means your clinical trial data lake functions as a purp
 Every modification to tables is automatically versioned. Let's demonstrate by adding new derived variables to ADSL:
 
 ```{r demonstrate-versioning}
-# Add new derived columns using dplyr syntax
-# replace_table() handles the DROP/CREATE cycle internally
-with_transaction(
+# Add derived columns in place: declare them, fill them with an in-database
+# UPDATE, and label them. Nothing is collected into R, and the three steps
+# land as one snapshot.
+with_transaction({
+  add_table_column("adsl", "AGE65FL", "VARCHAR")
+  add_table_column("adsl", "AGECAT", "VARCHAR")
+
   get_ducklake_table("adsl") |>
     mutate(
       AGE65FL = if_else(AGE >= 65, "Y", "N"),
@@ -917,12 +942,16 @@ with_transaction(
         TRUE ~ NA_character_
       )
     ) |>
-    replace_table("adsl"),
-  author = "T Gerke",
-  commit_message = "Add age categorization vars"
-)
+    ducklake_exec()
 
-# View version history - should now show 2 snapshots
+  set_column_comments(
+    "adsl",
+    AGE65FL = "Age 65 or Older Flag",
+    AGECAT = "Age Category"
+  )
+}, author = "T Gerke", commit_message = "Add age categorization vars")
+
+# View version history
 list_table_snapshots("adsl")
 
 # Verify new columns exist
@@ -938,14 +967,20 @@ the audit trail is complete whichever function you use. The choice is about
 the *kind* of change (see `vignette("modifying-tables")` for the full
 guidance):
 
-- **Structural changes** (adding or removing derived variables, reshaping a
-  dataset): use `replace_table()` wrapped in `with_transaction()`, as in the
-  example above.
+- **New derived variables**: declare them with `add_table_column()` and fill
+  them with a `mutate()` pipeline through `ducklake_exec()`, as in the
+  example above. The column is a metadata change and the fill is an
+  in-database UPDATE; nothing is collected into R.
 - **Targeted corrections** (fixing a flag for one subject, appending a
   handful of records): use `rows_update()`, `rows_insert()`, or
   `rows_delete()`. The change runs as a single SQL statement without
   rewriting the rest of the table, and small changesets benefit from
   DuckLake's data inlining.
+- **Bulk reshapes** (recomputing or filtering most of a dataset, changing
+  its grain): use `replace_table()` wrapped in `with_transaction()`. It
+  rewrites the whole table, which is the right tool when most rows change
+  anyway, and it carries the table's labels, partition keys, sort order,
+  and options over to the rewritten table.
 
 ```r
 # Targeted correction: fix one subject's safety flag with rows_update()
@@ -959,13 +994,13 @@ with_transaction(
   commit_message = "Correct safety flag for 01-701-1015"
 )
 
-# Structural change: add a derived column with replace_table()
+# Bulk reshape: restrict the dataset to the safety population
 with_transaction(
   get_ducklake_table("adsl") |>
-    mutate(AGE65FL = if_else(AGE >= 65, "Y", "N")) |>
+    filter(SAFFL == "Y") |>
     replace_table("adsl"),
   author = "T Gerke",
-  commit_message = "Add age 65+ flag"
+  commit_message = "Restrict ADSL to the safety population"
 )
 ```
 
@@ -978,19 +1013,18 @@ your regulatory audit trail, with the author and commit message recorded by
 When developing derivations, create a snapshot at each meaningful iteration to maintain a complete audit trail:
 
 ```{r iterative-workflow}
-# Iteration 1: First attempt (creates snapshot v2)
-with_transaction(
+# Iteration 1: First attempt, a new column filled in place
+with_transaction({
+  add_table_column("adsl", "AGECAT_TEST", "VARCHAR")
   get_ducklake_table("adsl") |>
     mutate(AGECAT_TEST = case_when(
       AGE < 50 ~ "Young",
       AGE >= 50 ~ "Older"
     )) |>
-    replace_table("adsl"),
-  author = "T Gerke",
-  commit_message = "Test age categories v1"
-)
+    ducklake_exec()
+}, author = "T Gerke", commit_message = "Test age categories v1")
 
-# Iteration 2: Refinement (creates snapshot v3)
+# Iteration 2: Refinement, an UPDATE of the same column
 with_transaction(
   get_ducklake_table("adsl") |>
     mutate(AGECAT_TEST = case_when(
@@ -998,27 +1032,24 @@ with_transaction(
       AGE < 65 ~ "40-64",
       AGE >= 65 ~ "65+"
     )) |>
-    replace_table("adsl"),
+    ducklake_exec(),
   author = "T Gerke",
   commit_message = "Refine age categories v2"
 )
 
-# Iteration 3: Final version (creates snapshot v4)
-with_transaction(
+# Iteration 3: Final version, replacing the test column with the real one
+with_transaction({
+  drop_table_column("adsl", "AGECAT_TEST")
+  add_table_column("adsl", "AGECAT2", "VARCHAR")
   get_ducklake_table("adsl") |>
-    mutate(
-      AGECAT_TEST = NULL,
-      AGECAT2 = case_when(
-        AGE < 40 ~ "18-39",
-        AGE < 65 ~ "40-64",
-        AGE >= 65 ~ "65+",
-        TRUE ~ "Missing"
-      )
-    ) |>
-    replace_table("adsl"),
-  author = "T Gerke",
-  commit_message = "Finalize age categories"
-)
+    mutate(AGECAT2 = case_when(
+      AGE < 40 ~ "18-39",
+      AGE < 65 ~ "40-64",
+      AGE >= 65 ~ "65+",
+      TRUE ~ "Missing"
+    )) |>
+    ducklake_exec()
+}, author = "T Gerke", commit_message = "Finalize age categories")
 
 # Complete audit trail available
 snapshots <- list_table_snapshots("adsl")
@@ -1115,17 +1146,14 @@ This ensures ADSL and ADAE stay synchronized - either both get the new `ANALYSIS
 Update existing records while maintaining version control and audit trails:
 
 ```{r update-records}
-# Update a specific record with versioning
+# Correct one record by key: a single in-database UPDATE, versioned like
+# every other change, without rewriting the rest of the table
 with_transaction(
-  get_ducklake_table("adae") |>
-    mutate(
-      AESEV = if_else(
-        USUBJID == "01-701-1015" & AESEQ == 1,
-        "SEVERE",
-        AESEV
-      )
-    ) |>
-    replace_table("adae"),  # Creates versioned snapshot
+  rows_update(
+    get_ducklake_table("adae"),
+    data.frame(USUBJID = "01-701-1015", AESEQ = 1, AESEV = "SEVERE"),
+    by = c("USUBJID", "AESEQ")
+  ),
   author = "T Gerke",
   commit_message = "Correct AE severity"
 )
@@ -1218,7 +1246,7 @@ the data path contains a fully self-describing, portable set of files:
 
 ```{r pre-archival-checkpoint, eval = FALSE}
 # Materialise any inlined data to Parquet before archival
-checkpoint_ducklake()
+flush_inlined_data()
 ```
 
 This ensures that the archived lake can be read by any Parquet-capable tool, and

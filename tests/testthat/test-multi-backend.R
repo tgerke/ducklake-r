@@ -206,6 +206,17 @@ test_that("build_attach_sql includes OVERRIDE_DATA_PATH when requested", {
   expect_false(grepl("OVERRIDE_DATA_PATH", sql2))
 })
 
+test_that("build_attach_sql includes AUTOMATIC_MIGRATION when requested", {
+  sql <- ducklake:::build_attach_sql(
+    "my_lake", "/data", "duckdb", NULL, FALSE,
+    automatic_migration = TRUE
+  )
+  expect_true(grepl("AUTOMATIC_MIGRATION", sql, fixed = TRUE))
+
+  sql2 <- ducklake:::build_attach_sql("my_lake", "/data", "duckdb", NULL, FALSE)
+  expect_false(grepl("AUTOMATIC_MIGRATION", sql2, fixed = TRUE))
+})
+
 # --- SQLite backend end-to-end ---
 
 test_that("SQLite backend: create table, query, and time travel", {

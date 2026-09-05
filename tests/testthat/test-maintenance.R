@@ -184,3 +184,33 @@ test_that("backup_ducklake rejects remote data paths", {
     "only supports local data paths"
   )
 })
+
+test_that("checkpoint expires snapshots only under a retention policy", {
+  skip_if_not_installed("duckdb")
+  skip_if_not_installed("dplyr")
+  # CHECKPOINT's file cleanup cannot reopen the catalog file on Windows
+  skip_on_os("windows")
+
+  lake <- create_temp_ducklake()
+  on.exit(cleanup_temp_ducklake(lake), add = TRUE)
+
+  create_table(data.frame(id = 1:20), "policy_t")
+  for (i in 1:3) {
+    suppressMessages(
+      rows_insert(get_ducklake_table("policy_t"), data.frame(id = 100L + i), by = "id")
+    )
+  }
+  first_id <- min(list_table_snapshots()$snapshot_id)
+
+  # No policy: every snapshot survives a checkpoint
+  suppressMessages(checkpoint_ducklake(lake$ducklake_name))
+  expect_true(first_id %in% list_table_snapshots()$snapshot_id)
+
+  # With a policy, the checkpoint expires what the policy allows
+  suppressMessages({
+    set_ducklake_option("expire_older_than", "0 seconds")
+    set_ducklake_option("delete_older_than", "0 seconds")
+    checkpoint_ducklake(lake$ducklake_name)
+  })
+  expect_false(first_id %in% list_table_snapshots()$snapshot_id)
+})

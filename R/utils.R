@@ -14,9 +14,9 @@ db_execute <- function(sql, conn = get_ducklake_connection()) {
 
 #' Load a DuckDB extension, installing it first if needed
 #'
-#' Says so before installing. An install downloads into DuckDB's extension
-#' cache under the user's home directory, which should never be a silent
-#' side effect of calling an unrelated function.
+#' Says so before installing: a download into DuckDB's extension directory
+#' should never be a silent side effect of calling an unrelated function.
+#' The message names the directory and warns when it is a temporary one.
 #'
 #' @param ext Extension name.
 #' @param conn A DBI connection; defaults to the shared ducklake connection.
@@ -26,9 +26,10 @@ load_or_install_extension <- function(ext, conn = get_ducklake_connection()) {
   tryCatch(
     db_execute(sprintf("LOAD %s;", ext), conn = conn),
     error = function(e) {
+      dir <- extension_directory(conn)
       cli::cli_inform(c(
-        "Installing the {.pkg {ext}} DuckDB extension.",
-        "i" = "Downloaded once into DuckDB's extension cache under {.path ~/.duckdb/}."
+        "Installing the {.pkg {ext}} DuckDB extension into {.path {dir}}.",
+        extension_persistence_hint(dir)
       ))
       db_execute(sprintf("INSTALL %s;", ext), conn = conn)
       db_execute(sprintf("LOAD %s;", ext), conn = conn)
@@ -208,11 +209,13 @@ quote_column <- function(x, conn = get_ducklake_connection(),
   as.character(DBI::dbQuoteIdentifier(conn, x))
 }
 
-#' Render an R value as a SQL literal
+#' Render an R value as a SQL literal for a DEFAULT clause
 #'
-#' Used for DEFAULT clauses in schema evolution statements. `NA` renders as
-#' `NULL`; Date and POSIXct values become typed literals (POSIXct in UTC,
-#' via `format_timestamp()`).
+#' DuckLake stores column defaults as plain constants and rejects anything
+#' else as "non-literal": `DEFAULT TRUE`, `DATE '...'`, `TIMESTAMP '...'`,
+#' and casts all fail, while a bare number or a quoted string is accepted
+#' and converted to the column type. So logicals, Dates, and POSIXct values
+#' (in UTC) render as quoted strings; `NA` renders as `NULL`.
 #'
 #' @param x A length-one vector.
 #' @returns A SQL literal string.
@@ -224,11 +227,11 @@ render_sql_literal <- function(x) {
   if (is.na(x)) {
     "NULL"
   } else if (inherits(x, "Date")) {
-    sprintf("DATE %s", quote_sql(format(x, "%Y-%m-%d")))
+    quote_sql(format(x, "%Y-%m-%d"))
   } else if (inherits(x, "POSIXct")) {
-    sprintf("TIMESTAMP %s", quote_sql(format_timestamp(x)))
+    quote_sql(format_timestamp(x))
   } else if (is.logical(x)) {
-    if (x) "TRUE" else "FALSE"
+    if (x) "'true'" else "'false'"
   } else if (is.numeric(x)) {
     format(x, scientific = FALSE)
   } else if (is.character(x)) {
@@ -236,4 +239,110 @@ render_sql_literal <- function(x) {
   } else {
     cli::cli_abort("Cannot render {.cls {class(x)}} as a SQL literal.")
   }
+}
+
+#' Run a DDL statement, rolling back an aborted autocommit transaction
+#'
+#' Some DuckLake DDL failures (an unsupported DEFAULT, for one) leave an
+#' aborted transaction behind even in autocommit mode, and every later
+#' statement on the connection then fails with "Current transaction is
+#' aborted (please ROLLBACK)". When no transaction was open beforehand,
+#' roll back on failure before re-raising; inside a caller's transaction the
+#' caller owns the rollback.
+#'
+#' @param sql A single SQL statement.
+#' @param conn A DBI connection.
+#' @returns The number of rows affected, invisibly.
+#' @noRd
+db_execute_ddl <- function(sql, conn = get_ducklake_connection()) {
+  own <- !in_transaction(conn)
+  tryCatch(
+    db_execute(sql, conn = conn),
+    error = function(e) {
+      if (own) {
+        try(DBI::dbExecute(conn, "ROLLBACK;"), silent = TRUE)
+      }
+      stop(e)
+    }
+  )
+}
+
+#' Split a possibly schema-qualified table name
+#'
+#' `"cars"` gives `list(schema = NULL, table = "cars")`; `"bronze.cars"`
+#' gives `list(schema = "bronze", table = "cars")`; a three-part name keeps
+#' its last two parts. Nothing is quoted here.
+#'
+#' @param table_name A table name, optionally qualified with `.`.
+#' @returns A list with `schema` (`NULL` when absent) and `table`.
+#' @noRd
+split_table_name <- function(table_name) {
+  parts <- strsplit(table_name, ".", fixed = TRUE)[[1]]
+  n <- length(parts)
+  if (n <= 1) {
+    return(list(schema = NULL, table = table_name))
+  }
+  list(schema = parts[[n - 1]], table = parts[[n]])
+}
+
+#' Quoted prefix of a lake's metadata catalog for SQL text
+#'
+#' DuckDB and SQLite catalogs keep the DuckLake tables in a `main` schema;
+#' PostgreSQL and MySQL catalogs expose them at the top level. Resolves the
+#' backend from the lake's own registry entry, not the current database.
+#'
+#' @param ducklake_name The lake name.
+#' @param conn A DBI connection used for quoting rules.
+#' @returns A string such as `"__ducklake_metadata_lake".main`.
+#' @noRd
+metadata_prefix <- function(ducklake_name, conn = get_ducklake_connection()) {
+  meta_db <- paste0("__ducklake_metadata_", ducklake_name)
+  if (get_ducklake_backend(ducklake_name) %in% c("postgres", "mysql")) {
+    quote_ident(meta_db, conn)
+  } else {
+    paste0(quote_ident(meta_db, conn), ".main")
+  }
+}
+
+#' Where DuckDB keeps downloaded extensions for this connection
+#'
+#' @param conn A DBI connection.
+#' @returns The directory as a string, or `NA` if it cannot be read.
+#' @noRd
+extension_directory <- function(conn = get_ducklake_connection()) {
+  tryCatch(
+    DBI::dbGetQuery(
+      conn, "SELECT current_setting('extension_directory') AS d"
+    )$d,
+    error = function(e) NA_character_
+  )
+}
+
+#' cli bullets explaining how to keep extensions between sessions
+#'
+#' duckdb 1.5.2 and later resolve a "home" directory for extensions that
+#' defaults to a per-session temporary directory unless `DUCKDB_R_HOME`
+#' (or `options(duckdb.home = )`, or an existing `~/.duckdb`) points at
+#' somewhere durable. An install into a temporary directory is repeated on
+#' every session, so say so.
+#'
+#' @param dir The extension directory, as reported by DuckDB.
+#' @returns A named character vector of bullets, empty when the directory
+#'   is durable or unknown.
+#' @noRd
+extension_persistence_hint <- function(dir) {
+  if (length(dir) != 1 || is.na(dir) || !nzchar(dir)) {
+    return(character())
+  }
+  is_temp <- startsWith(
+    normalizePath(dir, mustWork = FALSE),
+    normalizePath(tempdir(), mustWork = FALSE)
+  )
+  if (!is_temp) {
+    return(character())
+  }
+  c(
+    "!" = "This directory is temporary: the extension is gone when the R session ends.",
+    "i" = "To keep extensions between sessions, set {.envvar DUCKDB_R_HOME} to a durable directory (for example in {.file ~/.Renviron}) before duckdb is loaded."
+  )
 }

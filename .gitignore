@@ -11,3 +11,6 @@ README.html
 my_ducklake*
 docs
 Rplots.pdf
+
+# built tarballs
+*.tar.gz

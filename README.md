@@ -62,14 +62,19 @@ pak::pak("tgerke/ducklake-r")
 ```
 
 ducklake requires the [duckdb](https://r.duckdb.org) R package version
-1.5.1 or newer (DuckDB engine 1.5.1+, matching the stable [DuckLake v1.0
-specification](https://ducklake.select/docs/stable/specification/introduction)).
-The Quack remote-access features are the exception: they need DuckDB
-1.5.3 or newer, which means duckdb 1.5.4 or newer from CRAN.
+1.5.2 or newer: DuckDB 1.5.2 is the release that ships the stable
+[DuckLake 1.0
+specification](https://ducklake.select/docs/stable/specification/introduction).
+The Quack remote-access features need DuckDB 1.5.3 or newer, which means
+duckdb 1.5.3 or newer from CRAN.
 
 DuckLake itself ships as a DuckDB extension that is downloaded on first
-use. Run `install_ducklake()` once per machine, or check whether you
-already have it with `ducklake_extension_available()`.
+use. Run `install_ducklake()` once, or check whether you already have it
+with `ducklake_extension_available()`. From duckdb 1.5.2 on, extensions
+live in a per-session temporary directory unless you point
+`DUCKDB_R_HOME` (for example in `~/.Renviron`) at a directory of your
+choice. Do that, and the download happens once per machine instead of
+once per session.
 
 ducklake manages its own DuckDB connection, so there is nothing to set
 up: just `attach_ducklake()` and go. If you prefer to supply your own
@@ -82,7 +87,7 @@ register it with `set_ducklake_connection()`.
 library(ducklake)
 library(dplyr)
 
-# Install the ducklake extension (requires duckdb R package >= 1.5.1)
+# Install the ducklake extension (requires duckdb R package >= 1.5.2)
 install_ducklake()
 
 # Create a data lake in a temporary directory
@@ -133,7 +138,7 @@ get_ducklake_table("vehicles_analysis") |>
   select(mpg, cyl, efficiency) |>
   head(3)
 #> # A query:  ?? x 3
-#> # Database: DuckDB 1.5.1 [tgerke@Darwin 25.5.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpwGZIaL/ducklake/ducklake58b075fac717.duckdb]
+#> # Database: DuckDB 1.5.5 [tgerke@Darwin 25.6.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/Rtmpb9iHiJ/ducklake/ducklake2207158651a5.duckdb]
 #>     mpg cyl   efficiency
 #>   <dbl> <chr> <chr>     
 #> 1  21   6.0   Medium    
@@ -143,11 +148,11 @@ get_ducklake_table("vehicles_analysis") |>
 # View complete audit trail across all layers with author and commit messages
 list_table_snapshots()
 #>   snapshot_id       snapshot_time schema_version
-#> 1           0 2026-08-25 21:02:58              0
-#> 2           1 2026-08-25 21:02:58              1
-#> 3           2 2026-08-25 21:02:58              2
-#> 4           3 2026-08-25 21:02:58              3
-#> 5           4 2026-08-25 21:02:58              4
+#> 1           0 2026-09-04 22:48:21              0
+#> 2           1 2026-09-04 22:48:21              1
+#> 3           2 2026-09-04 22:48:21              2
+#> 4           3 2026-09-04 22:48:21              3
+#> 5           4 2026-09-04 22:48:21              4
 #>                                                                           changes
 #> 1                                                           schemas_created, main
 #> 2                      tables_created, tables_inserted_into, main.vehicles_raw, 1
@@ -172,7 +177,7 @@ get_ducklake_table_version("vehicles_clean", version = 2) |>
   select(mpg, cyl, gear) |>
   head(3)
 #> # A query:  ?? x 3
-#> # Database: DuckDB 1.5.1 [tgerke@Darwin 25.5.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpwGZIaL/ducklake/ducklake58b075fac717.duckdb]
+#> # Database: DuckDB 1.5.5 [tgerke@Darwin 25.6.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/Rtmpb9iHiJ/ducklake/ducklake2207158651a5.duckdb]
 #>     mpg cyl    gear
 #>   <dbl> <chr> <dbl>
 #> 1  21   6.0       4

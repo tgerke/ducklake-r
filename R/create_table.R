@@ -54,39 +54,15 @@ create_table <- function(data_source, table_name, labels = TRUE) {
 
   # Handle data.frame or tibble
   if (is.data.frame(data_source)) {
-    # DuckLake does not support ENUM columns, which is what factors become
-    # in DuckDB -- store them as character instead
-    factor_cols <- vapply(data_source, is.factor, logical(1))
-    if (any(factor_cols)) {
-      data_source[factor_cols] <- lapply(data_source[factor_cols], as.character)
-      cli::cli_inform(
-        "Converted factor column{?s} {.field {names(data_source)[factor_cols]}} to character (DuckLake does not support ENUM columns)."
-      )
-    }
-
-    column_labels <- character(0)
-    if (isTRUE(labels)) {
-      found <- vapply(
-        data_source,
-        function(col) {
-          lbl <- attr(col, "label", exact = TRUE)
-          if (is.character(lbl) && length(lbl) == 1 && !is.na(lbl)) {
-            lbl
-          } else {
-            NA_character_
-          }
-        },
-        character(1)
-      )
-      column_labels <- found[!is.na(found)]
-    }
+    prepared <- prepare_data_frame(data_source, labels)
+    data_source <- prepared$data
+    column_labels <- prepared$labels
 
     # Register the data.frame as a temporary view in DuckDB; unregister on
     # exit so a failed CREATE doesn't leave the view behind on the shared
     # connection
-    temp_view_name <- paste0("__temp_view_", gsub("[^a-zA-Z0-9]", "_", table_name))
     conn <- get_ducklake_connection()
-    duckdb::duckdb_register(conn, temp_view_name, data_source)
+    temp_view_name <- register_temp_view(data_source, table_name, conn)
     on.exit(
       duckdb::duckdb_unregister(get_ducklake_connection(), temp_view_name),
       add = TRUE
@@ -113,17 +89,7 @@ create_table <- function(data_source, table_name, labels = TRUE) {
       quote_ident(table_name), quote_ident(temp_view_name)
     ))
 
-    for (col in names(column_labels)) {
-      db_execute(
-        sprintf(
-          "COMMENT ON COLUMN %s.%s IS %s;",
-          quote_ident(table_name, conn),
-          quote_column(col, conn),
-          quote_sql(column_labels[[col]])
-        ),
-        conn = conn
-      )
-    }
+    store_column_labels(table_name, column_labels, conn)
 
     if (own_txn) {
       DBI::dbExecute(conn, "COMMIT;")
@@ -153,5 +119,81 @@ create_table <- function(data_source, table_name, labels = TRUE) {
     cli::cli_abort("{.arg data_source} must be a character string (file path or URL) or a data.frame.")
   }
   
+  invisible(NULL)
+}
+
+#' Prepare a data frame for loading into DuckLake
+#'
+#' Converts factor columns to character (DuckLake has no ENUM type) and,
+#' when `labels` is `TRUE`, collects haven/labelled `label` attributes to
+#' store as column comments.
+#'
+#' @param data A data frame.
+#' @param labels Whether to collect column labels.
+#' @returns A list with `data` and a named character vector `labels`.
+#' @noRd
+prepare_data_frame <- function(data, labels = TRUE) {
+  # DuckLake does not support ENUM columns, which is what factors become
+  # in DuckDB -- store them as character instead
+  factor_cols <- vapply(data, is.factor, logical(1))
+  if (any(factor_cols)) {
+    data[factor_cols] <- lapply(data[factor_cols], as.character)
+    cli::cli_inform(
+      "Converted factor column{?s} {.field {names(data)[factor_cols]}} to character (DuckLake does not support ENUM columns)."
+    )
+  }
+
+  column_labels <- character(0)
+  if (isTRUE(labels)) {
+    found <- vapply(
+      data,
+      function(col) {
+        lbl <- attr(col, "label", exact = TRUE)
+        if (is.character(lbl) && length(lbl) == 1 && !is.na(lbl)) {
+          lbl
+        } else {
+          NA_character_
+        }
+      },
+      character(1)
+    )
+    column_labels <- found[!is.na(found)]
+  }
+
+  list(data = data, labels = column_labels)
+}
+
+#' Register a data frame as a temporary DuckDB view
+#'
+#' The caller unregisters it (typically with `on.exit()`) so a failed
+#' statement never leaves the view behind on the shared connection.
+#'
+#' @param data A data frame.
+#' @param table_name The target table, used to derive the view name.
+#' @param conn A DBI connection.
+#' @returns The view name.
+#' @noRd
+register_temp_view <- function(data, table_name, conn) {
+  temp_view_name <- paste0(
+    "__temp_view_", gsub("[^a-zA-Z0-9]", "_", table_name)
+  )
+  duckdb::duckdb_register(conn, temp_view_name, data)
+  temp_view_name
+}
+
+#' Store column labels as comments, in the open transaction
+#' @noRd
+store_column_labels <- function(table_name, column_labels, conn) {
+  for (col in names(column_labels)) {
+    db_execute(
+      sprintf(
+        "COMMENT ON COLUMN %s.%s IS %s;",
+        quote_ident(table_name, conn),
+        quote_column(col, conn),
+        quote_sql(column_labels[[col]])
+      ),
+      conn = conn
+    )
+  }
   invisible(NULL)
 }

@@ -15,10 +15,11 @@ add_table_column(table_name, column_name, type, default = NULL)
 \code{"DECIMAL(10,2)"}, or \code{"TIMESTAMP WITH TIME ZONE"}.}
 
 \item{default}{Optional default value (an R scalar: character, numeric,
-logical, Date, or POSIXct). In DuckLake the default applies to
-existing rows as well as future inserts, so the new column appears
-filled everywhere. Without a default, the column reads \code{NA} for
-existing rows.}
+logical, Date, or POSIXct, the last rendered in UTC). In DuckLake the
+default applies to existing rows as well as future inserts, so the new
+column appears filled everywhere. Without a default, the column reads
+\code{NA} for existing rows. DuckLake accepts constant defaults only;
+an expression such as \code{now()} is not supported.}
 }
 \value{
 Invisibly returns \code{NULL}.

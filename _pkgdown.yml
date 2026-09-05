@@ -141,6 +141,7 @@ reference:
     - get_table_partitions
     - set_table_sorting
     - reset_table_sorting
+    - get_table_sorting
 
   - title: "Options"
     desc: "Lake, schema, and table configuration"

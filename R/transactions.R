@@ -162,25 +162,36 @@ commit_transaction <- function(
 
 #' Set metadata for the most recent snapshot
 #'
-#' Sets the author, commit message, and/or extra info for the most recent
-#' snapshot in a DuckLake catalog by updating the `ducklake_snapshot_changes`
-#' metadata table directly.
+#' Fills in the author, commit message, and/or extra info of the most
+#' recent snapshot in a DuckLake catalog after it was committed, by
+#' updating the `ducklake_snapshot_changes` metadata table directly.
 #'
 #' @param ducklake_name The name of the DuckLake catalog
 #' @param author Optional author name to associate with the snapshot
 #' @param commit_message Optional commit message describing the changes
 #' @param commit_extra_info Optional extra information about the commit
 #' @param conn Optional DuckDB connection object. If not provided, uses the default ducklake connection.
+#' @param overwrite Replace values the snapshot already carries (default
+#'   `FALSE`). By default only empty fields are filled in, and the call
+#'   stops when a supplied field already has a value.
 #'
 #' @returns Invisibly returns TRUE on success
 #' @family transactions
 #' @export
 #'
 #' @details
-#' This function retroactively updates metadata on the most recent snapshot.
-#' To set metadata at commit time, use the \code{author}, \code{commit_message},
-#' and \code{commit_extra_info} arguments in \code{commit_transaction()} or
-#' \code{with_transaction()} instead.
+#' Metadata belongs on the commit: pass `author`, `commit_message`, and
+#' `commit_extra_info` to [with_transaction()] or [commit_transaction()],
+#' which record them through DuckLake's `set_commit_message()` as part of
+#' the transaction itself. This function is the escape hatch for a snapshot
+#' that was committed without them, such as one made interactively or by a
+#' client that could not set them.
+#'
+#' It writes to the catalog's metadata table outside DuckLake's transaction
+#' and conflict model, and an overwrite leaves no trace of the previous
+#' value. That is why it fills blanks only unless `overwrite = TRUE`. Where
+#' the snapshot history is the audit trail (GxP, 21 CFR Part 11), set
+#' metadata at commit time and leave `overwrite` alone.
 #'
 #' @examplesIf ducklake_extension_available()
 #' lake_dir <- tempfile("meta_lake_")
@@ -191,12 +202,16 @@ commit_transaction <- function(
 #' create_table(mtcars, "cars")
 #' commit_transaction()
 #'
-#' # Add metadata to the snapshot after the fact
+#' # The snapshot has no author or message yet: fill them in
 #' set_snapshot_metadata(
 #'   ducklake_name = "meta_lake",
 #'   author = "Data Team",
 #'   commit_message = "Added the cars dataset"
 #' )
+#'
+#' # A second call refuses to replace them unless told to
+#' try(set_snapshot_metadata("meta_lake", commit_message = "Reworded"))
+#' set_snapshot_metadata("meta_lake", commit_message = "Reworded", overwrite = TRUE)
 #'
 #' detach_ducklake("meta_lake", shutdown = TRUE)
 #' unlink(lake_dir, recursive = TRUE)
@@ -205,57 +220,65 @@ set_snapshot_metadata <- function(
   author = NULL,
   commit_message = NULL,
   commit_extra_info = NULL,
-  conn = NULL
+  conn = NULL,
+  overwrite = FALSE
 ) {
   if (is.null(conn)) {
     conn <- get_ducklake_connection()
   }
   check_identifier(ducklake_name)
 
-  if (
-    is.null(author) && is.null(commit_message) && is.null(commit_extra_info)
-  ) {
+  provided <- list(
+    author = author,
+    commit_message = commit_message,
+    commit_extra_info = commit_extra_info
+  )
+  provided <- provided[!vapply(provided, is.null, logical(1))]
+  if (length(provided) == 0) {
     cli::cli_warn("No metadata provided to set.")
     return(invisible(FALSE))
   }
 
-  # Build parameterized SET clause to prevent SQL injection
-  set_parts <- character()
-  params <- list()
-  if (!is.null(author)) {
-    set_parts <- c(set_parts, "author = ?")
-    params <- c(params, list(author))
-  }
-  if (!is.null(commit_message)) {
-    set_parts <- c(set_parts, "commit_message = ?")
-    params <- c(params, list(commit_message))
-  }
-  if (!is.null(commit_extra_info)) {
-    set_parts <- c(set_parts, "commit_extra_info = ?")
-    params <- c(params, list(commit_extra_info))
+  prefix <- metadata_prefix(ducklake_name, conn)
+  changes_ref <- paste0(prefix, ".ducklake_snapshot_changes")
+  latest <- sprintf(
+    "(SELECT MAX(snapshot_id) FROM %s.ducklake_snapshot)", prefix
+  )
+
+  if (!isTRUE(overwrite)) {
+    current <- tryCatch(
+      DBI::dbGetQuery(
+        conn,
+        sprintf(
+          "SELECT author, commit_message, commit_extra_info FROM %s WHERE snapshot_id = %s",
+          changes_ref, latest
+        )
+      ),
+      error = function(e) NULL
+    )
+    if (!is.null(current) && nrow(current) == 1) {
+      taken <- names(provided)[!is.na(unlist(current[1, names(provided)]))]
+      if (length(taken) > 0) {
+        cli::cli_abort(c(
+          "The latest snapshot already has {.field {taken}} set.",
+          "i" = "Metadata belongs on the commit: record it with {.fn with_transaction} or {.fn commit_transaction}.",
+          "i" = "Pass {.code overwrite = TRUE} to replace {cli::qty(length(taken))}{?it/them}; the previous value{?s} {?is/are} not kept."
+        ))
+      }
+    }
   }
 
-  # Qualify metadata table names based on backend
-  backend <- get_ducklake_backend(ducklake_name)
-  meta_db <- paste0("__ducklake_metadata_", ducklake_name)
-  if (backend %in% c("postgres", "mysql")) {
-    changes_ref <- sprintf("\"%s\".ducklake_snapshot_changes", meta_db)
-    snapshot_ref <- sprintf("\"%s\".ducklake_snapshot", meta_db)
-  } else {
-    changes_ref <- sprintf("\"%s\".main.ducklake_snapshot_changes", meta_db)
-    snapshot_ref <- sprintf("\"%s\".main.ducklake_snapshot", meta_db)
-  }
-
+  # Parameterized SET clause: values never touch the SQL text
   update_sql <- sprintf(
-    "UPDATE %s SET %s WHERE snapshot_id = (SELECT MAX(snapshot_id) FROM %s)",
+    "UPDATE %s SET %s WHERE snapshot_id = %s",
     changes_ref,
-    paste(set_parts, collapse = ", "),
-    snapshot_ref
+    paste0(names(provided), " = ?", collapse = ", "),
+    latest
   )
 
   tryCatch(
     {
-      DBI::dbExecute(conn, update_sql, params = params)
+      DBI::dbExecute(conn, update_sql, params = unname(provided))
       cli::cli_inform("Snapshot metadata updated.")
       invisible(TRUE)
     },

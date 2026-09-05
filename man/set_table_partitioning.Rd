@@ -29,8 +29,9 @@ speed up filtered reads on large tables considerably.
 \details{
 Partitioning only affects data written \emph{after} the keys are set;
 previously written files keep their layout. To re-partition existing
-data, rewrite the table (e.g. with \code{\link[=replace_table]{replace_table()}}) after setting the
-keys.
+data, set the keys and then rewrite the table with \code{\link[=replace_table]{replace_table()}}:
+the rewrite carries the keys over to the new table and writes every row
+through them.
 
 Runs \verb{ALTER TABLE ... SET PARTITIONED BY (...)}. The expressions are
 validated against the transforms DuckLake supports before any SQL is

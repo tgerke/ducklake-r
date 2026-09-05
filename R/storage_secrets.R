@@ -23,8 +23,12 @@
 #'   and dropped individually; unnamed ones act as the default for their
 #'   type.
 #' @param persistent If `TRUE`, the secret is written (unencrypted) to
-#'   `~/.duckdb/stored_secrets` and survives the session. The default
-#'   `FALSE` keeps it in memory only, which is the right choice for
+#'   DuckDB's secret directory and survives the session. Where that is
+#'   depends on the duckdb R package: from 1.5.2 on it sits under the same
+#'   "home" directory as extensions (`DUCKDB_R_HOME`, the `duckdb.home`
+#'   option, or `~/.duckdb`; see [install_ducklake()]), and with the
+#'   temporary default the secret is lost with the session anyway. The
+#'   default `FALSE` keeps it in memory only, which is the right choice for
 #'   credentials supplied from a vault or environment variable.
 #'
 #' @details
@@ -35,6 +39,10 @@
 #' can fail, so the package loads it up front instead. If you pre-install
 #' extensions (say, when baking a container image), include `aws` alongside
 #' `httpfs`. The azure extension provides its own credential chain.
+#'
+#' On Windows neither the aws nor the azure extension is available for the
+#' duckdb R package, so `provider = "credential_chain"` and `type = "azure"`
+#' fail there; explicit keys for `"s3"`, `"gcs"`, and `"r2"` work.
 #'
 #' Prefer `provider = "credential_chain"` over embedding long-lived keys in
 #' scripts. The secret's values are visible in the session via

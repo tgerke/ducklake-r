@@ -38,8 +38,12 @@ and dropped individually; unnamed ones act as the default for their
 type.}
 
 \item{persistent}{If \code{TRUE}, the secret is written (unencrypted) to
-\verb{~/.duckdb/stored_secrets} and survives the session. The default
-\code{FALSE} keeps it in memory only, which is the right choice for
+DuckDB's secret directory and survives the session. Where that is
+depends on the duckdb R package: from 1.5.2 on it sits under the same
+"home" directory as extensions (\code{DUCKDB_R_HOME}, the \code{duckdb.home}
+option, or \verb{~/.duckdb}; see \code{\link[=install_ducklake]{install_ducklake()}}), and with the
+temporary default the secret is lost with the session anyway. The
+default \code{FALSE} keeps it in memory only, which is the right choice for
 credentials supplied from a vault or environment variable.}
 }
 \value{
@@ -59,6 +63,10 @@ and \code{"r2"} secrets, and DuckDB's automatic mid-statement install of it
 can fail, so the package loads it up front instead. If you pre-install
 extensions (say, when baking a container image), include \code{aws} alongside
 \code{httpfs}. The azure extension provides its own credential chain.
+
+On Windows neither the aws nor the azure extension is available for the
+duckdb R package, so \code{provider = "credential_chain"} and \code{type = "azure"}
+fail there; explicit keys for \code{"s3"}, \code{"gcs"}, and \code{"r2"} work.
 
 Prefer \code{provider = "credential_chain"} over embedding long-lived keys in
 scripts. The secret's values are visible in the session via

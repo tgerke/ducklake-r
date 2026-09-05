@@ -33,10 +33,10 @@ snapshot -- typically files orphaned by \code{\link[=expire_snapshots]{expire_sn
 by \code{\link[=merge_adjacent_files]{merge_adjacent_files()}}.
 }
 \details{
-As an alternative to calling this manually, a retention policy can be set
-once on the catalog with
-\code{DBI::dbExecute(get_ducklake_connection(), "CALL my_lake.set_option('delete_older_than', '1 week')")},
-after which DuckLake cleans up eligible files automatically.
+As an alternative to calling this manually, set a retention policy once
+with \code{set_ducklake_option("delete_older_than", "7 days")}; every later
+\code{\link[=checkpoint_ducklake]{checkpoint_ducklake()}} then deletes the files that have been released
+for at least that long.
 }
 \examples{
 \dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}

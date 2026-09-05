@@ -16,7 +16,9 @@ already in UTC (e.g., "2024-01-15 10:30:00")}
 \item{conn}{Optional DuckDB connection object. If not provided, uses the default ducklake connection.}
 }
 \value{
-A dplyr lazy query object (tbl_lazy) that can be further manipulated with dplyr verbs
+A lazy table (class \code{tbl_ducklake}) that works with dplyr verbs.
+Like \code{\link[=get_ducklake_table]{get_ducklake_table()}}, collecting it restores stored column
+labels.
 }
 \description{
 Retrieves data from a DuckLake table as it existed at a specific point in time

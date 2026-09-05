@@ -251,7 +251,7 @@ format_gap_duration <- function(secs) {
 #'
 #' @noRd
 ducklake_table_id_names <- function(ducklake_name, conn) {
-  backend <- get_ducklake_backend()
+  backend <- get_ducklake_backend(ducklake_name)
   metadata_ref <- if (backend %in% c("postgres", "mysql")) {
     paste0("__ducklake_metadata_", ducklake_name, ".ducklake_table")
   } else {

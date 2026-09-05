@@ -69,7 +69,7 @@ test_that("commit_transaction sets metadata via CALL API", {
 
 # --- set_snapshot_metadata() (retroactive UPDATE on metadata table) ---
 
-test_that("set_snapshot_metadata updates metadata retroactively", {
+test_that("set_snapshot_metadata replaces metadata when overwrite = TRUE", {
   skip_if_not_installed("duckdb")
   skip_if_not_installed("dplyr")
 
@@ -84,7 +84,8 @@ test_that("set_snapshot_metadata updates metadata retroactively", {
   set_snapshot_metadata(
     ducklake_name = lake$ducklake_name,
     author = "Corrected Author",
-    commit_message = "Corrected message"
+    commit_message = "Corrected message",
+    overwrite = TRUE
   )
 
   snapshots <- list_table_snapshots("meta_retro_1")
@@ -109,7 +110,8 @@ test_that("set_snapshot_metadata handles single quotes and special characters", 
   set_snapshot_metadata(
     ducklake_name = lake$ducklake_name,
     author = "François O'Malley",
-    commit_message = "Added 'special' chars: è, ñ, ü"
+    commit_message = "Added 'special' chars: è, ñ, ü",
+    overwrite = TRUE
   )
 
   snapshots <- list_table_snapshots("meta_retro_2")
@@ -163,4 +165,39 @@ test_that("set_snapshot_metadata validates the ducklake name", {
     set_snapshot_metadata('bad"name', author = "x"),
     "simple identifier"
   )
+})
+
+test_that("set_snapshot_metadata fills empty fields and refuses to overwrite by default", {
+  skip_if_not_installed("duckdb")
+  skip_if_not_installed("dplyr")
+
+  lake <- create_temp_ducklake()
+  on.exit(cleanup_temp_ducklake(lake), add = TRUE)
+
+  # Committed without metadata: every field is empty
+  with_transaction(create_table(mtcars[1:3, ], "meta_fill"))
+
+  set_snapshot_metadata(lake$ducklake_name, author = "Late Author")
+  snapshots <- list_table_snapshots("meta_fill")
+  expect_equal(snapshots$author, "Late Author")
+  expect_true(is.na(snapshots$commit_message))
+
+  # A still-empty field can be filled in a later call
+  set_snapshot_metadata(lake$ducklake_name, commit_message = "Late message")
+  expect_equal(list_table_snapshots("meta_fill")$commit_message, "Late message")
+
+  # A field that already has a value is refused, and left as it was
+  expect_error(
+    set_snapshot_metadata(lake$ducklake_name, author = "Someone Else"),
+    "already has"
+  )
+  expect_error(
+    set_snapshot_metadata(
+      lake$ducklake_name, author = "Someone Else", commit_extra_info = "x"
+    ),
+    "author"
+  )
+  snapshots <- list_table_snapshots("meta_fill")
+  expect_equal(snapshots$author, "Late Author")
+  expect_true(is.na(snapshots$commit_extra_info))
 })

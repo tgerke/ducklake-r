@@ -11,7 +11,9 @@ ducklake_exec(.data, table_name = NULL, .quiet = TRUE)
 
 \item{table_name}{The target table name for the operation. If not provided, will be extracted from the table attribute (set by get_ducklake_table())}
 
-\item{.quiet}{Logical, whether to suppress debug output (default TRUE)}
+\item{.quiet}{Logical, whether to suppress the SQL trace (default TRUE).
+With \code{.quiet = FALSE} the original dplyr SQL, the translated statement,
+and the number of rows affected are emitted as messages.}
 }
 \value{
 The result from db_execute()

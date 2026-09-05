@@ -9,7 +9,9 @@
 #'   already in UTC (e.g., "2024-01-15 10:30:00")
 #' @param conn Optional DuckDB connection object. If not provided, uses the default ducklake connection.
 #'
-#' @returns A dplyr lazy query object (tbl_lazy) that can be further manipulated with dplyr verbs
+#' @returns A lazy table (class `tbl_ducklake`) that works with dplyr verbs.
+#'   Like [get_ducklake_table()], collecting it restores stored column
+#'   labels.
 #' @family time travel
 #' @export
 #'
@@ -64,24 +66,19 @@ get_ducklake_table_asof <- function(table_name, timestamp, conn = NULL) {
 
   # Add schema prefix if not already present.
   # DuckDB and SQLite use the main. schema; PostgreSQL and MySQL do not.
+  qualified <- table_name
   if (!grepl("\\.", table_name)) {
     backend <- get_ducklake_backend()
     if (!(backend %in% c("postgres", "mysql"))) {
-      table_name <- paste0("main.", table_name)
+      qualified <- paste0("main.", table_name)
     }
   }
-  
+
   # Use DuckLake's AT (TIMESTAMP => ...) syntax for time travel
   query <- sprintf("SELECT * FROM %s AT (TIMESTAMP => %s)",
-                   quote_ident(table_name, conn), quote_sql(timestamp_str))
-  
-  # Return as a dplyr tbl
-  result <- dplyr::tbl(conn, dplyr::sql(query))
-  
-  # Store the table name as an attribute for potential use with ducklake_exec()
-  attr(result, "ducklake_table_name") <- table_name
-  
-  return(result)
+                   quote_ident(qualified, conn), quote_sql(timestamp_str))
+
+  as_ducklake_tbl(dplyr::tbl(conn, dplyr::sql(query)), table_name)
 }
 
 #' Query a table at a specific version/snapshot
@@ -93,7 +90,9 @@ get_ducklake_table_asof <- function(table_name, timestamp, conn = NULL) {
 #' @param version The snapshot_id to query (get this from \code{list_table_snapshots()})
 #' @param conn Optional DuckDB connection object. If not provided, uses the default ducklake connection.
 #'
-#' @returns A dplyr lazy query object (tbl_lazy) that can be further manipulated with dplyr verbs
+#' @returns A lazy table (class `tbl_ducklake`) that works with dplyr verbs.
+#'   Like [get_ducklake_table()], collecting it restores stored column
+#'   labels.
 #' @family time travel
 #' @export
 #'
@@ -135,19 +134,20 @@ get_ducklake_table_version <- function(table_name, version, conn = NULL) {
 
   # Add schema prefix if not already present.
   # DuckDB and SQLite use the main. schema; PostgreSQL and MySQL do not.
+  qualified <- table_name
   if (!grepl("\\.", table_name)) {
     backend <- get_ducklake_backend()
     if (!(backend %in% c("postgres", "mysql"))) {
-      table_name <- paste0("main.", table_name)
+      qualified <- paste0("main.", table_name)
     }
   }
 
   # Use DuckLake's AT (VERSION => ...) syntax to query a specific snapshot
   # The version parameter should be the snapshot_id from list_table_snapshots()
   query <- sprintf("SELECT * FROM %s AT (VERSION => %d)",
-                   quote_ident(table_name, conn), as.integer(version))
+                   quote_ident(qualified, conn), as.integer(version))
 
-  dplyr::tbl(conn, dplyr::sql(query))
+  as_ducklake_tbl(dplyr::tbl(conn, dplyr::sql(query)), table_name)
 }
 
 #' List available snapshots for a table
@@ -166,6 +166,11 @@ get_ducklake_table_version <- function(table_name, version, conn = NULL) {
 #' This function queries the snapshot history of a table, showing available
 #' versions and their timestamps. This is useful for understanding what
 #' historical versions are available for time-travel queries.
+#'
+#' A table's snapshots are matched by its name and by every table id the
+#' name has had in its schema, so the history stays complete across
+#' [replace_table()] and [restore_table_version()], which give the table a
+#' new id.
 #'
 #' @examplesIf ducklake_extension_available()
 #' lake_dir <- tempfile("snaplist_lake_")
@@ -200,46 +205,12 @@ list_table_snapshots <- function(table_name = NULL, ducklake_name = NULL, conn =
     query <- sprintf("SELECT * FROM %s.snapshots()", quote_ident(ducklake_name, conn))
     result <- DBI::dbGetQuery(conn, query)
     
-    # If table_name is provided, filter the results
+    # If table_name is provided, keep the snapshots that touched it
     if (!is.null(table_name) && nrow(result) > 0) {
-      # Filter by checking if the table appears in the changes column.
-      # Snapshots that create a table reference it by name
-      # ("tables_created, tables_inserted_into, main.dm_raw, 1"), but
-      # row-level DML snapshots reference it by numeric table id only
-      # ("inlined_insert, 1"), so match on both.
-      # DuckDB and SQLite use main. schema prefix; PostgreSQL and MySQL do not
-      backend <- get_ducklake_backend()
-      if (backend %in% c("postgres", "mysql")) {
-        full_table_name <- table_name
-      } else {
-        full_table_name <- paste0("main.", table_name)
-      }
-      # Use regex with word boundaries to avoid matching "main.dm" when looking for "main.dm_raw"
-      patterns <- paste0("\\b", gsub("\\.", "\\\\.", full_table_name), "\\b")
-
-      # Resolve every table id this name has had (replace_table assigns a
-      # new id each time), so id-only DML snapshots are matched too
-      table_ids <- tryCatch({
-        metadata_ref <- if (backend %in% c("postgres", "mysql")) {
-          paste0("__ducklake_metadata_", ducklake_name, ".ducklake_table")
-        } else {
-          paste0("__ducklake_metadata_", ducklake_name, ".main.ducklake_table")
-        }
-        DBI::dbGetQuery(
-          conn,
-          sprintf(
-            "SELECT DISTINCT table_id FROM %s WHERE table_name = ?",
-            quote_ident(metadata_ref, conn)
-          ),
-          params = list(table_name)
-        )$table_id
-      }, error = function(e) integer(0))
-      if (length(table_ids) > 0) {
-        patterns <- c(patterns, paste0("\\b", table_ids, "\\b"))
-      }
-
-      keep <- Reduce(`|`, lapply(patterns, grepl, x = result$changes))
-      result <- result[keep, ]
+      keep <- snapshots_touching_table(
+        result$changes, table_name, ducklake_name, conn
+      )
+      result <- result[keep, , drop = FALSE]
       rownames(result) <- NULL
     }
 
@@ -280,10 +251,18 @@ list_table_snapshots <- function(table_name = NULL, ducklake_name = NULL, conn =
 #' @details
 #' You must specify either \code{version} or \code{timestamp}, but not both.
 #'
-#' Under the hood this runs
-#' \code{CREATE OR REPLACE TABLE t AS SELECT * FROM t AT (VERSION => n)}
-#' inside a transaction. Because the restore creates a new snapshot, it is
-#' itself reversible with another \code{restore_table_version()} call.
+#' Under the hood this reads \code{SELECT * FROM t AT (VERSION => n)} into a
+#' temporary DuckDB table, then drops and recreates \code{t} from it inside
+#' a transaction. Because the restore creates a new snapshot, it is itself
+#' reversible with another \code{restore_table_version()} call.
+#'
+#' The restored table gets a new table id, and DuckLake keeps comments,
+#' partition keys, sort order, and table-scoped options against the id, so
+#' they are captured beforehand and put back: comments and keys for the
+#' columns the restored version still has, inside the restore transaction;
+#' table-scoped options right after it commits, as a small follow-up
+#' snapshot, since DuckLake cannot set options on a table created in the
+#' open transaction.
 #'
 #' @seealso [get_ducklake_table_version()], [get_ducklake_table_asof()],
 #'   [list_table_snapshots()]
@@ -342,22 +321,62 @@ restore_table_version <- function(table_name, version = NULL, timestamp = NULL,
   }
 
   quoted_table <- quote_ident(table_name, conn)
-  restore_sql <- sprintf(
-    "CREATE OR REPLACE TABLE %s AS SELECT * FROM %s AT (%s)",
-    quoted_table, quoted_table, at_clause
-  )
 
   if (is.null(commit_message)) {
     commit_message <- sprintf("Restored %s to %s", table_name, restore_point)
   }
 
+  # The rewrite assigns a new table id; carry the comments, partition keys,
+  # sort order, and table-scoped options over to it
+  meta <- capture_table_metadata(table_name, conn = conn)
+
+  # Materialize the old version outside the lake first: once the table is
+  # dropped inside the transaction, time travel can no longer resolve it,
+  # and CREATE OR REPLACE followed by INSERT in one transaction loses the
+  # inserted rows in DuckLake 1.0
+  temp_table <- quote_ident(
+    paste0("__ducklake_restore_", gsub("[^a-zA-Z0-9]", "_", table_name)), conn
+  )
+  db_execute(sprintf("DROP TABLE IF EXISTS %s;", temp_table), conn = conn)
+  on.exit(
+    try(
+      db_execute(sprintf("DROP TABLE IF EXISTS %s;", temp_table), conn = conn),
+      silent = TRUE
+    ),
+    add = TRUE
+  )
+
   tryCatch({
+    db_execute(
+      sprintf(
+        "CREATE TEMP TABLE %s AS SELECT * FROM %s AT (%s);",
+        temp_table, quoted_table, at_clause
+      ),
+      conn = conn
+    )
+    columns <- names(DBI::dbGetQuery(
+      conn, sprintf("SELECT * FROM %s LIMIT 0", temp_table)
+    ))
+
     with_transaction(
-      db_execute(restore_sql, conn = conn),
+      {
+        db_execute(sprintf("DROP TABLE %s;", quoted_table), conn = conn)
+        db_execute(
+          sprintf("CREATE TABLE %s AS SELECT * FROM %s LIMIT 0;", quoted_table, temp_table),
+          conn = conn
+        )
+        reapply_table_keys(meta, columns, conn)
+        db_execute(
+          sprintf("INSERT INTO %s SELECT * FROM %s;", quoted_table, temp_table),
+          conn = conn
+        )
+        reapply_table_comments(meta, columns, conn = conn)
+      },
       author = author,
       commit_message = commit_message,
       conn = conn
     )
+    reapply_table_options(meta, conn)
     cli::cli_inform("Table {.val {table_name}} restored to {restore_point} (recorded as a new snapshot).")
     invisible(TRUE)
   }, error = function(e) {

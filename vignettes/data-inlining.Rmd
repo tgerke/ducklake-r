@@ -97,15 +97,17 @@ get_ducklake_table("readings") |> collect()
 
 ## Incremental updates stay inlined
 
-Small modifications — adding a derived column, correcting a value — also stay
-in the catalog when the resulting changeset is below the threshold.
+Small modifications also stay in the catalog when the changeset is below
+the threshold. Adding a derived column is a metadata change
+(`add_table_column()`), and filling it is an in-database UPDATE:
 
 ```{r small-update}
-# Add a calibrated temperature column
-with_transaction(
+with_transaction({
+  add_table_column("readings", "temp_calibrated", "DOUBLE")
   get_ducklake_table("readings") |>
     mutate(temp_calibrated = temperature - 0.3) |>
-    replace_table("readings"),
+    ducklake_exec()
+},
   author = "Sensor Team",
   commit_message = "Add calibrated temperature"
 )
@@ -115,15 +117,17 @@ get_ducklake_table("readings") |> collect()
 
 ## Removing rows
 
-Filtering out rows and replacing the table also works within the inlining
-threshold:
+A small delete is inlined too: DuckLake records it in the catalog rather
+than writing a delete file.
 
 ```{r small-delete}
 # Remove sensor 2's reading
 with_transaction(
-  get_ducklake_table("readings") |>
-    filter(sensor_id != 2) |>
-    replace_table("readings"),
+  rows_delete(
+    get_ducklake_table("readings"),
+    data.frame(sensor_id = 2L),
+    by = "sensor_id"
+  ),
   author = "Sensor Team",
   commit_message = "Remove faulty sensor 2 reading"
 )
@@ -222,8 +226,11 @@ flush_inlined_data(table_name = "readings")
 
 ## Checkpoint: one-stop maintenance
 
-`checkpoint_ducklake()` runs all maintenance operations in sequence—flush,
-compaction, snapshot expiration, and file cleanup:
+`checkpoint_ducklake()` runs DuckLake's maintenance operations in sequence:
+it flushes inlined data, merges small files, and rewrites heavily deleted
+files. It also expires old snapshots and deletes the files they released,
+but only once the lake carries a retention policy (the `expire_older_than`
+and `delete_older_than` options); see `vignette("storage-and-backups")`.
 
 ```{r checkpoint, eval = ducklake_available && .Platform$OS.type != "windows"}
 checkpoint_ducklake()

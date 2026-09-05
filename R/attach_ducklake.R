@@ -62,6 +62,12 @@
 #' @param snapshot_time Optional POSIXct or UTC timestamp string. Attaches
 #'   the lake pinned to its state at that moment. Mutually exclusive with
 #'   `snapshot_version`.
+#' @param automatic_migration If `TRUE`, let DuckLake upgrade a catalog
+#'   written in an earlier format version to the one the installed
+#'   extension uses (the `AUTOMATIC_MIGRATION` option). Needed once for a
+#'   lake created with DuckDB 1.5.1, whose extension wrote the 0.4 format,
+#'   after upgrading to 1.5.2 or later. The upgrade is permanent, so take a
+#'   backup first. Default `FALSE`, in which case a mismatch is an error.
 #'
 #' @details
 #' For credential management with PostgreSQL or MySQL, consider DuckDB's
@@ -85,7 +91,10 @@
 #' **Windows limitation:** The `postgres` and `mysql` DuckDB extensions are not
 #' available on Windows (MinGW toolchain). Only `duckdb` and `sqlite` backends
 #' work there. Use Linux, macOS, or WSL for PostgreSQL/MySQL backends.
-#' See \url{https://github.com/duckdb/duckdb/issues/7892}.
+#' See \url{https://github.com/duckdb/duckdb/issues/7892}. The `aws` and
+#' `azure` extensions are missing on Windows too, so
+#' [create_storage_secret()] with `provider = "credential_chain"` or
+#' `type = "azure"` does not work there; explicit S3 keys do.
 #'
 #' @returns Invisibly, `NULL`. Called for its side effect of attaching the
 #'   DuckLake catalog to the package's DuckDB connection.
@@ -170,6 +179,10 @@
 #'
 #' # A frozen view of the lake as of snapshot 12, e.g. to reproduce a report
 #' attach_ducklake("lake_v12", lake_path = "path/to/lake", snapshot_version = 12)
+#'
+#' # A lake created with DuckDB 1.5.1 (catalog format 0.4), opened after
+#' # upgrading: migrate it once, then attach as usual
+#' attach_ducklake("old_lake", lake_path = "path/to/lake", automatic_migration = TRUE)
 #' }
 attach_ducklake <- function(ducklake_name, lake_path,
                              backend = c("duckdb", "postgres", "sqlite", "mysql"),
@@ -180,7 +193,8 @@ attach_ducklake <- function(ducklake_name, lake_path,
                              encrypted = FALSE,
                              meta_encryption_key = NULL,
                              snapshot_version = NULL,
-                             snapshot_time = NULL) {
+                             snapshot_time = NULL,
+                             automatic_migration = FALSE) {
   backend <- match.arg(backend)
   check_identifier(ducklake_name)
 
@@ -284,7 +298,8 @@ attach_ducklake <- function(ducklake_name, lake_path,
                                   encrypted,
                                   meta_encryption_key,
                                   snapshot_version,
-                                  snapshot_time)
+                                  snapshot_time,
+                                  automatic_migration)
   db_execute(attach_sql)
   db_execute(sprintf("USE %s;", quote_ident(ducklake_name, conn)))
   register_lake(ducklake_name, backend, catalog_connection_string)
@@ -368,6 +383,7 @@ ensure_extensions <- function(backend, encrypted = FALSE, remote = FALSE) {
 #' @param meta_encryption_key Optional key for META_ENCRYPTION_KEY
 #' @param snapshot_version Optional snapshot id for SNAPSHOT_VERSION
 #' @param snapshot_time Optional timestamp for SNAPSHOT_TIME
+#' @param automatic_migration Whether to add AUTOMATIC_MIGRATION
 #'
 #' @returns A SQL ATTACH statement string
 #' @keywords internal
@@ -378,7 +394,8 @@ build_attach_sql <- function(ducklake_name, lake_path, backend,
                               encrypted = FALSE,
                               meta_encryption_key = NULL,
                               snapshot_version = NULL,
-                              snapshot_time = NULL) {
+                              snapshot_time = NULL,
+                              automatic_migration = FALSE) {
   connection_string <- switch(backend,
     duckdb = {
       ducklake_path <- if (!is.null(catalog_connection_string)) {
@@ -434,6 +451,10 @@ build_attach_sql <- function(ducklake_name, lake_path, backend,
       options,
       sprintf("SNAPSHOT_TIME %s", quote_sql(format_timestamp(snapshot_time)))
     )
+  }
+
+  if (automatic_migration) {
+    options <- c(options, "AUTOMATIC_MIGRATION")
   }
 
   if (length(options) > 0) {

@@ -12,6 +12,13 @@ test_that("sorting keys round-trip through set and reset", {
     "now sorted by"
   )
 
+  keys <- get_table_sorting("sorted_t")
+  expect_equal(keys$table_name, c("sorted_t", "sorted_t"))
+  expect_equal(keys$expression, c("id", "v"))
+  expect_equal(keys$sort_direction, c("ASC", "DESC"))
+  expect_equal(keys$null_order[[2]], "NULLS_LAST")
+  expect_true("sorted_t" %in% get_table_sorting()$table_name)
+
   # New writes go through the sort path without error
   suppressMessages(
     rows_insert(
@@ -23,6 +30,7 @@ test_that("sorting keys round-trip through set and reset", {
   expect_equal(nrow(dplyr::collect(get_ducklake_table("sorted_t"))), 4)
 
   expect_message(reset_table_sorting("sorted_t"), "removed")
+  expect_equal(nrow(get_table_sorting("sorted_t")), 0)
 
   cleanup_temp_ducklake(lake)
 })

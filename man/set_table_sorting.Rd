@@ -60,6 +60,7 @@ unlink(lake_dir, recursive = TRUE)
 \code{\link[=set_table_partitioning]{set_table_partitioning()}}
 
 Other sorting:
+\code{\link[=get_table_sorting]{get_table_sorting()}},
 \code{\link[=reset_table_sorting]{reset_table_sorting()}}
 }
 \concept{sorting}

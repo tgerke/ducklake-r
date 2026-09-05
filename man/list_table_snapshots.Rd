@@ -23,6 +23,11 @@ Retrieves information about available snapshots/versions for a table.
 This function queries the snapshot history of a table, showing available
 versions and their timestamps. This is useful for understanding what
 historical versions are available for time-travel queries.
+
+A table's snapshots are matched by its name and by every table id the
+name has had in its schema, so the history stays complete across
+\code{\link[=replace_table]{replace_table()}} and \code{\link[=restore_table_version]{restore_table_version()}}, which give the table a
+new id.
 }
 \examples{
 \dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}

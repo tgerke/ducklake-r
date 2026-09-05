@@ -58,14 +58,17 @@ pak::pak("tgerke/ducklake-r")
 ```
 
 ducklake requires the [duckdb](https://r.duckdb.org) R package version
-1.5.1 or newer (DuckDB engine 1.5.1+, matching the stable
-[DuckLake v1.0 specification](https://ducklake.select/docs/stable/specification/introduction)).
-The Quack remote-access features are the exception: they need DuckDB 1.5.3 or
-newer, which means duckdb 1.5.4 or newer from CRAN.
+1.5.2 or newer: DuckDB 1.5.2 is the release that ships the stable
+[DuckLake 1.0 specification](https://ducklake.select/docs/stable/specification/introduction).
+The Quack remote-access features need DuckDB 1.5.3 or newer, which means
+duckdb 1.5.3 or newer from CRAN.
 
 DuckLake itself ships as a DuckDB extension that is downloaded on first use.
-Run `install_ducklake()` once per machine, or check whether you already have
-it with `ducklake_extension_available()`.
+Run `install_ducklake()` once, or check whether you already have it with
+`ducklake_extension_available()`. From duckdb 1.5.2 on, extensions live in a
+per-session temporary directory unless you point `DUCKDB_R_HOME` (for
+example in `~/.Renviron`) at a directory of your choice. Do that, and the
+download happens once per machine instead of once per session.
 
 ducklake manages its own DuckDB connection, so there is nothing to set up:
 just `attach_ducklake()` and go. If you prefer to supply your own connection
@@ -78,7 +81,7 @@ just `attach_ducklake()` and go. If you prefer to supply your own connection
 library(ducklake)
 library(dplyr)
 
-# Install the ducklake extension (requires duckdb R package >= 1.5.1)
+# Install the ducklake extension (requires duckdb R package >= 1.5.2)
 install_ducklake()
 
 # Create a data lake in a temporary directory

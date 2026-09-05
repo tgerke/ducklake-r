@@ -90,11 +90,13 @@ get_ducklake_table("cars") |>
 Suppose we discover that fuel efficiency measurements need to be adjusted for some vehicles:
 
 ```{r version2}
-# Update mpg for high-performance cars (5% reduction)
+# Update mpg for high-performance cars (5% reduction), in place: the
+# filter becomes the WHERE clause of an UPDATE
 with_transaction(
   get_ducklake_table("cars") |>
-    mutate(mpg = if_else(hp > 200, mpg * 0.95, mpg)) |>
-    replace_table("cars"),
+    filter(hp > 200) |>
+    mutate(mpg = mpg * 0.95) |>
+    ducklake_exec(),
   author = "Data Analyst",
   commit_message = "Adjust MPG for high-performance vehicles"
 )
@@ -113,7 +115,9 @@ get_ducklake_table("cars") |>
 Let's add a new categorical variable to classify cars by fuel efficiency:
 
 ```{r version3}
-with_transaction(
+# A new column is a metadata change; filling it is an in-database UPDATE
+with_transaction({
+  add_table_column("cars", "efficiency_class", "VARCHAR")
   get_ducklake_table("cars") |>
     mutate(
       efficiency_class = case_when(
@@ -122,7 +126,8 @@ with_transaction(
         TRUE ~ "Low"
       )
     ) |>
-    replace_table("cars"),
+    ducklake_exec()
+},
   author = "Data Analyst",
   commit_message = "Add efficiency classification"
 )
@@ -147,7 +152,7 @@ with_transaction(
         TRUE ~ "Low"
       )
     ) |>
-    replace_table("cars"),
+    ducklake_exec(),
   author = "Senior Analyst",
   commit_message = "Correct efficiency classification thresholds"
 )
@@ -197,10 +202,8 @@ get_ducklake_table_version("cars", version = 3) |>
 We can also query data as it existed at any point in time:
 
 ```{r timestamp-query}
-# Get the timestamp from version 2
-version2_timestamp <- snapshots |>
-  filter(schema_version == 2) |>
-  pull(snapshot_time)
+# Get the timestamp of the second snapshot (the MPG adjustment)
+version2_timestamp <- snapshots$snapshot_time[[2]]
 
 # Query data as it existed at that time
 # Note: Add 1 second to ensure we query AFTER the snapshot was created

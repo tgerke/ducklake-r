@@ -17,8 +17,9 @@
 #' @details
 #' Partitioning only affects data written *after* the keys are set;
 #' previously written files keep their layout. To re-partition existing
-#' data, rewrite the table (e.g. with [replace_table()]) after setting the
-#' keys.
+#' data, set the keys and then rewrite the table with [replace_table()]:
+#' the rewrite carries the keys over to the new table and writes every row
+#' through them.
 #'
 #' Runs `ALTER TABLE ... SET PARTITIONED BY (...)`. The expressions are
 #' validated against the transforms DuckLake supports before any SQL is
@@ -165,14 +166,7 @@ get_table_partitions <- function(table_name = NULL, ducklake_name = NULL) {
   conn <- get_ducklake_connection()
   ducklake_name <- infer_ducklake_name(ducklake_name, conn)
 
-  # Metadata tables live in the __ducklake_metadata_[name] database.
-  # DuckDB and SQLite use a .main. schema qualifier; PostgreSQL and MySQL do not.
-  meta_db <- paste0("__ducklake_metadata_", ducklake_name)
-  prefix <- if (get_ducklake_backend() %in% c("postgres", "mysql")) {
-    quote_ident(meta_db, conn)
-  } else {
-    paste0(quote_ident(meta_db, conn), ".main")
-  }
+  prefix <- metadata_prefix(ducklake_name, conn)
 
   filter_clause <- if (is.null(table_name)) "" else "AND t.table_name = ?"
 

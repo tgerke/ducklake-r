@@ -43,6 +43,9 @@ longer referenced are merely scheduled for deletion. Run
 \code{\link[=checkpoint_ducklake]{checkpoint_ducklake()}} handle both steps.
 
 The most recent snapshot can never be expired.
+
+For a standing policy, set \code{set_ducklake_option("expire_older_than", "90 days")} once; \code{\link[=checkpoint_ducklake]{checkpoint_ducklake()}} then expires eligible snapshots on
+every run. Without that option a checkpoint expires nothing.
 }
 \examples{
 \dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}

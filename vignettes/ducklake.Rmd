@@ -89,14 +89,17 @@ with_transaction(
 )
 ```
 
-### Update an existing table
+### Add a derived column in place
 
 ```{r update_cars}
-# Create a second version of the cars table
-with_transaction(
+# A new column is a metadata change; filling it is an in-database UPDATE.
+# Together they make the second version of the cars table.
+with_transaction({
+  add_table_column("cars", "kpl", "DOUBLE")
   get_ducklake_table("cars") |>
-    mutate(kpl = mpg * 0.425144) |>  # Add km/L conversion
-    replace_table("cars"),
+    mutate(kpl = mpg * 0.425144) |>  # km/L conversion
+    ducklake_exec()
+},
   author = "Data Engineer",
   commit_message = "Add km/L metric to cars table"
 )
@@ -277,19 +280,35 @@ get_ducklake_table_asof("cars", timestamp = "2024-01-15 10:30:00") |>
 
 ## Updating data recipes
 
-### Replace entire table
+### Correct rows in place
 
-```{r replace_table}
+```{r update_in_place}
+# filter() becomes the WHERE clause of a single UPDATE
 with_transaction(
   get_ducklake_table("cars") |>
-    mutate(hp_per_cyl = hp / as.numeric(cyl)) |>  # Add derived metric
-    replace_table("cars"),
+    filter(cyl == 8) |>
+    mutate(hp = hp * 1.02) |>
+    ducklake_exec(),
   author = "Data Engineer",
-  commit_message = "Add horsepower per cylinder metric"
+  commit_message = "Apply the dyno correction to V8 engines"
 )
 ```
 
-Note: Use `replace_table()` for structural changes (adding or removing columns) and the row-level operations (`rows_update()`, `rows_insert()`, `rows_delete()`) for targeted, incremental changes. Both are fully versioned -- every committed change creates a snapshot you can time-travel back to. See `vignette("modifying-tables")` for guidance on choosing between them.
+### Replace entire table
+
+```{r replace_table}
+# A bulk rewrite that touches most rows: the whole table is rewritten, and
+# its comments, partition keys, sort order, and options carry over
+with_transaction(
+  get_ducklake_table("cars") |>
+    mutate(across(c(mpg, kpl), ~ round(.x, 1))) |>
+    replace_table("cars"),
+  author = "Data Engineer",
+  commit_message = "Round fuel efficiency metrics"
+)
+```
+
+Note: use the schema evolution functions (`add_table_column()` and friends) for structural changes, `ducklake_exec()` and the row-level operations (`rows_update()`, `rows_insert()`, `rows_delete()`, `rows_upsert()`) for targeted changes, and `replace_table()` for bulk rewrites. All are fully versioned: every committed change creates a snapshot you can time-travel back to. See `vignette("modifying-tables")` for guidance on choosing between them.
 
 ## Metadata and versioning recipes
 
@@ -438,6 +457,24 @@ set_ducklake_option("require_commit_message", TRUE)
 
 get_ducklake_options()
 ```
+
+## Maintenance recipes
+
+### Set a retention policy and checkpoint
+
+```{r retention, eval=FALSE}
+# Keep 90 days of time travel; delete released files a week after release
+set_ducklake_option("expire_older_than", "90 days")
+set_ducklake_option("delete_older_than", "7 days")
+
+# Flush, compact, and apply the policy
+checkpoint_ducklake()
+```
+
+Without those two options a checkpoint still flushes inlined data and
+compacts files, but expires nothing and deletes nothing. See
+`vignette("storage-and-backups")` for the individual maintenance functions
+and for backups.
 
 ## Cleanup
 

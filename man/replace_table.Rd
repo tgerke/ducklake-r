@@ -26,6 +26,7 @@ create a new versioned snapshot. It:
 \item Collects the transformed data
 \item Drops the existing table
 \item Creates a new table with the updated schema/data
+\item Puts back the metadata DuckLake keeps against the table
 }
 
 The drop and create run atomically: when no transaction is open,
@@ -34,6 +35,20 @@ leaves the table dropped. Wrap the call in \code{\link[=with_transaction]{with_t
 \code{begin_transaction()}/\code{commit_transaction()}) when you want to record an
 author and commit message on the snapshot, or to group the replacement
 with other changes.
+
+DuckLake gives the replacement a new table id, as it does for any
+\code{DROP} + \code{CREATE}, and it stores comments, partition keys, sort order,
+and table-scoped options against that id. \code{replace_table()} carries them
+over: the table comment, column comments (and so variable labels) for
+columns that still exist, partition and sort keys whose columns still
+exist (set before the rows are written, so the rewrite itself lands
+partitioned and sorted), and options set with \code{\link[=set_ducklake_option]{set_ducklake_option()}} at
+table scope. DuckLake cannot set options on a table created in the open
+transaction, so options are re-set right after the rewrite commits, as a
+small follow-up snapshot; inside a transaction you opened yourself they
+cannot be re-set at all, and a warning lists the calls to make after
+your commit. Earlier snapshots keep the earlier id and stay reachable by
+name through time travel.
 
 \strong{When to use replace_table():}
 \itemize{
@@ -54,8 +69,8 @@ with an in-database UPDATE
 }
 
 Both paths create a snapshot: replace_table() via DROP + CREATE, and
-ducklake_exec() via the in-place UPDATE/DELETE it runs, so either way the
-change is available for time travel.
+ducklake_exec() via the in-place UPDATE/DELETE/INSERT it runs, so either
+way the change is available for time travel.
 }
 \examples{
 \dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}
@@ -84,6 +99,13 @@ with_transaction(
   author = "Data Engineer",
   commit_message = "Drop derived columns"
 )
+
+# Partition keys, sort order, comments, and table options survive the rewrite
+set_table_partitioning("cars", "cyl")
+get_ducklake_table("cars") |>
+  dplyr::filter(mpg > 15) |>
+  replace_table("cars")
+get_table_partitions("cars")
 
 detach_ducklake("replace_lake", shutdown = TRUE)
 unlink(lake_dir, recursive = TRUE)

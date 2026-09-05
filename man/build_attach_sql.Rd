@@ -15,7 +15,8 @@ build_attach_sql(
   encrypted = FALSE,
   meta_encryption_key = NULL,
   snapshot_version = NULL,
-  snapshot_time = NULL
+  snapshot_time = NULL,
+  automatic_migration = FALSE
 )
 }
 \arguments{
@@ -41,6 +42,8 @@ the duckdb backend, an optional path for the catalog file}
 \item{snapshot_version}{Optional snapshot id for SNAPSHOT_VERSION}
 
 \item{snapshot_time}{Optional timestamp for SNAPSHOT_TIME}
+
+\item{automatic_migration}{Whether to add AUTOMATIC_MIGRATION}
 }
 \value{
 A SQL ATTACH statement string

@@ -43,10 +43,18 @@ still time-travel to any snapshot, including those after the restore point.
 \details{
 You must specify either \code{version} or \code{timestamp}, but not both.
 
-Under the hood this runs
-\code{CREATE OR REPLACE TABLE t AS SELECT * FROM t AT (VERSION => n)}
-inside a transaction. Because the restore creates a new snapshot, it is
-itself reversible with another \code{restore_table_version()} call.
+Under the hood this reads \code{SELECT * FROM t AT (VERSION => n)} into a
+temporary DuckDB table, then drops and recreates \code{t} from it inside
+a transaction. Because the restore creates a new snapshot, it is itself
+reversible with another \code{restore_table_version()} call.
+
+The restored table gets a new table id, and DuckLake keeps comments,
+partition keys, sort order, and table-scoped options against the id, so
+they are captured beforehand and put back: comments and keys for the
+columns the restored version still has, inside the restore transaction;
+table-scoped options right after it commits, as a small follow-up
+snapshot, since DuckLake cannot set options on a table created in the
+open transaction.
 }
 \examples{
 \dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}

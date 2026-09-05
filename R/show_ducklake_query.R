@@ -1,7 +1,9 @@
 #' Show the SQL that would be executed by ducklake operations
 #'
-#' This function shows the SQL that would be generated and executed by ducklake.
-#' This is useful for debugging and understanding what SQL is being sent to DuckDB.
+#' Prints the statement [ducklake_exec()] would run for a pipeline, without
+#' running it. Like [dplyr::show_query()], the SQL is written to the console
+#' and the input is returned invisibly, so it can sit in the middle of a
+#' pipe.
 #'
 #' @param .data A dplyr query object (tbl_lazy)
 #' @param table_name The target table name for the operation. If not provided, will be extracted from the table attribute (set by get_ducklake_table())
@@ -24,7 +26,7 @@
 #' detach_ducklake("sql_lake", shutdown = TRUE)
 #' unlink(lake_dir, recursive = TRUE)
 show_ducklake_query <- function(.data, table_name = NULL) {
-  
+
   # Extract table name from attribute if not provided
   if (is.null(table_name)) {
     table_name <- attr(.data, "ducklake_table_name", exact = TRUE)
@@ -32,13 +34,11 @@ show_ducklake_query <- function(.data, table_name = NULL) {
       cli::cli_abort("{.arg table_name} must be provided either as an argument or via {.fn get_ducklake_table}.")
     }
   }
-  cat("\n=== DuckLake SQL Preview ===\n")
-  
-  # Show main operation SQL without executing it
-  cat("\n-- Main operation\n")
+
+  # Build without executing
   sql_string <- update_table(.data, table_name, .quiet = TRUE, .execute = FALSE)
-  cat(sql_string, ";\n")
-  
+  cli::cat_line("-- DuckLake SQL preview")
+  cli::cat_line(paste0(sql_string, ";"))
+
   invisible(.data)
 }
-
