@@ -81,7 +81,7 @@ expire_snapshots(older_than = Sys.time())
 #> ℹ Unreferenced files are scheduled for deletion; run `cleanup_old_files()` to
 #>   reclaim storage.
 #>   snapshot_id       snapshot_time schema_version               changes author
-#> 1           0 2026-09-05 01:58:17              0 schemas_created, main   <NA>
+#> 1           0 2026-09-05 02:14:10              0 schemas_created, main   <NA>
 #>   commit_message commit_extra_info
 #> 1           <NA>              <NA>
 

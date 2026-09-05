@@ -1,6 +1,6 @@
 # Changelog
 
-## ducklake (development version)
+## ducklake 0.7.0
 
 - New article “Choosing a Deployment”
   ([`vignette("deployment")`](https://tgerke.github.io/ducklake-r/articles/deployment.md)):
