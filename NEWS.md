@@ -1,4 +1,4 @@
-# ducklake (development version)
+# ducklake 0.7.0
 
 * New article "Choosing a Deployment" (`vignette("deployment")`): what a
   lake looks like on disk, which catalog backend fits one person, a team on
