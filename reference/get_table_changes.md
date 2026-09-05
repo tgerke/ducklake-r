@@ -14,7 +14,8 @@ get_table_changes(table_name, start, end, ducklake_name = NULL, conn = NULL)
 
 - table_name:
 
-  The name of the table to inspect.
+  The name of the table to inspect, optionally qualified as
+  `"schema.table"` (default schema `main`).
 
 - start:
 

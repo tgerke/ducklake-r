@@ -71,7 +71,9 @@ sync, or any other client – as a tidy data frame.</p>
 
 
 <dl><dt id="arg-table-name">table_name<a class="anchor" aria-label="anchor" href="#arg-table-name"></a></dt>
-<dd><p>Optional table (or view) name to filter to.</p></dd>
+<dd><p>Optional table (or view) name to filter to, optionally
+qualified as <code>"schema.table"</code>; a bare name matches that table in every
+schema.</p></dd>
 
 
 <dt id="arg-ducklake-name">ducklake_name<a class="anchor" aria-label="anchor" href="#arg-ducklake-name"></a></dt>
@@ -82,9 +84,9 @@ sync, or any other client – as a tidy data frame.</p>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A data frame with one row per comment: <code>object_type</code>
-(<code>"table"</code>, <code>"view"</code>, or <code>"column"</code>), <code>table_name</code>, <code>column_name</code>
-(<code>NA</code> for tables and views), and <code>comment</code>. Zero rows when nothing is
-commented.</p>
+(<code>"table"</code>, <code>"view"</code>, or <code>"column"</code>), <code>schema_name</code>, <code>table_name</code>,
+<code>column_name</code> (<code>NA</code> for tables and views), and <code>comment</code>. Zero rows
+when nothing is commented.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
@@ -108,15 +110,15 @@ commented.</p>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Everything documented in the lake</span></span></span>
 <span class="r-in"><span><span class="fu">get_table_comments</span><span class="op">(</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   object_type table_name column_name                comment</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1      column       cars         mpg    Miles per US gallon</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2       table       cars        &lt;NA&gt; Motor Trend road tests</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   object_type schema_name table_name column_name                comment</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1      column        main       cars         mpg    Miles per US gallon</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2       table        main       cars        &lt;NA&gt; Motor Trend road tests</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># One table's documentation</span></span></span>
 <span class="r-in"><span><span class="fu">get_table_comments</span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   object_type table_name column_name                comment</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1      column       cars         mpg    Miles per US gallon</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2       table       cars        &lt;NA&gt; Motor Trend road tests</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   object_type schema_name table_name column_name                comment</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1      column        main       cars         mpg    Miles per US gallon</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2       table        main       cars        &lt;NA&gt; Motor Trend road tests</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="fu"><a href="detach_ducklake.html">detach_ducklake</a></span><span class="op">(</span><span class="st">"readcomment_lake"</span>, shutdown <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/unlink.html" class="external-link">unlink</a></span><span class="op">(</span><span class="va">lake_dir</span>, recursive <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>

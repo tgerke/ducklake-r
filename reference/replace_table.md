@@ -100,8 +100,10 @@ way the change is available for time travel.
 
 Other table operations:
 [`add_data_files()`](https://tgerke.github.io/ducklake-r/reference/add_data_files.md),
+[`create_schema()`](https://tgerke.github.io/ducklake-r/reference/create_schema.md),
 [`create_table()`](https://tgerke.github.io/ducklake-r/reference/create_table.md),
 [`create_view()`](https://tgerke.github.io/ducklake-r/reference/create_view.md),
+[`drop_schema()`](https://tgerke.github.io/ducklake-r/reference/drop_schema.md),
 [`drop_view()`](https://tgerke.github.io/ducklake-r/reference/drop_view.md),
 [`ducklake_exec()`](https://tgerke.github.io/ducklake-r/reference/ducklake_exec.md),
 [`get_ducklake_table()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_table.md),
@@ -148,8 +150,8 @@ get_ducklake_table("cars") |>
   dplyr::filter(mpg > 15) |>
   replace_table("cars")
 get_table_partitions("cars")
-#>   table_name partition_key_index column_name transform
-#> 1       cars                   0         cyl  identity
+#>   schema_name table_name partition_key_index column_name transform
+#> 1        main       cars                   0         cyl  identity
 
 detach_ducklake("replace_lake", shutdown = TRUE)
 unlink(lake_dir, recursive = TRUE)

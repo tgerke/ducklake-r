@@ -25,9 +25,9 @@ set_inlining_row_limit(
 
 - table_name:
 
-  Optional table name. When provided the limit is persisted for that
-  table in the DuckLake metadata (takes priority over the global
-  setting).
+  Optional table name, optionally qualified as `"schema.table"`. When
+  provided the limit is persisted for that table in the DuckLake
+  metadata (takes priority over the global setting).
 
 - schema_name:
 

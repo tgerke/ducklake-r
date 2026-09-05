@@ -10,7 +10,8 @@ files slow reads down until they are rewritten without the dead rows.
 rewrite_data_files(
   ducklake_name = NULL,
   table_name = NULL,
-  delete_threshold = NULL
+  delete_threshold = NULL,
+  schema_name = NULL
 )
 ```
 
@@ -23,14 +24,18 @@ rewrite_data_files(
 
 - table_name:
 
-  Optional table name. When provided, only that table's files are
-  rewritten.
+  Optional table name, optionally qualified as `"schema.table"`. When
+  provided, only that table's files are rewritten.
 
 - delete_threshold:
 
   Optional fraction of deleted rows (between 0 and
 
   1.  above which a file is rewritten. DuckLake's default is 0.95.
+
+- schema_name:
+
+  Optional schema containing `table_name`.
 
 ## Value
 

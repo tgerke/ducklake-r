@@ -1,34 +1,45 @@
-# Drop a DuckLake view
+# Drop a schema from a DuckLake
 
-Removes a view from the lake with `DROP VIEW`. Only the stored query is
-dropped; the tables it reads are untouched.
+Removes a schema with `DROP SCHEMA`. By default the schema must be
+empty; `cascade = TRUE` drops its tables and views with it. Like every
+change, the drop is a snapshot, so the tables stay reachable through
+time travel.
 
 ## Usage
 
 ``` r
-drop_view(view_name)
+drop_schema(schema_name, cascade = FALSE, ducklake_name = NULL)
 ```
 
 ## Arguments
 
-- view_name:
+- schema_name:
 
-  The view to drop.
+  Name of the schema.
+
+- cascade:
+
+  Also drop the tables and views in the schema (default `FALSE`).
+
+- ducklake_name:
+
+  Optional name of the attached DuckLake catalog. If `NULL`, the current
+  database is used.
 
 ## Value
 
-Invisibly returns `NULL`.
+Invisibly, `NULL`.
 
 ## See also
 
-[`create_view()`](https://tgerke.github.io/ducklake-r/reference/create_view.md)
+[`create_schema()`](https://tgerke.github.io/ducklake-r/reference/create_schema.md)
 
 Other table operations:
 [`add_data_files()`](https://tgerke.github.io/ducklake-r/reference/add_data_files.md),
 [`create_schema()`](https://tgerke.github.io/ducklake-r/reference/create_schema.md),
 [`create_table()`](https://tgerke.github.io/ducklake-r/reference/create_table.md),
 [`create_view()`](https://tgerke.github.io/ducklake-r/reference/create_view.md),
-[`drop_schema()`](https://tgerke.github.io/ducklake-r/reference/drop_schema.md),
+[`drop_view()`](https://tgerke.github.io/ducklake-r/reference/drop_view.md),
 [`ducklake_exec()`](https://tgerke.github.io/ducklake-r/reference/ducklake_exec.md),
 [`get_ducklake_table()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_table.md),
 [`get_metadata_table()`](https://tgerke.github.io/ducklake-r/reference/get_metadata_table.md),
@@ -39,19 +50,16 @@ Other table operations:
 ## Examples
 
 ``` r
-lake_dir <- tempfile("dropview_lake_")
+lake_dir <- tempfile("dropschema_lake_")
 dir.create(lake_dir)
-attach_ducklake("dropview_lake", lake_path = lake_dir)
-create_table(mtcars, "cars")
+attach_ducklake("dropschema_lake", lake_path = lake_dir)
 
-get_ducklake_table("cars") |>
-  dplyr::filter(cyl == 4) |>
-  create_view("v_efficient_cars")
-#> Created view "v_efficient_cars".
+create_schema("scratch")
+#> Created schema "scratch".
+create_table(mtcars, "scratch.cars")
+drop_schema("scratch", cascade = TRUE)
+#> Dropped schema "scratch".
 
-drop_view("v_efficient_cars")
-#> Dropped view "v_efficient_cars".
-
-detach_ducklake("dropview_lake", shutdown = TRUE)
+detach_ducklake("dropschema_lake", shutdown = TRUE)
 unlink(lake_dir, recursive = TRUE)
 ```

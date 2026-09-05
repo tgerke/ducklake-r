@@ -26,7 +26,8 @@ merge_adjacent_files(
 
 - table_name:
 
-  Optional table name. When provided, only that table is compacted.
+  Optional table name, optionally qualified as `"schema.table"`. When
+  provided, only that table is compacted.
 
 - schema_name:
 

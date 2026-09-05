@@ -269,6 +269,36 @@ R, and column labels follow the columns into the new table.</p>
 <span><span class="co">#&gt; 3        main    iris_sample table</span></span>
 <span><span class="co">#&gt; 4        main     small_cars table</span></span></code></pre></div>
 </div>
+<div class="section level3">
+<h3 id="organize-tables-in-schemas">Organize tables in schemas<a class="anchor" aria-label="anchor" href="#organize-tables-in-schemas"></a>
+</h3>
+<p>Schemas group tables inside the lake. They suit medallion layers
+(<code>bronze</code>, <code>silver</code>, <code>gold</code>) or one
+area per study, and every function that takes a table name accepts
+<code>"schema.table"</code>:</p>
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/create_schema.html">create_schema</a></span><span class="op">(</span><span class="st">"staging"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Created schema <span style="color: #0000BB;">"staging"</span>.</span></span>
+<span><span class="fu"><a href="../reference/create_table.html">create_table</a></span><span class="op">(</span><span class="va">mtcars</span>, <span class="st">"staging.cars_raw"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"staging.cars_raw"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">cyl</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A query:  ?? x 2</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpQXKWQP/ducklake/ducklake2b6b63925f89.duckdb]</span></span></span>
+<span><span class="co">#&gt;     cyl     n</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>     6     7</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span>     8    14</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span>     4    11</span></span>
+<span></span>
+<span><span class="fu"><a href="../reference/list_ducklake_tables.html">list_ducklake_tables</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   schema_name     table_name  type</span></span>
+<span><span class="co">#&gt; 1        main           cars table</span></span>
+<span><span class="co">#&gt; 2        main efficient_cars table</span></span>
+<span><span class="co">#&gt; 3        main    iris_sample table</span></span>
+<span><span class="co">#&gt; 4        main     small_cars table</span></span>
+<span><span class="co">#&gt; 5     staging       cars_raw table</span></span></code></pre></div>
+</div>
 </div>
 <div class="section level2">
 <h2 id="shared-logic-and-documentation-recipes">Shared logic and documentation recipes<a class="anchor" aria-label="anchor" href="#shared-logic-and-documentation-recipes"></a>
@@ -279,7 +309,7 @@ R, and column labels follow the columns into the new table.</p>
 <p>A view stores a query, not data: reads always run against the current
 tables, and every client of the lake – R, Python, or plain SQL – sees
 the same definition.</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">mpg</span> <span class="op">&gt;</span> <span class="fl">25</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/create_view.html">create_view</a></span><span class="op">(</span><span class="st">"v_efficient_cars"</span><span class="op">)</span></span>
@@ -296,7 +326,7 @@ the same definition.</p>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span>  26       4 120.     91  4.43  2.14  16.7     0     1     5     2  11.1</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span>  30.4     4  95.1   113  3.77  1.51  16.9     1     1     5     2  12.9</span></span></code></pre></div>
 <p>Drop it when the logic is no longer needed:</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/drop_view.html">drop_view</a></span><span class="op">(</span><span class="st">"v_efficient_cars"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Dropped view <span style="color: #0000BB;">"v_efficient_cars"</span>.</span></span></code></pre></div>
 <p>For logic a view cannot hold – a parameterized SQL macro, say –
@@ -308,7 +338,7 @@ DuckDB SQL is the escape hatch:
 </h3>
 <p>Comments live in the lake’s catalog, so the documentation travels
 with the data instead of in a sidecar file:</p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/set_table_comment.html">set_table_comment</a></span><span class="op">(</span><span class="st">"cars"</span>, <span class="st">"Motor Trend road tests of 1973-74 models"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Commented table <span style="color: #0000BB;">"cars"</span>.</span></span>
 <span><span class="fu"><a href="../reference/set_column_comments.html">set_column_comments</a></span><span class="op">(</span></span>
@@ -319,10 +349,14 @@ with the data instead of in a sidecar file:</p>
 <span><span class="co">#&gt; Commented 2 columns on <span style="color: #0000BB;">"cars"</span>.</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/get_table_comments.html">get_table_comments</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span></span>
-<span><span class="co">#&gt;   object_type table_name column_name                                  comment</span></span>
-<span><span class="co">#&gt; 1      column       cars         mpg                      Miles per US gallon</span></span>
-<span><span class="co">#&gt; 2      column       cars          wt                        Weight (1000 lbs)</span></span>
-<span><span class="co">#&gt; 3       table       cars        &lt;NA&gt; Motor Trend road tests of 1973-74 models</span></span></code></pre></div>
+<span><span class="co">#&gt;   object_type schema_name table_name column_name</span></span>
+<span><span class="co">#&gt; 1      column        main       cars         mpg</span></span>
+<span><span class="co">#&gt; 2      column        main       cars          wt</span></span>
+<span><span class="co">#&gt; 3       table        main       cars        &lt;NA&gt;</span></span>
+<span><span class="co">#&gt;                                    comment</span></span>
+<span><span class="co">#&gt; 1                      Miles per US gallon</span></span>
+<span><span class="co">#&gt; 2                        Weight (1000 lbs)</span></span>
+<span><span class="co">#&gt; 3 Motor Trend road tests of 1973-74 models</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="keep-variable-labels-through-the-lake">Keep variable labels through the lake<a class="anchor" aria-label="anchor" href="#keep-variable-labels-through-the-lake"></a>
@@ -332,7 +366,7 @@ survive the lake: <code><a href="../reference/create_table.html">create_table()<
 attributes as column comments, and <code><a href="https://dplyr.tidyverse.org/reference/compute.html" class="external-link">collect()</a></code> puts them
 back, so label-aware tools like gtsummary and gt behave as if the data
 never left R.</p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">df_visits</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>subject <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"S1"</span>, <span class="st">"S2"</span><span class="op">)</span>, sbp <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">128</span>, <span class="fl">141</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">df_visits</span><span class="op">$</span><span class="va">subject</span>, <span class="st">"label"</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="st">"Subject identifier"</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">df_visits</span><span class="op">$</span><span class="va">sbp</span>, <span class="st">"label"</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="st">"Systolic blood pressure (mmHg)"</span></span>
@@ -351,7 +385,7 @@ never left R.</p>
 <div class="section level3">
 <h3 id="read-a-table">Read a table<a class="anchor" aria-label="anchor" href="#read-a-table"></a>
 </h3>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Returns a lazy dplyr tbl</span></span>
 <span><span class="va">cars_data</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span></span>
 <span></span>
@@ -361,7 +395,7 @@ never left R.</p>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">mpg</span>, <span class="va">cyl</span>, <span class="va">hp</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">3</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A query:  ?? x 3</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmpu0ZWsD/ducklake/ducklake2b3a34e31bb9.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpQXKWQP/ducklake/ducklake2b6b63925f89.duckdb]</span></span></span>
 <span><span class="co">#&gt;     mpg   cyl    hp</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>  21       6   110</span></span>
@@ -371,7 +405,7 @@ never left R.</p>
 <div class="section level3">
 <h3 id="collect-data-into-memory">Collect data into memory<a class="anchor" aria-label="anchor" href="#collect-data-into-memory"></a>
 </h3>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Fetch all data into a data.frame</span></span>
 <span><span class="va">cars_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/compute.html" class="external-link">collect</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">cars_df</span>, <span class="fl">3</span><span class="op">)</span></span>
@@ -385,14 +419,14 @@ never left R.</p>
 <div class="section level3">
 <h3 id="view-all-versions-of-a-table">View all versions of a table<a class="anchor" aria-label="anchor" href="#view-all-versions-of-a-table"></a>
 </h3>
-<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># See all snapshots for the cars table</span></span>
 <span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 1           1 2026-09-05 01:16:10              1</span></span>
-<span><span class="co">#&gt; 2           2 2026-09-05 01:16:10              2</span></span>
-<span><span class="co">#&gt; 3           8 2026-09-05 01:16:12              8</span></span>
-<span><span class="co">#&gt; 4           9 2026-09-05 01:16:12              9</span></span>
+<span><span class="co">#&gt; 1           1 2026-09-05 01:24:14              1</span></span>
+<span><span class="co">#&gt; 2           2 2026-09-05 01:24:14              2</span></span>
+<span><span class="co">#&gt; 3          10 2026-09-05 01:24:16             10</span></span>
+<span><span class="co">#&gt; 4          11 2026-09-05 01:24:16             11</span></span>
 <span><span class="co">#&gt;                                                              changes</span></span>
 <span><span class="co">#&gt; 1                 tables_created, tables_inserted_into, main.cars, 1</span></span>
 <span><span class="co">#&gt; 2 tables_altered, tables_inserted_into, tables_deleted_from, 1, 1, 1</span></span>
@@ -407,13 +441,13 @@ never left R.</p>
 <div class="section level3">
 <h3 id="read-a-specific-version">Read a specific version<a class="anchor" aria-label="anchor" href="#read-a-specific-version"></a>
 </h3>
-<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Query data as it existed at snapshot 1 -- before the kpl column was added</span></span>
 <span><span class="fu"><a href="../reference/get_ducklake_table_version.html">get_ducklake_table_version</a></span><span class="op">(</span><span class="st">"cars"</span>, version <span class="op">=</span> <span class="fl">1</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">mpg</span>, <span class="va">cyl</span>, <span class="va">hp</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">3</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A query:  ?? x 3</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmpu0ZWsD/ducklake/ducklake2b3a34e31bb9.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpQXKWQP/ducklake/ducklake2b6b63925f89.duckdb]</span></span></span>
 <span><span class="co">#&gt;     mpg   cyl    hp</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>  21       6   110</span></span>
@@ -423,7 +457,7 @@ never left R.</p>
 <div class="section level3">
 <h3 id="read-data-at-a-specific-timestamp">Read data at a specific timestamp<a class="anchor" aria-label="anchor" href="#read-data-at-a-specific-timestamp"></a>
 </h3>
-<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Query data as of a specific time (see list_table_snapshots() for times)</span></span>
 <span><span class="fu"><a href="../reference/get_ducklake_table_asof.html">get_ducklake_table_asof</a></span><span class="op">(</span><span class="st">"cars"</span>, timestamp <span class="op">=</span> <span class="st">"2024-01-15 10:30:00"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/compute.html" class="external-link">collect</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
@@ -435,7 +469,7 @@ never left R.</p>
 <div class="section level3">
 <h3 id="correct-rows-in-place">Correct rows in place<a class="anchor" aria-label="anchor" href="#correct-rows-in-place"></a>
 </h3>
-<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># filter() becomes the WHERE clause of a single UPDATE</span></span>
 <span><span class="fu"><a href="../reference/with_transaction.html">with_transaction</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -451,7 +485,7 @@ never left R.</p>
 <div class="section level3">
 <h3 id="replace-entire-table">Replace entire table<a class="anchor" aria-label="anchor" href="#replace-entire-table"></a>
 </h3>
-<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># A bulk rewrite that touches most rows: the whole table is rewritten, and</span></span>
 <span><span class="co"># its comments, partition keys, sort order, and options carry over</span></span>
 <span><span class="fu"><a href="../reference/with_transaction.html">with_transaction</a></span><span class="op">(</span></span>
@@ -480,22 +514,24 @@ guidance on choosing between them.</p>
 <div class="section level3">
 <h3 id="view-all-snapshots">View all snapshots<a class="anchor" aria-label="anchor" href="#view-all-snapshots"></a>
 </h3>
-<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt;    snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 1            0 2026-09-05 01:16:10              0</span></span>
-<span><span class="co">#&gt; 2            1 2026-09-05 01:16:10              1</span></span>
-<span><span class="co">#&gt; 3            2 2026-09-05 01:16:10              2</span></span>
-<span><span class="co">#&gt; 4            3 2026-09-05 01:16:11              3</span></span>
-<span><span class="co">#&gt; 5            4 2026-09-05 01:16:11              4</span></span>
-<span><span class="co">#&gt; 6            5 2026-09-05 01:16:11              5</span></span>
-<span><span class="co">#&gt; 7            6 2026-09-05 01:16:12              6</span></span>
-<span><span class="co">#&gt; 8            7 2026-09-05 01:16:12              7</span></span>
-<span><span class="co">#&gt; 9            8 2026-09-05 01:16:12              8</span></span>
-<span><span class="co">#&gt; 10           9 2026-09-05 01:16:12              9</span></span>
-<span><span class="co">#&gt; 11          10 2026-09-05 01:16:12             10</span></span>
-<span><span class="co">#&gt; 12          11 2026-09-05 01:16:13             10</span></span>
-<span><span class="co">#&gt; 13          12 2026-09-05 01:16:13             11</span></span>
+<span><span class="co">#&gt; 1            0 2026-09-05 01:24:13              0</span></span>
+<span><span class="co">#&gt; 2            1 2026-09-05 01:24:14              1</span></span>
+<span><span class="co">#&gt; 3            2 2026-09-05 01:24:14              2</span></span>
+<span><span class="co">#&gt; 4            3 2026-09-05 01:24:14              3</span></span>
+<span><span class="co">#&gt; 5            4 2026-09-05 01:24:15              4</span></span>
+<span><span class="co">#&gt; 6            5 2026-09-05 01:24:15              5</span></span>
+<span><span class="co">#&gt; 7            6 2026-09-05 01:24:15              6</span></span>
+<span><span class="co">#&gt; 8            7 2026-09-05 01:24:15              7</span></span>
+<span><span class="co">#&gt; 9            8 2026-09-05 01:24:15              8</span></span>
+<span><span class="co">#&gt; 10           9 2026-09-05 01:24:15              9</span></span>
+<span><span class="co">#&gt; 11          10 2026-09-05 01:24:16             10</span></span>
+<span><span class="co">#&gt; 12          11 2026-09-05 01:24:16             11</span></span>
+<span><span class="co">#&gt; 13          12 2026-09-05 01:24:16             12</span></span>
+<span><span class="co">#&gt; 14          13 2026-09-05 01:24:16             12</span></span>
+<span><span class="co">#&gt; 15          14 2026-09-05 01:24:17             13</span></span>
 <span><span class="co">#&gt;                                                                                     changes</span></span>
 <span><span class="co">#&gt; 1                                                                     schemas_created, main</span></span>
 <span><span class="co">#&gt; 2                                        tables_created, tables_inserted_into, main.cars, 1</span></span>
@@ -503,13 +539,15 @@ guidance on choosing between them.</p>
 <span><span class="co">#&gt; 4                                 tables_created, tables_inserted_into, main.iris_sample, 2</span></span>
 <span><span class="co">#&gt; 5                              tables_created, tables_inserted_into, main.efficient_cars, 3</span></span>
 <span><span class="co">#&gt; 6                                  tables_created, tables_inserted_into, main.small_cars, 4</span></span>
-<span><span class="co">#&gt; 7                                                      views_created, main.v_efficient_cars</span></span>
-<span><span class="co">#&gt; 8                                                                          views_dropped, 5</span></span>
-<span><span class="co">#&gt; 9                                                                         tables_altered, 1</span></span>
-<span><span class="co">#&gt; 10                                                                        tables_altered, 1</span></span>
-<span><span class="co">#&gt; 11                        tables_created, tables_altered, inlined_insert, main.visits, 6, 6</span></span>
-<span><span class="co">#&gt; 12                                          tables_inserted_into, tables_deleted_from, 1, 1</span></span>
-<span><span class="co">#&gt; 13 tables_created, tables_dropped, tables_altered, tables_inserted_into, main.cars, 1, 7, 7</span></span>
+<span><span class="co">#&gt; 7                                                                  schemas_created, staging</span></span>
+<span><span class="co">#&gt; 8                                 tables_created, tables_inserted_into, staging.cars_raw, 6</span></span>
+<span><span class="co">#&gt; 9                                                      views_created, main.v_efficient_cars</span></span>
+<span><span class="co">#&gt; 10                                                                         views_dropped, 7</span></span>
+<span><span class="co">#&gt; 11                                                                        tables_altered, 1</span></span>
+<span><span class="co">#&gt; 12                                                                        tables_altered, 1</span></span>
+<span><span class="co">#&gt; 13                        tables_created, tables_altered, inlined_insert, main.visits, 8, 8</span></span>
+<span><span class="co">#&gt; 14                                          tables_inserted_into, tables_deleted_from, 1, 1</span></span>
+<span><span class="co">#&gt; 15 tables_created, tables_dropped, tables_altered, tables_inserted_into, main.cars, 1, 9, 9</span></span>
 <span><span class="co">#&gt;           author                          commit_message commit_extra_info</span></span>
 <span><span class="co">#&gt; 1           &lt;NA&gt;                                    &lt;NA&gt;              &lt;NA&gt;</span></span>
 <span><span class="co">#&gt; 2  Data Engineer                   Initial car data load              &lt;NA&gt;</span></span>
@@ -522,19 +560,21 @@ guidance on choosing between them.</p>
 <span><span class="co">#&gt; 9           &lt;NA&gt;                                    &lt;NA&gt;              &lt;NA&gt;</span></span>
 <span><span class="co">#&gt; 10          &lt;NA&gt;                                    &lt;NA&gt;              &lt;NA&gt;</span></span>
 <span><span class="co">#&gt; 11          &lt;NA&gt;                                    &lt;NA&gt;              &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 12 Data Engineer Apply the dyno correction to V8 engines              &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 13 Data Engineer           Round fuel efficiency metrics              &lt;NA&gt;</span></span></code></pre></div>
+<span><span class="co">#&gt; 12          &lt;NA&gt;                                    &lt;NA&gt;              &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 13          &lt;NA&gt;                                    &lt;NA&gt;              &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 14 Data Engineer Apply the dyno correction to V8 engines              &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 15 Data Engineer           Round fuel efficiency metrics              &lt;NA&gt;</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="view-snapshots-for-a-specific-table">View snapshots for a specific table<a class="anchor" aria-label="anchor" href="#view-snapshots-for-a-specific-table"></a>
 </h3>
-<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="restore-a-table-to-a-previous-version">Restore a table to a previous version<a class="anchor" aria-label="anchor" href="#restore-a-table-to-a-previous-version"></a>
 </h3>
-<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Roll cars back to snapshot 1. The restore is recorded as a new snapshot,</span></span>
 <span><span class="co"># so nothing is lost -- you can still time-travel to any version.</span></span>
 <span><span class="fu"><a href="../reference/restore_table_version.html">restore_table_version</a></span><span class="op">(</span></span>
@@ -548,21 +588,21 @@ guidance on choosing between them.</p>
 <span></span>
 <span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 1           1 2026-09-05 01:16:10              1</span></span>
-<span><span class="co">#&gt; 2           2 2026-09-05 01:16:10              2</span></span>
-<span><span class="co">#&gt; 3           8 2026-09-05 01:16:12              8</span></span>
-<span><span class="co">#&gt; 4           9 2026-09-05 01:16:12              9</span></span>
-<span><span class="co">#&gt; 5          11 2026-09-05 01:16:13             10</span></span>
-<span><span class="co">#&gt; 6          12 2026-09-05 01:16:13             11</span></span>
-<span><span class="co">#&gt; 7          13 2026-09-05 01:16:13             12</span></span>
-<span><span class="co">#&gt;                                                                                    changes</span></span>
-<span><span class="co">#&gt; 1                                       tables_created, tables_inserted_into, main.cars, 1</span></span>
-<span><span class="co">#&gt; 2                       tables_altered, tables_inserted_into, tables_deleted_from, 1, 1, 1</span></span>
-<span><span class="co">#&gt; 3                                                                        tables_altered, 1</span></span>
-<span><span class="co">#&gt; 4                                                                        tables_altered, 1</span></span>
-<span><span class="co">#&gt; 5                                          tables_inserted_into, tables_deleted_from, 1, 1</span></span>
-<span><span class="co">#&gt; 6 tables_created, tables_dropped, tables_altered, tables_inserted_into, main.cars, 1, 7, 7</span></span>
-<span><span class="co">#&gt; 7 tables_created, tables_dropped, tables_altered, tables_inserted_into, main.cars, 7, 8, 8</span></span>
+<span><span class="co">#&gt; 1           1 2026-09-05 01:24:14              1</span></span>
+<span><span class="co">#&gt; 2           2 2026-09-05 01:24:14              2</span></span>
+<span><span class="co">#&gt; 3          10 2026-09-05 01:24:16             10</span></span>
+<span><span class="co">#&gt; 4          11 2026-09-05 01:24:16             11</span></span>
+<span><span class="co">#&gt; 5          13 2026-09-05 01:24:16             12</span></span>
+<span><span class="co">#&gt; 6          14 2026-09-05 01:24:17             13</span></span>
+<span><span class="co">#&gt; 7          15 2026-09-05 01:24:17             14</span></span>
+<span><span class="co">#&gt;                                                                                      changes</span></span>
+<span><span class="co">#&gt; 1                                         tables_created, tables_inserted_into, main.cars, 1</span></span>
+<span><span class="co">#&gt; 2                         tables_altered, tables_inserted_into, tables_deleted_from, 1, 1, 1</span></span>
+<span><span class="co">#&gt; 3                                                                          tables_altered, 1</span></span>
+<span><span class="co">#&gt; 4                                                                          tables_altered, 1</span></span>
+<span><span class="co">#&gt; 5                                            tables_inserted_into, tables_deleted_from, 1, 1</span></span>
+<span><span class="co">#&gt; 6   tables_created, tables_dropped, tables_altered, tables_inserted_into, main.cars, 1, 9, 9</span></span>
+<span><span class="co">#&gt; 7 tables_created, tables_dropped, tables_altered, tables_inserted_into, main.cars, 9, 10, 10</span></span>
 <span><span class="co">#&gt;          author                          commit_message commit_extra_info</span></span>
 <span><span class="co">#&gt; 1 Data Engineer                   Initial car data load              &lt;NA&gt;</span></span>
 <span><span class="co">#&gt; 2 Data Engineer           Add km/L metric to cars table              &lt;NA&gt;</span></span>
@@ -579,7 +619,7 @@ guidance on choosing between them.</p>
 <div class="section level3">
 <h3 id="simple-transaction">Simple transaction<a class="anchor" aria-label="anchor" href="#simple-transaction"></a>
 </h3>
-<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/with_transaction.html">with_transaction</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="../reference/create_table.html">create_table</a></span><span class="op">(</span><span class="va">my_data</span>, <span class="st">"my_table"</span><span class="op">)</span>,</span>
 <span>  author <span class="op">=</span> <span class="st">"Your Name"</span>,</span>
@@ -589,7 +629,7 @@ guidance on choosing between them.</p>
 <div class="section level3">
 <h3 id="multi-step-transaction">Multi-step transaction<a class="anchor" aria-label="anchor" href="#multi-step-transaction"></a>
 </h3>
-<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/with_transaction.html">with_transaction</a></span><span class="op">(</span><span class="op">{</span></span>
 <span>  <span class="co"># All these operations happen atomically</span></span>
 <span>  <span class="fu"><a href="../reference/create_table.html">create_table</a></span><span class="op">(</span><span class="va">raw_data</span>, <span class="st">"raw_table"</span><span class="op">)</span></span>
@@ -609,7 +649,7 @@ guidance on choosing between them.</p>
 <div class="section level3">
 <h3 id="manual-transaction-control">Manual transaction control<a class="anchor" aria-label="anchor" href="#manual-transaction-control"></a>
 </h3>
-<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># For fine-grained control</span></span>
 <span><span class="fu"><a href="../reference/begin_transaction.html">begin_transaction</a></span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
@@ -634,7 +674,7 @@ guidance on choosing between them.</p>
 </h3>
 <p>To see the SQL a <em>read</em> pipeline will run, use dplyr’s
 <code><a href="https://dplyr.tidyverse.org/reference/explain.html" class="external-link">show_query()</a></code>:</p>
-<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">mpg</span> <span class="op">&gt;</span> <span class="fl">25</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">mpg</span>, <span class="va">cyl</span>, <span class="va">hp</span><span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -646,7 +686,7 @@ guidance on choosing between them.</p>
 <p>To preview the SQL an in-place <em>modification</em> would run
 (before committing to it with <code><a href="../reference/ducklake_exec.html">ducklake_exec()</a></code>), use
 <code><a href="../reference/show_ducklake_query.html">show_ducklake_query()</a></code>:</p>
-<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>mpg <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">mpg</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/show_ducklake_query.html">show_ducklake_query</a></span><span class="op">(</span><span class="op">)</span></span>
@@ -656,14 +696,14 @@ guidance on choosing between them.</p>
 <div class="section level3">
 <h3 id="filter-early-for-performance">Filter early for performance<a class="anchor" aria-label="anchor" href="#filter-early-for-performance"></a>
 </h3>
-<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Good: Filter before other operations</span></span>
 <span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">cyl</span> <span class="op">==</span> <span class="fl">6</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>kpl <span class="op">=</span> <span class="va">mpg</span> <span class="op">*</span> <span class="fl">0.425144</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">3</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A query:  ?? x 12</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmpu0ZWsD/ducklake/ducklake2b3a34e31bb9.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpQXKWQP/ducklake/ducklake2b6b63925f89.duckdb]</span></span></span>
 <span><span class="co">#&gt;     mpg   cyl  disp    hp  drat    wt  qsec    vs    am  gear  carb   kpl</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>  21       6   160   110  3.9   2.62  16.5     0     1     4     4  8.93</span></span>
@@ -673,13 +713,13 @@ guidance on choosing between them.</p>
 <div class="section level3">
 <h3 id="use-specific-columns">Use specific columns<a class="anchor" aria-label="anchor" href="#use-specific-columns"></a>
 </h3>
-<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Good: Select only needed columns</span></span>
 <span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">mpg</span>, <span class="va">cyl</span>, <span class="va">hp</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">mpg</span> <span class="op">&gt;</span> <span class="fl">25</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A query:  ?? x 3</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmpu0ZWsD/ducklake/ducklake2b3a34e31bb9.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpQXKWQP/ducklake/ducklake2b6b63925f89.duckdb]</span></span></span>
 <span><span class="co">#&gt;     mpg   cyl    hp</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>  32.4     4    66</span></span>
@@ -695,7 +735,7 @@ guidance on choosing between them.</p>
 <p>For big tables, declaring a sort order or partition keys lets
 DuckLake skip whole Parquet files when a query filters on those
 columns:</p>
-<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Sorting suits high-cardinality columns like timestamps or ids</span></span>
 <span><span class="fu"><a href="../reference/set_table_sorting.html">set_table_sorting</a></span><span class="op">(</span><span class="st">"events"</span>, <span class="st">"event_time"</span><span class="op">)</span></span>
 <span></span>
@@ -708,7 +748,7 @@ columns:</p>
 <p><code><a href="../reference/set_ducklake_option.html">set_ducklake_option()</a></code> adjusts DuckLake’s persisted
 settings at lake, schema, or table scope, and
 <code><a href="../reference/get_ducklake_options.html">get_ducklake_options()</a></code> shows what’s set:</p>
-<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Trade write speed for smaller files</span></span>
 <span><span class="fu"><a href="../reference/set_ducklake_option.html">set_ducklake_option</a></span><span class="op">(</span><span class="st">"parquet_compression"</span>, <span class="st">"zstd"</span><span class="op">)</span></span>
 <span></span>
@@ -724,7 +764,7 @@ settings at lake, schema, or table scope, and
 <div class="section level3">
 <h3 id="set-a-retention-policy-and-checkpoint">Set a retention policy and checkpoint<a class="anchor" aria-label="anchor" href="#set-a-retention-policy-and-checkpoint"></a>
 </h3>
-<div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Keep 90 days of time travel; delete released files a week after release</span></span>
 <span><span class="fu"><a href="../reference/set_ducklake_option.html">set_ducklake_option</a></span><span class="op">(</span><span class="st">"expire_older_than"</span>, <span class="st">"90 days"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/set_ducklake_option.html">set_ducklake_option</a></span><span class="op">(</span><span class="st">"delete_older_than"</span>, <span class="st">"7 days"</span><span class="op">)</span></span>
@@ -740,7 +780,7 @@ maintenance functions and for backups.</p>
 <div class="section level2">
 <h2 id="cleanup">Cleanup<a class="anchor" aria-label="anchor" href="#cleanup"></a>
 </h2>
-<div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb39"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Detach from the lake</span></span>
 <span><span class="fu"><a href="../reference/detach_ducklake.html">detach_ducklake</a></span><span class="op">(</span><span class="st">"my_lake"</span><span class="op">)</span></span></code></pre></div>
 </div>

@@ -54,7 +54,7 @@ get_ducklake_table("cars") |>
   select(mpg, cyl, hp, wt) |>
   head()
 #> # A query:  ?? x 4
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmpohz4Rk/ducklake/ducklake2dd459cfa863.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpdPR9Cc/ducklake/ducklake2e0bcca788e.duckdb]
 #>     mpg   cyl    hp    wt
 #>   <dbl> <dbl> <dbl> <dbl>
 #> 1  21       6   110  2.62
@@ -107,7 +107,7 @@ get_ducklake_table("cars") |>
   select(mpg, cyl) |>
   head()
 #> # A query:  ?? x 2
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmpohz4Rk/ducklake/ducklake2dd459cfa863.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpdPR9Cc/ducklake/ducklake2e0bcca788e.duckdb]
 #>     mpg   cyl
 #>   <dbl> <dbl>
 #> 1  21       6
@@ -156,7 +156,7 @@ get_ducklake_table("cars") |>
   select(mpg, cyl, efficiency) |>
   head()
 #> # A query:  ?? x 3
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmpohz4Rk/ducklake/ducklake2dd459cfa863.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpdPR9Cc/ducklake/ducklake2e0bcca788e.duckdb]
 #>     mpg   cyl efficiency
 #>   <dbl> <dbl> <chr>     
 #> 1  21       6 medium    
@@ -171,9 +171,9 @@ get_ducklake_table("cars_summary") |>
 #> # A tibble: 3 × 4
 #>     cyl avg_mpg avg_hp count
 #>   <dbl>   <dbl>  <dbl> <dbl>
-#> 1     4    28.0   82.6    11
-#> 2     6    19.7  122.      7
-#> 3     8    15.1  209.     14
+#> 1     6    19.7  122.      7
+#> 2     8    15.1  209.     14
+#> 3     4    28.0   82.6    11
 ```
 
 ### Automatic Rollback on Error
@@ -213,9 +213,9 @@ get_ducklake_table("cars") |>
 # View all versioned changes
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-09-05 01:16:35              1
-#> 2           2 2026-09-05 01:16:36              1
-#> 3           3 2026-09-05 01:16:36              2
+#> 1           1 2026-09-05 01:24:40              1
+#> 2           2 2026-09-05 01:24:40              1
+#> 3           3 2026-09-05 01:24:40              2
 #>                                                                                                       changes
 #> 1                                                          tables_created, tables_inserted_into, main.cars, 1
 #> 2                                                             tables_inserted_into, tables_deleted_from, 1, 1
@@ -271,7 +271,7 @@ get_ducklake_table("cars") |>
   select(wt, weight_kg) |>
   head()
 #> # A query:  ?? x 2
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmpohz4Rk/ducklake/ducklake2dd459cfa863.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpdPR9Cc/ducklake/ducklake2e0bcca788e.duckdb]
 #>      wt weight_kg
 #>   <dbl>     <dbl>
 #> 1  2.32     1052.
@@ -326,10 +326,10 @@ rollback_transaction()
 # View all versioned changes
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-09-05 01:16:35              1
-#> 2           2 2026-09-05 01:16:36              1
-#> 3           3 2026-09-05 01:16:36              2
-#> 4           4 2026-09-05 01:16:36              3
+#> 1           1 2026-09-05 01:24:40              1
+#> 2           2 2026-09-05 01:24:40              1
+#> 3           3 2026-09-05 01:24:40              2
+#> 4           4 2026-09-05 01:24:41              3
 #>                                                                                                       changes
 #> 1                                                          tables_created, tables_inserted_into, main.cars, 1
 #> 2                                                             tables_inserted_into, tables_deleted_from, 1, 1
@@ -381,7 +381,7 @@ get_ducklake_table("cars") |>
   select(hp, cyl, hp_per_liter) |>
   head()
 #> # A query:  ?? x 3
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmpohz4Rk/ducklake/ducklake2dd459cfa863.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpdPR9Cc/ducklake/ducklake2e0bcca788e.duckdb]
 #>      hp   cyl hp_per_liter
 #>   <dbl> <dbl>        <dbl>
 #> 1   110     6         36.7
@@ -453,17 +453,41 @@ list_table_snapshots("cars") |>
   select(snapshot_id, snapshot_time, author, commit_message) |>
   tail(5)
 #>   snapshot_id       snapshot_time           author
-#> 2           2 2026-09-05 01:16:36        Data Team
-#> 3           3 2026-09-05 01:16:36        Data Team
-#> 4           4 2026-09-05 01:16:36        Data Team
-#> 5           5 2026-09-05 01:16:37 Performance Team
-#> 6           6 2026-09-05 01:16:37 Performance Team
+#> 2           2 2026-09-05 01:24:40        Data Team
+#> 3           3 2026-09-05 01:24:40        Data Team
+#> 4           4 2026-09-05 01:24:41        Data Team
+#> 5           5 2026-09-05 01:24:41 Performance Team
+#> 6           6 2026-09-05 01:24:42 Performance Team
 #>                                   commit_message
 #> 2 Apply the revised 4-cylinder efficiency factor
 #> 3       Add efficiency ratings and summary table
 #> 4                               Add weight in kg
 #> 5                Add horsepower per liter metric
 #> 6       Correct hp_per_liter for the 21 mpg cars
+```
+
+## Working with several writers
+
+When a lake has more than one writer (a PostgreSQL or SQLite catalog
+shared by several sessions, or a Quack server), two transactions can
+race to commit the next snapshot. DuckLake resolves the race itself: the
+transaction that lost checks whether its changes conflict with the
+winner’s, and when they do not, it is retried against the new snapshot.
+Two sessions appending to the same table, or editing different tables,
+both commit. Real conflicts surface as an error in the losing session,
+whose changes are rolled back: two transactions deleting from the same
+data file, an insert into a table the other transaction dropped or
+altered, or two creates of the same name. Re-run that transaction on the
+current data.
+
+The retry policy is a per-session DuckDB setting: 10 attempts, 100 ms
+apart, with the wait growing by 1.5 each time.
+[`set_ducklake_retry()`](https://tgerke.github.io/ducklake-r/reference/set_ducklake_retry.md)
+adjusts it for a busy catalog:
+
+``` r
+
+set_ducklake_retry(max_retries = 20, wait_ms = 250, backoff = 2)
 ```
 
 ## Comparison: with_transaction() vs Manual Control
@@ -485,7 +509,8 @@ list_table_snapshots("cars") |>
 2.  **Always add metadata**: Include `author` and `commit_message` for
     audit trails
 3.  **Keep transactions focused**: Group related changes, but avoid
-    overly long transactions
+    overly long transactions; when other sessions write to the same
+    lake, a long-open transaction is the one most likely to conflict
 4.  **Handle errors gracefully**: When using manual transactions, always
     use [`tryCatch()`](https://rdrr.io/r/base/conditions.html) to ensure
     rollback

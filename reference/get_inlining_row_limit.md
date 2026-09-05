@@ -18,7 +18,8 @@ get_inlining_row_limit(
 
 - table_name:
 
-  Optional table name to query the table-level override.
+  Optional table name to query the table-level override, optionally
+  qualified as `"schema.table"`.
 
 - schema_name:
 

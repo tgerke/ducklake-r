@@ -12,7 +12,8 @@ get_table_partitions(table_name = NULL, ducklake_name = NULL)
 
 - table_name:
 
-  Optional table name to filter to a single table.
+  Optional table name to filter to a single table, optionally qualified
+  as `"schema.table"`.
 
 - ducklake_name:
 
@@ -21,9 +22,10 @@ get_table_partitions(table_name = NULL, ducklake_name = NULL)
 
 ## Value
 
-A data frame with one row per partition key: `table_name`,
-`partition_key_index`, `column_name`, and `transform` (e.g. `"identity"`
-or `"year"`). Zero rows when nothing is partitioned.
+A data frame with one row per partition key: `schema_name`,
+`table_name`, `partition_key_index`, `column_name`, and `transform`
+(e.g. `"identity"`, `"year"`, or `"bucket(4)"`). Zero rows when nothing
+is partitioned.
 
 ## See also
 
@@ -48,13 +50,13 @@ set_table_partitioning("cars", "cyl")
 
 # All partitioned tables in the lake
 get_table_partitions()
-#>   table_name partition_key_index column_name transform
-#> 1       cars                   0         cyl  identity
+#>   schema_name table_name partition_key_index column_name transform
+#> 1        main       cars                   0         cyl  identity
 
 # Keys for one table
 get_table_partitions("cars")
-#>   table_name partition_key_index column_name transform
-#> 1       cars                   0         cyl  identity
+#>   schema_name table_name partition_key_index column_name transform
+#> 1        main       cars                   0         cyl  identity
 
 detach_ducklake("getpart_lake", shutdown = TRUE)
 unlink(lake_dir, recursive = TRUE)

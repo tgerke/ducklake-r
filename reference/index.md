@@ -37,6 +37,10 @@ Create and query tables
   : Create a DuckLake view from a dplyr pipeline
 - [`drop_view()`](https://tgerke.github.io/ducklake-r/reference/drop_view.md)
   : Drop a DuckLake view
+- [`create_schema()`](https://tgerke.github.io/ducklake-r/reference/create_schema.md)
+  : Create a schema in a DuckLake
+- [`drop_schema()`](https://tgerke.github.io/ducklake-r/reference/drop_schema.md)
+  : Drop a schema from a DuckLake
 - [`list_ducklake_tables()`](https://tgerke.github.io/ducklake-r/reference/list_ducklake_tables.md)
   : List the tables and views in a DuckLake catalog
 
@@ -91,6 +95,8 @@ ACID transaction support
   : Commit a transaction
 - [`rollback_transaction()`](https://tgerke.github.io/ducklake-r/reference/rollback_transaction.md)
   : Rollback a transaction
+- [`set_ducklake_retry()`](https://tgerke.github.io/ducklake-r/reference/set_ducklake_retry.md)
+  : Configure how DuckLake retries conflicting transactions
 
 ## Time Travel
 

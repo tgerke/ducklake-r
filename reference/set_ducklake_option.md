@@ -33,7 +33,8 @@ set_ducklake_option(
 
 - table_name:
 
-  Optional table name to scope the option to one table.
+  Optional table name to scope the option to one table, optionally
+  qualified as `"schema.table"`.
 
 - schema_name:
 

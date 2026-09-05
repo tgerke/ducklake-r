@@ -14,7 +14,9 @@ get_table_info(table_name = NULL, ducklake_name = NULL, conn = NULL)
 
 - table_name:
 
-  Optional table name. When provided, only that table's row is returned.
+  Optional table name, optionally qualified as `"schema.table"`. When
+  provided, only that table's row is returned (a bare name matches it in
+  every schema).
 
 - ducklake_name:
 
@@ -30,7 +32,7 @@ get_table_info(table_name = NULL, ducklake_name = NULL, conn = NULL)
 
 A data frame with one row per table and columns `table_name`,
 `schema_id`, `table_id`, `table_uuid`, `file_count`, `file_size_bytes`,
-`delete_file_count`, and `delete_file_size_bytes`.
+`delete_file_count`, `delete_file_size_bytes`, and `schema_name`.
 
 ## Details
 
@@ -77,16 +79,16 @@ create_table(mtcars, "cars")
 # File statistics for every table in the lake
 get_table_info()
 #>   table_name schema_id table_id                           table_uuid file_count
-#> 1       cars         0        1 01a06f22-6797-77b4-a85e-b5e8b6eb04c8          1
-#>   file_size_bytes delete_file_count delete_file_size_bytes
-#> 1            2911                 0                      0
+#> 1       cars         0        1 01a06f29-ce53-7bd3-a53b-b55d7406b423          1
+#>   file_size_bytes delete_file_count delete_file_size_bytes schema_name
+#> 1            2911                 0                      0        main
 
 # Just one table
 get_table_info("cars")
 #>   table_name schema_id table_id                           table_uuid file_count
-#> 1       cars         0        1 01a06f22-6797-77b4-a85e-b5e8b6eb04c8          1
-#>   file_size_bytes delete_file_count delete_file_size_bytes
-#> 1            2911                 0                      0
+#> 1       cars         0        1 01a06f29-ce53-7bd3-a53b-b55d7406b423          1
+#>   file_size_bytes delete_file_count delete_file_size_bytes schema_name
+#> 1            2911                 0                      0        main
 
 detach_ducklake("info_lake", shutdown = TRUE)
 unlink(lake_dir, recursive = TRUE)

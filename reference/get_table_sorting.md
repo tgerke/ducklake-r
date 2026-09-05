@@ -16,7 +16,8 @@ get_table_sorting(table_name = NULL, ducklake_name = NULL)
 
 - table_name:
 
-  Optional table name to filter to a single table.
+  Optional table name to filter to a single table, optionally qualified
+  as `"schema.table"`.
 
 - ducklake_name:
 
@@ -25,9 +26,10 @@ get_table_sorting(table_name = NULL, ducklake_name = NULL)
 
 ## Value
 
-A data frame with one row per sort key: `table_name`, `sort_key_index`,
-`expression`, `sort_direction` (`"ASC"` or `"DESC"`), and `null_order`
-(`"NULLS_FIRST"` or `"NULLS_LAST"`). Zero rows when nothing is sorted.
+A data frame with one row per sort key: `schema_name`, `table_name`,
+`sort_key_index`, `expression`, `sort_direction` (`"ASC"` or `"DESC"`),
+and `null_order` (`"NULLS_FIRST"` or `"NULLS_LAST"`). Zero rows when
+nothing is sorted.
 
 ## See also
 
@@ -53,15 +55,15 @@ set_table_sorting("cars", c("cyl ASC", "mpg DESC"))
 
 # All sorted tables in the lake
 get_table_sorting()
-#>   table_name sort_key_index expression sort_direction null_order
-#> 1       cars              0        cyl            ASC NULLS_LAST
-#> 2       cars              1        mpg           DESC NULLS_LAST
+#>   schema_name table_name sort_key_index expression sort_direction null_order
+#> 1        main       cars              0        cyl            ASC NULLS_LAST
+#> 2        main       cars              1        mpg           DESC NULLS_LAST
 
 # Keys for one table
 get_table_sorting("cars")
-#>   table_name sort_key_index expression sort_direction null_order
-#> 1       cars              0        cyl            ASC NULLS_LAST
-#> 2       cars              1        mpg           DESC NULLS_LAST
+#>   schema_name table_name sort_key_index expression sort_direction null_order
+#> 1        main       cars              0        cyl            ASC NULLS_LAST
+#> 2        main       cars              1        mpg           DESC NULLS_LAST
 
 detach_ducklake("getsort_lake", shutdown = TRUE)
 unlink(lake_dir, recursive = TRUE)

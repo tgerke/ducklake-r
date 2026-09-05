@@ -71,8 +71,9 @@ delete files.</p>
 
 
 <dl><dt id="arg-table-name">table_name<a class="anchor" aria-label="anchor" href="#arg-table-name"></a></dt>
-<dd><p>Optional table name. When provided, only that table's
-row is returned.</p></dd>
+<dd><p>Optional table name, optionally qualified as
+<code>"schema.table"</code>. When provided, only that table's row is returned (a
+bare name matches it in every schema).</p></dd>
 
 
 <dt id="arg-ducklake-name">ducklake_name<a class="anchor" aria-label="anchor" href="#arg-ducklake-name"></a></dt>
@@ -89,7 +90,7 @@ default ducklake connection.</p></dd>
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A data frame with one row per table and columns <code>table_name</code>,
 <code>schema_id</code>, <code>table_id</code>, <code>table_uuid</code>, <code>file_count</code>, <code>file_size_bytes</code>,
-<code>delete_file_count</code>, and <code>delete_file_size_bytes</code>.</p>
+<code>delete_file_count</code>, <code>delete_file_size_bytes</code>, and <code>schema_name</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -128,16 +129,16 @@ counts until <code><a href="flush_inlined_data.html">flush_inlined_data()</a></c
 <span class="r-in"><span><span class="co"># File statistics for every table in the lake</span></span></span>
 <span class="r-in"><span><span class="fu">get_table_info</span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   table_name schema_id table_id                           table_uuid file_count</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1       cars         0        1 01a06f22-6797-77b4-a85e-b5e8b6eb04c8          1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   file_size_bytes delete_file_count delete_file_size_bytes</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1            2911                 0                      0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1       cars         0        1 01a06f29-ce53-7bd3-a53b-b55d7406b423          1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   file_size_bytes delete_file_count delete_file_size_bytes schema_name</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1            2911                 0                      0        main</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Just one table</span></span></span>
 <span class="r-in"><span><span class="fu">get_table_info</span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   table_name schema_id table_id                           table_uuid file_count</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1       cars         0        1 01a06f22-6797-77b4-a85e-b5e8b6eb04c8          1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   file_size_bytes delete_file_count delete_file_size_bytes</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1            2911                 0                      0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1       cars         0        1 01a06f29-ce53-7bd3-a53b-b55d7406b423          1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   file_size_bytes delete_file_count delete_file_size_bytes schema_name</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1            2911                 0                      0        main</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="fu"><a href="detach_ducklake.html">detach_ducklake</a></span><span class="op">(</span><span class="st">"info_lake"</span>, shutdown <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/unlink.html" class="external-link">unlink</a></span><span class="op">(</span><span class="va">lake_dir</span>, recursive <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>

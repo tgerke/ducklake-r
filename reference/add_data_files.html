@@ -82,9 +82,10 @@ catalog in place.</p>
 
 
 <dl><dt id="arg-table-name">table_name<a class="anchor" aria-label="anchor" href="#arg-table-name"></a></dt>
-<dd><p>The table to add the files to. Unless <code>create = TRUE</code>, it
-must already exist with a schema compatible with the files (see
-<code>allow_missing</code> and <code>ignore_extra_columns</code> for the permitted mismatches).</p></dd>
+<dd><p>The table to add the files to, optionally qualified as
+<code>"schema.table"</code>. Unless <code>create = TRUE</code>, it must already exist with a
+schema compatible with the files (see <code>allow_missing</code> and
+<code>ignore_extra_columns</code> for the permitted mismatches).</p></dd>
 
 
 <dt id="arg-files">files<a class="anchor" aria-label="anchor" href="#arg-files"></a></dt>
@@ -139,8 +140,10 @@ files that something else still relies on.</p>
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
     <div class="dont-index"><p><code><a href="list_ducklake_files.html">list_ducklake_files()</a></code>, <code><a href="create_table.html">create_table()</a></code></p>
 <p>Other table operations:
+<code><a href="create_schema.html">create_schema()</a></code>,
 <code><a href="create_table.html">create_table()</a></code>,
 <code><a href="create_view.html">create_view()</a></code>,
+<code><a href="drop_schema.html">drop_schema()</a></code>,
 <code><a href="drop_view.html">drop_view()</a></code>,
 <code><a href="ducklake_exec.html">ducklake_exec()</a></code>,
 <code><a href="get_ducklake_table.html">get_ducklake_table()</a></code>,

@@ -28,7 +28,7 @@ merge_into(
 
   The table to modify: a table from
   [`get_ducklake_table()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_table.md)
-  or a table name.
+  or a table name, optionally qualified as `"schema.table"`.
 
 - source:
 

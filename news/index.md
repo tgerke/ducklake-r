@@ -2,6 +2,41 @@
 
 ## ducklake (development version)
 
+- Schema-qualified table names work end to end. Every function that
+  takes a table name accepts `"schema.table"`:
+  [`get_ducklake_table()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_table.md)
+  hands dbplyr a proper table path for it (the duckdb driver’s
+  [`tbl()`](https://dplyr.tidyverse.org/reference/tbl.html) turned a
+  dotted name into raw SQL that `rows_*()` could not write to), and the
+  metadata readers
+  ([`get_table_comments()`](https://tgerke.github.io/ducklake-r/reference/get_table_comments.md),
+  [`get_table_partitions()`](https://tgerke.github.io/ducklake-r/reference/get_table_partitions.md),
+  [`get_table_sorting()`](https://tgerke.github.io/ducklake-r/reference/get_table_sorting.md),
+  [`get_table_info()`](https://tgerke.github.io/ducklake-r/reference/get_table_info.md),
+  [`list_table_snapshots()`](https://tgerke.github.io/ducklake-r/reference/list_table_snapshots.md),
+  [`get_table_changes()`](https://tgerke.github.io/ducklake-r/reference/get_table_changes.md),
+  [`list_ducklake_files()`](https://tgerke.github.io/ducklake-r/reference/list_ducklake_files.md))
+  resolve the schema instead of matching the bare name. Functions with a
+  `schema_name` argument take the schema from either place. The readers
+  gain a `schema_name` column. New
+  [`create_schema()`](https://tgerke.github.io/ducklake-r/reference/create_schema.md)
+  and
+  [`drop_schema()`](https://tgerke.github.io/ducklake-r/reference/drop_schema.md)
+  manage schemas, the natural home for medallion layers; the README
+  example now keeps bronze, silver, and gold in schemas of their own.
+
+- [`attach_ducklake()`](https://tgerke.github.io/ducklake-r/reference/attach_ducklake.md)
+  gains `create` (`FALSE` opens an existing lake and errors on a wrong
+  path or name instead of creating a new, empty lake) and
+  `metadata_schema` (several lakes in one PostgreSQL database, each in
+  its own schema).
+
+- New
+  [`set_ducklake_retry()`](https://tgerke.github.io/ducklake-r/reference/set_ducklake_retry.md)
+  sets how DuckLake retries a transaction that races with another
+  writer, and the transactions vignette explains which concurrent
+  changes conflict and which are retried.
+
 - [`create_table()`](https://tgerke.github.io/ducklake-r/reference/create_table.md)
   and
   [`replace_table()`](https://tgerke.github.io/ducklake-r/reference/replace_table.md)

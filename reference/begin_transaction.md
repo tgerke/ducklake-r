@@ -37,6 +37,7 @@ DuckDB supports full ACID transactions with multiple isolation levels.
 Other transactions:
 [`commit_transaction()`](https://tgerke.github.io/ducklake-r/reference/commit_transaction.md),
 [`rollback_transaction()`](https://tgerke.github.io/ducklake-r/reference/rollback_transaction.md),
+[`set_ducklake_retry()`](https://tgerke.github.io/ducklake-r/reference/set_ducklake_retry.md),
 [`set_snapshot_metadata()`](https://tgerke.github.io/ducklake-r/reference/set_snapshot_metadata.md),
 [`with_transaction()`](https://tgerke.github.io/ducklake-r/reference/with_transaction.md)
 

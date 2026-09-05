@@ -19,8 +19,8 @@ flush_inlined_data(ducklake_name = NULL, table_name = NULL, schema_name = NULL)
 
 - table_name:
 
-  Optional table name. When provided, only flushes inlined data for that
-  table.
+  Optional table name, optionally qualified as `"schema.table"`. When
+  provided, only flushes inlined data for that table.
 
 - schema_name:
 

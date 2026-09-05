@@ -17,7 +17,9 @@ build_attach_sql(
   meta_encryption_key = NULL,
   snapshot_version = NULL,
   snapshot_time = NULL,
-  automatic_migration = FALSE
+  automatic_migration = FALSE,
+  create = TRUE,
+  metadata_schema = NULL
 )
 ```
 
@@ -71,6 +73,14 @@ build_attach_sql(
 - automatic_migration:
 
   Whether to add AUTOMATIC_MIGRATION
+
+- create:
+
+  Whether to allow creating the lake (CREATE_IF_NOT_EXISTS)
+
+- metadata_schema:
+
+  Optional schema for METADATA_SCHEMA
 
 ## Value
 

@@ -30,12 +30,14 @@
 <url><loc>https://tgerke.github.io/ducklake-r/reference/cleanup_old_files.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/collect.tbl_ducklake.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/commit_transaction.html</loc></url>
+<url><loc>https://tgerke.github.io/ducklake-r/reference/create_schema.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/create_storage_secret.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/create_table.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/create_view.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/delete_orphaned_files.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/detach_ducklake.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/detach_quack.html</loc></url>
+<url><loc>https://tgerke.github.io/ducklake-r/reference/drop_schema.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/drop_table_column.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/drop_view.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/ducklake-package.html</loc></url>
@@ -91,6 +93,7 @@
 <url><loc>https://tgerke.github.io/ducklake-r/reference/set_column_type.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/set_ducklake_connection.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/set_ducklake_option.html</loc></url>
+<url><loc>https://tgerke.github.io/ducklake-r/reference/set_ducklake_retry.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/set_inlining_row_limit.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/set_snapshot_metadata.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/set_table_comment.html</loc></url>

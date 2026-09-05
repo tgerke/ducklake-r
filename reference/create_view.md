@@ -51,7 +51,9 @@ to materialize a pipeline as data instead.
 
 Other table operations:
 [`add_data_files()`](https://tgerke.github.io/ducklake-r/reference/add_data_files.md),
+[`create_schema()`](https://tgerke.github.io/ducklake-r/reference/create_schema.md),
 [`create_table()`](https://tgerke.github.io/ducklake-r/reference/create_table.md),
+[`drop_schema()`](https://tgerke.github.io/ducklake-r/reference/drop_schema.md),
 [`drop_view()`](https://tgerke.github.io/ducklake-r/reference/drop_view.md),
 [`ducklake_exec()`](https://tgerke.github.io/ducklake-r/reference/ducklake_exec.md),
 [`get_ducklake_table()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_table.md),

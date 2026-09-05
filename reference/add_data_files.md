@@ -23,8 +23,9 @@ add_data_files(
 
 - table_name:
 
-  The table to add the files to. Unless `create = TRUE`, it must already
-  exist with a schema compatible with the files (see `allow_missing` and
+  The table to add the files to, optionally qualified as
+  `"schema.table"`. Unless `create = TRUE`, it must already exist with a
+  schema compatible with the files (see `allow_missing` and
   `ignore_extra_columns` for the permitted mismatches).
 
 - files:
@@ -85,8 +86,10 @@ still relies on.
 [`create_table()`](https://tgerke.github.io/ducklake-r/reference/create_table.md)
 
 Other table operations:
+[`create_schema()`](https://tgerke.github.io/ducklake-r/reference/create_schema.md),
 [`create_table()`](https://tgerke.github.io/ducklake-r/reference/create_table.md),
 [`create_view()`](https://tgerke.github.io/ducklake-r/reference/create_view.md),
+[`drop_schema()`](https://tgerke.github.io/ducklake-r/reference/drop_schema.md),
 [`drop_view()`](https://tgerke.github.io/ducklake-r/reference/drop_view.md),
 [`ducklake_exec()`](https://tgerke.github.io/ducklake-r/reference/ducklake_exec.md),
 [`get_ducklake_table()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_table.md),

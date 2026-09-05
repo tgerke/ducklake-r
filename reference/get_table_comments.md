@@ -16,7 +16,8 @@ get_table_comments(table_name = NULL, ducklake_name = NULL)
 
 - table_name:
 
-  Optional table (or view) name to filter to.
+  Optional table (or view) name to filter to, optionally qualified as
+  `"schema.table"`; a bare name matches that table in every schema.
 
 - ducklake_name:
 
@@ -26,8 +27,9 @@ get_table_comments(table_name = NULL, ducklake_name = NULL)
 ## Value
 
 A data frame with one row per comment: `object_type` (`"table"`,
-`"view"`, or `"column"`), `table_name`, `column_name` (`NA` for tables
-and views), and `comment`. Zero rows when nothing is commented.
+`"view"`, or `"column"`), `schema_name`, `table_name`, `column_name`
+(`NA` for tables and views), and `comment`. Zero rows when nothing is
+commented.
 
 ## See also
 
@@ -52,15 +54,15 @@ set_column_comments("cars", mpg = "Miles per US gallon")
 
 # Everything documented in the lake
 get_table_comments()
-#>   object_type table_name column_name                comment
-#> 1      column       cars         mpg    Miles per US gallon
-#> 2       table       cars        <NA> Motor Trend road tests
+#>   object_type schema_name table_name column_name                comment
+#> 1      column        main       cars         mpg    Miles per US gallon
+#> 2       table        main       cars        <NA> Motor Trend road tests
 
 # One table's documentation
 get_table_comments("cars")
-#>   object_type table_name column_name                comment
-#> 1      column       cars         mpg    Miles per US gallon
-#> 2       table       cars        <NA> Motor Trend road tests
+#>   object_type schema_name table_name column_name                comment
+#> 1      column        main       cars         mpg    Miles per US gallon
+#> 2       table        main       cars        <NA> Motor Trend road tests
 
 detach_ducklake("readcomment_lake", shutdown = TRUE)
 unlink(lake_dir, recursive = TRUE)

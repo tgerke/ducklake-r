@@ -201,6 +201,37 @@ list_ducklake_tables()
 #> 4        main     small_cars table
 ```
 
+### Organize tables in schemas
+
+Schemas group tables inside the lake. They suit medallion layers
+(`bronze`, `silver`, `gold`) or one area per study, and every function
+that takes a table name accepts `"schema.table"`:
+
+``` r
+
+create_schema("staging")
+#> Created schema "staging".
+create_table(mtcars, "staging.cars_raw")
+
+get_ducklake_table("staging.cars_raw") |>
+  count(cyl)
+#> # A query:  ?? x 2
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpQXKWQP/ducklake/ducklake2b6b63925f89.duckdb]
+#>     cyl     n
+#>   <dbl> <dbl>
+#> 1     6     7
+#> 2     8    14
+#> 3     4    11
+
+list_ducklake_tables()
+#>   schema_name     table_name  type
+#> 1        main           cars table
+#> 2        main efficient_cars table
+#> 3        main    iris_sample table
+#> 4        main     small_cars table
+#> 5     staging       cars_raw table
+```
+
 ## Shared logic and documentation recipes
 
 ### Store a pipeline as a view
@@ -257,10 +288,14 @@ set_column_comments(
 #> Commented 2 columns on "cars".
 
 get_table_comments("cars")
-#>   object_type table_name column_name                                  comment
-#> 1      column       cars         mpg                      Miles per US gallon
-#> 2      column       cars          wt                        Weight (1000 lbs)
-#> 3       table       cars        <NA> Motor Trend road tests of 1973-74 models
+#>   object_type schema_name table_name column_name
+#> 1      column        main       cars         mpg
+#> 2      column        main       cars          wt
+#> 3       table        main       cars        <NA>
+#>                                    comment
+#> 1                      Miles per US gallon
+#> 2                        Weight (1000 lbs)
+#> 3 Motor Trend road tests of 1973-74 models
 ```
 
 ### Keep variable labels through the lake
@@ -302,7 +337,7 @@ cars_data |>
   select(mpg, cyl, hp) |>
   head(3)
 #> # A query:  ?? x 3
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmpu0ZWsD/ducklake/ducklake2b3a34e31bb9.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpQXKWQP/ducklake/ducklake2b6b63925f89.duckdb]
 #>     mpg   cyl    hp
 #>   <dbl> <dbl> <dbl>
 #> 1  21       6   110
@@ -332,10 +367,10 @@ head(cars_df, 3)
 # See all snapshots for the cars table
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-09-05 01:16:10              1
-#> 2           2 2026-09-05 01:16:10              2
-#> 3           8 2026-09-05 01:16:12              8
-#> 4           9 2026-09-05 01:16:12              9
+#> 1           1 2026-09-05 01:24:14              1
+#> 2           2 2026-09-05 01:24:14              2
+#> 3          10 2026-09-05 01:24:16             10
+#> 4          11 2026-09-05 01:24:16             11
 #>                                                              changes
 #> 1                 tables_created, tables_inserted_into, main.cars, 1
 #> 2 tables_altered, tables_inserted_into, tables_deleted_from, 1, 1, 1
@@ -357,7 +392,7 @@ get_ducklake_table_version("cars", version = 1) |>
   select(mpg, cyl, hp) |>
   head(3)
 #> # A query:  ?? x 3
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmpu0ZWsD/ducklake/ducklake2b3a34e31bb9.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpQXKWQP/ducklake/ducklake2b6b63925f89.duckdb]
 #>     mpg   cyl    hp
 #>   <dbl> <dbl> <dbl>
 #> 1  21       6   110
@@ -434,19 +469,21 @@ for guidance on choosing between them.
 
 list_table_snapshots()
 #>    snapshot_id       snapshot_time schema_version
-#> 1            0 2026-09-05 01:16:10              0
-#> 2            1 2026-09-05 01:16:10              1
-#> 3            2 2026-09-05 01:16:10              2
-#> 4            3 2026-09-05 01:16:11              3
-#> 5            4 2026-09-05 01:16:11              4
-#> 6            5 2026-09-05 01:16:11              5
-#> 7            6 2026-09-05 01:16:12              6
-#> 8            7 2026-09-05 01:16:12              7
-#> 9            8 2026-09-05 01:16:12              8
-#> 10           9 2026-09-05 01:16:12              9
-#> 11          10 2026-09-05 01:16:12             10
-#> 12          11 2026-09-05 01:16:13             10
-#> 13          12 2026-09-05 01:16:13             11
+#> 1            0 2026-09-05 01:24:13              0
+#> 2            1 2026-09-05 01:24:14              1
+#> 3            2 2026-09-05 01:24:14              2
+#> 4            3 2026-09-05 01:24:14              3
+#> 5            4 2026-09-05 01:24:15              4
+#> 6            5 2026-09-05 01:24:15              5
+#> 7            6 2026-09-05 01:24:15              6
+#> 8            7 2026-09-05 01:24:15              7
+#> 9            8 2026-09-05 01:24:15              8
+#> 10           9 2026-09-05 01:24:15              9
+#> 11          10 2026-09-05 01:24:16             10
+#> 12          11 2026-09-05 01:24:16             11
+#> 13          12 2026-09-05 01:24:16             12
+#> 14          13 2026-09-05 01:24:16             12
+#> 15          14 2026-09-05 01:24:17             13
 #>                                                                                     changes
 #> 1                                                                     schemas_created, main
 #> 2                                        tables_created, tables_inserted_into, main.cars, 1
@@ -454,13 +491,15 @@ list_table_snapshots()
 #> 4                                 tables_created, tables_inserted_into, main.iris_sample, 2
 #> 5                              tables_created, tables_inserted_into, main.efficient_cars, 3
 #> 6                                  tables_created, tables_inserted_into, main.small_cars, 4
-#> 7                                                      views_created, main.v_efficient_cars
-#> 8                                                                          views_dropped, 5
-#> 9                                                                         tables_altered, 1
-#> 10                                                                        tables_altered, 1
-#> 11                        tables_created, tables_altered, inlined_insert, main.visits, 6, 6
-#> 12                                          tables_inserted_into, tables_deleted_from, 1, 1
-#> 13 tables_created, tables_dropped, tables_altered, tables_inserted_into, main.cars, 1, 7, 7
+#> 7                                                                  schemas_created, staging
+#> 8                                 tables_created, tables_inserted_into, staging.cars_raw, 6
+#> 9                                                      views_created, main.v_efficient_cars
+#> 10                                                                         views_dropped, 7
+#> 11                                                                        tables_altered, 1
+#> 12                                                                        tables_altered, 1
+#> 13                        tables_created, tables_altered, inlined_insert, main.visits, 8, 8
+#> 14                                          tables_inserted_into, tables_deleted_from, 1, 1
+#> 15 tables_created, tables_dropped, tables_altered, tables_inserted_into, main.cars, 1, 9, 9
 #>           author                          commit_message commit_extra_info
 #> 1           <NA>                                    <NA>              <NA>
 #> 2  Data Engineer                   Initial car data load              <NA>
@@ -473,8 +512,10 @@ list_table_snapshots()
 #> 9           <NA>                                    <NA>              <NA>
 #> 10          <NA>                                    <NA>              <NA>
 #> 11          <NA>                                    <NA>              <NA>
-#> 12 Data Engineer Apply the dyno correction to V8 engines              <NA>
-#> 13 Data Engineer           Round fuel efficiency metrics              <NA>
+#> 12          <NA>                                    <NA>              <NA>
+#> 13          <NA>                                    <NA>              <NA>
+#> 14 Data Engineer Apply the dyno correction to V8 engines              <NA>
+#> 15 Data Engineer           Round fuel efficiency metrics              <NA>
 ```
 
 ### View snapshots for a specific table
@@ -501,21 +542,21 @@ restore_table_version(
 
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-09-05 01:16:10              1
-#> 2           2 2026-09-05 01:16:10              2
-#> 3           8 2026-09-05 01:16:12              8
-#> 4           9 2026-09-05 01:16:12              9
-#> 5          11 2026-09-05 01:16:13             10
-#> 6          12 2026-09-05 01:16:13             11
-#> 7          13 2026-09-05 01:16:13             12
-#>                                                                                    changes
-#> 1                                       tables_created, tables_inserted_into, main.cars, 1
-#> 2                       tables_altered, tables_inserted_into, tables_deleted_from, 1, 1, 1
-#> 3                                                                        tables_altered, 1
-#> 4                                                                        tables_altered, 1
-#> 5                                          tables_inserted_into, tables_deleted_from, 1, 1
-#> 6 tables_created, tables_dropped, tables_altered, tables_inserted_into, main.cars, 1, 7, 7
-#> 7 tables_created, tables_dropped, tables_altered, tables_inserted_into, main.cars, 7, 8, 8
+#> 1           1 2026-09-05 01:24:14              1
+#> 2           2 2026-09-05 01:24:14              2
+#> 3          10 2026-09-05 01:24:16             10
+#> 4          11 2026-09-05 01:24:16             11
+#> 5          13 2026-09-05 01:24:16             12
+#> 6          14 2026-09-05 01:24:17             13
+#> 7          15 2026-09-05 01:24:17             14
+#>                                                                                      changes
+#> 1                                         tables_created, tables_inserted_into, main.cars, 1
+#> 2                         tables_altered, tables_inserted_into, tables_deleted_from, 1, 1, 1
+#> 3                                                                          tables_altered, 1
+#> 4                                                                          tables_altered, 1
+#> 5                                            tables_inserted_into, tables_deleted_from, 1, 1
+#> 6   tables_created, tables_dropped, tables_altered, tables_inserted_into, main.cars, 1, 9, 9
+#> 7 tables_created, tables_dropped, tables_altered, tables_inserted_into, main.cars, 9, 10, 10
 #>          author                          commit_message commit_extra_info
 #> 1 Data Engineer                   Initial car data load              <NA>
 #> 2 Data Engineer           Add km/L metric to cars table              <NA>
@@ -624,7 +665,7 @@ get_ducklake_table("cars") |>
   mutate(kpl = mpg * 0.425144) |>
   head(3)
 #> # A query:  ?? x 12
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmpu0ZWsD/ducklake/ducklake2b3a34e31bb9.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpQXKWQP/ducklake/ducklake2b6b63925f89.duckdb]
 #>     mpg   cyl  disp    hp  drat    wt  qsec    vs    am  gear  carb   kpl
 #>   <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>
 #> 1  21       6   160   110  3.9   2.62  16.5     0     1     4     4  8.93
@@ -641,7 +682,7 @@ get_ducklake_table("cars") |>
   select(mpg, cyl, hp) |>
   filter(mpg > 25)
 #> # A query:  ?? x 3
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmpu0ZWsD/ducklake/ducklake2b3a34e31bb9.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpQXKWQP/ducklake/ducklake2b6b63925f89.duckdb]
 #>     mpg   cyl    hp
 #>   <dbl> <dbl> <dbl>
 #> 1  32.4     4    66

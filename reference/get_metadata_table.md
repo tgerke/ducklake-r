@@ -42,8 +42,10 @@ for a friendlier view of snapshot history.
 
 Other table operations:
 [`add_data_files()`](https://tgerke.github.io/ducklake-r/reference/add_data_files.md),
+[`create_schema()`](https://tgerke.github.io/ducklake-r/reference/create_schema.md),
 [`create_table()`](https://tgerke.github.io/ducklake-r/reference/create_table.md),
 [`create_view()`](https://tgerke.github.io/ducklake-r/reference/create_view.md),
+[`drop_schema()`](https://tgerke.github.io/ducklake-r/reference/drop_schema.md),
 [`drop_view()`](https://tgerke.github.io/ducklake-r/reference/drop_view.md),
 [`ducklake_exec()`](https://tgerke.github.io/ducklake-r/reference/ducklake_exec.md),
 [`get_ducklake_table()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_table.md),
@@ -64,8 +66,8 @@ get_metadata_table("ducklake_snapshot") |> dplyr::collect()
 #> # A tibble: 2 × 5
 #>   snapshot_id snapshot_time       schema_version next_catalog_id next_file_id
 #>         <dbl> <dttm>                       <dbl>           <dbl>        <dbl>
-#> 1           0 2026-09-05 01:15:19              0               1            0
-#> 2           1 2026-09-05 01:15:19              1               2            1
+#> 1           0 2026-09-05 01:23:24              0               1            0
+#> 2           1 2026-09-05 01:23:24              1               2            1
 
 # Which Parquet files back the lake?
 get_metadata_table("ducklake_data_file") |>
@@ -74,7 +76,7 @@ get_metadata_table("ducklake_data_file") |>
 #> # A tibble: 1 × 2
 #>   data_file_id path                                                 
 #>          <dbl> <chr>                                                
-#> 1            0 ducklake-01a06f22-6099-7c3e-9552-b655ac7bf3ba.parquet
+#> 1            0 ducklake-01a06f29-c773-72aa-bdff-2f927e7139f9.parquet
 
 detach_ducklake("meta_lake", shutdown = TRUE)
 unlink(lake_dir, recursive = TRUE)

@@ -19,7 +19,8 @@ get_ducklake_table(tbl_name)
 
 - tbl_name:
 
-  Character string, name of the table to retrieve.
+  Character string, name of the table to retrieve. A table outside the
+  `main` schema is named `"schema.table"`.
 
 ## Value
 
@@ -37,8 +38,10 @@ for time-travel reads.
 
 Other table operations:
 [`add_data_files()`](https://tgerke.github.io/ducklake-r/reference/add_data_files.md),
+[`create_schema()`](https://tgerke.github.io/ducklake-r/reference/create_schema.md),
 [`create_table()`](https://tgerke.github.io/ducklake-r/reference/create_table.md),
 [`create_view()`](https://tgerke.github.io/ducklake-r/reference/create_view.md),
+[`drop_schema()`](https://tgerke.github.io/ducklake-r/reference/drop_schema.md),
 [`drop_view()`](https://tgerke.github.io/ducklake-r/reference/drop_view.md),
 [`ducklake_exec()`](https://tgerke.github.io/ducklake-r/reference/ducklake_exec.md),
 [`get_metadata_table()`](https://tgerke.github.io/ducklake-r/reference/get_metadata_table.md),

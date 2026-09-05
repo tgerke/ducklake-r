@@ -66,7 +66,8 @@ slow reads down until they are rewritten without the dead rows.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">rewrite_data_files</span><span class="op">(</span></span>
 <span>  ducklake_name <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  table_name <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  delete_threshold <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  delete_threshold <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  schema_name <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -80,13 +81,17 @@ current database is used.</p></dd>
 
 
 <dt id="arg-table-name">table_name<a class="anchor" aria-label="anchor" href="#arg-table-name"></a></dt>
-<dd><p>Optional table name. When provided, only that table's
-files are rewritten.</p></dd>
+<dd><p>Optional table name, optionally qualified as
+<code>"schema.table"</code>. When provided, only that table's files are rewritten.</p></dd>
 
 
 <dt id="arg-delete-threshold">delete_threshold<a class="anchor" aria-label="anchor" href="#arg-delete-threshold"></a></dt>
 <dd><p>Optional fraction of deleted rows (between 0 and</p><ol><li><p>above which a file is rewritten. DuckLake's default is 0.95.</p></li>
 </ol></dd>
+
+
+<dt id="arg-schema-name">schema_name<a class="anchor" aria-label="anchor" href="#arg-schema-name"></a></dt>
+<dd><p>Optional schema containing <code>table_name</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">

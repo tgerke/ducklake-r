@@ -74,7 +74,8 @@ table, optionally as of a past snapshot.</p>
 
 
 <dl><dt id="arg-table-name">table_name<a class="anchor" aria-label="anchor" href="#arg-table-name"></a></dt>
-<dd><p>The table whose files to list.</p></dd>
+<dd><p>The table whose files to list, optionally qualified as
+<code>"schema.table"</code>.</p></dd>
 
 
 <dt id="arg-schema-name">schema_name<a class="anchor" aria-label="anchor" href="#arg-schema-name"></a></dt>
@@ -139,8 +140,8 @@ see <code><a href="plot_table_files.html">plot_table_files()</a></code>.</p>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Files behind a table right now</span></span></span>
 <span class="r-in"><span><span class="fu">list_ducklake_files</span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                                                                                                   data_file</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1 /tmp/RtmpDaJMYe/listfiles_lake_1afc7b8d4f/main/cars/ducklake-01a06f22-6ec8-7118-bcb8-6631f7b95ce8.parquet</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                                                                                     data_file</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 /tmp/RtmpeVOfQc/listfiles_lake_1ad33a2f8986/main/cars/ducklake-01a06f29-d588-7bcc-82b0-f90f09795bde.parquet</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   data_file_size_bytes data_file_footer_size data_file_encryption_key</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1                 2911                  1128                     NULL</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   delete_file delete_file_size_bytes delete_file_footer_size</span>
@@ -151,8 +152,8 @@ see <code><a href="plot_table_files.html">plot_table_files()</a></code>.</p>
 <span class="r-in"><span><span class="co"># Files as of an earlier snapshot</span></span></span>
 <span class="r-in"><span><span class="va">first</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="fu"><a href="list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span><span class="op">$</span><span class="va">snapshot_id</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">list_ducklake_files</span><span class="op">(</span><span class="st">"cars"</span>, snapshot_version <span class="op">=</span> <span class="va">first</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                                                                                                   data_file</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1 /tmp/RtmpDaJMYe/listfiles_lake_1afc7b8d4f/main/cars/ducklake-01a06f22-6ec8-7118-bcb8-6631f7b95ce8.parquet</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                                                                                     data_file</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 /tmp/RtmpeVOfQc/listfiles_lake_1ad33a2f8986/main/cars/ducklake-01a06f29-d588-7bcc-82b0-f90f09795bde.parquet</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   data_file_size_bytes data_file_footer_size data_file_encryption_key</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1                 2911                  1128                     NULL</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   delete_file delete_file_size_bytes delete_file_footer_size</span>
