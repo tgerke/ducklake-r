@@ -30,3 +30,49 @@
   (`meta_encryption_key` in `attach_ducklake()`). ATTACH cannot take bound
   parameters -- DuckLake re-serializes forwarded options into an internal
   second ATTACH -- so option values interpolate via `quote_sql()`.
+
+## Decisions from the September 2026 review
+
+- **Writes from lazy tables run in-engine** (2026-09-04). `create_table()`
+  runs `CREATE TABLE ... AS`; `replace_table()` materializes the query in
+  a DuckDB temp table, then rebuilds the target. Column comments are copied
+  by name from the query's base tables so labels survive pipelines.
+- **DuckLake in-transaction rules, confirmed empirically on DuckDB 1.5.5**
+  (2026-09-04): `ALTER TABLE ... SET PARTITIONED BY / SORTED BY` is refused
+  on a table holding inlined rows written in the open transaction, so keys
+  go on the empty table before the rows are inserted; `set_option()` is
+  refused for a table created in the open transaction, so table options
+  are re-set after the commit; `CREATE OR REPLACE TABLE` followed by
+  `INSERT` in one transaction commits an empty table, so rewrites use
+  `DROP` + `CREATE`; a `DEFAULT` accepts plain constants only (no `TRUE`,
+  `DATE '...'`, casts); some failed DDL leaves an aborted transaction even
+  in autocommit mode, which `db_execute_ddl()` rolls back; DuckDB temp
+  tables are transactional, so the rollback handler must run before the
+  temp-table cleanup.
+- **`replace_table()` and `restore_table_version()` change the table id**
+  (DuckLake has no in-place replace); every piece of metadata DuckLake
+  keys to the id is captured first and put back.
+- **`set_snapshot_metadata()` fills blanks only** unless `overwrite = TRUE`;
+  at-commit metadata is the audited path, and an overwrite is an edit to
+  the audit trail.
+- **Minimum duckdb is 1.5.2**, the release that ships DuckLake 1.0. The
+  extension for 1.5.1 wrote 0.4-format catalogs; `automatic_migration`
+  upgrades them.
+- **`CHECKPOINT` expires and deletes nothing without a policy**
+  (`expire_older_than`, `delete_older_than`); verified 2026-09-04.
+- **Schema-qualified names go through `dbplyr::tbl_sql()` with a quoted
+  `I()` path**, because the duckdb driver's `tbl()` method wraps any
+  dotted name it cannot find as a literal table name in raw SQL, which
+  `rows_*()` cannot write to.
+- **Windows (`windows_amd64_mingw`, what duckdb-r uses)**: `sqlite_scanner`,
+  `httpfs`, `quack`, and `ducklake` exist; `postgres`, `mysql`, `aws`, and
+  `azure` do not (checked 2026-09-04 for v1.5.1 and v1.5.5).
+- **Extension persistence**: duckdb-r 1.5.2+ keeps extensions in a
+  per-session temp directory unless `DUCKDB_R_HOME` (or `duckdb.home`, or
+  an existing `~/.duckdb`) is set; local development and CI set
+  `DUCKDB_R_HOME`.
+- **Iceberg interop is documented, not wrapped** (2026-09-04): `COPY FROM
+  DATABASE lake TO iceberg_catalog` and `iceberg_to_ducklake()` live in
+  DuckDB's iceberg extension; the cookbook shows them. This closes the
+  "one-command Iceberg catalog export" watch item above.
+

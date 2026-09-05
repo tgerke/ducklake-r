@@ -238,6 +238,24 @@ test_that("build_attach_sql renders CREATE_IF_NOT_EXISTS and METADATA_SCHEMA", {
   expect_false(grepl("CREATE_IF_NOT_EXISTS|METADATA_SCHEMA", sql3))
 })
 
+test_that("attach_ducklake() creates a missing local lake directory", {
+  skip_if_no_ducklake()
+
+  root <- tempfile("newdirs_")
+  on.exit(unlink(root, recursive = TRUE), add = TRUE)
+  lake_dir <- file.path(root, "lakes", "trial")
+  catalog_file <- file.path(root, "catalogs", "trial.ducklake")
+
+  attach_ducklake("newdir_lake", lake_path = lake_dir,
+                  catalog_connection_string = catalog_file)
+  on.exit(detach_ducklake("newdir_lake"), add = TRUE)
+  create_table(data.frame(id = 1:2), "t")
+
+  expect_true(dir.exists(lake_dir))
+  expect_true(file.exists(catalog_file))
+  expect_equal(nrow(dplyr::collect(get_ducklake_table("t"))), 2)
+})
+
 test_that("attach_ducklake(create = FALSE) refuses to create a missing lake", {
   skip_if_no_ducklake()
 

@@ -285,6 +285,22 @@ Every table then reads as of snapshot 2 with no `AT (...)` clauses needed,
 and writes are rejected, so the milestone view can't drift. A
 `snapshot_time` argument does the same for a point in time.
 
+## Row Lineage
+
+Every row in a DuckLake table carries two hidden columns: `rowid`, an
+identifier assigned when the row was first inserted and kept through
+updates and compaction, and `snapshot_id`, the snapshot that wrote the
+row's current version. They are how the change feed tells an update apart
+from a delete followed by an insert. dbplyr does not know about hidden
+columns, so read them with a SQL query:
+
+```{r row-lineage}
+conn <- get_ducklake_connection()
+tbl(conn, sql("SELECT rowid, snapshot_id, mpg, cyl FROM cars")) |>
+  head(5) |>
+  collect()
+```
+
 ## Use Cases for Time Travel
 
 Time travel functionality is particularly valuable for:

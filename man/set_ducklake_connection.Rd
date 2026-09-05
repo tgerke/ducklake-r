@@ -54,6 +54,7 @@ Other connection management:
 \code{\link[=ducklake_extension_available]{ducklake_extension_available()}},
 \code{\link[=get_ducklake_backend]{get_ducklake_backend()}},
 \code{\link[=get_ducklake_connection]{get_ducklake_connection()}},
+\code{\link[=get_ducklake_info]{get_ducklake_info()}},
 \code{\link[=install_ducklake]{install_ducklake()}}
 }
 \concept{connection management}

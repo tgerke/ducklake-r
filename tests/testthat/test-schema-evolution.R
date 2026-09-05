@@ -260,3 +260,34 @@ test_that("a failed DDL statement leaves the connection usable", {
   expect_equal(nrow(dplyr::collect(get_ducklake_table("ddl_recovery"))), 3)
 })
 
+test_that("set_column_not_null() requires and then allows NULL values", {
+  skip_if_not_installed("duckdb")
+  skip_if_not_installed("dplyr")
+
+  lake <- create_temp_ducklake()
+  on.exit(cleanup_temp_ducklake(lake), add = TRUE)
+
+  create_table(data.frame(id = 1:3, code = c("A", "B", "C")), "nn_sites")
+  expect_message(set_column_not_null("nn_sites", "code"), "requires a value")
+
+  expect_error(
+    suppressMessages(
+      rows_insert(get_ducklake_table("nn_sites"), data.frame(id = 4L), by = "id")
+    )
+  )
+  expect_equal(nrow(dplyr::collect(get_ducklake_table("nn_sites"))), 3)
+
+  expect_message(
+    set_column_not_null("nn_sites", "code", not_null = FALSE),
+    "allows NULL"
+  )
+  suppressMessages(
+    rows_insert(get_ducklake_table("nn_sites"), data.frame(id = 4L), by = "id")
+  )
+  expect_equal(nrow(dplyr::collect(get_ducklake_table("nn_sites"))), 4)
+
+  # Existing NULLs block the constraint, and the connection stays usable
+  expect_error(set_column_not_null("nn_sites", "code"))
+  expect_equal(nrow(dplyr::collect(get_ducklake_table("nn_sites"))), 4)
+})
+
