@@ -82,12 +82,15 @@
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>This function is designed for schema changes or bulk transformations that should
-create a new versioned snapshot. It:</p><ol><li><p>Collects the transformed data</p></li>
-<li><p>Drops the existing table</p></li>
-<li><p>Creates a new table with the updated schema/data</p></li>
-<li><p>Puts back the metadata DuckLake keeps against the table</p></li>
-</ol><p>The drop and create run atomically: when no transaction is open,
+    <p>This function is designed for bulk transformations that should create a
+new versioned snapshot. A dplyr pipeline on the package's connection
+runs inside DuckDB: its result is materialized in DuckDB's temporary
+storage (the query may read the table being replaced), the table is
+dropped and recreated from it, and the metadata DuckLake keeps against
+the table is put back. No rows pass through R. A data frame, or a lazy
+table on another connection, is loaded the way <code><a href="create_table.html">create_table()</a></code> loads
+it.</p>
+<p>The drop and create run atomically: when no transaction is open,
 <code>replace_table()</code> wraps them in one of its own, so a failed create never
 leaves the table dropped. Wrap the call in <code><a href="with_transaction.html">with_transaction()</a></code> (or
 <code><a href="begin_transaction.html">begin_transaction()</a></code>/<code><a href="commit_transaction.html">commit_transaction()</a></code>) when you want to record an

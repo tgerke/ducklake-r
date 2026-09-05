@@ -28,16 +28,15 @@ Invisibly returns NULL
 
 ## Details
 
-This function is designed for schema changes or bulk transformations
-that should create a new versioned snapshot. It:
-
-1.  Collects the transformed data
-
-2.  Drops the existing table
-
-3.  Creates a new table with the updated schema/data
-
-4.  Puts back the metadata DuckLake keeps against the table
+This function is designed for bulk transformations that should create a
+new versioned snapshot. A dplyr pipeline on the package's connection
+runs inside DuckDB: its result is materialized in DuckDB's temporary
+storage (the query may read the table being replaced), the table is
+dropped and recreated from it, and the metadata DuckLake keeps against
+the table is put back. No rows pass through R. A data frame, or a lazy
+table on another connection, is loaded the way
+[`create_table()`](https://tgerke.github.io/ducklake-r/reference/create_table.md)
+loads it.
 
 The drop and create run atomically: when no transaction is open,
 `replace_table()` wraps them in one of its own, so a failed create never

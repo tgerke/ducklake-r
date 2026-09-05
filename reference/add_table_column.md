@@ -4,7 +4,7 @@ Adds a column in place with `ALTER TABLE ... ADD COLUMN`. This is a
 metadata-only change: no data files are rewritten, history is preserved,
 and earlier snapshots still show the old schema. Compare
 [`replace_table()`](https://tgerke.github.io/ducklake-r/reference/replace_table.md),
-which collects the table into R and rewrites it.
+which rewrites the whole table.
 
 ## Usage
 

@@ -20,7 +20,12 @@ create_table(data_source, table_name, labels = TRUE)
 
   - An R data.frame or tibble
 
-  - A lazy table (tbl_duckdb_connection or tbl_lazy)
+  - A lazy table (tbl_duckdb_connection or tbl_lazy). A lazy table on
+    the package's connection, such as a dplyr pipeline built on
+    [`get_ducklake_table()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_table.md),
+    is written with `CREATE TABLE ... AS` inside DuckDB, so its rows
+    never pass through R. A lazy table on another connection is
+    collected first.
 
 - table_name:
 
@@ -28,11 +33,14 @@ create_table(data_source, table_name, labels = TRUE)
 
 - labels:
 
-  When `TRUE` (the default) and the data has haven/labelled variable
-  labels (`label` attributes on columns), store them in the lake as
-  column comments – in the same transaction as the table creation, so
-  both land as one snapshot. Collecting the table later restores the
-  labels (see
+  When `TRUE` (the default), store variable labels in the lake as column
+  comments, in the same transaction as the table creation, so both land
+  as one snapshot. For a data frame the labels are its haven/labelled
+  `label` attributes; for a lazy table, each output column keeps the
+  comment of the same-named column in the tables the query reads, so
+  labels follow the data through a pipeline (a renamed or derived column
+  starts without one). Collecting the table later restores the labels
+  (see
   [`get_table_comments()`](https://tgerke.github.io/ducklake-r/reference/get_table_comments.md)),
   and every other client of the lake can read them too. Set to `FALSE`
   to skip.
@@ -70,7 +78,8 @@ csv_path <- tempfile(fileext = ".csv")
 utils::write.csv(mtcars, csv_path, row.names = FALSE)
 create_table(csv_path, "cars_from_csv")
 
-# From a lazy table (pipe-friendly)
+# From a lazy table: the query runs inside DuckDB and writes straight
+# into the lake, without collecting into R
 get_ducklake_table("cars") |>
   dplyr::filter(cyl > 4) |>
   create_table("big_cars")

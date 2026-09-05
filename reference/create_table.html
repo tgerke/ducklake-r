@@ -68,7 +68,11 @@
 <dd><p>Raw data source. Can be:</p><ul><li><p>A URL (http:// or https://)</p></li>
 <li><p>A file path (e.g., "data.csv", "data.parquet")</p></li>
 <li><p>An R data.frame or tibble</p></li>
-<li><p>A lazy table (tbl_duckdb_connection or tbl_lazy)</p></li>
+<li><p>A lazy table (tbl_duckdb_connection or tbl_lazy). A lazy table on
+the package's connection, such as a dplyr pipeline built on
+<code><a href="get_ducklake_table.html">get_ducklake_table()</a></code>, is written with <code>CREATE TABLE ... AS</code> inside
+DuckDB, so its rows never pass through R. A lazy table on another
+connection is collected first.</p></li>
 </ul></dd>
 
 
@@ -77,12 +81,15 @@
 
 
 <dt id="arg-labels">labels<a class="anchor" aria-label="anchor" href="#arg-labels"></a></dt>
-<dd><p>When <code>TRUE</code> (the default) and the data has haven/labelled
-variable labels (<code>label</code> attributes on columns), store them in the
-lake as column comments – in the same transaction as the table
-creation, so both land as one snapshot. Collecting the table later
-restores the labels (see <code><a href="get_table_comments.html">get_table_comments()</a></code>), and every other
-client of the lake can read them too. Set to <code>FALSE</code> to skip.</p></dd>
+<dd><p>When <code>TRUE</code> (the default), store variable labels in the
+lake as column comments, in the same transaction as the table
+creation, so both land as one snapshot. For a data frame the labels
+are its haven/labelled <code>label</code> attributes; for a lazy table, each
+output column keeps the comment of the same-named column in the tables
+the query reads, so labels follow the data through a pipeline (a
+renamed or derived column starts without one). Collecting the table
+later restores the labels (see <code><a href="get_table_comments.html">get_table_comments()</a></code>), and every
+other client of the lake can read them too. Set to <code>FALSE</code> to skip.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -118,7 +125,8 @@ table in the lake.</p>
 <span class="r-in"><span><span class="fu">utils</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/utils/write.table.html" class="external-link">write.csv</a></span><span class="op">(</span><span class="va">mtcars</span>, <span class="va">csv_path</span>, row.names <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">create_table</span><span class="op">(</span><span class="va">csv_path</span>, <span class="st">"cars_from_csv"</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># From a lazy table (pipe-friendly)</span></span></span>
+<span class="r-in"><span><span class="co"># From a lazy table: the query runs inside DuckDB and writes straight</span></span></span>
+<span class="r-in"><span><span class="co"># into the lake, without collecting into R</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
 <span class="r-in"><span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">cyl</span> <span class="op">&gt;</span> <span class="fl">4</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
 <span class="r-in"><span>  <span class="fu">create_table</span><span class="op">(</span><span class="st">"big_cars"</span><span class="op">)</span></span></span>

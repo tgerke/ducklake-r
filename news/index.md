@@ -2,6 +2,20 @@
 
 ## ducklake (development version)
 
+- [`create_table()`](https://tgerke.github.io/ducklake-r/reference/create_table.md)
+  and
+  [`replace_table()`](https://tgerke.github.io/ducklake-r/reference/replace_table.md)
+  now run dplyr pipelines inside DuckDB. A lazy table on the package’s
+  connection is written with `CREATE TABLE ... AS`; a replacement is
+  materialized in DuckDB’s temporary storage first (the query may read
+  the table it replaces) and the table is rebuilt from it. Rows no
+  longer pass through R, so silver and gold layers derived from large
+  bronze tables cost DuckDB memory, not R memory. Column comments follow
+  the data: each output column keeps the comment of the same-named
+  column in the tables the query reads, so variable labels survive a
+  pipeline as they did through the old collect path. Data frames, and
+  lazy tables on other connections, load as before.
+
 - [`replace_table()`](https://tgerke.github.io/ducklake-r/reference/replace_table.md)
   and
   [`restore_table_version()`](https://tgerke.github.io/ducklake-r/reference/restore_table_version.md)

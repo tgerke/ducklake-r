@@ -62,7 +62,7 @@ create_table(data.frame(id = 1:3, amount = c(10, 20, 30)), "orders")
 # List all snapshots for a table
 list_table_snapshots("orders")
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-09-05 01:10:34              1
+#> 1           1 2026-09-05 01:15:23              1
 #>                                          changes author commit_message
 #> 1 tables_created, inlined_insert, main.orders, 1   <NA>           <NA>
 #>   commit_extra_info

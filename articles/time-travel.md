@@ -53,7 +53,7 @@ get_ducklake_table("cars") |>
   select(mpg, cyl, hp, wt) |>
   head()
 #> # A query:  ?? x 4
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmpc0MGqm/ducklake/ducklake2df74bab83b4.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpVQu0ME/ducklake/ducklake2d5061874f6.duckdb]
 #>     mpg   cyl    hp    wt
 #>   <dbl> <dbl> <dbl> <dbl>
 #> 1  21       6   110  2.62
@@ -82,7 +82,7 @@ get_ducklake_table("cars") |>
     avg_hp = mean(hp, na.rm = TRUE)
   )
 #> # A query:  ?? x 3
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmpc0MGqm/ducklake/ducklake2df74bab83b4.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpVQu0ME/ducklake/ducklake2d5061874f6.duckdb]
 #>   n_cars avg_mpg avg_hp
 #>    <dbl>   <dbl>  <dbl>
 #> 1     32    20.1   147.
@@ -116,7 +116,7 @@ get_ducklake_table("cars") |>
     avg_hp = mean(hp, na.rm = TRUE)
   )
 #> # A query:  ?? x 3
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmpc0MGqm/ducklake/ducklake2df74bab83b4.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpVQu0ME/ducklake/ducklake2d5061874f6.duckdb]
 #>   n_cars avg_mpg avg_hp
 #>    <dbl>   <dbl>  <dbl>
 #> 1     32    19.9   147.
@@ -155,7 +155,7 @@ get_ducklake_table("cars") |>
   count(efficiency_class) |>
   arrange(desc(n))
 #> # A query:    ?? x 2
-#> # Database:   DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmpc0MGqm/ducklake/ducklake2df74bab83b4.duckdb]
+#> # Database:   DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpVQu0ME/ducklake/ducklake2d5061874f6.duckdb]
 #> # Ordered by: desc(n)
 #>   efficiency_class     n
 #>   <chr>            <dbl>
@@ -192,7 +192,7 @@ get_ducklake_table("cars") |>
   count(efficiency_class) |>
   arrange(desc(n))
 #> # A query:    ?? x 2
-#> # Database:   DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmpc0MGqm/ducklake/ducklake2df74bab83b4.duckdb]
+#> # Database:   DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpVQu0ME/ducklake/ducklake2d5061874f6.duckdb]
 #> # Ordered by: desc(n)
 #>   efficiency_class     n
 #>   <chr>            <dbl>
@@ -214,10 +214,10 @@ functionality.
 snapshots <- list_table_snapshots("cars")
 snapshots
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-09-05 01:11:41              1
-#> 2           2 2026-09-05 01:11:41              1
-#> 3           3 2026-09-05 01:11:42              2
-#> 4           4 2026-09-05 01:11:42              2
+#> 1           1 2026-09-05 01:16:30              1
+#> 2           2 2026-09-05 01:16:31              1
+#> 3           3 2026-09-05 01:16:31              2
+#> 4           4 2026-09-05 01:16:31              2
 #>                                                                                 changes
 #> 1                                    tables_created, tables_inserted_into, main.cars, 1
 #> 2                                                  inlined_insert, inlined_delete, 1, 1
@@ -241,7 +241,7 @@ get_ducklake_table_version("cars", version = 2) |>
   select(mpg, cyl, hp, wt) |>
   head()
 #> # A query:  ?? x 4
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmpc0MGqm/ducklake/ducklake2df74bab83b4.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpVQu0ME/ducklake/ducklake2d5061874f6.duckdb]
 #>     mpg   cyl    hp    wt
 #>   <dbl> <dbl> <dbl> <dbl>
 #> 1  21       6   110  2.62
@@ -263,12 +263,12 @@ get_ducklake_table_version("cars", version = 3) |>
   select(mpg, efficiency_class) |>
   count(efficiency_class)
 #> # A query:  ?? x 2
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmpc0MGqm/ducklake/ducklake2df74bab83b4.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpVQu0ME/ducklake/ducklake2d5061874f6.duckdb]
 #>   efficiency_class     n
 #>   <chr>            <dbl>
-#> 1 Medium               8
-#> 2 Low                 18
-#> 3 High                 6
+#> 1 High                 6
+#> 2 Medium               8
+#> 3 Low                 18
 ```
 
 ### Query data as of a specific timestamp
@@ -287,7 +287,7 @@ get_ducklake_table_asof("cars", version2_timestamp + 1) |>
     avg_mpg = mean(mpg, na.rm = TRUE)
   )
 #> # A query:  ?? x 1
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmpc0MGqm/ducklake/ducklake2df74bab83b4.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpVQu0ME/ducklake/ducklake2d5061874f6.duckdb]
 #>   avg_mpg
 #>     <dbl>
 #> 1    19.9
@@ -362,11 +362,11 @@ call:
 
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-09-05 01:11:41              1
-#> 2           2 2026-09-05 01:11:41              1
-#> 3           3 2026-09-05 01:11:42              2
-#> 4           4 2026-09-05 01:11:42              2
-#> 5           5 2026-09-05 01:11:43              3
+#> 1           1 2026-09-05 01:16:30              1
+#> 2           2 2026-09-05 01:16:31              1
+#> 3           3 2026-09-05 01:16:31              2
+#> 4           4 2026-09-05 01:16:31              2
+#> 5           5 2026-09-05 01:16:32              3
 #>                                                                                 changes
 #> 1                                    tables_created, tables_inserted_into, main.cars, 1
 #> 2                                                  inlined_insert, inlined_delete, 1, 1
@@ -433,11 +433,11 @@ snapshot_history <- list_table_snapshots("cars")
 snapshot_history |>
   select(snapshot_id, snapshot_time, author, commit_message)
 #>   snapshot_id       snapshot_time         author
-#> 1           1 2026-09-05 01:11:41  Data Engineer
-#> 2           2 2026-09-05 01:11:41   Data Analyst
-#> 3           3 2026-09-05 01:11:42   Data Analyst
-#> 4           4 2026-09-05 01:11:42 Senior Analyst
-#> 5           5 2026-09-05 01:11:43 Senior Analyst
+#> 1           1 2026-09-05 01:16:30  Data Engineer
+#> 2           2 2026-09-05 01:16:31   Data Analyst
+#> 3           3 2026-09-05 01:16:31   Data Analyst
+#> 4           4 2026-09-05 01:16:31 Senior Analyst
+#> 5           5 2026-09-05 01:16:32 Senior Analyst
 #>                                 commit_message
 #> 1               Initial load of mtcars dataset
 #> 2     Adjust MPG for high-performance vehicles
@@ -464,12 +464,12 @@ all_snapshots |>
   select(snapshot_id, snapshot_time, changes) |>
   head(10)
 #>   snapshot_id       snapshot_time
-#> 1           0 2026-09-05 01:11:41
-#> 2           1 2026-09-05 01:11:41
-#> 3           2 2026-09-05 01:11:41
-#> 4           3 2026-09-05 01:11:42
-#> 5           4 2026-09-05 01:11:42
-#> 6           5 2026-09-05 01:11:43
+#> 1           0 2026-09-05 01:16:30
+#> 2           1 2026-09-05 01:16:30
+#> 3           2 2026-09-05 01:16:31
+#> 4           3 2026-09-05 01:16:31
+#> 5           4 2026-09-05 01:16:31
+#> 6           5 2026-09-05 01:16:32
 #>                                                                                 changes
 #> 1                                                                 schemas_created, main
 #> 2                                    tables_created, tables_inserted_into, main.cars, 1

@@ -119,9 +119,9 @@ staging source.
 
 - For bulk transformations that touch most rows, use
   [`replace_table()`](https://tgerke.github.io/ducklake-r/reference/replace_table.md).
-  It collects the transformed data into R and rewrites the whole table –
-  heavier than the row operations, and it resets the row lineage that
-  the in-place operations preserve in the change feed.
+  It rewrites the whole table inside DuckDB – heavier than the row
+  operations, and it resets the row lineage that the in-place operations
+  preserve in the change feed.
 
 A tempting alternative – joining the source to the table and calling
 [`replace_table()`](https://tgerke.github.io/ducklake-r/reference/replace_table.md)
