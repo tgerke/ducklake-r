@@ -55,6 +55,7 @@ sorting on insert with
 [`set_table_partitioning()`](https://tgerke.github.io/ducklake-r/reference/set_table_partitioning.md)
 
 Other sorting:
+[`get_table_sorting()`](https://tgerke.github.io/ducklake-r/reference/get_table_sorting.md),
 [`reset_table_sorting()`](https://tgerke.github.io/ducklake-r/reference/reset_table_sorting.md)
 
 ## Examples

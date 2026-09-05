@@ -35,9 +35,10 @@ Invisibly returns `NULL`.
 
 Partitioning only affects data written *after* the keys are set;
 previously written files keep their layout. To re-partition existing
-data, rewrite the table (e.g. with
-[`replace_table()`](https://tgerke.github.io/ducklake-r/reference/replace_table.md))
-after setting the keys.
+data, set the keys and then rewrite the table with
+[`replace_table()`](https://tgerke.github.io/ducklake-r/reference/replace_table.md):
+the rewrite carries the keys over to the new table and writes every row
+through them.
 
 Runs `ALTER TABLE ... SET PARTITIONED BY (...)`. The expressions are
 validated against the transforms DuckLake supports before any SQL is

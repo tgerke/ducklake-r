@@ -83,6 +83,12 @@ otherwise (including when a connection cannot be opened).</p>
 absent: examples, vignettes, tests, and conditional branches in scripts.
 The package's own examples are gated on it. To install the extension, call
 <code><a href="install_ducklake.html">install_ducklake()</a></code>.</p>
+<p>A <code>FALSE</code> on a machine where <code><a href="install_ducklake.html">install_ducklake()</a></code> has already run usually
+means the extension went into a temporary directory: from duckdb 1.5.2
+on, extensions are kept under a "home" directory that defaults to a
+per-session temporary directory unless <code>DUCKDB_R_HOME</code> (or the
+<code>duckdb.home</code> option, or an existing <code>~/.duckdb</code>) points somewhere
+durable. See <code><a href="install_ducklake.html">install_ducklake()</a></code>.</p>
 <p>The result is cached for the rest of the session, since spinning up DuckDB
 to re-answer the same question is wasteful when dozens of examples ask it.
 <code><a href="install_ducklake.html">install_ducklake()</a></code> clears the cache, so a <code>FALSE</code> answer becomes <code>TRUE</code>

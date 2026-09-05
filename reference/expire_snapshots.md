@@ -55,6 +55,12 @@ handle both steps.
 
 The most recent snapshot can never be expired.
 
+For a standing policy, set
+`set_ducklake_option("expire_older_than", "90 days")` once;
+[`checkpoint_ducklake()`](https://tgerke.github.io/ducklake-r/reference/checkpoint_ducklake.md)
+then expires eligible snapshots on every run. Without that option a
+checkpoint expires nothing.
+
 ## See also
 
 [`cleanup_old_files()`](https://tgerke.github.io/ducklake-r/reference/cleanup_old_files.md),
@@ -100,8 +106,8 @@ expire_snapshots(older_than = Sys.time())
 #> ℹ Unreferenced files are scheduled for deletion; run `cleanup_old_files()` to
 #>   reclaim storage.
 #>   snapshot_id       snapshot_time schema_version
-#> 1           0 2026-08-27 21:51:28              0
-#> 2           1 2026-08-27 21:51:28              1
+#> 1           0 2026-09-05 01:10:26              0
+#> 2           1 2026-09-05 01:10:26              1
 #>                                              changes author commit_message
 #> 1                              schemas_created, main   <NA>           <NA>
 #> 2 tables_created, tables_inserted_into, main.cars, 1   <NA>           <NA>

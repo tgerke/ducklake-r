@@ -45,10 +45,10 @@ A data frame listing the deleted (or deletable) files.
 
 ## Details
 
-As an alternative to calling this manually, a retention policy can be
-set once on the catalog with
-`DBI::dbExecute(get_ducklake_connection(), "CALL my_lake.set_option('delete_older_than', '1 week')")`,
-after which DuckLake cleans up eligible files automatically.
+As an alternative to calling this manually, set a retention policy once
+with `set_ducklake_option("delete_older_than", "7 days")`; every later
+[`checkpoint_ducklake()`](https://tgerke.github.io/ducklake-r/reference/checkpoint_ducklake.md)
+then deletes the files that have been released for at least that long.
 
 ## See also
 
@@ -81,7 +81,7 @@ expire_snapshots(older_than = Sys.time())
 #> ℹ Unreferenced files are scheduled for deletion; run `cleanup_old_files()` to
 #>   reclaim storage.
 #>   snapshot_id       snapshot_time schema_version               changes author
-#> 1           0 2026-08-27 21:51:22              0 schemas_created, main   <NA>
+#> 1           0 2026-09-05 01:10:20              0 schemas_created, main   <NA>
 #>   commit_message commit_extra_info
 #> 1           <NA>              <NA>
 

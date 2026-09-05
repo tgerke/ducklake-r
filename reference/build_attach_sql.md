@@ -16,7 +16,8 @@ build_attach_sql(
   encrypted = FALSE,
   meta_encryption_key = NULL,
   snapshot_version = NULL,
-  snapshot_time = NULL
+  snapshot_time = NULL,
+  automatic_migration = FALSE
 )
 ```
 
@@ -66,6 +67,10 @@ build_attach_sql(
 - snapshot_time:
 
   Optional timestamp for SNAPSHOT_TIME
+
+- automatic_migration:
+
+  Whether to add AUTOMATIC_MIGRATION
 
 ## Value
 

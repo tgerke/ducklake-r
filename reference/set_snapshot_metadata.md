@@ -1,8 +1,8 @@
 # Set metadata for the most recent snapshot
 
-Sets the author, commit message, and/or extra info for the most recent
-snapshot in a DuckLake catalog by updating the
-`ducklake_snapshot_changes` metadata table directly.
+Fills in the author, commit message, and/or extra info of the most
+recent snapshot in a DuckLake catalog after it was committed, by
+updating the `ducklake_snapshot_changes` metadata table directly.
 
 ## Usage
 
@@ -12,7 +12,8 @@ set_snapshot_metadata(
   author = NULL,
   commit_message = NULL,
   commit_extra_info = NULL,
-  conn = NULL
+  conn = NULL,
+  overwrite = FALSE
 )
 ```
 
@@ -39,19 +40,33 @@ set_snapshot_metadata(
   Optional DuckDB connection object. If not provided, uses the default
   ducklake connection.
 
+- overwrite:
+
+  Replace values the snapshot already carries (default `FALSE`). By
+  default only empty fields are filled in, and the call stops when a
+  supplied field already has a value.
+
 ## Value
 
 Invisibly returns TRUE on success
 
 ## Details
 
-This function retroactively updates metadata on the most recent
-snapshot. To set metadata at commit time, use the `author`,
-`commit_message`, and `commit_extra_info` arguments in
-[`commit_transaction()`](https://tgerke.github.io/ducklake-r/reference/commit_transaction.md)
-or
+Metadata belongs on the commit: pass `author`, `commit_message`, and
+`commit_extra_info` to
 [`with_transaction()`](https://tgerke.github.io/ducklake-r/reference/with_transaction.md)
-instead.
+or
+[`commit_transaction()`](https://tgerke.github.io/ducklake-r/reference/commit_transaction.md),
+which record them through DuckLake's `set_commit_message()` as part of
+the transaction itself. This function is the escape hatch for a snapshot
+that was committed without them, such as one made interactively or by a
+client that could not set them.
+
+It writes to the catalog's metadata table outside DuckLake's transaction
+and conflict model, and an overwrite leaves no trace of the previous
+value. That is why it fills blanks only unless `overwrite = TRUE`. Where
+the snapshot history is the audit trail (GxP, 21 CFR Part 11), set
+metadata at commit time and leave `overwrite` alone.
 
 ## See also
 
@@ -74,12 +89,22 @@ create_table(mtcars, "cars")
 commit_transaction()
 #> Transaction committed.
 
-# Add metadata to the snapshot after the fact
+# The snapshot has no author or message yet: fill them in
 set_snapshot_metadata(
   ducklake_name = "meta_lake",
   author = "Data Team",
   commit_message = "Added the cars dataset"
 )
+#> Snapshot metadata updated.
+
+# A second call refuses to replace them unless told to
+try(set_snapshot_metadata("meta_lake", commit_message = "Reworded"))
+#> Error in set_snapshot_metadata("meta_lake", commit_message = "Reworded") : 
+#>   The latest snapshot already has commit_message set.
+#> ℹ Metadata belongs on the commit: record it with `with_transaction()` or
+#>   `commit_transaction()`.
+#> ℹ Pass `overwrite = TRUE` to replace it; the previous value is not kept.
+set_snapshot_metadata("meta_lake", commit_message = "Reworded", overwrite = TRUE)
 #> Snapshot metadata updated.
 
 detach_ducklake("meta_lake", shutdown = TRUE)

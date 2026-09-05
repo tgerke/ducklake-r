@@ -34,6 +34,13 @@ This function queries the snapshot history of a table, showing available
 versions and their timestamps. This is useful for understanding what
 historical versions are available for time-travel queries.
 
+A table's snapshots are matched by its name and by every table id the
+name has had in its schema, so the history stays complete across
+[`replace_table()`](https://tgerke.github.io/ducklake-r/reference/replace_table.md)
+and
+[`restore_table_version()`](https://tgerke.github.io/ducklake-r/reference/restore_table_version.md),
+which give the table a new id.
+
 ## See also
 
 Other time travel:
@@ -55,7 +62,7 @@ create_table(data.frame(id = 1:3, amount = c(10, 20, 30)), "orders")
 # List all snapshots for a table
 list_table_snapshots("orders")
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-08-27 21:51:37              1
+#> 1           1 2026-09-05 01:10:34              1
 #>                                          changes author commit_message
 #> 1 tables_created, inlined_insert, main.orders, 1   <NA>           <NA>
 #>   commit_extra_info

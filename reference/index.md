@@ -158,6 +158,8 @@ Manage partition keys and sort orders for file pruning
   : Set the sort order of a table
 - [`reset_table_sorting()`](https://tgerke.github.io/ducklake-r/reference/reset_table_sorting.md)
   : Remove the sort order from a table
+- [`get_table_sorting()`](https://tgerke.github.io/ducklake-r/reference/get_table_sorting.md)
+  : List the sort keys of tables in a lake
 
 ## Options
 

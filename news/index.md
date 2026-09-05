@@ -2,6 +2,143 @@
 
 ## ducklake (development version)
 
+- [`replace_table()`](https://tgerke.github.io/ducklake-r/reference/replace_table.md)
+  and
+  [`restore_table_version()`](https://tgerke.github.io/ducklake-r/reference/restore_table_version.md)
+  now carry a table’s metadata over to the rewritten table: the table
+  comment, column comments (and so variable labels), partition keys,
+  sort order, and table-scoped options. Both go through DROP + CREATE,
+  which gives the table a new id, and DuckLake keeps all of these
+  against the id, so they were silently lost before. Partition and sort
+  keys are set before the rows are written, so the rewrite itself lands
+  partitioned and sorted. Table-scoped options are re-set right after
+  the rewrite commits (DuckLake cannot set options on a table created in
+  the open transaction); inside a transaction you opened yourself they
+  cannot be re-set, and a warning lists the calls to make after
+  committing. New
+  [`get_table_sorting()`](https://tgerke.github.io/ducklake-r/reference/get_table_sorting.md)
+  reads a table’s sort keys from the catalog, the counterpart of
+  [`get_table_partitions()`](https://tgerke.github.io/ducklake-r/reference/get_table_partitions.md).
+
+- The
+  [`set_table_partitioning()`](https://tgerke.github.io/ducklake-r/reference/set_table_partitioning.md)
+  recipe for re-partitioning existing data (set the keys, then rewrite
+  with
+  [`replace_table()`](https://tgerke.github.io/ducklake-r/reference/replace_table.md))
+  now works; before, the rewrite dropped the keys it was meant to apply.
+
+- [`checkpoint_ducklake()`](https://tgerke.github.io/ducklake-r/reference/checkpoint_ducklake.md)
+  no longer claims to expire old snapshots and reclaim their files on
+  its own. A checkpoint does so only when the lake carries a retention
+  policy (`expire_older_than` and `delete_older_than`, set with
+  [`set_ducklake_option()`](https://tgerke.github.io/ducklake-r/reference/set_ducklake_option.md));
+  without one it flushes and compacts but keeps every snapshot and every
+  file. The storage and data-inlining vignettes and the cookbook now
+  show the policy.
+
+- [`set_snapshot_metadata()`](https://tgerke.github.io/ducklake-r/reference/set_snapshot_metadata.md)
+  fills in only empty fields by default and stops when a supplied field
+  already has a value; pass `overwrite = TRUE` to replace one. It writes
+  to the catalog outside DuckLake’s transaction model, and an overwrite
+  leaves no trace of the previous value, so the audited path is metadata
+  set at commit time with
+  [`with_transaction()`](https://tgerke.github.io/ducklake-r/reference/with_transaction.md)
+  or
+  [`commit_transaction()`](https://tgerke.github.io/ducklake-r/reference/commit_transaction.md).
+  The documentation now says so plainly.
+
+- The minimum duckdb version is now 1.5.2, the release that ships
+  DuckLake 1.0. The extension built for DuckDB 1.5.1 writes the earlier
+  0.4 catalog format, so a lake created there needs a one-time migration
+  after the upgrade:
+  [`attach_ducklake()`](https://tgerke.github.io/ducklake-r/reference/attach_ducklake.md)
+  gains `automatic_migration = TRUE` for that (DuckLake’s
+  `AUTOMATIC_MIGRATION` option).
+
+- Where the ducklake extension is installed depends on the duckdb R
+  package: from 1.5.2 on it is a per-session temporary directory unless
+  `DUCKDB_R_HOME` (or the `duckdb.home` option, or an existing
+  `~/.duckdb`) points somewhere durable, so “install once per machine”
+  needs that setting.
+  [`install_ducklake()`](https://tgerke.github.io/ducklake-r/reference/install_ducklake.md)
+  and the automatic extension installs now report the directory they
+  used and say when it is temporary; the README,
+  [`ducklake_extension_available()`](https://tgerke.github.io/ducklake-r/reference/ducklake_extension_available.md),
+  and `create_storage_secret(persistent = TRUE)` describe the setting.
+
+- The clinical trial vignette’s silver layer called
+  [`admiral::convert_blanks_to_na()`](https:/pharmaverse.github.io/admiral/v1.5.0/cran-release/reference/convert_blanks_to_na.html)
+  on a lazy lake table, which leaves the table untouched, so the
+  cleaning it described never ran. The conversion now runs inside DuckDB
+  through a small dbplyr helper. (The pharmaverse test data already
+  stores missing values as `NA`, so the vignette’s output does not
+  change; XPT exports do carry blanks.)
+
+- Vignettes follow the package’s own guidance on how to change a table:
+  derived columns are declared with
+  [`add_table_column()`](https://tgerke.github.io/ducklake-r/reference/add_table_column.md)
+  and filled with
+  [`ducklake_exec()`](https://tgerke.github.io/ducklake-r/reference/ducklake_exec.md),
+  corrections use
+  [`rows_update()`](https://tgerke.github.io/ducklake-r/reference/rows_update.md)
+  and
+  [`rows_delete()`](https://tgerke.github.io/ducklake-r/reference/rows_delete.md),
+  and
+  [`replace_table()`](https://tgerke.github.io/ducklake-r/reference/replace_table.md)
+  is kept for bulk rewrites.
+
+- [`get_ducklake_table_asof()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_table_asof.md)
+  and
+  [`get_ducklake_table_version()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_table_version.md)
+  return the same `tbl_ducklake` class as
+  [`get_ducklake_table()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_table.md),
+  so [`collect()`](https://dplyr.tidyverse.org/reference/compute.html)
+  restores stored column labels on time-travel reads too.
+
+- `list_table_snapshots(table_name)` matches snapshots by parsing the
+  change map rather than by a regular expression over its printed form,
+  and resolves table ids within the table’s schema.
+
+- Functions that read a named lake’s metadata
+  ([`get_metadata_table()`](https://tgerke.github.io/ducklake-r/reference/get_metadata_table.md),
+  [`list_table_snapshots()`](https://tgerke.github.io/ducklake-r/reference/list_table_snapshots.md),
+  [`get_table_partitions()`](https://tgerke.github.io/ducklake-r/reference/get_table_partitions.md),
+  [`get_table_comments()`](https://tgerke.github.io/ducklake-r/reference/get_table_comments.md),
+  [`plot_snapshots()`](https://tgerke.github.io/ducklake-r/reference/plot_snapshots.md))
+  resolve the catalog backend from that lake rather than from the
+  current database, so a PostgreSQL or MySQL lake that is attached but
+  not current is qualified correctly.
+
+- `ducklake_exec(.quiet = FALSE)` emits its SQL trace as messages
+  instead of printing it, and no longer prints the lazy table itself,
+  which ran a preview query.
+  [`show_ducklake_query()`](https://tgerke.github.io/ducklake-r/reference/show_ducklake_query.md)
+  prints through cli.
+
+- The documentation notes that the aws and azure DuckDB extensions are
+  not available on Windows for the duckdb R package, so
+  `create_storage_secret(provider = "credential_chain")` and Azure
+  secrets do not work there. The README now says Quack needs duckdb
+  1.5.3 or newer, not 1.5.4.
+
+- [`add_table_column()`](https://tgerke.github.io/ducklake-r/reference/add_table_column.md)
+  now works with logical, Date, and POSIXct defaults. DuckLake accepts
+  only plain constants in a DEFAULT clause and rejected the typed
+  literals the package rendered (`TRUE`, `DATE '...'`,
+  `TIMESTAMP '...'`) as “non-literal”; such values are now passed as
+  quoted strings, which DuckLake converts to the column type.
+
+- A failed schema evolution statement no longer leaves the shared
+  connection in an aborted transaction. Some DuckLake DDL failures do
+  that even in autocommit mode, so that every later statement failed
+  with “Current transaction is aborted”; the wrappers now roll back
+  before re-raising the error when they did not inherit a transaction.
+
+- The unreferenced and broken `inst/examples/with_transaction_demo.R`
+  was removed; the
+  [`with_transaction()`](https://tgerke.github.io/ducklake-r/reference/with_transaction.md)
+  examples cover it.
+
 - New `meta_encryption_key` argument in
   [`attach_ducklake()`](https://tgerke.github.io/ducklake-r/reference/attach_ducklake.md)
   encrypts the DuckDB catalog database file itself with AES-256-GCM

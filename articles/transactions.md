@@ -54,7 +54,7 @@ get_ducklake_table("cars") |>
   select(mpg, cyl, hp, wt) |>
   head()
 #> # A query:  ?? x 4
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpDWNqme/ducklake/ducklake2e1a269e1137.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpeZAt1U/ducklake/ducklake2e7b2ae56c58.duckdb]
 #>     mpg   cyl    hp    wt
 #>   <dbl> <dbl> <dbl> <dbl>
 #> 1  21       6   110  2.62
@@ -89,31 +89,33 @@ function provides automatic error handling and cleanup, similar to the
 
 ``` r
 
-# Add a new column with automatic metadata tracking
+# Correct values in place, with automatic metadata tracking: the filter
+# becomes the WHERE clause of a single UPDATE
 with_transaction(
   get_ducklake_table("cars") |>
-    mutate(kpl = mpg * 0.425144) |>
-    replace_table("cars"),
+    filter(cyl == 4) |>
+    mutate(mpg = mpg * 1.05) |>
+    ducklake_exec(),
   author = "Data Team",
-  commit_message = "Add kilometers per liter column"
+  commit_message = "Apply the revised 4-cylinder efficiency factor"
 )
 #> Transaction started.
 #> Transaction committed.
 
 # Verify the change
 get_ducklake_table("cars") |>
-  select(mpg, kpl) |>
+  select(mpg, cyl) |>
   head()
 #> # A query:  ?? x 2
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpDWNqme/ducklake/ducklake2e1a269e1137.duckdb]
-#>     mpg   kpl
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpeZAt1U/ducklake/ducklake2e7b2ae56c58.duckdb]
+#>     mpg   cyl
 #>   <dbl> <dbl>
-#> 1  21    8.93
-#> 2  21    8.93
-#> 3  22.8  9.69
-#> 4  21.4  9.10
-#> 5  18.7  7.95
-#> 6  18.1  7.70
+#> 1  21       6
+#> 2  21       6
+#> 3  21.4     6
+#> 4  18.7     8
+#> 5  18.1     6
+#> 6  14.3     8
 ```
 
 ### Multiple Operations in a Single Transaction
@@ -154,24 +156,24 @@ get_ducklake_table("cars") |>
   select(mpg, cyl, efficiency) |>
   head()
 #> # A query:  ?? x 3
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpDWNqme/ducklake/ducklake2e1a269e1137.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpeZAt1U/ducklake/ducklake2e7b2ae56c58.duckdb]
 #>     mpg   cyl efficiency
 #>   <dbl> <dbl> <chr>     
 #> 1  21       6 medium    
 #> 2  21       6 medium    
-#> 3  22.8     4 medium    
-#> 4  21.4     6 medium    
-#> 5  18.7     8 low       
-#> 6  18.1     6 low
+#> 3  21.4     6 medium    
+#> 4  18.7     8 low       
+#> 5  18.1     6 low       
+#> 6  14.3     8 low
 
 get_ducklake_table("cars_summary") |>
   collect()
 #> # A tibble: 3 × 4
 #>     cyl avg_mpg avg_hp count
 #>   <dbl>   <dbl>  <dbl> <dbl>
-#> 1     4    26.7   82.6    11
-#> 2     6    19.7  122.      7
-#> 3     8    15.1  209.     14
+#> 1     6    19.7  122.      7
+#> 2     8    15.1  209.     14
+#> 3     4    28.0   82.6    11
 ```
 
 ### Automatic Rollback on Error
@@ -206,22 +208,22 @@ get_ducklake_table("cars") |>
   colnames()
 #>  [1] "mpg"        "cyl"        "disp"       "hp"         "drat"      
 #>  [6] "wt"         "qsec"       "vs"         "am"         "gear"      
-#> [11] "carb"       "kpl"        "efficiency"
+#> [11] "carb"       "efficiency"
 
 # View all versioned changes
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-08-27 21:52:47              1
-#> 2           2 2026-08-27 21:52:47              2
-#> 3           3 2026-08-27 21:52:48              3
+#> 1           1 2026-09-05 01:11:46              1
+#> 2           2 2026-09-05 01:11:46              1
+#> 3           3 2026-09-05 01:11:47              2
 #>                                                                                                       changes
 #> 1                                                          tables_created, tables_inserted_into, main.cars, 1
-#> 2                                       tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2
-#> 3 tables_created, tables_dropped, tables_inserted_into, inlined_insert, main.cars, main.cars_summary, 2, 4, 3
-#>      author                           commit_message commit_extra_info
-#> 1  Tutorial           Initial load of mtcars dataset              <NA>
-#> 2 Data Team          Add kilometers per liter column              <NA>
-#> 3 Data Team Add efficiency ratings and summary table              <NA>
+#> 2                                                             tables_inserted_into, tables_deleted_from, 1, 1
+#> 3 tables_created, tables_dropped, tables_inserted_into, inlined_insert, main.cars, main.cars_summary, 1, 3, 2
+#>      author                                 commit_message commit_extra_info
+#> 1  Tutorial                 Initial load of mtcars dataset              <NA>
+#> 2 Data Team Apply the revised 4-cylinder efficiency factor              <NA>
+#> 3 Data Team       Add efficiency ratings and summary table              <NA>
 ```
 
 ## Approach 2: Manual Transaction Control
@@ -247,10 +249,14 @@ boundaries, DuckLake provides manual transaction functions.
 begin_transaction()
 #> Transaction started.
 
-# Make changes
+# Make changes: declare a column, then fill it in place
+add_table_column("cars", "weight_kg", "DOUBLE")
+#> Added column "weight_kg" (DOUBLE) to "cars".
+#> ℹ Metadata-only change; no data files were rewritten.
 get_ducklake_table("cars") |>
   mutate(weight_kg = wt * 453.592) |>
-  replace_table("cars")
+  ducklake_exec()
+#> [1] 32
 
 # Commit the changes with metadata
 commit_transaction(
@@ -265,7 +271,7 @@ get_ducklake_table("cars") |>
   select(wt, weight_kg) |>
   head()
 #> # A query:  ?? x 2
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpDWNqme/ducklake/ducklake2e1a269e1137.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpeZAt1U/ducklake/ducklake2e7b2ae56c58.duckdb]
 #>      wt weight_kg
 #>   <dbl>     <dbl>
 #> 1  2.32     1052.
@@ -288,9 +294,9 @@ begin_transaction()
 #> Transaction started.
 
 # Make a test change
-get_ducklake_table("cars") |>
-  mutate(test_flag = TRUE) |>
-  replace_table("cars")
+add_table_column("cars", "test_flag", "BOOLEAN", default = TRUE)
+#> Added column "test_flag" (BOOLEAN) to "cars".
+#> ℹ Metadata-only change; no data files were rewritten.
 
 # Check the result
 test_result <- get_ducklake_table("cars") |>
@@ -298,16 +304,16 @@ test_result <- get_ducklake_table("cars") |>
   head() |>
   collect()
 
-print(test_result)
+test_result
 #> # A tibble: 6 × 2
 #>     mpg test_flag
 #>   <dbl> <lgl>    
 #> 1  21   TRUE     
 #> 2  21   TRUE     
-#> 3  22.8 TRUE     
-#> 4  21.4 TRUE     
-#> 5  18.7 TRUE     
-#> 6  18.1 TRUE
+#> 3  21.4 TRUE     
+#> 4  18.7 TRUE     
+#> 5  18.1 TRUE     
+#> 6  14.3 TRUE
 
 # Decide to rollback
 rollback_transaction()
@@ -320,20 +326,20 @@ rollback_transaction()
 # View all versioned changes
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-08-27 21:52:47              1
-#> 2           2 2026-08-27 21:52:47              2
-#> 3           3 2026-08-27 21:52:48              3
-#> 4           4 2026-08-27 21:52:48              4
+#> 1           1 2026-09-05 01:11:46              1
+#> 2           2 2026-09-05 01:11:46              1
+#> 3           3 2026-09-05 01:11:47              2
+#> 4           4 2026-09-05 01:11:47              3
 #>                                                                                                       changes
 #> 1                                                          tables_created, tables_inserted_into, main.cars, 1
-#> 2                                       tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2
-#> 3 tables_created, tables_dropped, tables_inserted_into, inlined_insert, main.cars, main.cars_summary, 2, 4, 3
-#> 4                                       tables_created, tables_dropped, tables_inserted_into, main.cars, 4, 5
-#>      author                           commit_message commit_extra_info
-#> 1  Tutorial           Initial load of mtcars dataset              <NA>
-#> 2 Data Team          Add kilometers per liter column              <NA>
-#> 3 Data Team Add efficiency ratings and summary table              <NA>
-#> 4 Data Team                         Add weight in kg              <NA>
+#> 2                                                             tables_inserted_into, tables_deleted_from, 1, 1
+#> 3 tables_created, tables_dropped, tables_inserted_into, inlined_insert, main.cars, main.cars_summary, 1, 3, 2
+#> 4                                          tables_altered, tables_inserted_into, tables_deleted_from, 3, 3, 3
+#>      author                                 commit_message commit_extra_info
+#> 1  Tutorial                 Initial load of mtcars dataset              <NA>
+#> 2 Data Team Apply the revised 4-cylinder efficiency factor              <NA>
+#> 3 Data Team       Add efficiency ratings and summary table              <NA>
+#> 4 Data Team                               Add weight in kg              <NA>
 ```
 
 ### Snapshot Metadata: At Commit Time vs After the Fact
@@ -356,9 +362,13 @@ finalized.
 begin_transaction()
 #> Transaction started.
 
+add_table_column("cars", "hp_per_liter", "DOUBLE")
+#> Added column "hp_per_liter" (DOUBLE) to "cars".
+#> ℹ Metadata-only change; no data files were rewritten.
 get_ducklake_table("cars") |>
   mutate(hp_per_liter = hp / (cyl * 0.5)) |>
-  replace_table("cars")
+  ducklake_exec()
+#> [1] 32
 
 commit_transaction(
   author = "Performance Team",
@@ -371,38 +381,65 @@ get_ducklake_table("cars") |>
   select(hp, cyl, hp_per_liter) |>
   head()
 #> # A query:  ?? x 3
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpDWNqme/ducklake/ducklake2e1a269e1137.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpeZAt1U/ducklake/ducklake2e7b2ae56c58.duckdb]
 #>      hp   cyl hp_per_liter
 #>   <dbl> <dbl>        <dbl>
 #> 1   110     6         36.7
 #> 2   110     6         36.7
-#> 3    93     4         46.5
-#> 4   110     6         36.7
-#> 5   175     8         43.8
-#> 6   105     6         35
+#> 3   110     6         36.7
+#> 4   175     8         43.8
+#> 5   105     6         35  
+#> 6   245     8         61.2
 ```
 
-**After the fact**: Use
+**After the fact**:
 [`set_snapshot_metadata()`](https://tgerke.github.io/ducklake-r/reference/set_snapshot_metadata.md)
-to retroactively update the metadata on the most recent snapshot. This
-directly updates the `ducklake_snapshot_changes` metadata table.
+fills in the metadata of a snapshot that was committed without any, such
+as a quick interactive change. It updates the
+`ducklake_snapshot_changes` metadata table directly, outside DuckLake’s
+transaction model, so by default it only fills empty fields and refuses
+to replace a value that is already there:
 
 ``` r
 
-# Retrospectively update metadata on the last snapshot
+# A quick interactive change, committed without metadata
+begin_transaction()
+#> Transaction started.
+rows_update(
+  get_ducklake_table("cars"),
+  data.frame(mpg = 21, hp_per_liter = 36.7),
+  by = "mpg"
+)
+commit_transaction()
+#> Transaction committed.
+
+# Fill in the metadata afterwards
 set_snapshot_metadata(
   ducklake_name = "transactions_lake",
-  author = "Performance Team (reviewed)",
-  commit_message = "Add horsepower per liter metric (approved)"
+  author = "Performance Team",
+  commit_message = "Correct hp_per_liter for the 21 mpg cars"
 )
 #> Snapshot metadata updated.
+
+# Replacing an existing value takes overwrite = TRUE, and leaves no trace
+# of the previous value
+try(
+  set_snapshot_metadata("transactions_lake", commit_message = "Reworded")
+)
+#> Error in set_snapshot_metadata("transactions_lake", commit_message = "Reworded") : 
+#>   The latest snapshot already has commit_message set.
+#> ℹ Metadata belongs on the commit: record it with `with_transaction()` or
+#>   `commit_transaction()`.
+#> ℹ Pass `overwrite = TRUE` to replace it; the previous value is not kept.
 ```
 
-Both approaches result in the same metadata fields being populated — the
-choice is about workflow. Use at-commit-time metadata for automated
-pipelines where metadata is known upfront. Use after-the-fact metadata
-for interactive workflows where you want to annotate a snapshot after
-reviewing the results.
+Both approaches populate the same fields. Set metadata at commit time
+whenever you can: it is recorded inside the transaction, by DuckLake
+itself. Keep
+[`set_snapshot_metadata()`](https://tgerke.github.io/ducklake-r/reference/set_snapshot_metadata.md)
+for the occasional snapshot that was committed without it. Where the
+snapshot history is the audit trail, treat `overwrite = TRUE` as what it
+is: an edit to that trail.
 
 ## Viewing Transaction History
 
@@ -415,18 +452,18 @@ complete metadata:
 list_table_snapshots("cars") |>
   select(snapshot_id, snapshot_time, author, commit_message) |>
   tail(5)
-#>   snapshot_id       snapshot_time                      author
-#> 1           1 2026-08-27 21:52:47                    Tutorial
-#> 2           2 2026-08-27 21:52:47                   Data Team
-#> 3           3 2026-08-27 21:52:48                   Data Team
-#> 4           4 2026-08-27 21:52:48                   Data Team
-#> 5           5 2026-08-27 21:52:49 Performance Team (reviewed)
-#>                               commit_message
-#> 1             Initial load of mtcars dataset
-#> 2            Add kilometers per liter column
-#> 3   Add efficiency ratings and summary table
-#> 4                           Add weight in kg
-#> 5 Add horsepower per liter metric (approved)
+#>   snapshot_id       snapshot_time           author
+#> 2           2 2026-09-05 01:11:46        Data Team
+#> 3           3 2026-09-05 01:11:47        Data Team
+#> 4           4 2026-09-05 01:11:47        Data Team
+#> 5           5 2026-09-05 01:11:48 Performance Team
+#> 6           6 2026-09-05 01:11:48 Performance Team
+#>                                   commit_message
+#> 2 Apply the revised 4-cylinder efficiency factor
+#> 3       Add efficiency ratings and summary table
+#> 4                               Add weight in kg
+#> 5                Add horsepower per liter metric
+#> 6       Correct hp_per_liter for the 21 mpg cars
 ```
 
 ## Comparison: with_transaction() vs Manual Control
@@ -435,7 +472,7 @@ list_table_snapshots("cars") |>
 |----|----|----|
 | **Ease of use** | ✅ Simple, one function | ❌ Requires multiple function calls |
 | **Error handling** | ✅ Automatic rollback | ❌ Must handle manually |
-| **Metadata** | ✅ Inline with transaction | ✅ Inline via parameter, or retroactive via [`set_snapshot_metadata()`](https://tgerke.github.io/ducklake-r/reference/set_snapshot_metadata.md) |
+| **Metadata** | ✅ Inline with transaction | ✅ Inline via parameter, or filled in later via [`set_snapshot_metadata()`](https://tgerke.github.io/ducklake-r/reference/set_snapshot_metadata.md) |
 | **Safety** | ✅ Can’t forget to commit | ❌ Risk of open transactions |
 | **Use case** | Most production workflows | Interactive/conditional workflows |
 | **Code clarity** | ✅ Clear transaction scope | ⚠ Scope can be unclear |
@@ -467,7 +504,8 @@ list_table_snapshots("cars") |>
 - **[`rollback_transaction()`](https://tgerke.github.io/ducklake-r/reference/rollback_transaction.md)**:
   Discard changes from a manual transaction
 - **[`set_snapshot_metadata()`](https://tgerke.github.io/ducklake-r/reference/set_snapshot_metadata.md)**:
-  Retroactively update metadata on the most recent snapshot
+  Fill in metadata the most recent snapshot was committed without
+  (`overwrite = TRUE` to replace a value)
 
 Transactions ensure data integrity and provide complete audit trails for
 all changes in your DuckLake.

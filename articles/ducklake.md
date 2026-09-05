@@ -77,19 +77,24 @@ with_transaction(
 #> Transaction committed.
 ```
 
-### Update an existing table
+### Add a derived column in place
 
 ``` r
 
-# Create a second version of the cars table
-with_transaction(
+# A new column is a metadata change; filling it is an in-database UPDATE.
+# Together they make the second version of the cars table.
+with_transaction({
+  add_table_column("cars", "kpl", "DOUBLE")
   get_ducklake_table("cars") |>
-    mutate(kpl = mpg * 0.425144) |>  # Add km/L conversion
-    replace_table("cars"),
+    mutate(kpl = mpg * 0.425144) |>  # km/L conversion
+    ducklake_exec()
+},
   author = "Data Engineer",
   commit_message = "Add km/L metric to cars table"
 )
 #> Transaction started.
+#> Added column "kpl" (DOUBLE) to "cars".
+#> ℹ Metadata-only change; no data files were rewritten.
 #> Transaction committed.
 ```
 
@@ -275,7 +280,7 @@ cars_data |>
   select(mpg, cyl, hp) |>
   head(3)
 #> # A query:  ?? x 3
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpYhSQA1/ducklake/ducklake2b8239d4a158.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmpx7DX84/ducklake/ducklake2bde2c54eaf6.duckdb]
 #>     mpg   cyl    hp
 #>   <dbl> <dbl> <dbl>
 #> 1  21       6   110
@@ -305,15 +310,15 @@ head(cars_df, 3)
 # See all snapshots for the cars table
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-08-27 21:52:22              1
-#> 2           2 2026-08-27 21:52:22              2
-#> 3           7 2026-08-27 21:52:24              7
-#> 4           8 2026-08-27 21:52:24              8
-#>                                                                 changes
-#> 1                    tables_created, tables_inserted_into, main.cars, 1
-#> 2 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2
-#> 3                                                     tables_altered, 2
-#> 4                                                     tables_altered, 2
+#> 1           1 2026-09-05 01:11:21              1
+#> 2           2 2026-09-05 01:11:21              2
+#> 3           7 2026-09-05 01:11:22              7
+#> 4           8 2026-09-05 01:11:22              8
+#>                                                              changes
+#> 1                 tables_created, tables_inserted_into, main.cars, 1
+#> 2 tables_altered, tables_inserted_into, tables_deleted_from, 1, 1, 1
+#> 3                                                  tables_altered, 1
+#> 4                                                  tables_altered, 1
 #>          author                commit_message commit_extra_info
 #> 1 Data Engineer         Initial car data load              <NA>
 #> 2 Data Engineer Add km/L metric to cars table              <NA>
@@ -330,7 +335,7 @@ get_ducklake_table_version("cars", version = 1) |>
   select(mpg, cyl, hp) |>
   head(3)
 #> # A query:  ?? x 3
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpYhSQA1/ducklake/ducklake2b8239d4a158.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmpx7DX84/ducklake/ducklake2bde2c54eaf6.duckdb]
 #>     mpg   cyl    hp
 #>   <dbl> <dbl> <dbl>
 #> 1  21       6   110
@@ -349,31 +354,53 @@ get_ducklake_table_asof("cars", timestamp = "2024-01-15 10:30:00") |>
 
 ## Updating data recipes
 
+### Correct rows in place
+
+``` r
+
+# filter() becomes the WHERE clause of a single UPDATE
+with_transaction(
+  get_ducklake_table("cars") |>
+    filter(cyl == 8) |>
+    mutate(hp = hp * 1.02) |>
+    ducklake_exec(),
+  author = "Data Engineer",
+  commit_message = "Apply the dyno correction to V8 engines"
+)
+#> Transaction started.
+#> Transaction committed.
+```
+
 ### Replace entire table
 
 ``` r
 
+# A bulk rewrite that touches most rows: the whole table is rewritten, and
+# its comments, partition keys, sort order, and options carry over
 with_transaction(
   get_ducklake_table("cars") |>
-    mutate(hp_per_cyl = hp / as.numeric(cyl)) |>  # Add derived metric
+    mutate(across(c(mpg, kpl), ~ round(.x, 1))) |>
     replace_table("cars"),
   author = "Data Engineer",
-  commit_message = "Add horsepower per cylinder metric"
+  commit_message = "Round fuel efficiency metrics"
 )
 #> Transaction started.
-#> Stored 2 column labels as column comments.
 #> Transaction committed.
 ```
 
-Note: Use
-[`replace_table()`](https://tgerke.github.io/ducklake-r/reference/replace_table.md)
-for structural changes (adding or removing columns) and the row-level
-operations
+Note: use the schema evolution functions
+([`add_table_column()`](https://tgerke.github.io/ducklake-r/reference/add_table_column.md)
+and friends) for structural changes,
+[`ducklake_exec()`](https://tgerke.github.io/ducklake-r/reference/ducklake_exec.md)
+and the row-level operations
 ([`rows_update()`](https://tgerke.github.io/ducklake-r/reference/rows_update.md),
 [`rows_insert()`](https://tgerke.github.io/ducklake-r/reference/rows_insert.md),
-[`rows_delete()`](https://tgerke.github.io/ducklake-r/reference/rows_delete.md))
-for targeted, incremental changes. Both are fully versioned – every
-committed change creates a snapshot you can time-travel back to. See
+[`rows_delete()`](https://tgerke.github.io/ducklake-r/reference/rows_delete.md),
+[`rows_upsert()`](https://tgerke.github.io/ducklake-r/reference/rows_upsert.md))
+for targeted changes, and
+[`replace_table()`](https://tgerke.github.io/ducklake-r/reference/replace_table.md)
+for bulk rewrites. All are fully versioned: every committed change
+creates a snapshot you can time-travel back to. See
 [`vignette("modifying-tables")`](https://tgerke.github.io/ducklake-r/articles/modifying-tables.md)
 for guidance on choosing between them.
 
@@ -385,41 +412,44 @@ for guidance on choosing between them.
 
 list_table_snapshots()
 #>    snapshot_id       snapshot_time schema_version
-#> 1            0 2026-08-27 21:52:22              0
-#> 2            1 2026-08-27 21:52:22              1
-#> 3            2 2026-08-27 21:52:22              2
-#> 4            3 2026-08-27 21:52:23              3
-#> 5            4 2026-08-27 21:52:23              4
-#> 6            5 2026-08-27 21:52:23              5
-#> 7            6 2026-08-27 21:52:24              6
-#> 8            7 2026-08-27 21:52:24              7
-#> 9            8 2026-08-27 21:52:24              8
-#> 10           9 2026-08-27 21:52:24              9
-#> 11          10 2026-08-27 21:52:25             10
+#> 1            0 2026-09-05 01:11:20              0
+#> 2            1 2026-09-05 01:11:21              1
+#> 3            2 2026-09-05 01:11:21              2
+#> 4            3 2026-09-05 01:11:21              3
+#> 5            4 2026-09-05 01:11:21              4
+#> 6            5 2026-09-05 01:11:22              5
+#> 7            6 2026-09-05 01:11:22              6
+#> 8            7 2026-09-05 01:11:22              7
+#> 9            8 2026-09-05 01:11:22              8
+#> 10           9 2026-09-05 01:11:22              9
+#> 11          10 2026-09-05 01:11:23              9
+#> 12          11 2026-09-05 01:11:23             10
 #>                                                                                     changes
 #> 1                                                                     schemas_created, main
 #> 2                                        tables_created, tables_inserted_into, main.cars, 1
-#> 3                     tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2
-#> 4                                 tables_created, tables_inserted_into, main.iris_sample, 3
-#> 5                              tables_created, tables_inserted_into, main.efficient_cars, 4
+#> 3                        tables_altered, tables_inserted_into, tables_deleted_from, 1, 1, 1
+#> 4                                 tables_created, tables_inserted_into, main.iris_sample, 2
+#> 5                              tables_created, tables_inserted_into, main.efficient_cars, 3
 #> 6                                                      views_created, main.v_efficient_cars
-#> 7                                                                          views_dropped, 5
-#> 8                                                                         tables_altered, 2
-#> 9                                                                         tables_altered, 2
-#> 10                        tables_created, tables_altered, inlined_insert, main.visits, 6, 6
-#> 11 tables_created, tables_dropped, tables_altered, tables_inserted_into, main.cars, 2, 7, 7
-#>           author                     commit_message commit_extra_info
-#> 1           <NA>                               <NA>              <NA>
-#> 2  Data Engineer              Initial car data load              <NA>
-#> 3  Data Engineer      Add km/L metric to cars table              <NA>
-#> 4  Data Engineer          Load iris sample from CSV              <NA>
-#> 5   Data Analyst             Load filtered car data              <NA>
-#> 6           <NA>                               <NA>              <NA>
-#> 7           <NA>                               <NA>              <NA>
-#> 8           <NA>                               <NA>              <NA>
-#> 9           <NA>                               <NA>              <NA>
-#> 10          <NA>                               <NA>              <NA>
-#> 11 Data Engineer Add horsepower per cylinder metric              <NA>
+#> 7                                                                          views_dropped, 4
+#> 8                                                                         tables_altered, 1
+#> 9                                                                         tables_altered, 1
+#> 10                        tables_created, tables_altered, inlined_insert, main.visits, 5, 5
+#> 11                                          tables_inserted_into, tables_deleted_from, 1, 1
+#> 12 tables_created, tables_dropped, tables_altered, tables_inserted_into, main.cars, 1, 6, 6
+#>           author                          commit_message commit_extra_info
+#> 1           <NA>                                    <NA>              <NA>
+#> 2  Data Engineer                   Initial car data load              <NA>
+#> 3  Data Engineer           Add km/L metric to cars table              <NA>
+#> 4  Data Engineer               Load iris sample from CSV              <NA>
+#> 5   Data Analyst                  Load filtered car data              <NA>
+#> 6           <NA>                                    <NA>              <NA>
+#> 7           <NA>                                    <NA>              <NA>
+#> 8           <NA>                                    <NA>              <NA>
+#> 9           <NA>                                    <NA>              <NA>
+#> 10          <NA>                                    <NA>              <NA>
+#> 11 Data Engineer Apply the dyno correction to V8 engines              <NA>
+#> 12 Data Engineer           Round fuel efficiency metrics              <NA>
 ```
 
 ### View snapshots for a specific table
@@ -446,26 +476,29 @@ restore_table_version(
 
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-08-27 21:52:22              1
-#> 2           2 2026-08-27 21:52:22              2
-#> 3           7 2026-08-27 21:52:24              7
-#> 4           8 2026-08-27 21:52:24              8
-#> 5          10 2026-08-27 21:52:25             10
-#> 6          11 2026-08-27 21:52:25             11
+#> 1           1 2026-09-05 01:11:21              1
+#> 2           2 2026-09-05 01:11:21              2
+#> 3           7 2026-09-05 01:11:22              7
+#> 4           8 2026-09-05 01:11:22              8
+#> 5          10 2026-09-05 01:11:23              9
+#> 6          11 2026-09-05 01:11:23             10
+#> 7          12 2026-09-05 01:11:23             11
 #>                                                                                    changes
 #> 1                                       tables_created, tables_inserted_into, main.cars, 1
-#> 2                    tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2
-#> 3                                                                        tables_altered, 2
-#> 4                                                                        tables_altered, 2
-#> 5 tables_created, tables_dropped, tables_altered, tables_inserted_into, main.cars, 2, 7, 7
-#> 6                    tables_created, tables_dropped, tables_inserted_into, main.cars, 7, 8
-#>          author                     commit_message commit_extra_info
-#> 1 Data Engineer              Initial car data load              <NA>
-#> 2 Data Engineer      Add km/L metric to cars table              <NA>
-#> 3          <NA>                               <NA>              <NA>
-#> 4          <NA>                               <NA>              <NA>
-#> 5 Data Engineer Add horsepower per cylinder metric              <NA>
-#> 6 Data Engineer        Restored cars to snapshot 1              <NA>
+#> 2                       tables_altered, tables_inserted_into, tables_deleted_from, 1, 1, 1
+#> 3                                                                        tables_altered, 1
+#> 4                                                                        tables_altered, 1
+#> 5                                          tables_inserted_into, tables_deleted_from, 1, 1
+#> 6 tables_created, tables_dropped, tables_altered, tables_inserted_into, main.cars, 1, 6, 6
+#> 7 tables_created, tables_dropped, tables_altered, tables_inserted_into, main.cars, 6, 7, 7
+#>          author                          commit_message commit_extra_info
+#> 1 Data Engineer                   Initial car data load              <NA>
+#> 2 Data Engineer           Add km/L metric to cars table              <NA>
+#> 3          <NA>                                    <NA>              <NA>
+#> 4          <NA>                                    <NA>              <NA>
+#> 5 Data Engineer Apply the dyno correction to V8 engines              <NA>
+#> 6 Data Engineer           Round fuel efficiency metrics              <NA>
+#> 7 Data Engineer             Restored cars to snapshot 1              <NA>
 ```
 
 ## Transaction recipes
@@ -552,11 +585,8 @@ use
 get_ducklake_table("cars") |>
   mutate(mpg = round(mpg)) |>
   show_ducklake_query()
-#> 
-#> === DuckLake SQL Preview ===
-#> 
-#> -- Main operation
-#> UPDATE cars SET mpg = ROUND_EVEN(mpg, CAST(ROUND(0.0, 0) AS INTEGER)) ;
+#> -- DuckLake SQL preview
+#> UPDATE cars SET mpg = ROUND_EVEN(mpg, CAST(ROUND(0.0, 0) AS INTEGER));
 ```
 
 ### Filter early for performance
@@ -569,7 +599,7 @@ get_ducklake_table("cars") |>
   mutate(kpl = mpg * 0.425144) |>
   head(3)
 #> # A query:  ?? x 12
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpYhSQA1/ducklake/ducklake2b8239d4a158.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmpx7DX84/ducklake/ducklake2bde2c54eaf6.duckdb]
 #>     mpg   cyl  disp    hp  drat    wt  qsec    vs    am  gear  carb   kpl
 #>   <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>
 #> 1  21       6   160   110  3.9   2.62  16.5     0     1     4     4  8.93
@@ -586,7 +616,7 @@ get_ducklake_table("cars") |>
   select(mpg, cyl, hp) |>
   filter(mpg > 25)
 #> # A query:  ?? x 3
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpYhSQA1/ducklake/ducklake2b8239d4a158.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmpx7DX84/ducklake/ducklake2bde2c54eaf6.duckdb]
 #>     mpg   cyl    hp
 #>   <dbl> <dbl> <dbl>
 #> 1  32.4     4    66
@@ -629,6 +659,25 @@ set_ducklake_option("require_commit_message", TRUE)
 
 get_ducklake_options()
 ```
+
+## Maintenance recipes
+
+### Set a retention policy and checkpoint
+
+``` r
+
+# Keep 90 days of time travel; delete released files a week after release
+set_ducklake_option("expire_older_than", "90 days")
+set_ducklake_option("delete_older_than", "7 days")
+
+# Flush, compact, and apply the policy
+checkpoint_ducklake()
+```
+
+Without those two options a checkpoint still flushes inlined data and
+compacts files, but expires nothing and deletes nothing. See
+[`vignette("storage-and-backups")`](https://tgerke.github.io/ducklake-r/articles/storage-and-backups.md)
+for the individual maintenance functions and for backups.
 
 ## Cleanup
 

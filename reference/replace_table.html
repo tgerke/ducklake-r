@@ -86,12 +86,26 @@
 create a new versioned snapshot. It:</p><ol><li><p>Collects the transformed data</p></li>
 <li><p>Drops the existing table</p></li>
 <li><p>Creates a new table with the updated schema/data</p></li>
+<li><p>Puts back the metadata DuckLake keeps against the table</p></li>
 </ol><p>The drop and create run atomically: when no transaction is open,
 <code>replace_table()</code> wraps them in one of its own, so a failed create never
 leaves the table dropped. Wrap the call in <code><a href="with_transaction.html">with_transaction()</a></code> (or
 <code><a href="begin_transaction.html">begin_transaction()</a></code>/<code><a href="commit_transaction.html">commit_transaction()</a></code>) when you want to record an
 author and commit message on the snapshot, or to group the replacement
 with other changes.</p>
+<p>DuckLake gives the replacement a new table id, as it does for any
+<code>DROP</code> + <code>CREATE</code>, and it stores comments, partition keys, sort order,
+and table-scoped options against that id. <code>replace_table()</code> carries them
+over: the table comment, column comments (and so variable labels) for
+columns that still exist, partition and sort keys whose columns still
+exist (set before the rows are written, so the rewrite itself lands
+partitioned and sorted), and options set with <code><a href="set_ducklake_option.html">set_ducklake_option()</a></code> at
+table scope. DuckLake cannot set options on a table created in the open
+transaction, so options are re-set right after the rewrite commits, as a
+small follow-up snapshot; inside a transaction you opened yourself they
+cannot be re-set at all, and a warning lists the calls to make after
+your commit. Earlier snapshots keep the earlier id and stay reachable by
+name through time travel.</p>
 <p><strong>When to use replace_table():</strong></p><ul><li><p><strong>Bulk transformations</strong> - a dplyr pipeline that recomputes, reshapes,
 or filters most of the table</p></li>
 </ul><p><strong>When to reach elsewhere:</strong></p><ul><li><p><strong>Schema-only changes</strong> - <code><a href="add_table_column.html">add_table_column()</a></code>, <code><a href="drop_table_column.html">drop_table_column()</a></code>,
@@ -103,8 +117,8 @@ with an in-database UPDATE</p></li>
 <li><p><strong>Targeted row changes</strong> - <code><a href="rows_update.html">rows_update()</a></code>, <code><a href="rows_upsert.html">rows_upsert()</a></code>, or
 <code><a href="ducklake_exec.html">ducklake_exec()</a></code> modify only the affected rows</p></li>
 </ul><p>Both paths create a snapshot: replace_table() via DROP + CREATE, and
-ducklake_exec() via the in-place UPDATE/DELETE it runs, so either way the
-change is available for time travel.</p>
+ducklake_exec() via the in-place UPDATE/DELETE/INSERT it runs, so either
+way the change is available for time travel.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
@@ -149,6 +163,17 @@ change is available for time travel.</p>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Transaction started.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Transaction committed.</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Partition keys, sort order, comments, and table options survive the rewrite</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="set_table_partitioning.html">set_table_partitioning</a></span><span class="op">(</span><span class="st">"cars"</span>, <span class="st">"cyl"</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Table <span style="color: #0000BB;">"cars"</span> is now partitioned by <span style="color: #0000BB;">"cyl"</span>.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Only newly written data is partitioned; existing files keep their layout.</span>
+<span class="r-in"><span><span class="fu"><a href="get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
+<span class="r-in"><span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">mpg</span> <span class="op">&gt;</span> <span class="fl">15</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
+<span class="r-in"><span>  <span class="fu">replace_table</span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="get_table_partitions.html">get_table_partitions</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   table_name partition_key_index column_name transform</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1       cars                   0         cyl  identity</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="fu"><a href="detach_ducklake.html">detach_ducklake</a></span><span class="op">(</span><span class="st">"replace_lake"</span>, shutdown <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/unlink.html" class="external-link">unlink</a></span><span class="op">(</span><span class="va">lake_dir</span>, recursive <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>

@@ -91,8 +91,9 @@ for timestamp columns</p></li>
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>Partitioning only affects data written <em>after</em> the keys are set;
 previously written files keep their layout. To re-partition existing
-data, rewrite the table (e.g. with <code><a href="replace_table.html">replace_table()</a></code>) after setting the
-keys.</p>
+data, set the keys and then rewrite the table with <code><a href="replace_table.html">replace_table()</a></code>:
+the rewrite carries the keys over to the new table and writes every row
+through them.</p>
 <p>Runs <code>ALTER TABLE ... SET PARTITIONED BY (...)</code>. The expressions are
 validated against the transforms DuckLake supports before any SQL is
 built.</p>

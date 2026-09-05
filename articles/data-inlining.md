@@ -90,20 +90,25 @@ get_ducklake_table("readings") |> collect()
 
 ## Incremental updates stay inlined
 
-Small modifications — adding a derived column, correcting a value — also
-stay in the catalog when the resulting changeset is below the threshold.
+Small modifications also stay in the catalog when the changeset is below
+the threshold. Adding a derived column is a metadata change
+([`add_table_column()`](https://tgerke.github.io/ducklake-r/reference/add_table_column.md)),
+and filling it is an in-database UPDATE:
 
 ``` r
 
-# Add a calibrated temperature column
-with_transaction(
+with_transaction({
+  add_table_column("readings", "temp_calibrated", "DOUBLE")
   get_ducklake_table("readings") |>
     mutate(temp_calibrated = temperature - 0.3) |>
-    replace_table("readings"),
+    ducklake_exec()
+},
   author = "Sensor Team",
   commit_message = "Add calibrated temperature"
 )
 #> Transaction started.
+#> Added column "temp_calibrated" (DOUBLE) to "readings".
+#> ℹ Metadata-only change; no data files were rewritten.
 #> Transaction committed.
 
 get_ducklake_table("readings") |> collect()
@@ -117,16 +122,18 @@ get_ducklake_table("readings") |> collect()
 
 ## Removing rows
 
-Filtering out rows and replacing the table also works within the
-inlining threshold:
+A small delete is inlined too: DuckLake records it in the catalog rather
+than writing a delete file.
 
 ``` r
 
 # Remove sensor 2's reading
 with_transaction(
-  get_ducklake_table("readings") |>
-    filter(sensor_id != 2) |>
-    replace_table("readings"),
+  rows_delete(
+    get_ducklake_table("readings"),
+    data.frame(sensor_id = 2L),
+    by = "sensor_id"
+  ),
   author = "Sensor Team",
   commit_message = "Remove faulty sensor 2 reading"
 )
@@ -227,10 +234,10 @@ When inlined data accumulates, flush it to consolidated Parquet files:
 ``` r
 
 flush_result <- flush_inlined_data()
-#> Flushed 2 rows from 1 table to Parquet.
+#> Flushed 6 rows from 1 table to Parquet.
 flush_result
 #>   schema_name table_name rows_flushed
-#> 1        main   readings            2
+#> 1        main   readings            6
 ```
 
 Data remains correct after flushing:
@@ -255,8 +262,12 @@ flush_inlined_data(table_name = "readings")
 ## Checkpoint: one-stop maintenance
 
 [`checkpoint_ducklake()`](https://tgerke.github.io/ducklake-r/reference/checkpoint_ducklake.md)
-runs all maintenance operations in sequence—flush, compaction, snapshot
-expiration, and file cleanup:
+runs DuckLake’s maintenance operations in sequence: it flushes inlined
+data, merges small files, and rewrites heavily deleted files. It also
+expires old snapshots and deletes the files they released, but only once
+the lake carries a retention policy (the `expire_older_than` and
+`delete_older_than` options); see
+[`vignette("storage-and-backups")`](https://tgerke.github.io/ducklake-r/articles/storage-and-backups.md).
 
 ``` r
 
@@ -286,20 +297,23 @@ inlined insert or delete creates a snapshot, just like a regular write:
 snapshots <- list_table_snapshots("readings")
 snapshots
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-08-27 21:52:18              1
-#> 2           2 2026-08-27 21:52:18              2
-#> 3           3 2026-08-27 21:52:18              3
-#> 4           5 2026-08-27 21:52:19              4
-#>                                                               changes
-#> 1                    tables_created, inlined_insert, main.readings, 1
-#> 2 tables_created, tables_dropped, inlined_insert, main.readings, 1, 2
-#> 3 tables_created, tables_dropped, inlined_insert, main.readings, 2, 3
-#> 4                                                  flushed_inlined, 3
-#>        author                 commit_message commit_extra_info
-#> 1 Sensor Team        Initial sensor readings              <NA>
-#> 2 Sensor Team     Add calibrated temperature              <NA>
-#> 3 Sensor Team Remove faulty sensor 2 reading              <NA>
-#> 4        <NA>                           <NA>              <NA>
+#> 1           1 2026-09-05 01:11:16              1
+#> 2           2 2026-09-05 01:11:16              2
+#> 3           3 2026-09-05 01:11:16              2
+#> 4           5 2026-09-05 01:11:17              3
+#> 5           6 2026-09-05 01:11:17              3
+#>                                                   changes      author
+#> 1        tables_created, inlined_insert, main.readings, 1 Sensor Team
+#> 2 tables_altered, inlined_insert, inlined_delete, 1, 1, 1 Sensor Team
+#> 3                                       inlined_delete, 1 Sensor Team
+#> 4                                      flushed_inlined, 1        <NA>
+#> 5                                       rewrite_delete, 1        <NA>
+#>                   commit_message commit_extra_info
+#> 1        Initial sensor readings              <NA>
+#> 2     Add calibrated temperature              <NA>
+#> 3 Remove faulty sensor 2 reading              <NA>
+#> 4                           <NA>              <NA>
+#> 5                           <NA>              <NA>
 ```
 
 ``` r

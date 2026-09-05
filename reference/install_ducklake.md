@@ -1,8 +1,9 @@
 # Install the ducklake extension to duckdb
 
 Installs the ducklake DuckDB extension and optionally the extensions for
-alternative catalog backends (postgres, sqlite, mysql). Only needs to be
-run once per DuckDB version.
+alternative catalog backends (postgres, sqlite, mysql). Needs to run
+once per DuckDB version, provided DuckDB's extension directory survives
+the session (see Details).
 
 ## Usage
 
@@ -22,6 +23,18 @@ install_ducklake(backend = NULL)
 
 Invisibly, `NULL`. Called for its side effect of installing the DuckDB
 extensions into the local extension cache.
+
+## Details
+
+Where the extension lands depends on the duckdb R package. From duckdb
+1.5.2 on, extensions live under a "home" directory that defaults to a
+per-session temporary directory unless something durable is configured:
+the `DUCKDB_R_HOME` environment variable (set it in `~/.Renviron` so
+every session sees it), the `duckdb.home` option, or an existing
+`~/.duckdb` directory. With the temporary default, the extension is gone
+when R exits and the next session downloads it again.
+`install_ducklake()` reports the directory it installed into and says so
+when that directory is temporary.
 
 ## Note
 

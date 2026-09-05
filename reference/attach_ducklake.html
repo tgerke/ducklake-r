@@ -74,7 +74,8 @@ an existing one. The lake can be detached with <code><a href="detach_ducklake.ht
 <span>  encrypted <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  meta_encryption_key <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  snapshot_version <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  snapshot_time <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  snapshot_time <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  automatic_migration <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -174,6 +175,15 @@ are rejected. Mutually exclusive with <code>snapshot_time</code>.</p></dd>
 the lake pinned to its state at that moment. Mutually exclusive with
 <code>snapshot_version</code>.</p></dd>
 
+
+<dt id="arg-automatic-migration">automatic_migration<a class="anchor" aria-label="anchor" href="#arg-automatic-migration"></a></dt>
+<dd><p>If <code>TRUE</code>, let DuckLake upgrade a catalog
+written in an earlier format version to the one the installed
+extension uses (the <code>AUTOMATIC_MIGRATION</code> option). Needed once for a
+lake created with DuckDB 1.5.1, whose extension wrote the 0.4 format,
+after upgrading to 1.5.2 or later. The upgrade is permanent, so take a
+backup first. Default <code>FALSE</code>, in which case a mismatch is an error.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -205,7 +215,10 @@ the rest from the secret. See
 <p><strong>Windows limitation:</strong> The <code>postgres</code> and <code>mysql</code> DuckDB extensions are not
 available on Windows (MinGW toolchain). Only <code>duckdb</code> and <code>sqlite</code> backends
 work there. Use Linux, macOS, or WSL for PostgreSQL/MySQL backends.
-See <a href="https://github.com/duckdb/duckdb/issues/7892" class="external-link">https://github.com/duckdb/duckdb/issues/7892</a>.</p>
+See <a href="https://github.com/duckdb/duckdb/issues/7892" class="external-link">https://github.com/duckdb/duckdb/issues/7892</a>. The <code>aws</code> and
+<code>azure</code> extensions are missing on Windows too, so
+<code><a href="create_storage_secret.html">create_storage_secret()</a></code> with <code>provider = "credential_chain"</code> or
+<code>type = "azure"</code> does not work there; explicit S3 keys do.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
@@ -297,6 +310,10 @@ See <a href="https://github.com/duckdb/duckdb/issues/7892" class="external-link"
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># A frozen view of the lake as of snapshot 12, e.g. to reproduce a report</span></span></span>
 <span class="r-in"><span><span class="fu">attach_ducklake</span><span class="op">(</span><span class="st">"lake_v12"</span>, lake_path <span class="op">=</span> <span class="st">"path/to/lake"</span>, snapshot_version <span class="op">=</span> <span class="fl">12</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># A lake created with DuckDB 1.5.1 (catalog format 0.4), opened after</span></span></span>
+<span class="r-in"><span><span class="co"># upgrading: migrate it once, then attach as usual</span></span></span>
+<span class="r-in"><span><span class="fu">attach_ducklake</span><span class="op">(</span><span class="st">"old_lake"</span>, lake_path <span class="op">=</span> <span class="st">"path/to/lake"</span>, automatic_migration <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 </code></pre></div>
     </div>

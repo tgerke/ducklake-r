@@ -1,8 +1,11 @@
 # Show the SQL that would be executed by ducklake operations
 
-This function shows the SQL that would be generated and executed by
-ducklake. This is useful for debugging and understanding what SQL is
-being sent to DuckDB.
+Prints the statement
+[`ducklake_exec()`](https://tgerke.github.io/ducklake-r/reference/ducklake_exec.md)
+would run for a pipeline, without running it. Like
+[`dplyr::show_query()`](https://dplyr.tidyverse.org/reference/explain.html),
+the SQL is written to the console and the input is returned invisibly,
+so it can sit in the middle of a pipe.
 
 ## Usage
 
@@ -50,11 +53,8 @@ create_table(mtcars, "cars")
 get_ducklake_table("cars") |>
   dplyr::mutate(gear = 5) |>
   show_ducklake_query()
-#> 
-#> === DuckLake SQL Preview ===
-#> 
-#> -- Main operation
-#> UPDATE cars SET gear = 5.0 ;
+#> -- DuckLake SQL preview
+#> UPDATE cars SET gear = 5.0;
 
 detach_ducklake("sql_lake", shutdown = TRUE)
 unlink(lake_dir, recursive = TRUE)

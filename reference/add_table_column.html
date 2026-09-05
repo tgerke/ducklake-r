@@ -88,10 +88,11 @@ and earlier snapshots still show the old schema. Compare
 
 <dt id="arg-default">default<a class="anchor" aria-label="anchor" href="#arg-default"></a></dt>
 <dd><p>Optional default value (an R scalar: character, numeric,
-logical, Date, or POSIXct). In DuckLake the default applies to
-existing rows as well as future inserts, so the new column appears
-filled everywhere. Without a default, the column reads <code>NA</code> for
-existing rows.</p></dd>
+logical, Date, or POSIXct, the last rendered in UTC). In DuckLake the
+default applies to existing rows as well as future inserts, so the new
+column appears filled everywhere. Without a default, the column reads
+<code>NA</code> for existing rows. DuckLake accepts constant defaults only;
+an expression such as <code>now()</code> is not supported.</p></dd>
 
 </dl></div>
     <div class="section level2">

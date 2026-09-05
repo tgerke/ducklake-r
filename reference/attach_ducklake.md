@@ -20,7 +20,8 @@ attach_ducklake(
   encrypted = FALSE,
   meta_encryption_key = NULL,
   snapshot_version = NULL,
-  snapshot_time = NULL
+  snapshot_time = NULL,
+  automatic_migration = FALSE
 )
 ```
 
@@ -124,6 +125,15 @@ attach_ducklake(
   Optional POSIXct or UTC timestamp string. Attaches the lake pinned to
   its state at that moment. Mutually exclusive with `snapshot_version`.
 
+- automatic_migration:
+
+  If `TRUE`, let DuckLake upgrade a catalog written in an earlier format
+  version to the one the installed extension uses (the
+  `AUTOMATIC_MIGRATION` option). Needed once for a lake created with
+  DuckDB 1.5.1, whose extension wrote the 0.4 format, after upgrading to
+  1.5.2 or later. The upgrade is permanent, so take a backup first.
+  Default `FALSE`, in which case a mismatch is an error.
+
 ## Value
 
 Invisibly, `NULL`. Called for its side effect of attaching the DuckLake
@@ -157,7 +167,11 @@ in the rest from the secret. See
 **Windows limitation:** The `postgres` and `mysql` DuckDB extensions are
 not available on Windows (MinGW toolchain). Only `duckdb` and `sqlite`
 backends work there. Use Linux, macOS, or WSL for PostgreSQL/MySQL
-backends. See <https://github.com/duckdb/duckdb/issues/7892>.
+backends. See <https://github.com/duckdb/duckdb/issues/7892>. The `aws`
+and `azure` extensions are missing on Windows too, so
+[`create_storage_secret()`](https://tgerke.github.io/ducklake-r/reference/create_storage_secret.md)
+with `provider = "credential_chain"` or `type = "azure"` does not work
+there; explicit S3 keys do.
 
 ## See also
 
@@ -252,5 +266,9 @@ attach_ducklake(
 
 # A frozen view of the lake as of snapshot 12, e.g. to reproduce a report
 attach_ducklake("lake_v12", lake_path = "path/to/lake", snapshot_version = 12)
+
+# A lake created with DuckDB 1.5.1 (catalog format 0.4), opened after
+# upgrading: migrate it once, then attach as usual
+attach_ducklake("old_lake", lake_path = "path/to/lake", automatic_migration = TRUE)
 } # }
 ```

@@ -21,7 +21,9 @@ ducklake_exec(.data, table_name = NULL, .quiet = TRUE)
 
 - .quiet:
 
-  Logical, whether to suppress debug output (default TRUE)
+  Logical, whether to suppress the SQL trace (default TRUE). With
+  `.quiet = FALSE` the original dplyr SQL, the translated statement, and
+  the number of rows affected are emitted as messages.
 
 ## Value
 

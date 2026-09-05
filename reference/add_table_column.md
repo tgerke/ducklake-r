@@ -30,9 +30,11 @@ add_table_column(table_name, column_name, type, default = NULL)
 - default:
 
   Optional default value (an R scalar: character, numeric, logical,
-  Date, or POSIXct). In DuckLake the default applies to existing rows as
-  well as future inserts, so the new column appears filled everywhere.
-  Without a default, the column reads `NA` for existing rows.
+  Date, or POSIXct, the last rendered in UTC). In DuckLake the default
+  applies to existing rows as well as future inserts, so the new column
+  appears filled everywhere. Without a default, the column reads `NA`
+  for existing rows. DuckLake accepts constant defaults only; an
+  expression such as `now()` is not supported.
 
 ## Value
 

@@ -118,10 +118,17 @@ Defaults to a message noting the restore point (e.g.
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>You must specify either <code>version</code> or <code>timestamp</code>, but not both.</p>
-<p>Under the hood this runs
-<code>CREATE OR REPLACE TABLE t AS SELECT * FROM t AT (VERSION =&gt; n)</code>
-inside a transaction. Because the restore creates a new snapshot, it is
-itself reversible with another <code>restore_table_version()</code> call.</p>
+<p>Under the hood this reads <code>SELECT * FROM t AT (VERSION =&gt; n)</code> into a
+temporary DuckDB table, then drops and recreates <code>t</code> from it inside
+a transaction. Because the restore creates a new snapshot, it is itself
+reversible with another <code>restore_table_version()</code> call.</p>
+<p>The restored table gets a new table id, and DuckLake keeps comments,
+partition keys, sort order, and table-scoped options against the id, so
+they are captured beforehand and put back: comments and keys for the
+columns the restored version still has, inside the restore transaction;
+table-scoped options right after it commits, as a small follow-up
+snapshot, since DuckLake cannot set options on a table created in the
+open transaction.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

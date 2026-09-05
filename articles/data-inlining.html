@@ -160,19 +160,23 @@ catalog:</p>
 <div class="section level2">
 <h2 id="incremental-updates-stay-inlined">Incremental updates stay inlined<a class="anchor" aria-label="anchor" href="#incremental-updates-stay-inlined"></a>
 </h2>
-<p>Small modifications — adding a derived column, correcting a value —
-also stay in the catalog when the resulting changeset is below the
-threshold.</p>
+<p>Small modifications also stay in the catalog when the changeset is
+below the threshold. Adding a derived column is a metadata change
+(<code><a href="../reference/add_table_column.html">add_table_column()</a></code>), and filling it is an in-database
+UPDATE:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Add a calibrated temperature column</span></span>
-<span><span class="fu"><a href="../reference/with_transaction.html">with_transaction</a></span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/with_transaction.html">with_transaction</a></span><span class="op">(</span><span class="op">{</span></span>
+<span>  <span class="fu"><a href="../reference/add_table_column.html">add_table_column</a></span><span class="op">(</span><span class="st">"readings"</span>, <span class="st">"temp_calibrated"</span>, <span class="st">"DOUBLE"</span><span class="op">)</span></span>
 <span>  <span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"readings"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>temp_calibrated <span class="op">=</span> <span class="va">temperature</span> <span class="op">-</span> <span class="fl">0.3</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>    <span class="fu"><a href="../reference/replace_table.html">replace_table</a></span><span class="op">(</span><span class="st">"readings"</span><span class="op">)</span>,</span>
+<span>    <span class="fu"><a href="../reference/ducklake_exec.html">ducklake_exec</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="op">}</span>,</span>
 <span>  author <span class="op">=</span> <span class="st">"Sensor Team"</span>,</span>
 <span>  commit_message <span class="op">=</span> <span class="st">"Add calibrated temperature"</span></span>
 <span><span class="op">)</span></span>
 <span><span class="co">#&gt; Transaction started.</span></span>
+<span><span class="co">#&gt; Added column <span style="color: #0000BB;">"temp_calibrated"</span> (DOUBLE) to <span style="color: #0000BB;">"readings"</span>.</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Metadata-only change; no data files were rewritten.</span></span>
 <span><span class="co">#&gt; Transaction committed.</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"readings"</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/compute.html" class="external-link">collect</a></span><span class="op">(</span><span class="op">)</span></span>
@@ -186,14 +190,16 @@ threshold.</p>
 <div class="section level2">
 <h2 id="removing-rows">Removing rows<a class="anchor" aria-label="anchor" href="#removing-rows"></a>
 </h2>
-<p>Filtering out rows and replacing the table also works within the
-inlining threshold:</p>
+<p>A small delete is inlined too: DuckLake records it in the catalog
+rather than writing a delete file.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Remove sensor 2's reading</span></span>
 <span><span class="fu"><a href="../reference/with_transaction.html">with_transaction</a></span><span class="op">(</span></span>
-<span>  <span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"readings"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">sensor_id</span> <span class="op">!=</span> <span class="fl">2</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>    <span class="fu"><a href="../reference/replace_table.html">replace_table</a></span><span class="op">(</span><span class="st">"readings"</span><span class="op">)</span>,</span>
+<span>  <span class="fu"><a href="../reference/rows_delete.html">rows_delete</a></span><span class="op">(</span></span>
+<span>    <span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"readings"</span><span class="op">)</span>,</span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>sensor_id <span class="op">=</span> <span class="fl">2L</span><span class="op">)</span>,</span>
+<span>    by <span class="op">=</span> <span class="st">"sensor_id"</span></span>
+<span>  <span class="op">)</span>,</span>
 <span>  author <span class="op">=</span> <span class="st">"Sensor Team"</span>,</span>
 <span>  commit_message <span class="op">=</span> <span class="st">"Remove faulty sensor 2 reading"</span></span>
 <span><span class="op">)</span></span>
@@ -286,10 +292,10 @@ reconnects:</p>
 files:</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">flush_result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/flush_inlined_data.html">flush_inlined_data</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Flushed <span style="color: #0000BB;">2</span> rows from <span style="color: #0000BB;">1</span> table to Parquet.</span></span>
+<span><span class="co">#&gt; Flushed <span style="color: #0000BB;">6</span> rows from <span style="color: #0000BB;">1</span> table to Parquet.</span></span>
 <span><span class="va">flush_result</span></span>
 <span><span class="co">#&gt;   schema_name table_name rows_flushed</span></span>
-<span><span class="co">#&gt; 1        main   readings            2</span></span></code></pre></div>
+<span><span class="co">#&gt; 1        main   readings            6</span></span></code></pre></div>
 <p>Data remains correct after flushing:</p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"readings"</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/compute.html" class="external-link">collect</a></span><span class="op">(</span><span class="op">)</span></span>
@@ -308,8 +314,13 @@ files:</p>
 <div class="section level2">
 <h2 id="checkpoint-one-stop-maintenance">Checkpoint: one-stop maintenance<a class="anchor" aria-label="anchor" href="#checkpoint-one-stop-maintenance"></a>
 </h2>
-<p><code><a href="../reference/checkpoint_ducklake.html">checkpoint_ducklake()</a></code> runs all maintenance operations in
-sequence—flush, compaction, snapshot expiration, and file cleanup:</p>
+<p><code><a href="../reference/checkpoint_ducklake.html">checkpoint_ducklake()</a></code> runs DuckLake’s maintenance
+operations in sequence: it flushes inlined data, merges small files, and
+rewrites heavily deleted files. It also expires old snapshots and
+deletes the files they released, but only once the lake carries a
+retention policy (the <code>expire_older_than</code> and
+<code>delete_older_than</code> options); see
+<code><a href="../articles/storage-and-backups.html">vignette("storage-and-backups")</a></code>.</p>
 <div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/checkpoint_ducklake.html">checkpoint_ducklake</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Checkpoint completed for <span style="color: #0000BB;">"sensor_lake"</span>.</span></span></code></pre></div>
@@ -335,20 +346,23 @@ write:</p>
 <span><span class="va">snapshots</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"readings"</span><span class="op">)</span></span>
 <span><span class="va">snapshots</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 1           1 2026-08-27 21:52:18              1</span></span>
-<span><span class="co">#&gt; 2           2 2026-08-27 21:52:18              2</span></span>
-<span><span class="co">#&gt; 3           3 2026-08-27 21:52:18              3</span></span>
-<span><span class="co">#&gt; 4           5 2026-08-27 21:52:19              4</span></span>
-<span><span class="co">#&gt;                                                               changes</span></span>
-<span><span class="co">#&gt; 1                    tables_created, inlined_insert, main.readings, 1</span></span>
-<span><span class="co">#&gt; 2 tables_created, tables_dropped, inlined_insert, main.readings, 1, 2</span></span>
-<span><span class="co">#&gt; 3 tables_created, tables_dropped, inlined_insert, main.readings, 2, 3</span></span>
-<span><span class="co">#&gt; 4                                                  flushed_inlined, 3</span></span>
-<span><span class="co">#&gt;        author                 commit_message commit_extra_info</span></span>
-<span><span class="co">#&gt; 1 Sensor Team        Initial sensor readings              &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 2 Sensor Team     Add calibrated temperature              &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 3 Sensor Team Remove faulty sensor 2 reading              &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 4        &lt;NA&gt;                           &lt;NA&gt;              &lt;NA&gt;</span></span></code></pre></div>
+<span><span class="co">#&gt; 1           1 2026-09-05 01:11:16              1</span></span>
+<span><span class="co">#&gt; 2           2 2026-09-05 01:11:16              2</span></span>
+<span><span class="co">#&gt; 3           3 2026-09-05 01:11:16              2</span></span>
+<span><span class="co">#&gt; 4           5 2026-09-05 01:11:17              3</span></span>
+<span><span class="co">#&gt; 5           6 2026-09-05 01:11:17              3</span></span>
+<span><span class="co">#&gt;                                                   changes      author</span></span>
+<span><span class="co">#&gt; 1        tables_created, inlined_insert, main.readings, 1 Sensor Team</span></span>
+<span><span class="co">#&gt; 2 tables_altered, inlined_insert, inlined_delete, 1, 1, 1 Sensor Team</span></span>
+<span><span class="co">#&gt; 3                                       inlined_delete, 1 Sensor Team</span></span>
+<span><span class="co">#&gt; 4                                      flushed_inlined, 1        &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 5                                       rewrite_delete, 1        &lt;NA&gt;</span></span>
+<span><span class="co">#&gt;                   commit_message commit_extra_info</span></span>
+<span><span class="co">#&gt; 1        Initial sensor readings              &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 2     Add calibrated temperature              &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 3 Remove faulty sensor 2 reading              &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 4                           &lt;NA&gt;              &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 5                           &lt;NA&gt;              &lt;NA&gt;</span></span></code></pre></div>
 <div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Query an earlier version</span></span>
 <span><span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">snapshots</span><span class="op">)</span> <span class="op">&gt;</span> <span class="fl">0</span><span class="op">)</span> <span class="op">{</span></span>

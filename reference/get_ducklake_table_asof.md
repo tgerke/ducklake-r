@@ -28,8 +28,9 @@ get_ducklake_table_asof(table_name, timestamp, conn = NULL)
 
 ## Value
 
-A dplyr lazy query object (tbl_lazy) that can be further manipulated
-with dplyr verbs
+A lazy table (class `tbl_ducklake`) that works with dplyr verbs. Like
+[`get_ducklake_table()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_table.md),
+collecting it restores stored column labels.
 
 ## Details
 

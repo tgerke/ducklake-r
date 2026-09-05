@@ -24,6 +24,7 @@ Invisibly returns `NULL`.
 [`set_table_sorting()`](https://tgerke.github.io/ducklake-r/reference/set_table_sorting.md)
 
 Other sorting:
+[`get_table_sorting()`](https://tgerke.github.io/ducklake-r/reference/get_table_sorting.md),
 [`set_table_sorting()`](https://tgerke.github.io/ducklake-r/reference/set_table_sorting.md)
 
 ## Examples
