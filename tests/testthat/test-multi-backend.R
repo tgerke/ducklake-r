@@ -314,6 +314,25 @@ test_that("SQLite backend: create table, query, and time travel", {
         dplyr::collect()
       expect_false("kpl" %in% names(v1))
 
+      # The catalog backs up as a SQLite file and attaches again
+      backup_root <- file.path(temp_dir, "backups")
+      backup_dir <- suppressMessages(
+        backup_ducklake("test_sqlite_backend", lake_path = sqlite_data, backup_path = backup_root)
+      )
+      backup_catalog <- file.path(backup_dir, "metadata.sqlite")
+      expect_true(file.size(backup_catalog) > 0)
+      attach_ducklake(
+        "sqlite_restored",
+        backend = "sqlite",
+        catalog_connection_string = backup_catalog,
+        lake_path = backup_dir,
+        override_data_path = TRUE,
+        create = FALSE
+      )
+      expect_equal(nrow(dplyr::collect(get_ducklake_table("cars"))), 32)
+      detach_ducklake("sqlite_restored")
+      DBI::dbExecute(get_ducklake_connection(), "USE test_sqlite_backend;")
+
       # Full shutdown to release all resources
       detach_ducklake("test_sqlite_backend", shutdown = TRUE)
     },

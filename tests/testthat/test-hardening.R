@@ -394,3 +394,29 @@ test_that("create_table converts factor columns instead of failing on ENUM", {
   expect_equal(nrow(result), 150)
   expect_type(result$Species, "character")
 })
+
+test_that("options(ducklake.verbose = FALSE) silences routine confirmations", {
+  skip_if_not_installed("duckdb")
+  skip_if_not_installed("dplyr")
+
+  lake <- create_temp_ducklake()
+  on.exit(cleanup_temp_ducklake(lake), add = TRUE)
+
+  old <- options(ducklake.verbose = FALSE)
+  on.exit(options(old), add = TRUE)
+
+  expect_silent(create_table(data.frame(id = 1:3), "quiet_t"))
+  expect_silent(add_table_column("quiet_t", "flag", "BOOLEAN"))
+  expect_silent(with_transaction(
+    rows_insert(get_ducklake_table("quiet_t"), data.frame(id = 4L), by = "id"),
+    author = "Tester", commit_message = "quiet"
+  ))
+  expect_equal(nrow(dplyr::collect(get_ducklake_table("quiet_t"))), 4)
+
+  # Warnings and errors are not affected
+  expect_error(add_table_column("quiet_t", "id", "INTEGER"))
+
+  options(ducklake.verbose = TRUE)
+  expect_message(drop_table_column("quiet_t", "flag"), "Dropped column")
+})
+

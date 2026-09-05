@@ -67,7 +67,7 @@
 update_table <- function(.data, table_name, .quiet = FALSE, .execute = TRUE) {
 
   if (!.quiet) {
-    cli::cli_inform("Translating dplyr query into an in-place statement for {.val {table_name}}.")
+    dl_inform("Translating dplyr query into an in-place statement for {.val {table_name}}.")
   }
 
   result_sql <- tryCatch(
@@ -82,7 +82,7 @@ update_table <- function(.data, table_name, .quiet = FALSE, .execute = TRUE) {
     }
   )
 
-  if (!.quiet) cli::cli_inform("Generated SQL: {.code {result_sql}}")
+  if (!.quiet) dl_inform("Generated SQL: {.code {result_sql}}")
 
   if (.execute) {
     db_execute(result_sql)
@@ -212,7 +212,7 @@ build_in_place_sql <- function(.data, table_name, .quiet = FALSE) {
           call = NULL
         )
       }
-      if (!.quiet) cli::cli_inform("Operation type: {.val update}")
+      if (!.quiet) dl_inform("Operation type: {.val update}")
       assignments <- paste0(
         quoted_names[is_assignment], " = ", entry_exprs[is_assignment],
         collapse = ", "
@@ -225,7 +225,7 @@ build_in_place_sql <- function(.data, table_name, .quiet = FALSE) {
     }
 
     # filter() only: keep the matching rows, delete the rest
-    if (!.quiet) cli::cli_inform("Operation type: {.val delete}")
+    if (!.quiet) dl_inform("Operation type: {.val delete}")
     return(sprintf("DELETE FROM %s WHERE NOT (%s)", quoted_table, where_sql))
   }
 
@@ -254,7 +254,7 @@ build_in_place_sql <- function(.data, table_name, .quiet = FALSE) {
     )
   }
 
-  if (!.quiet) cli::cli_inform("Operation type: {.val insert}")
+  if (!.quiet) dl_inform("Operation type: {.val insert}")
   insert_cols <- vapply(
     colnames(.data),
     function(nm) as.character(DBI::dbQuoteIdentifier(con, nm)),

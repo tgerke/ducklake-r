@@ -81,7 +81,7 @@ set_inlining_row_limit <- function(limit,
       conn,
       sprintf("SET ducklake_default_data_inlining_row_limit = %d;", limit)
     )
-    cli::cli_inform(
+    dl_inform(
       "Global data inlining row limit set to {.val {limit}}."
     )
   } else {
@@ -112,7 +112,7 @@ set_inlining_row_limit <- function(limit,
     } else {
       paste0("schema {.val ", schema_name, "}")
     }
-    cli::cli_inform(
+    dl_inform(
       "Data inlining row limit for {scope} set to {.val {limit}}."
     )
   }
@@ -323,11 +323,11 @@ flush_inlined_data <- function(ducklake_name = NULL,
   if (nrow(result) > 0L) {
     total <- sum(result$rows_flushed)
     n_tables <- nrow(result)
-    cli::cli_inform(
+    dl_inform(
       "Flushed {.val {total}} row{?s} from {.val {n_tables}} table{?s} to Parquet."
     )
   } else {
-    cli::cli_inform("No inlined data to flush.")
+    dl_inform("No inlined data to flush.")
   }
 
   result
@@ -407,7 +407,7 @@ checkpoint_ducklake <- function(ducklake_name = NULL) {
   check_identifier(ducklake_name)
 
   DBI::dbExecute(conn, sprintf("CHECKPOINT %s;", ducklake_name))
-  cli::cli_inform("Checkpoint completed for {.val {ducklake_name}}.")
+  dl_inform("Checkpoint completed for {.val {ducklake_name}}.")
 
   invisible(NULL)
 }

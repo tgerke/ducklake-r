@@ -1,7 +1,7 @@
 #' Create a DuckLake backup
 #'
 #' Creates a timestamped backup of the Parquet data files and, for file-based
-#' backends (DuckDB, SQLite), the catalog database file. For PostgreSQL/MySQL
+#' backends (DuckDB, SQLite), the catalog database. For PostgreSQL/MySQL
 #' backends only data files are copied; use `pg_dump` / `mysqldump` for the
 #' catalog.
 #'
@@ -16,17 +16,27 @@
 #' @export
 #'
 #' @details
-#' For file-based backends the DuckLake is temporarily detached during backup
-#' to release file locks and ensure a consistent copy. It is automatically
-#' re-attached afterwards.
+#' The catalog is copied with DuckDB's `COPY FROM DATABASE` while the lake
+#' stays attached. The copy is taken inside one transaction, so it is a
+#' consistent snapshot of the metadata, and nothing is detached or shut
+#' down along the way: other attached lakes, in-memory secrets, and a
+#' connection you registered with [set_ducklake_connection()] are left as
+#' they are. The data directories (one per schema) are copied as files.
+#'
+#' To work with the backup, attach it with `lake_path` pointing at the
+#' backup directory. Pass `override_data_path = TRUE`, since the copied
+#' catalog remembers the original data location, and `create = FALSE`, so a
+#' mistyped path is an error rather than a new, empty lake. When the
+#' catalog file was not named after the lake (a split layout), name it with
+#' `catalog_connection_string`.
 #'
 #' **Important notes:**
 #' \itemize{
 #'   \item Transactions committed after a backup won't be tracked when recovering.
 #'     The data will exist in the Parquet files, but the backup will point to
 #'     an earlier snapshot.
-#'   \item Consider coordinating backups with maintenance operations (compaction
-#'     and cleanup) for optimal storage efficiency.
+#'   \item Run compaction and cleanup before a backup, not after: they
+#'     rewrite and remove data files that the copied catalog refers to.
 #'   \item For production systems, schedule backups using \code{{cronR}} or
 #'     \code{{taskscheduleR}}.
 #' }
@@ -44,7 +54,7 @@
 #'   commit_message = "Initial data"
 #' )
 #'
-#' # Create a backup
+#' # Create a backup; the lake stays attached throughout
 #' backup_dir <- backup_ducklake(
 #'   ducklake_name = "my_lake",
 #'   lake_path = lake_dir,
@@ -53,7 +63,8 @@
 #'
 #' # Restore (override_data_path needed when location differs):
 #' # detach_ducklake("my_lake")
-#' # attach_ducklake("my_lake", lake_path = backup_dir, override_data_path = TRUE)
+#' # attach_ducklake("my_lake", lake_path = backup_dir,
+#' #                 override_data_path = TRUE, create = FALSE)
 #'
 #' detach_ducklake("my_lake", shutdown = TRUE)
 #' unlink(lake_dir, recursive = TRUE)
@@ -74,16 +85,17 @@ backup_ducklake <- function(ducklake_name, lake_path, backup_path) {
   }
 
   backend <- get_ducklake_backend(ducklake_name)
+  conn <- get_ducklake_connection()
 
   # Create backup directory with timestamp
   timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S")
   backup_dir <- file.path(backup_path, paste0("backup_", timestamp))
   dir.create(backup_dir, recursive = TRUE, showWarnings = FALSE)
 
-  # File-based backends: shut down to release file locks, copy, re-attach.
-  # Capture the registry's connection string before detaching (which
-  # unregisters the lake); for duckdb it is set when the catalog lives
-  # outside lake_path, and NULL for the default layout.
+  # File-based backends: copy the catalog database through DuckDB, with
+  # the lake still attached. The registry holds the connection string for
+  # a duckdb catalog that lives outside lake_path, NULL for the default
+  # layout.
   if (backend %in% c("duckdb", "sqlite")) {
     stored_catalog <- .ducklake_env$lakes[[ducklake_name]]$catalog_connection_string
     catalog_file <- if (backend == "duckdb" && is.null(stored_catalog)) {
@@ -93,27 +105,11 @@ backup_ducklake <- function(ducklake_name, lake_path, backup_path) {
     }
 
     if (!is.null(catalog_file) && file.exists(catalog_file)) {
-      detach_ducklake(ducklake_name, shutdown = TRUE)
-
-      copy_ok <- file.copy(
-        from = catalog_file,
-        to = file.path(backup_dir, basename(catalog_file))
+      copy_catalog_database(
+        ducklake_name, backend,
+        file.path(backup_dir, basename(catalog_file)), conn
       )
-
-      attach_ducklake(ducklake_name, lake_path = lake_path, backend = backend,
-                      catalog_connection_string = stored_catalog)
-
-      dest_file <- file.path(backup_dir, basename(catalog_file))
-      if (copy_ok && file.size(dest_file) > 0) {
-        cli::cli_inform("Catalog backed up successfully.")
-      } else {
-        cli::cli_warn(c(
-          "Catalog file could not be copied (likely locked by DuckDB).",
-          "i" = "Data files were still backed up."
-        ))
-        # Remove the 0-byte file so it doesn't look like a valid backup
-        unlink(dest_file)
-      }
+      dl_inform("Catalog backed up successfully.")
     } else {
       cli::cli_warn("Catalog file not found: {.path {catalog_file}}")
     }
@@ -142,14 +138,50 @@ backup_ducklake <- function(ducklake_name, lake_path, backup_path) {
   if (length(data_dirs) > 0) {
     for (d in data_dirs) {
       # file.copy(recursive = TRUE) copies `d` *into* backup_dir, preserving
-      # its basename -- same destination fs::dir_copy() targeted.
+      # its basename
       file.copy(from = d, to = backup_dir, recursive = TRUE)
     }
-    cli::cli_inform("Data files backed up successfully ({length(data_dirs)} director{?y/ies}).")
+    dl_inform("Data files backed up successfully ({length(data_dirs)} director{?y/ies}).")
   } else {
     cli::cli_warn("No data directories found in {.path {lake_path}}.")
   }
 
-  cli::cli_inform("Backup completed: {.path {backup_dir}}")
+  dl_inform("Backup completed: {.path {backup_dir}}")
   invisible(backup_dir)
+}
+
+#' Copy a lake's metadata catalog into a new database file
+#'
+#' `COPY FROM DATABASE` reads the attached metadata catalog inside one
+#' transaction, so the copy is consistent, and the lake stays attached: no
+#' file locks to release and no shutdown. A SQLite catalog is copied into a
+#' SQLite file so the backup attaches with the same backend.
+#'
+#' @param ducklake_name The lake whose catalog to copy.
+#' @param backend `"duckdb"` or `"sqlite"`.
+#' @param dest_file Path of the new database file (overwritten).
+#' @param conn A DBI connection.
+#' @returns Invisibly, `dest_file`.
+#' @noRd
+copy_catalog_database <- function(ducklake_name, backend, dest_file, conn) {
+  meta_db <- quote_ident(paste0("__ducklake_metadata_", ducklake_name), conn)
+  alias <- "__ducklake_backup"
+  unlink(dest_file)
+
+  try(db_execute(sprintf("DETACH %s;", alias), conn = conn), silent = TRUE)
+  db_execute(
+    sprintf(
+      "ATTACH %s AS %s%s;",
+      quote_sql(dest_file), alias,
+      if (backend == "sqlite") " (TYPE sqlite)" else ""
+    ),
+    conn = conn
+  )
+  on.exit(
+    try(db_execute(sprintf("DETACH %s;", alias), conn = conn), silent = TRUE),
+    add = TRUE
+  )
+  db_execute(sprintf("COPY FROM DATABASE %s TO %s;", meta_db, alias), conn = conn)
+
+  invisible(dest_file)
 }

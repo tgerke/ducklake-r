@@ -38,9 +38,9 @@ set_table_comment <- function(table_name, comment) {
     conn = conn
   )
   if (is_empty_comment(comment)) {
-    cli::cli_inform("Cleared the comment on {.val {table_name}}.")
+    dl_inform("Cleared the comment on {.val {table_name}}.")
   } else {
-    cli::cli_inform("Commented table {.val {table_name}}.")
+    dl_inform("Commented table {.val {table_name}}.")
   }
 
   invisible(NULL)
@@ -133,7 +133,7 @@ set_column_comments <- function(table_name, ...) {
     committed <- TRUE
   }
 
-  cli::cli_inform(
+  dl_inform(
     "Commented {length(statements)} column{?s} on {.val {table_name}}."
   )
 

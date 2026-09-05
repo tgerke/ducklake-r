@@ -96,7 +96,7 @@
 replace_table <- function(.data, table_name, .quiet = TRUE) {
 
   if (!.quiet) {
-    cli::cli_inform("Replacing table {.val {table_name}}...")
+    dl_inform("Replacing table {.val {table_name}}...")
   }
 
   conn <- get_ducklake_connection()
@@ -129,7 +129,7 @@ replace_table <- function(.data, table_name, .quiet = TRUE) {
 
   if (!.quiet) {
     n <- DBI::dbGetQuery(conn, sprintf("SELECT count(*) AS n FROM %s", source_ref))$n
-    cli::cli_inform("Prepared {n} row{?s} for {.val {table_name}}.")
+    dl_inform("Prepared {n} row{?s} for {.val {table_name}}.")
   }
 
   # The drop and create must land together: outside a transaction they
@@ -162,7 +162,7 @@ replace_table <- function(.data, table_name, .quiet = TRUE) {
   reapply_table_options(meta, conn)
 
   if (!.quiet) {
-    cli::cli_inform("Table {.val {table_name}} successfully replaced.")
+    dl_inform("Table {.val {table_name}} successfully replaced.")
   }
 
   invisible(NULL)

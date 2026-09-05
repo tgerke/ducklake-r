@@ -87,7 +87,7 @@ set_ducklake_option <- function(option,
   } else {
     "lake {.val {ducklake_name}}"
   }
-  cli::cli_inform(paste0(
+  dl_inform(paste0(
     "Option {.val {option}} set to {.val {value}} for ", scope, "."
   ))
 

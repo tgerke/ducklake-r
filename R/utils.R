@@ -399,3 +399,23 @@ table_filter <- function(table_name, table_col = "t.table_name") {
     )
   }
 }
+
+#' Emit a routine confirmation, unless the session turned them off
+#'
+#' Every operation confirms what it did through this wrapper, so a
+#' pipeline can silence the chatter with `options(ducklake.verbose =
+#' FALSE)`. Warnings, errors, and notices about extension downloads are
+#' emitted directly and stay on. Messages carry the class
+#' `ducklake_message` for handlers that want to route them.
+#'
+#' @param message,... Passed to [cli::cli_inform()].
+#' @param .envir Environment for glue interpolation; the caller's frame.
+#' @returns Invisibly, `NULL`.
+#' @noRd
+dl_inform <- function(message, ..., .envir = parent.frame()) {
+  if (!isTRUE(getOption("ducklake.verbose", TRUE))) {
+    return(invisible(NULL))
+  }
+  cli::cli_inform(message, ..., class = "ducklake_message", .envir = .envir)
+  invisible(NULL)
+}

@@ -46,7 +46,7 @@ create_schema <- function(schema_name, if_not_exists = TRUE, ducklake_name = NUL
     if (!if_not_exists) {
       cli::cli_abort("Schema {.val {schema_name}} already exists in {.val {ducklake_name}}.")
     }
-    cli::cli_inform("Schema {.val {schema_name}} already exists.")
+    dl_inform("Schema {.val {schema_name}} already exists.")
     return(invisible(NULL))
   }
 
@@ -54,7 +54,7 @@ create_schema <- function(schema_name, if_not_exists = TRUE, ducklake_name = NUL
     sprintf("CREATE SCHEMA %s.%s;", quote_ident(ducklake_name, conn), quoted),
     conn = conn
   )
-  cli::cli_inform("Created schema {.val {schema_name}}.")
+  dl_inform("Created schema {.val {schema_name}}.")
 
   invisible(NULL)
 }
@@ -102,7 +102,7 @@ drop_schema <- function(schema_name, cascade = FALSE, ducklake_name = NULL) {
     ),
     conn = conn
   )
-  cli::cli_inform("Dropped schema {.val {schema_name}}.")
+  dl_inform("Dropped schema {.val {schema_name}}.")
 
   invisible(NULL)
 }

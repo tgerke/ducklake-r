@@ -157,7 +157,7 @@ add_data_files <- function(table_name,
     committed <- TRUE
   }
 
-  cli::cli_inform(c(
+  dl_inform(c(
     "Added {length(files)} file{?s} to table {.val {table_name}}.",
     # Inside a caller's transaction the snapshot is theirs and not yet
     # committed, so only claim atomicity for a batch this call committed.

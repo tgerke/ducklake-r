@@ -30,11 +30,11 @@ install_quack <- function(load = TRUE) {
   check_quack_version()
 
   db_execute("INSTALL quack;")
-  cli::cli_inform("Installed {.pkg quack} extension.")
+  dl_inform("Installed {.pkg quack} extension.")
 
   if (load) {
     db_execute("LOAD quack;")
-    cli::cli_inform("Loaded {.pkg quack} extension.")
+    dl_inform("Loaded {.pkg quack} extension.")
   }
 
   invisible(NULL)
@@ -253,7 +253,7 @@ quack_serve <- function(uri = "quack:localhost", token = NULL,
   }
 
   db_execute(sprintf("CALL quack_serve(%s);", paste(args, collapse = ", ")))
-  cli::cli_inform("Quack server listening on {.val {uri}}.")
+  dl_inform("Quack server listening on {.val {uri}}.")
 
   invisible(uri)
 }
@@ -280,7 +280,7 @@ quack_stop <- function(uri = "quack:localhost") {
   ensure_quack_extension()
 
   db_execute(sprintf("CALL quack_stop(%s);", quote_sql(uri)))
-  cli::cli_inform("Quack server on {.val {uri}} stopped.")
+  dl_inform("Quack server on {.val {uri}} stopped.")
 
   invisible(TRUE)
 }

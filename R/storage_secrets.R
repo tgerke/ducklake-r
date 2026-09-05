@@ -135,7 +135,7 @@ create_storage_secret <- function(type = c("s3", "gcs", "r2", "azure"),
   )
   db_execute(sql, conn = conn)
 
-  cli::cli_inform(
+  dl_inform(
     "Created {if (persistent) 'persistent ' else ''}{.val {type}} storage secret{if (!is.null(name)) ' {.val {name}}' else ''}."
   )
 

@@ -70,7 +70,7 @@ set_ducklake_retry <- function(max_retries = NULL, wait_ms = NULL, backoff = NUL
      ORDER BY name"
   )
   value_of <- function(name) settings$value[settings$name == name]
-  cli::cli_inform(
+  dl_inform(
     "DuckLake retries a conflicting transaction up to {value_of('ducklake_max_retry_count')} times, starting {value_of('ducklake_retry_wait_ms')} ms apart with backoff {value_of('ducklake_retry_backoff')}."
   )
 

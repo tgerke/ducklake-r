@@ -96,14 +96,14 @@ expire_snapshots <- function(ducklake_name = NULL,
 
   n <- nrow(result)
   if (isTRUE(dry_run)) {
-    cli::cli_inform("Dry run: {.val {n}} snapshot{?s} would be expired.")
+    dl_inform("Dry run: {.val {n}} snapshot{?s} would be expired.")
   } else if (n > 0) {
-    cli::cli_inform(c(
+    dl_inform(c(
       "Expired {.val {n}} snapshot{?s}.",
       "i" = "Unreferenced files are scheduled for deletion; run {.fun cleanup_old_files} to reclaim storage."
     ))
   } else {
-    cli::cli_inform("No snapshots to expire.")
+    dl_inform("No snapshots to expire.")
   }
 
   result
@@ -203,11 +203,11 @@ merge_adjacent_files <- function(ducklake_name = NULL,
 
   if (nrow(result) > 0) {
     merged <- sum(result$files_processed)
-    cli::cli_inform(
+    dl_inform(
       "Merged {.val {merged}} file{?s} into {.val {nrow(result)}} file{?s}."
     )
   } else {
-    cli::cli_inform("No adjacent files to merge.")
+    dl_inform("No adjacent files to merge.")
   }
 
   result
@@ -256,9 +256,9 @@ run_file_cleanup <- function(sql_function, what,
 
   n <- nrow(result)
   if (isTRUE(dry_run)) {
-    cli::cli_inform("Dry run: {.val {n}} {cli::qty(n)}{what}{?s} would be deleted.")
+    dl_inform("Dry run: {.val {n}} {cli::qty(n)}{what}{?s} would be deleted.")
   } else {
-    cli::cli_inform("Deleted {.val {n}} {cli::qty(n)}{what}{?s}.")
+    dl_inform("Deleted {.val {n}} {cli::qty(n)}{what}{?s}.")
   }
 
   result
@@ -457,11 +457,11 @@ rewrite_data_files <- function(ducklake_name = NULL,
 
   if (nrow(result) > 0) {
     rewritten <- sum(result$files_processed)
-    cli::cli_inform(
+    dl_inform(
       "Rewrote {.val {rewritten}} file{?s} into {.val {nrow(result)}} file{?s}."
     )
   } else {
-    cli::cli_inform("No files needed rewriting.")
+    dl_inform("No files needed rewriting.")
   }
 
   result
