@@ -203,9 +203,9 @@ delete-file share mean it is time for the compaction tools covered in
 With two tables in the lake, we can step back and look at everything at
 once. Calling `plot_snapshots()` without a table name switches to a swimlane
 view: one row per table, one point per snapshot, with recently active tables
-at the top. It answers a different question than the single-table timeline
--- not "what happened to this table" but "which tables are active, and what
-kind of churn does each one see":
+at the top. Where the single-table timeline shows what happened to one
+table, the swimlane shows which tables are active and what kind of churn
+each one sees:
 
 ```{r plot-lake}
 plot_snapshots()

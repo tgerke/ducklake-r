@@ -44,7 +44,7 @@ DuckLake separates data management into two distinct components:
 
 1. **Catalog (Metadata)**: A database that stores all metadata about your tables, snapshots, transactions, and data file locations. By default this is a DuckDB file, but DuckLake also supports PostgreSQL, SQLite, or MySQL as catalog backends (see `?attach_ducklake`). The catalog is typically small but critically important.
 
-2. **Storage (Data Files)**: A directory containing immutable Parquet files that hold your actual data. DuckLake never modifies existing files—it only creates new ones.
+2. **Storage (Data Files)**: A directory containing immutable Parquet files that hold your actual data. DuckLake never modifies an existing file. It only creates new ones.
 
 This separation provides several benefits:
 
@@ -113,7 +113,7 @@ create_storage_secret(
 )
 
 # Or let the AWS credential chain find them (env vars, profiles,
-# instance metadata) -- no keys in code
+# instance metadata), so no keys sit in code
 create_storage_secret("s3", provider = "credential_chain")
 
 # Then attach. With the default duckdb backend the catalog file must stay
@@ -226,7 +226,7 @@ The key insight is that **DuckLake never modifies existing Parquet files**. Each
 
 ### Backing Up the Catalog
 
-The catalog is the most critical component—it maps snapshots to data files. Regular backups are essential.
+The catalog is the most critical component: it maps snapshots to data files. Regular backups are essential.
 
 #### Copying the Catalog
 
@@ -419,7 +419,7 @@ cleanup_old_files(cleanup_all = TRUE)
 # Rewrite data files whose rows have mostly been deleted
 rewrite_data_files(delete_threshold = 0.5)
 
-# Remove untracked files from the data path -- always dry-run this one first
+# Remove untracked files from the data path. Always dry-run this one first
 delete_orphaned_files(dry_run = TRUE, cleanup_all = TRUE)
 ```
 
