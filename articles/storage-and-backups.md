@@ -29,8 +29,8 @@ DuckLake separates data management into two distinct components:
     The catalog is typically small but critically important.
 
 2.  **Storage (Data Files)**: A directory containing immutable Parquet
-    files that hold your actual data. DuckLake never modifies existing
-    files—it only creates new ones.
+    files that hold your actual data. DuckLake never modifies an
+    existing file. It only creates new ones.
 
 This separation provides several benefits:
 
@@ -110,7 +110,7 @@ create_storage_secret(
 )
 
 # Or let the AWS credential chain find them (env vars, profiles,
-# instance metadata) -- no keys in code
+# instance metadata), so no keys sit in code
 create_storage_secret("s3", provider = "credential_chain")
 
 # Then attach. With the default duckdb backend the catalog file must stay
@@ -190,14 +190,14 @@ The catalog is a single database file containing all metadata:
 ``` r
 
 dir_tree(lake_dir)
-#> /tmp/Rtmp7eoO9U/storage_backups_vignette/storage_demo
+#> /tmp/Rtmpou9I0A/storage_backups_vignette/storage_demo
 #> ├── demo_lake.ducklake
 #> ├── demo_lake.ducklake.wal
 #> └── main
 #>     └── cars
-#>         ├── ducklake-01a07a43-d476-7265-8e86-7b7350ae3d96.parquet
-#>         ├── ducklake-01a07a43-d5b2-72ee-8bc3-3cbe51bc4d2a.parquet
-#>         └── ducklake-01a07a43-d699-7118-8b99-87d34a723749.parquet
+#>         ├── ducklake-01a07cd3-0387-7d5a-8944-6ea81bc9eae7.parquet
+#>         ├── ducklake-01a07cd3-04c9-7d15-a1ca-6c8451ee5593.parquet
+#>         └── ducklake-01a07cd3-05b6-74c3-b9a8-ef1388da9550.parquet
 ```
 
 The catalog files (`demo_lake.ducklake` and `.wal`) contain all metadata
@@ -213,11 +213,11 @@ Data files are stored in Parquet format in a structured directory:
 main_dir <- file.path(lake_dir, "main")
 
 dir_tree(main_dir, recurse = 2)
-#> /tmp/Rtmp7eoO9U/storage_backups_vignette/storage_demo/main
+#> /tmp/Rtmpou9I0A/storage_backups_vignette/storage_demo/main
 #> └── cars
-#>     ├── ducklake-01a07a43-d476-7265-8e86-7b7350ae3d96.parquet
-#>     ├── ducklake-01a07a43-d5b2-72ee-8bc3-3cbe51bc4d2a.parquet
-#>     └── ducklake-01a07a43-d699-7118-8b99-87d34a723749.parquet
+#>     ├── ducklake-01a07cd3-0387-7d5a-8944-6ea81bc9eae7.parquet
+#>     ├── ducklake-01a07cd3-04c9-7d15-a1ca-6c8451ee5593.parquet
+#>     └── ducklake-01a07cd3-05b6-74c3-b9a8-ef1388da9550.parquet
   
 # Get details about parquet files
 parquet_files <- dir_ls(main_dir, recurse = TRUE, regexp = "\\.parquet$")
@@ -226,9 +226,9 @@ for (f in parquet_files) {
               path_file(f), 
               file.size(f)))
 }
-#>   ducklake-01a07a43-d476-7265-8e86-7b7350ae3d96.parquet (2307 bytes)
-#>   ducklake-01a07a43-d5b2-72ee-8bc3-3cbe51bc4d2a.parquet (2501 bytes)
-#>   ducklake-01a07a43-d699-7118-8b99-87d34a723749.parquet (2724 bytes)
+#>   ducklake-01a07cd3-0387-7d5a-8944-6ea81bc9eae7.parquet (2307 bytes)
+#>   ducklake-01a07cd3-04c9-7d15-a1ca-6c8451ee5593.parquet (2501 bytes)
+#>   ducklake-01a07cd3-05b6-74c3-b9a8-ef1388da9550.parquet (2724 bytes)
 ```
 
 ### Understanding File Organization
@@ -257,7 +257,7 @@ functions described below, once no snapshot needs them.
 
 ### Backing Up the Catalog
 
-The catalog is the most critical component—it maps snapshots to data
+The catalog is the most critical component: it maps snapshots to data
 files. Regular backups are essential.
 
 #### Copying the Catalog
@@ -294,13 +294,13 @@ dir_copy(
 
 # Verify the backup was created
 dir_tree(backup_dir)
-#> /tmp/Rtmp7eoO9U/storage_backups_vignette/storage_demo/backups
+#> /tmp/Rtmpou9I0A/storage_backups_vignette/storage_demo/backups
 #> ├── demo_lake.ducklake
 #> └── main
 #>     └── cars
-#>         ├── ducklake-01a07a43-d476-7265-8e86-7b7350ae3d96.parquet
-#>         ├── ducklake-01a07a43-d5b2-72ee-8bc3-3cbe51bc4d2a.parquet
-#>         └── ducklake-01a07a43-d699-7118-8b99-87d34a723749.parquet
+#>         ├── ducklake-01a07cd3-0387-7d5a-8944-6ea81bc9eae7.parquet
+#>         ├── ducklake-01a07cd3-04c9-7d15-a1ca-6c8451ee5593.parquet
+#>         └── ducklake-01a07cd3-05b6-74c3-b9a8-ef1388da9550.parquet
 ```
 
 A plain file copy of the `.ducklake` file works too, but only after
@@ -326,9 +326,9 @@ attach_ducklake(
 # Verify you're working with the backup
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-09-07 05:07:40              1
-#> 2           2 2026-09-07 05:07:40              2
-#> 3           3 2026-09-07 05:07:41              3
+#> 1           1 2026-09-07 17:03:18              1
+#> 2           2 2026-09-07 17:03:18              2
+#> 3           3 2026-09-07 17:03:19              3
 #>                                                                 changes
 #> 1                    tables_created, tables_inserted_into, main.cars, 1
 #> 2 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2
@@ -486,7 +486,7 @@ cleanup_old_files(cleanup_all = TRUE)
 # Rewrite data files whose rows have mostly been deleted
 rewrite_data_files(delete_threshold = 0.5)
 
-# Remove untracked files from the data path -- always dry-run this one first
+# Remove untracked files from the data path. Always dry-run this one first
 delete_orphaned_files(dry_run = TRUE, cleanup_all = TRUE)
 ```
 
@@ -548,11 +548,11 @@ backup_dir <- backup_ducklake(
 #> Catalog backed up successfully.
 #> Data files backed up successfully (1 directory).
 #> Backup completed:
-#> /tmp/Rtmp7eoO9U/storage_backups_vignette/storage_demo/backups/backup_20260907_050742
+#> /tmp/Rtmpou9I0A/storage_backups_vignette/storage_demo/backups/backup_20260907_170320
 
 # The function returns the backup directory path
 print(backup_dir)
-#> [1] "/tmp/Rtmp7eoO9U/storage_backups_vignette/storage_demo/backups/backup_20260907_050742"
+#> [1] "/tmp/Rtmpou9I0A/storage_backups_vignette/storage_demo/backups/backup_20260907_170320"
 ```
 
 The

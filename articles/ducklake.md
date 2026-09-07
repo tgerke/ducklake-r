@@ -125,7 +125,7 @@ cars_data |>
   select(mpg, cyl, hp) |>
   head(3)
 #> # A query:  ?? x 3
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmpr9mYiI/ducklake/ducklake2bda7aef5c70.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmp1d9KVB/ducklake/ducklake2b9e55deeb31.duckdb]
 #>     mpg   cyl    hp
 #>   <dbl> <dbl> <dbl>
 #> 1  21       6   110
@@ -197,7 +197,7 @@ get_ducklake_table("cars") |>
   select(mpg, kpl) |>
   head(3)
 #> # A query:  ?? x 2
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmpr9mYiI/ducklake/ducklake2bda7aef5c70.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmp1d9KVB/ducklake/ducklake2b9e55deeb31.duckdb]
 #>     mpg   kpl
 #>   <dbl> <dbl>
 #> 1  21    8.93
@@ -229,8 +229,8 @@ lists every snapshot that touched a table:
 
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-09-07 05:07:24              1
-#> 2           2 2026-09-07 05:07:24              2
+#> 1           1 2026-09-07 17:03:02              1
+#> 2           2 2026-09-07 17:03:03              2
 #>                                                              changes
 #> 1                 tables_created, tables_inserted_into, main.cars, 1
 #> 2 tables_altered, tables_inserted_into, tables_deleted_from, 1, 1, 1
@@ -252,7 +252,7 @@ version can be read as a lazy table:
 get_ducklake_table_version("cars", version = 1) |>
   head(3)
 #> # A query:  ?? x 11
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmpr9mYiI/ducklake/ducklake2bda7aef5c70.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmp1d9KVB/ducklake/ducklake2b9e55deeb31.duckdb]
 #>     mpg   cyl  disp    hp  drat    wt  qsec    vs    am  gear  carb
 #>   <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>
 #> 1  21       6   160   110  3.9   2.62  16.5     0     1     4     4
@@ -270,9 +270,9 @@ restore_table_version("cars", version = 1, author = "Data Engineer")
 
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-09-07 05:07:24              1
-#> 2           2 2026-09-07 05:07:24              2
-#> 3           3 2026-09-07 05:07:25              3
+#> 1           1 2026-09-07 17:03:02              1
+#> 2           2 2026-09-07 17:03:03              2
+#> 3           3 2026-09-07 17:03:03              3
 #>                                                                 changes
 #> 1                    tables_created, tables_inserted_into, main.cars, 1
 #> 2    tables_altered, tables_inserted_into, tables_deleted_from, 1, 1, 1

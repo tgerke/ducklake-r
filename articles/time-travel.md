@@ -52,7 +52,7 @@ get_ducklake_table("cars") |>
   select(mpg, cyl, hp, wt) |>
   head()
 #> # A query:  ?? x 4
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpeYD6Bm/ducklake/ducklake2e293c9d21b6.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpBd236B/ducklake/ducklake2e07188cd43e.duckdb]
 #>     mpg   cyl    hp    wt
 #>   <dbl> <dbl> <dbl> <dbl>
 #> 1  21       6   110  2.62
@@ -81,7 +81,7 @@ get_ducklake_table("cars") |>
     avg_hp = mean(hp, na.rm = TRUE)
   )
 #> # A query:  ?? x 3
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpeYD6Bm/ducklake/ducklake2e293c9d21b6.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpBd236B/ducklake/ducklake2e07188cd43e.duckdb]
 #>   n_cars avg_mpg avg_hp
 #>    <dbl>   <dbl>  <dbl>
 #> 1     32    20.1   147.
@@ -115,7 +115,7 @@ get_ducklake_table("cars") |>
     avg_hp = mean(hp, na.rm = TRUE)
   )
 #> # A query:  ?? x 3
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpeYD6Bm/ducklake/ducklake2e293c9d21b6.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpBd236B/ducklake/ducklake2e07188cd43e.duckdb]
 #>   n_cars avg_mpg avg_hp
 #>    <dbl>   <dbl>  <dbl>
 #> 1     32    19.9   147.
@@ -153,7 +153,7 @@ get_ducklake_table("cars") |>
   count(efficiency_class) |>
   arrange(desc(n))
 #> # A query:    ?? x 2
-#> # Database:   DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpeYD6Bm/ducklake/ducklake2e293c9d21b6.duckdb]
+#> # Database:   DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpBd236B/ducklake/ducklake2e07188cd43e.duckdb]
 #> # Ordered by: desc(n)
 #>   efficiency_class     n
 #>   <chr>            <dbl>
@@ -190,7 +190,7 @@ get_ducklake_table("cars") |>
   count(efficiency_class) |>
   arrange(desc(n))
 #> # A query:    ?? x 2
-#> # Database:   DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpeYD6Bm/ducklake/ducklake2e293c9d21b6.duckdb]
+#> # Database:   DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpBd236B/ducklake/ducklake2e07188cd43e.duckdb]
 #> # Ordered by: desc(n)
 #>   efficiency_class     n
 #>   <chr>            <dbl>
@@ -212,10 +212,10 @@ functionality.
 snapshots <- list_table_snapshots("cars")
 snapshots
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-09-07 05:07:45              1
-#> 2           2 2026-09-07 05:07:46              1
-#> 3           3 2026-09-07 05:07:46              2
-#> 4           4 2026-09-07 05:07:46              2
+#> 1           1 2026-09-07 17:03:23              1
+#> 2           2 2026-09-07 17:03:24              1
+#> 3           3 2026-09-07 17:03:24              2
+#> 4           4 2026-09-07 17:03:24              2
 #>                                                                                 changes
 #> 1                                    tables_created, tables_inserted_into, main.cars, 1
 #> 2                                                  inlined_insert, inlined_delete, 1, 1
@@ -239,7 +239,7 @@ get_ducklake_table_version("cars", version = 2) |>
   select(mpg, cyl, hp, wt) |>
   head()
 #> # A query:  ?? x 4
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpeYD6Bm/ducklake/ducklake2e293c9d21b6.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpBd236B/ducklake/ducklake2e07188cd43e.duckdb]
 #>     mpg   cyl    hp    wt
 #>   <dbl> <dbl> <dbl> <dbl>
 #> 1  21       6   110  2.62
@@ -261,12 +261,12 @@ get_ducklake_table_version("cars", version = 3) |>
   select(mpg, efficiency_class) |>
   count(efficiency_class)
 #> # A query:  ?? x 2
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpeYD6Bm/ducklake/ducklake2e293c9d21b6.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpBd236B/ducklake/ducklake2e07188cd43e.duckdb]
 #>   efficiency_class     n
 #>   <chr>            <dbl>
-#> 1 High                 6
-#> 2 Medium               8
-#> 3 Low                 18
+#> 1 Medium               8
+#> 2 Low                 18
+#> 3 High                 6
 ```
 
 ### Query data as of a specific timestamp
@@ -285,7 +285,7 @@ get_ducklake_table_asof("cars", version2_timestamp + 1) |>
     avg_mpg = mean(mpg, na.rm = TRUE)
   )
 #> # A query:  ?? x 1
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpeYD6Bm/ducklake/ducklake2e293c9d21b6.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpBd236B/ducklake/ducklake2e07188cd43e.duckdb]
 #>   avg_mpg
 #>     <dbl>
 #> 1    19.9
@@ -348,9 +348,9 @@ pass a custom `commit_message` if the default (“Restored cars to
 snapshot 2”) isn’t descriptive enough for your audit trail.
 
 Nothing is lost in a restore: the rollback happens *forward*, as a new
-snapshot with its own author and commit message, so the full history —
-including the states after the restore point — remains available for
-time travel. That also means a restore is itself reversible with another
+snapshot with its own author and commit message, so the full history,
+including the states after the restore point, remains available for time
+travel. That also means a restore is itself reversible with another
 [`restore_table_version()`](https://tgerke.github.io/ducklake-r/reference/restore_table_version.md)
 call:
 
@@ -358,11 +358,11 @@ call:
 
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-09-07 05:07:45              1
-#> 2           2 2026-09-07 05:07:46              1
-#> 3           3 2026-09-07 05:07:46              2
-#> 4           4 2026-09-07 05:07:46              2
-#> 5           5 2026-09-07 05:07:47              3
+#> 1           1 2026-09-07 17:03:23              1
+#> 2           2 2026-09-07 17:03:24              1
+#> 3           3 2026-09-07 17:03:24              2
+#> 4           4 2026-09-07 17:03:24              2
+#> 5           5 2026-09-07 17:03:25              3
 #>                                                                                 changes
 #> 1                                    tables_created, tables_inserted_into, main.cars, 1
 #> 2                                                  inlined_insert, inlined_delete, 1, 1
@@ -379,8 +379,8 @@ list_table_snapshots("cars")
 
 ## Pinning a Whole Session to a Snapshot
 
-The queries above travel one table at a time. To freeze *everything* —
-say, to re-run a report exactly as it stood at a submission milestone —
+The queries above travel one table at a time. To freeze *everything*,
+say to re-run a report exactly as it stood at a submission milestone,
 attach the lake pinned to a snapshot:
 
 ``` r
@@ -454,11 +454,11 @@ snapshot_history <- list_table_snapshots("cars")
 snapshot_history |>
   select(snapshot_id, snapshot_time, author, commit_message)
 #>   snapshot_id       snapshot_time         author
-#> 1           1 2026-09-07 05:07:45  Data Engineer
-#> 2           2 2026-09-07 05:07:46   Data Analyst
-#> 3           3 2026-09-07 05:07:46   Data Analyst
-#> 4           4 2026-09-07 05:07:46 Senior Analyst
-#> 5           5 2026-09-07 05:07:47 Senior Analyst
+#> 1           1 2026-09-07 17:03:23  Data Engineer
+#> 2           2 2026-09-07 17:03:24   Data Analyst
+#> 3           3 2026-09-07 17:03:24   Data Analyst
+#> 4           4 2026-09-07 17:03:24 Senior Analyst
+#> 5           5 2026-09-07 17:03:25 Senior Analyst
 #>                                 commit_message
 #> 1               Initial load of mtcars dataset
 #> 2     Adjust MPG for high-performance vehicles
@@ -485,12 +485,12 @@ all_snapshots |>
   select(snapshot_id, snapshot_time, changes) |>
   head(10)
 #>   snapshot_id       snapshot_time
-#> 1           0 2026-09-07 05:07:45
-#> 2           1 2026-09-07 05:07:45
-#> 3           2 2026-09-07 05:07:46
-#> 4           3 2026-09-07 05:07:46
-#> 5           4 2026-09-07 05:07:46
-#> 6           5 2026-09-07 05:07:47
+#> 1           0 2026-09-07 17:03:23
+#> 2           1 2026-09-07 17:03:23
+#> 3           2 2026-09-07 17:03:24
+#> 4           3 2026-09-07 17:03:24
+#> 5           4 2026-09-07 17:03:24
+#> 6           5 2026-09-07 17:03:25
 #>                                                                                 changes
 #> 1                                                                 schemas_created, main
 #> 2                                    tables_created, tables_inserted_into, main.cars, 1

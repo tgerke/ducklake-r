@@ -38,9 +38,9 @@ attach_ducklake("sensor_lake", lake_path = vignette_temp_dir)
 
 ## Small writes are automatically inlined
 
-Let’s create a small sensor-readings table. Because the data has only 3
-rows — well below the default inlining threshold of 10 — DuckLake stores
-it directly in the catalog instead of writing a Parquet file.
+Start with a small sensor-readings table. The data has only 3 rows, well
+below the default inlining threshold of 10, so DuckLake stores it
+directly in the catalog instead of writing a Parquet file.
 
 ``` r
 
@@ -61,7 +61,8 @@ with_transaction(
 #> Committed snapshot 1 (Sensor Team): Initial sensor readings
 ```
 
-No Parquet files were created — all data is inlined in the catalog:
+No Parquet files were created. All of the data is inlined in the
+catalog:
 
 ``` r
 
@@ -147,12 +148,12 @@ get_ducklake_table("readings") |> collect()
 
 ## Large writes bypass inlining automatically
 
-When a write exceeds the threshold, DuckLake writes directly to Parquet
-— no configuration needed:
+When a write exceeds the threshold, DuckLake writes directly to Parquet,
+with no configuration needed:
 
 ``` r
 
-# 50 rows — well above the default threshold of 10
+# 50 rows, well above the default threshold of 10
 large_batch <- data.frame(
   sensor_id = 101:150,
   temperature = rnorm(50, mean = 22, sd = 1),
@@ -293,11 +294,11 @@ inlined insert or delete creates a snapshot, just like a regular write:
 snapshots <- list_table_snapshots("readings")
 snapshots
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-09-07 05:07:17              1
-#> 2           2 2026-09-07 05:07:17              2
-#> 3           3 2026-09-07 05:07:18              2
-#> 4           5 2026-09-07 05:07:19              3
-#> 5           6 2026-09-07 05:07:19              3
+#> 1           1 2026-09-07 17:02:56              1
+#> 2           2 2026-09-07 17:02:56              2
+#> 3           3 2026-09-07 17:02:57              2
+#> 4           5 2026-09-07 17:02:57              3
+#> 5           6 2026-09-07 17:02:57              3
 #>                                                   changes      author
 #> 1        tables_created, inlined_insert, main.readings, 1 Sensor Team
 #> 2 tables_altered, inlined_insert, inlined_delete, 1, 1, 1 Sensor Team
@@ -329,12 +330,12 @@ if (nrow(snapshots) > 0) {
 
 ## When to use inlining
 
-| Workload                   | Recommendation                    |
-|----------------------------|-----------------------------------|
-| Streaming / IoT sensors    | Increase threshold (e.g., 50–100) |
-| Periodic large batch loads | Default (10) is fine              |
-| Single-row corrections     | Default handles it automatically  |
-| Append-only bulk ETL       | Consider disabling (`limit = 0`)  |
+| Workload                   | Recommendation                       |
+|----------------------------|--------------------------------------|
+| Streaming / IoT sensors    | Increase threshold (e.g., 50 to 100) |
+| Periodic large batch loads | Default (10) is fine                 |
+| Single-row corrections     | Default handles it automatically     |
+| Append-only bulk ETL       | Consider disabling (`limit = 0`)     |
 
 ## What inlining does *not* change
 

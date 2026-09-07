@@ -120,9 +120,9 @@ consolidated Parquet files with a single call.</p>
 <div class="section level2">
 <h2 id="small-writes-are-automatically-inlined">Small writes are automatically inlined<a class="anchor" aria-label="anchor" href="#small-writes-are-automatically-inlined"></a>
 </h2>
-<p>Let’s create a small sensor-readings table. Because the data has only
-3 rows — well below the default inlining threshold of 10 — DuckLake
-stores it directly in the catalog instead of writing a Parquet file.</p>
+<p>Start with a small sensor-readings table. The data has only 3 rows,
+well below the default inlining threshold of 10, so DuckLake stores it
+directly in the catalog instead of writing a Parquet file.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">readings</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  sensor_id <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">3</span>,</span>
@@ -139,7 +139,7 @@ stores it directly in the catalog instead of writing a Parquet file.</p>
 <span>  commit_message <span class="op">=</span> <span class="st">"Initial sensor readings"</span></span>
 <span><span class="op">)</span></span>
 <span><span class="co">#&gt; Committed snapshot 1 (Sensor Team): Initial sensor readings</span></span></code></pre></div>
-<p>No Parquet files were created — all data is inlined in the
+<p>No Parquet files were created. All of the data is inlined in the
 catalog:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">conn</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_ducklake_connection.html">get_ducklake_connection</a></span><span class="op">(</span><span class="op">)</span></span>
@@ -217,9 +217,9 @@ rather than writing a delete file.</p>
 <h2 id="large-writes-bypass-inlining-automatically">Large writes bypass inlining automatically<a class="anchor" aria-label="anchor" href="#large-writes-bypass-inlining-automatically"></a>
 </h2>
 <p>When a write exceeds the threshold, DuckLake writes directly to
-Parquet — no configuration needed:</p>
+Parquet, with no configuration needed:</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># 50 rows — well above the default threshold of 10</span></span>
+<code class="sourceCode R"><span><span class="co"># 50 rows, well above the default threshold of 10</span></span>
 <span><span class="va">large_batch</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  sensor_id <span class="op">=</span> <span class="fl">101</span><span class="op">:</span><span class="fl">150</span>,</span>
 <span>  temperature <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">50</span>, mean <span class="op">=</span> <span class="fl">22</span>, sd <span class="op">=</span> <span class="fl">1</span><span class="op">)</span>,</span>
@@ -345,11 +345,11 @@ write:</p>
 <span><span class="va">snapshots</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"readings"</span><span class="op">)</span></span>
 <span><span class="va">snapshots</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 1           1 2026-09-07 05:07:17              1</span></span>
-<span><span class="co">#&gt; 2           2 2026-09-07 05:07:17              2</span></span>
-<span><span class="co">#&gt; 3           3 2026-09-07 05:07:18              2</span></span>
-<span><span class="co">#&gt; 4           5 2026-09-07 05:07:19              3</span></span>
-<span><span class="co">#&gt; 5           6 2026-09-07 05:07:19              3</span></span>
+<span><span class="co">#&gt; 1           1 2026-09-07 17:02:56              1</span></span>
+<span><span class="co">#&gt; 2           2 2026-09-07 17:02:56              2</span></span>
+<span><span class="co">#&gt; 3           3 2026-09-07 17:02:57              2</span></span>
+<span><span class="co">#&gt; 4           5 2026-09-07 17:02:57              3</span></span>
+<span><span class="co">#&gt; 5           6 2026-09-07 17:02:57              3</span></span>
 <span><span class="co">#&gt;                                                   changes      author</span></span>
 <span><span class="co">#&gt; 1        tables_created, inlined_insert, main.readings, 1 Sensor Team</span></span>
 <span><span class="co">#&gt; 2 tables_altered, inlined_insert, inlined_delete, 1, 1, 1 Sensor Team</span></span>
@@ -386,7 +386,7 @@ write:</p>
 <tbody>
 <tr class="odd">
 <td>Streaming / IoT sensors</td>
-<td>Increase threshold (e.g., 50–100)</td>
+<td>Increase threshold (e.g., 50 to 100)</td>
 </tr>
 <tr class="even">
 <td>Periodic large batch loads</td>
