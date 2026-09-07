@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ducklake</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -46,7 +46,9 @@
     <li><a class="dropdown-item" href="../articles/clinical-trial-datalake.html">Clinical Trial Data Lake</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Core Operations</h6></li>
+    <li><a class="dropdown-item" href="../articles/loading-data.html">Loading Data</a></li>
     <li><a class="dropdown-item" href="../articles/modifying-tables.html">Modifying Tables</a></li>
+    <li><a class="dropdown-item" href="../articles/views-comments-labels.html">Views, Comments, and Labels</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Advanced Features</h6></li>
     <li><a class="dropdown-item" href="../articles/data-inlining.html">Data Inlining</a></li>
@@ -79,7 +81,7 @@
       <img src="../logo.png" class="logo" alt=""><h1>Choosing a Deployment</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/tgerke/ducklake-r/blob/v0.7.0/vignettes/deployment.Rmd" class="external-link"><code>vignettes/deployment.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/tgerke/ducklake-r/blob/main/vignettes/deployment.Rmd" class="external-link"><code>vignettes/deployment.Rmd</code></a></small>
       <div class="d-none name"><code>deployment.Rmd</code></div>
     </div>
 
@@ -237,6 +239,12 @@ the cost of latency per file. Sorting and partitioning large tables
 (<code><a href="../reference/set_table_sorting.html">set_table_sorting()</a></code>,
 <code><a href="../reference/set_table_partitioning.html">set_table_partitioning()</a></code>) matter most on object storage,
 where every file skipped is a request avoided.</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Sorting suits high-cardinality columns like timestamps or ids</span></span>
+<span><span class="fu"><a href="../reference/set_table_sorting.html">set_table_sorting</a></span><span class="op">(</span><span class="st">"events"</span>, <span class="st">"event_time"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Partitioning suits low-cardinality columns like year or region</span></span>
+<span><span class="fu"><a href="../reference/set_table_partitioning.html">set_table_partitioning</a></span><span class="op">(</span><span class="st">"sales"</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"year(order_date)"</span>, <span class="st">"region"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="who-can-reach-it">Who can reach it<a class="anchor" aria-label="anchor" href="#who-can-reach-it"></a>
@@ -301,7 +309,7 @@ months later.</p>
 </h2>
 <p>A few settings pay for themselves later. Set them when you create the
 lake, and they persist in the catalog for every client.</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># 1. Keep DuckDB's downloaded extensions between sessions (duckdb &gt;= 1.5.2</span></span>
 <span><span class="co">#    keeps them in a per-session temporary directory otherwise). Put this</span></span>
 <span><span class="co">#    in ~/.Renviron, not in a script:</span></span>
@@ -350,7 +358,7 @@ extension may carry an older catalog format: DuckDB 1.5.1 wrote DuckLake
 0.4, while 1.5.2 and later write 1.0. Attaching such a lake stops with a
 version mismatch until it is migrated, which is a one-time, permanent
 change, so take a backup first:</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/backup_ducklake.html">backup_ducklake</a></span><span class="op">(</span><span class="st">"trial"</span>, lake_path <span class="op">=</span> <span class="st">"~/lakes/trial"</span>, backup_path <span class="op">=</span> <span class="st">"~/lakes/backups"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/attach_ducklake.html">attach_ducklake</a></span><span class="op">(</span><span class="st">"trial"</span>, lake_path <span class="op">=</span> <span class="st">"~/lakes/trial"</span>, automatic_migration <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 </div>
@@ -359,8 +367,11 @@ change, so take a backup first:</p>
 </h2>
 <ul>
 <li>
-<code><a href="../articles/ducklake.html">vignette("ducklake")</a></code> for recipes covering the everyday
-operations</li>
+<code><a href="../articles/ducklake.html">vignette("ducklake")</a></code> to attach a lake, add a table, and
+follow its history</li>
+<li>
+<code><a href="../articles/loading-data.html">vignette("loading-data")</a></code> for files, URLs, Parquet in
+place, and migrating from DuckDB or Iceberg</li>
 <li>
 <code><a href="../articles/storage-and-backups.html">vignette("storage-and-backups")</a></code> for the file layout,
 backups, and maintenance</li>

@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ducklake</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -46,7 +46,9 @@
     <li><a class="dropdown-item" href="../articles/clinical-trial-datalake.html">Clinical Trial Data Lake</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Core Operations</h6></li>
+    <li><a class="dropdown-item" href="../articles/loading-data.html">Loading Data</a></li>
     <li><a class="dropdown-item" href="../articles/modifying-tables.html">Modifying Tables</a></li>
+    <li><a class="dropdown-item" href="../articles/views-comments-labels.html">Views, Comments, and Labels</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Advanced Features</h6></li>
     <li><a class="dropdown-item" href="../articles/data-inlining.html">Data Inlining</a></li>
@@ -79,7 +81,7 @@
       <img src="../logo.png" class="logo" alt=""><h1>Data Inlining</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/tgerke/ducklake-r/blob/v0.7.0/vignettes/data-inlining.Rmd" class="external-link"><code>vignettes/data-inlining.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/tgerke/ducklake-r/blob/main/vignettes/data-inlining.Rmd" class="external-link"><code>vignettes/data-inlining.Rmd</code></a></small>
       <div class="d-none name"><code>data-inlining.Rmd</code></div>
     </div>
 
@@ -136,8 +138,7 @@ stores it directly in the catalog instead of writing a Parquet file.</p>
 <span>  author <span class="op">=</span> <span class="st">"Sensor Team"</span>,</span>
 <span>  commit_message <span class="op">=</span> <span class="st">"Initial sensor readings"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; Transaction started.</span></span>
-<span><span class="co">#&gt; Transaction committed.</span></span></code></pre></div>
+<span><span class="co">#&gt; Committed snapshot 1 (Sensor Team): Initial sensor readings</span></span></code></pre></div>
 <p>No Parquet files were created — all data is inlined in the
 catalog:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
@@ -175,10 +176,9 @@ UPDATE:</p>
 <span>  author <span class="op">=</span> <span class="st">"Sensor Team"</span>,</span>
 <span>  commit_message <span class="op">=</span> <span class="st">"Add calibrated temperature"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; Transaction started.</span></span>
 <span><span class="co">#&gt; Added column <span style="color: #0000BB;">"temp_calibrated"</span> (DOUBLE) to <span style="color: #0000BB;">"readings"</span>.</span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Metadata-only change; no data files were rewritten.</span></span>
-<span><span class="co">#&gt; Transaction committed.</span></span>
+<span><span class="co">#&gt; Committed snapshot 2 (Sensor Team): Add calibrated temperature</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"readings"</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/compute.html" class="external-link">collect</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 3 × 4</span></span></span>
@@ -204,8 +204,7 @@ rather than writing a delete file.</p>
 <span>  author <span class="op">=</span> <span class="st">"Sensor Team"</span>,</span>
 <span>  commit_message <span class="op">=</span> <span class="st">"Remove faulty sensor 2 reading"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; Transaction started.</span></span>
-<span><span class="co">#&gt; Transaction committed.</span></span>
+<span><span class="co">#&gt; Committed snapshot 3 (Sensor Team): Remove faulty sensor 2 reading</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"readings"</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/compute.html" class="external-link">collect</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 2 × 4</span></span></span>
@@ -233,8 +232,7 @@ Parquet — no configuration needed:</p>
 <span>  author <span class="op">=</span> <span class="st">"Sensor Team"</span>,</span>
 <span>  commit_message <span class="op">=</span> <span class="st">"Bulk sensor upload"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; Transaction started.</span></span>
-<span><span class="co">#&gt; Transaction committed.</span></span>
+<span><span class="co">#&gt; Committed snapshot 4 (Sensor Team): Bulk sensor upload</span></span>
 <span></span>
 <span><span class="co"># This table has a Parquet file</span></span>
 <span><span class="fu">DBI</span><span class="fu">::</span><span class="fu"><a href="https://dbi.r-dbi.org/reference/dbGetQuery.html" class="external-link">dbGetQuery</a></span><span class="op">(</span></span>
@@ -347,11 +345,11 @@ write:</p>
 <span><span class="va">snapshots</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"readings"</span><span class="op">)</span></span>
 <span><span class="va">snapshots</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 1           1 2026-09-07 00:46:06              1</span></span>
-<span><span class="co">#&gt; 2           2 2026-09-07 00:46:06              2</span></span>
-<span><span class="co">#&gt; 3           3 2026-09-07 00:46:07              2</span></span>
-<span><span class="co">#&gt; 4           5 2026-09-07 00:46:07              3</span></span>
-<span><span class="co">#&gt; 5           6 2026-09-07 00:46:08              3</span></span>
+<span><span class="co">#&gt; 1           1 2026-09-07 05:07:17              1</span></span>
+<span><span class="co">#&gt; 2           2 2026-09-07 05:07:17              2</span></span>
+<span><span class="co">#&gt; 3           3 2026-09-07 05:07:18              2</span></span>
+<span><span class="co">#&gt; 4           5 2026-09-07 05:07:19              3</span></span>
+<span><span class="co">#&gt; 5           6 2026-09-07 05:07:19              3</span></span>
 <span><span class="co">#&gt;                                                   changes      author</span></span>
 <span><span class="co">#&gt; 1        tables_created, inlined_insert, main.readings, 1 Sensor Team</span></span>
 <span><span class="co">#&gt; 2 tables_altered, inlined_insert, inlined_delete, 1, 1, 1 Sensor Team</span></span>

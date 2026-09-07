@@ -46,15 +46,14 @@ with_transaction(
   author = "Tutorial",
   commit_message = "Initial load of mtcars dataset"
 )
-#> Transaction started.
-#> Transaction committed.
+#> Committed snapshot 1 (Tutorial): Initial load of mtcars dataset
 
 # View the data
 get_ducklake_table("cars") |>
   select(mpg, cyl, hp, wt) |>
   head()
 #> # A query:  ?? x 4
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmp1vuH28/ducklake/ducklake2e76f99c00.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmprfiv2V/ducklake/ducklake2eae58668f19.duckdb]
 #>     mpg   cyl    hp    wt
 #>   <dbl> <dbl> <dbl> <dbl>
 #> 1  21       6   110  2.62
@@ -99,15 +98,15 @@ with_transaction(
   author = "Data Team",
   commit_message = "Apply the revised 4-cylinder efficiency factor"
 )
-#> Transaction started.
-#> Transaction committed.
+#> Committed snapshot 2 (Data Team): Apply the revised 4-cylinder efficiency
+#> factor
 
 # Verify the change
 get_ducklake_table("cars") |>
   select(mpg, cyl) |>
   head()
 #> # A query:  ?? x 2
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmp1vuH28/ducklake/ducklake2e76f99c00.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmprfiv2V/ducklake/ducklake2eae58668f19.duckdb]
 #>     mpg   cyl
 #>   <dbl> <dbl>
 #> 1  21       6
@@ -148,15 +147,15 @@ with_transaction({
     ) |>
     create_table("cars_summary")
 }, author = "Data Team", commit_message = "Add efficiency ratings and summary table")
-#> Transaction started.
-#> Transaction committed.
+#> Committed snapshot 3 (Data Team): Add efficiency ratings and summary
+#> table
 
 # View results
 get_ducklake_table("cars") |>
   select(mpg, cyl, efficiency) |>
   head()
 #> # A query:  ?? x 3
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmp1vuH28/ducklake/ducklake2e76f99c00.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmprfiv2V/ducklake/ducklake2eae58668f19.duckdb]
 #>     mpg   cyl efficiency
 #>   <dbl> <dbl> <chr>     
 #> 1  21       6 medium    
@@ -171,9 +170,9 @@ get_ducklake_table("cars_summary") |>
 #> # A tibble: 3 × 4
 #>     cyl avg_mpg avg_hp count
 #>   <dbl>   <dbl>  <dbl> <dbl>
-#> 1     6    19.7  122.      7
-#> 2     8    15.1  209.     14
-#> 3     4    28.0   82.6    11
+#> 1     4    28.0   82.6    11
+#> 2     6    19.7  122.      7
+#> 3     8    15.1  209.     14
 ```
 
 ### Automatic Rollback on Error
@@ -199,7 +198,6 @@ tryCatch(
     message("Transaction automatically rolled back: ", e$message)
   }
 )
-#> Transaction started.
 #> Transaction rolled back.
 #> Transaction automatically rolled back: Transaction rolled back due to error: Simulated error - something went wrong!
 
@@ -213,9 +211,9 @@ get_ducklake_table("cars") |>
 # View all versioned changes
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-09-07 00:46:38              1
-#> 2           2 2026-09-07 00:46:38              1
-#> 3           3 2026-09-07 00:46:39              2
+#> 1           1 2026-09-07 05:07:50              1
+#> 2           2 2026-09-07 05:07:50              1
+#> 3           3 2026-09-07 05:07:51              2
 #>                                                                                                       changes
 #> 1                                                          tables_created, tables_inserted_into, main.cars, 1
 #> 2                                                             tables_inserted_into, tables_deleted_from, 1, 1
@@ -247,7 +245,6 @@ boundaries, DuckLake provides manual transaction functions.
 
 # Start a transaction
 begin_transaction()
-#> Transaction started.
 
 # Make changes: declare a column, then fill it in place
 add_table_column("cars", "weight_kg", "DOUBLE")
@@ -263,7 +260,7 @@ commit_transaction(
   author = "Data Team",
   commit_message = "Add weight in kg"
 )
-#> Transaction committed.
+#> Committed snapshot 4 (Data Team): Add weight in kg
 
 # Verify changes
 get_ducklake_table("cars") |>
@@ -271,7 +268,7 @@ get_ducklake_table("cars") |>
   select(wt, weight_kg) |>
   head()
 #> # A query:  ?? x 2
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmp1vuH28/ducklake/ducklake2e76f99c00.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmprfiv2V/ducklake/ducklake2eae58668f19.duckdb]
 #>      wt weight_kg
 #>   <dbl>     <dbl>
 #> 1  2.32     1052.
@@ -291,7 +288,6 @@ commit:
 
 # Start a transaction
 begin_transaction()
-#> Transaction started.
 
 # Make a test change
 add_table_column("cars", "test_flag", "BOOLEAN", default = TRUE)
@@ -326,10 +322,10 @@ rollback_transaction()
 # View all versioned changes
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-09-07 00:46:38              1
-#> 2           2 2026-09-07 00:46:38              1
-#> 3           3 2026-09-07 00:46:39              2
-#> 4           4 2026-09-07 00:46:39              3
+#> 1           1 2026-09-07 05:07:50              1
+#> 2           2 2026-09-07 05:07:50              1
+#> 3           3 2026-09-07 05:07:51              2
+#> 4           4 2026-09-07 05:07:51              3
 #>                                                                                                       changes
 #> 1                                                          tables_created, tables_inserted_into, main.cars, 1
 #> 2                                                             tables_inserted_into, tables_deleted_from, 1, 1
@@ -360,7 +356,6 @@ finalized.
 
 # Metadata set at commit time (preferred approach)
 begin_transaction()
-#> Transaction started.
 
 add_table_column("cars", "hp_per_liter", "DOUBLE")
 #> Added column "hp_per_liter" (DOUBLE) to "cars".
@@ -375,13 +370,13 @@ commit_transaction(
   commit_message = "Add horsepower per liter metric",
   commit_extra_info = '{"ticket": "DATA-123"}'
 )
-#> Transaction committed.
+#> Committed snapshot 5 (Performance Team): Add horsepower per liter metric
 
 get_ducklake_table("cars") |>
   select(hp, cyl, hp_per_liter) |>
   head()
 #> # A query:  ?? x 3
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmp1vuH28/ducklake/ducklake2e76f99c00.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmprfiv2V/ducklake/ducklake2eae58668f19.duckdb]
 #>      hp   cyl hp_per_liter
 #>   <dbl> <dbl>        <dbl>
 #> 1   110     6         36.7
@@ -404,14 +399,13 @@ to replace a value that is already there:
 
 # A quick interactive change, committed without metadata
 begin_transaction()
-#> Transaction started.
 rows_update(
   get_ducklake_table("cars"),
   data.frame(mpg = 21, hp_per_liter = 36.7),
   by = "mpg"
 )
 commit_transaction()
-#> Transaction committed.
+#> Committed snapshot 6.
 
 # Fill in the metadata afterwards
 set_snapshot_metadata(
@@ -453,11 +447,11 @@ list_table_snapshots("cars") |>
   select(snapshot_id, snapshot_time, author, commit_message) |>
   tail(5)
 #>   snapshot_id       snapshot_time           author
-#> 2           2 2026-09-07 00:46:38        Data Team
-#> 3           3 2026-09-07 00:46:39        Data Team
-#> 4           4 2026-09-07 00:46:39        Data Team
-#> 5           5 2026-09-07 00:46:40 Performance Team
-#> 6           6 2026-09-07 00:46:40 Performance Team
+#> 2           2 2026-09-07 05:07:50        Data Team
+#> 3           3 2026-09-07 05:07:51        Data Team
+#> 4           4 2026-09-07 05:07:51        Data Team
+#> 5           5 2026-09-07 05:07:52 Performance Team
+#> 6           6 2026-09-07 05:07:52 Performance Team
 #>                                   commit_message
 #> 2 Apply the revised 4-cylinder efficiency factor
 #> 3       Add efficiency ratings and summary table

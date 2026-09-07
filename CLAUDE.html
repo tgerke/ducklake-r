@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">ducklake</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -26,7 +26,9 @@
     <li><a class="dropdown-item" href="articles/clinical-trial-datalake.html">Clinical Trial Data Lake</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Core Operations</h6></li>
+    <li><a class="dropdown-item" href="articles/loading-data.html">Loading Data</a></li>
     <li><a class="dropdown-item" href="articles/modifying-tables.html">Modifying Tables</a></li>
+    <li><a class="dropdown-item" href="articles/views-comments-labels.html">Views, Comments, and Labels</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Advanced Features</h6></li>
     <li><a class="dropdown-item" href="articles/data-inlining.html">Data Inlining</a></li>
@@ -48,7 +50,7 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="logo.png" class="logo" alt=""><h1>ducklake development notes</h1>
-      <small class="dont-index">Source: <a href="https://github.com/tgerke/ducklake-r/blob/v0.7.0/CLAUDE.md" class="external-link"><code>CLAUDE.md</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/tgerke/ducklake-r/blob/main/CLAUDE.md" class="external-link"><code>CLAUDE.md</code></a></small>
     </div>
 
 <div id="ducklake-development-notes" class="section level1">
@@ -58,7 +60,7 @@
 <ul><li>
 <strong>MotherDuck is out of scope</strong> (decided 2026-08-10). The package targets self-hosted DuckLake catalogs (DuckDB, PostgreSQL, SQLite, MySQL): no <code>md:</code> backend and no MotherDuck-specific attach forms. Revisit only if that decision is explicitly reopened.</li>
 <li>
-<strong>SQL macros are deliberately not wrapped</strong> (2026-08-10). A macro body is raw SQL, and dbplyr cannot translate R calls into user-defined macros, so a wrapper would add quoting risk without removing any SQL from user code. Views (<code><a href="reference/create_view.html">create_view()</a></code>) cover shared logic; the cookbook vignette documents the raw <code><a href="https://dbi.r-dbi.org/reference/dbExecute.html" class="external-link">DBI::dbExecute()</a></code> escape hatch for macros.</li>
+<strong>SQL macros are deliberately not wrapped</strong> (2026-08-10). A macro body is raw SQL, and dbplyr cannot translate R calls into user-defined macros, so a wrapper would add quoting risk without removing any SQL from user code. Views (<code><a href="reference/create_view.html">create_view()</a></code>) cover shared logic; <code><a href="articles/views-comments-labels.html">vignette("views-comments-labels")</a></code> documents the raw <code><a href="https://dbi.r-dbi.org/reference/dbExecute.html" class="external-link">DBI::dbExecute()</a></code> escape hatch for macros.</li>
 </ul></div>
 <div class="section level2">
 <h2 id="reference">Reference<a class="anchor" aria-label="anchor" href="#reference"></a></h2>
@@ -87,7 +89,11 @@
 <li>
 <strong>Extension persistence</strong>: duckdb-r 1.5.2+ keeps extensions in a per-session temp directory unless <code>DUCKDB_R_HOME</code> (or <code>duckdb.home</code>, or an existing <code>~/.duckdb</code>) is set; local development and CI set <code>DUCKDB_R_HOME</code>.</li>
 <li>
-<strong>Iceberg interop is documented, not wrapped</strong> (2026-09-04): <code>COPY FROM DATABASE lake TO iceberg_catalog</code> and <code>iceberg_to_ducklake()</code> live in DuckDB’s iceberg extension; the cookbook shows them. This closes the “one-command Iceberg catalog export” watch item above.</li>
+<strong>Iceberg interop is documented, not wrapped</strong> (2026-09-04): <code>COPY FROM DATABASE lake TO iceberg_catalog</code> and <code>iceberg_to_ducklake()</code> live in DuckDB’s iceberg extension; <code><a href="articles/loading-data.html">vignette("loading-data")</a></code> shows them. This closes the “one-command Iceberg catalog export” watch item above.</li>
+<li>
+<strong>A commit is confirmed with one line naming its snapshot</strong> (2026-09-06). <code><a href="reference/begin_transaction.html">begin_transaction()</a></code> is silent and stashes the lake’s current snapshot id; <code><a href="reference/commit_transaction.html">commit_transaction()</a></code> reads it again after <code>COMMIT</code> and prints <code>Committed snapshot N (author): message</code>, or says nothing changed when the id did not move. DuckLake assigns the id only at commit, and an empty or read-only transaction creates no snapshot (confirmed on the DuckDB and SQLite catalogs). Limitation: DuckLake has no query for “the snapshot this transaction created”, so the id is whatever <code>current_snapshot()</code> returns right after the commit; with concurrent writers it can belong to a neighbor’s commit that landed in between. Functions that commit for themselves (<code><a href="reference/restore_table_version.html">restore_table_version()</a></code>) print no second confirmation.</li>
+<li>
+<strong>Article layout</strong> (2026-09-06): <code><a href="articles/ducklake.html">vignette("ducklake")</a></code> (Getting Started) is one short linear session; recipes live in topical articles (Loading Data; Views, Comments, and Labels; Modifying Tables; Choosing a Deployment). New recipes go to those, not to Getting Started.</li>
 </ul></div>
 </div>
 

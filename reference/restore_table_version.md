@@ -104,9 +104,7 @@ first_version <- snapshots$snapshot_id[1]
 
 # Roll the table back to its first snapshot
 restore_table_version("orders", version = first_version)
-#> Transaction started.
-#> Transaction committed.
-#> Table "orders" restored to snapshot 1 (recorded as a new snapshot).
+#> Committed snapshot 3: Restored orders to snapshot 1
 
 # Record who performed the restore in the audit trail
 restore_table_version(
@@ -115,9 +113,7 @@ restore_table_version(
   author = "Data Steward",
   commit_message = "Roll back erroneous bulk update"
 )
-#> Transaction started.
-#> Transaction committed.
-#> Table "orders" restored to snapshot 1 (recorded as a new snapshot).
+#> Committed snapshot 4 (Data Steward): Roll back erroneous bulk update
 
 detach_ducklake("restore_lake", shutdown = TRUE)
 unlink(lake_dir, recursive = TRUE)

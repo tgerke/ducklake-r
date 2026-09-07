@@ -1,5 +1,37 @@
 # Changelog
 
+## ducklake (development version)
+
+- [`with_transaction()`](https://tgerke.github.io/ducklake-r/reference/with_transaction.md)
+  and
+  [`commit_transaction()`](https://tgerke.github.io/ducklake-r/reference/commit_transaction.md)
+  confirm a commit with one line naming the snapshot it created, with
+  the author and commit message when they were given: “Committed
+  snapshot 3 (Data Engineer): Add the Motor Trend car data”. A
+  transaction that changed nothing says so, and
+  [`begin_transaction()`](https://tgerke.github.io/ducklake-r/reference/begin_transaction.md)
+  is silent. The two lines they replace (“Transaction started.”,
+  “Transaction committed.”) said nothing about the snapshot; the new one
+  gives the version number that time travel uses.
+
+- The Getting Started article
+  ([`vignette("ducklake")`](https://tgerke.github.io/ducklake-r/articles/ducklake.md))
+  is rewritten as one short session: install, attach a lake, add a
+  table, read it back, change it, see its history, and detach, with the
+  reasons to wrap changes in
+  [`with_transaction()`](https://tgerke.github.io/ducklake-r/reference/with_transaction.md)
+  explained along the way. Its recipes move to two new articles.
+  “Loading Data”
+  ([`vignette("loading-data")`](https://tgerke.github.io/ducklake-r/articles/loading-data.md))
+  collects the ways data gets into a lake, from data frames and files to
+  registering Parquet in place and migrating from DuckDB or Iceberg.
+  “Views, Comments, and Labels”
+  ([`vignette("views-comments-labels")`](https://tgerke.github.io/ducklake-r/articles/views-comments-labels.md))
+  covers the query logic and documentation that live in the catalog, and
+  its labels example uses
+  [`labelled::set_variable_labels()`](https://larmarange.github.io/labelled/reference/var_label.html),
+  so labelled is now a suggested package.
+
 ## ducklake 0.7.0
 
 - New article “Choosing a Deployment”

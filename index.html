@@ -30,7 +30,7 @@
 
     <a class="navbar-brand me-2" href="index.html">ducklake</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -51,7 +51,9 @@
     <li><a class="dropdown-item" href="articles/clinical-trial-datalake.html">Clinical Trial Data Lake</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Core Operations</h6></li>
+    <li><a class="dropdown-item" href="articles/loading-data.html">Loading Data</a></li>
     <li><a class="dropdown-item" href="articles/modifying-tables.html">Modifying Tables</a></li>
+    <li><a class="dropdown-item" href="articles/views-comments-labels.html">Views, Comments, and Labels</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Advanced Features</h6></li>
     <li><a class="dropdown-item" href="articles/data-inlining.html">Data Inlining</a></li>
@@ -295,7 +297,9 @@
 <p>Check out the <a href="https://tgerke.github.io/ducklake-r/">pkgdown site</a> for detailed vignettes:</p>
 <ul>
 <li>
-<a href="https://tgerke.github.io/ducklake-r/articles/ducklake.html">Getting Started</a> - Quick recipes for common operations</li>
+<a href="https://tgerke.github.io/ducklake-r/articles/ducklake.html">Getting Started</a> - Attach a lake, add a table, read it back, change it, and see its history</li>
+<li>
+<a href="https://tgerke.github.io/ducklake-r/articles/loading-data.html">Loading Data</a> - Files, URLs, pipelines, schemas, Parquet in place, and migrating from DuckDB or Iceberg</li>
 <li>
 <a href="https://tgerke.github.io/ducklake-r/articles/deployment.html">Choosing a Deployment</a> - Which catalog, where the data goes, who can reach it, and what to set up on day one</li>
 <li>
@@ -303,6 +307,8 @@
 <li>
 <a href="https://tgerke.github.io/ducklake-r/articles/modifying-tables.html">Modifying Tables</a> - Choosing how to change a table: joins vs. <code>rows_*</code>, upserts, <code><a href="reference/merge_into.html">merge_into()</a></code>, and <code><a href="reference/replace_table.html">replace_table()</a></code>
 </li>
+<li>
+<a href="https://tgerke.github.io/ducklake-r/articles/views-comments-labels.html">Views, Comments, and Labels</a> - Shared query logic and documentation that live in the lake</li>
 <li>
 <a href="https://tgerke.github.io/ducklake-r/articles/data-inlining.html">Data Inlining</a> - Streaming-friendly small writes</li>
 <li>

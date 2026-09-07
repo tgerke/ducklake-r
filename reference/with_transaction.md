@@ -87,18 +87,16 @@ with_transaction(
   author = "Data Team",
   commit_message = "Add cars dataset"
 )
-#> Transaction started.
-#> Transaction committed.
+#> Committed snapshot 1 (Data Team): Add cars dataset
 
 # Multiple operations in a block
 with_transaction({
   create_table(iris, "flowers")
   create_table(airquality, "air")
 }, author = "Data Team", commit_message = "Add datasets")
-#> Transaction started.
 #> Converted factor column Species to character (DuckLake does not support ENUM
 #> columns).
-#> Transaction committed.
+#> Committed snapshot 2 (Data Team): Add datasets
 
 # With dplyr pipeline
 with_transaction(
@@ -108,8 +106,7 @@ with_transaction(
   author = "Data Team",
   commit_message = "Add km/L column"
 )
-#> Transaction started.
-#> Transaction committed.
+#> Committed snapshot 3 (Data Team): Add km/L column
 
 # Automatic rollback on error
 tryCatch(
@@ -119,7 +116,6 @@ tryCatch(
   }),
   error = function(e) message("Transaction was rolled back: ", e$message)
 )
-#> Transaction started.
 #> Converted factor columns Chick and Diet to character (DuckLake does not support
 #> ENUM columns).
 #> Transaction rolled back.

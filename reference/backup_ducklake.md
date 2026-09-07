@@ -89,8 +89,7 @@ with_transaction(
   author = "User",
   commit_message = "Initial data"
 )
-#> Transaction started.
-#> Transaction committed.
+#> Committed snapshot 1 (User): Initial data
 
 # Create a backup; the lake stays attached throughout
 backup_dir <- backup_ducklake(
@@ -101,7 +100,7 @@ backup_dir <- backup_ducklake(
 #> Catalog backed up successfully.
 #> Data files backed up successfully (1 directory).
 #> Backup completed:
-#> /tmp/RtmpZB5ewx/my_lake1b126e361e2a/backups/backup_20260907_004507
+#> /tmp/Rtmpr0HcoA/my_lake1acd373eb9a5/backups/backup_20260907_050617
 
 # Restore (override_data_path needed when location differs):
 # detach_ducklake("my_lake")

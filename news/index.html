@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ducklake</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -26,7 +26,9 @@
     <li><a class="dropdown-item" href="../articles/clinical-trial-datalake.html">Clinical Trial Data Lake</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Core Operations</h6></li>
+    <li><a class="dropdown-item" href="../articles/loading-data.html">Loading Data</a></li>
     <li><a class="dropdown-item" href="../articles/modifying-tables.html">Modifying Tables</a></li>
+    <li><a class="dropdown-item" href="../articles/views-comments-labels.html">Views, Comments, and Labels</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Advanced Features</h6></li>
     <li><a class="dropdown-item" href="../articles/data-inlining.html">Data Inlining</a></li>
@@ -48,9 +50,14 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Changelog</h1>
-      <small>Source: <a href="https://github.com/tgerke/ducklake-r/blob/v0.7.0/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
+      <small>Source: <a href="https://github.com/tgerke/ducklake-r/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="development version" id="ducklake-development-version">ducklake (development version)<a class="anchor" aria-label="anchor" href="#ducklake-development-version"></a></h2>
+<ul><li><p><code><a href="../reference/with_transaction.html">with_transaction()</a></code> and <code><a href="../reference/commit_transaction.html">commit_transaction()</a></code> confirm a commit with one line naming the snapshot it created, with the author and commit message when they were given: “Committed snapshot 3 (Data Engineer): Add the Motor Trend car data”. A transaction that changed nothing says so, and <code><a href="../reference/begin_transaction.html">begin_transaction()</a></code> is silent. The two lines they replace (“Transaction started.”, “Transaction committed.”) said nothing about the snapshot; the new one gives the version number that time travel uses.</p></li>
+<li><p>The Getting Started article (<code><a href="../articles/ducklake.html">vignette("ducklake")</a></code>) is rewritten as one short session: install, attach a lake, add a table, read it back, change it, see its history, and detach, with the reasons to wrap changes in <code><a href="../reference/with_transaction.html">with_transaction()</a></code> explained along the way. Its recipes move to two new articles. “Loading Data” (<code><a href="../articles/loading-data.html">vignette("loading-data")</a></code>) collects the ways data gets into a lake, from data frames and files to registering Parquet in place and migrating from DuckDB or Iceberg. “Views, Comments, and Labels” (<code><a href="../articles/views-comments-labels.html">vignette("views-comments-labels")</a></code>) covers the query logic and documentation that live in the catalog, and its labels example uses <code><a href="https://larmarange.github.io/labelled/reference/var_label.html" class="external-link">labelled::set_variable_labels()</a></code>, so labelled is now a suggested package.</p></li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.7.0" id="ducklake-070">ducklake 0.7.0<a class="anchor" aria-label="anchor" href="#ducklake-070"></a></h2>
 <ul><li><p>New article “Choosing a Deployment” (<code><a href="../articles/deployment.html">vignette("deployment")</a></code>): what a lake looks like on disk, which catalog backend fits one person, a team on a shared drive, or many users on object storage, where data can go and the Windows limits, how reader and writer roles map onto catalog grants and storage permissions, the day-one settings (extension persistence, schemas, retention policy, commit messages), and upgrading.</p></li>

@@ -51,7 +51,6 @@ create_table(data.frame(id = 1:3, status = "pending"), "jobs")
 
 # Start a transaction
 begin_transaction()
-#> Transaction started.
 
 # Make some changes
 get_ducklake_table("jobs") |>
@@ -62,7 +61,7 @@ get_ducklake_table("jobs") |>
 
 # Commit if everything looks good
 commit_transaction()
-#> Transaction committed.
+#> Committed snapshot 2.
 
 # Or rollback if something went wrong
 # rollback_transaction()

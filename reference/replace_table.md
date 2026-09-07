@@ -139,8 +139,7 @@ with_transaction(
   author = "Data Engineer",
   commit_message = "Drop derived columns"
 )
-#> Transaction started.
-#> Transaction committed.
+#> Committed snapshot 3 (Data Engineer): Drop derived columns
 
 # Partition keys, sort order, comments, and table options survive the rewrite
 set_table_partitioning("cars", "cyl")

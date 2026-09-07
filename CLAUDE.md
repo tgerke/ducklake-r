@@ -11,7 +11,9 @@
   macros, so a wrapper would add quoting risk without removing any SQL
   from user code. Views
   ([`create_view()`](https://tgerke.github.io/ducklake-r/reference/create_view.md))
-  cover shared logic; the cookbook vignette documents the raw
+  cover shared logic;
+  [`vignette("views-comments-labels")`](https://tgerke.github.io/ducklake-r/articles/views-comments-labels.md)
+  documents the raw
   [`DBI::dbExecute()`](https://dbi.r-dbi.org/reference/dbExecute.html)
   escape hatch for macros.
 
@@ -89,6 +91,29 @@
   `DUCKDB_R_HOME`.
 - **Iceberg interop is documented, not wrapped** (2026-09-04):
   `COPY FROM DATABASE lake TO iceberg_catalog` and
-  `iceberg_to_ducklake()` live in DuckDB’s iceberg extension; the
-  cookbook shows them. This closes the “one-command Iceberg catalog
-  export” watch item above.
+  `iceberg_to_ducklake()` live in DuckDB’s iceberg extension;
+  [`vignette("loading-data")`](https://tgerke.github.io/ducklake-r/articles/loading-data.md)
+  shows them. This closes the “one-command Iceberg catalog export” watch
+  item above.
+- **A commit is confirmed with one line naming its snapshot**
+  (2026-09-06).
+  [`begin_transaction()`](https://tgerke.github.io/ducklake-r/reference/begin_transaction.md)
+  is silent and stashes the lake’s current snapshot id;
+  [`commit_transaction()`](https://tgerke.github.io/ducklake-r/reference/commit_transaction.md)
+  reads it again after `COMMIT` and prints
+  `Committed snapshot N (author): message`, or says nothing changed when
+  the id did not move. DuckLake assigns the id only at commit, and an
+  empty or read-only transaction creates no snapshot (confirmed on the
+  DuckDB and SQLite catalogs). Limitation: DuckLake has no query for
+  “the snapshot this transaction created”, so the id is whatever
+  `current_snapshot()` returns right after the commit; with concurrent
+  writers it can belong to a neighbor’s commit that landed in between.
+  Functions that commit for themselves
+  ([`restore_table_version()`](https://tgerke.github.io/ducklake-r/reference/restore_table_version.md))
+  print no second confirmation.
+- **Article layout** (2026-09-06):
+  [`vignette("ducklake")`](https://tgerke.github.io/ducklake-r/articles/ducklake.md)
+  (Getting Started) is one short linear session; recipes live in topical
+  articles (Loading Data; Views, Comments, and Labels; Modifying Tables;
+  Choosing a Deployment). New recipes go to those, not to Getting
+  Started.

@@ -8,8 +8,10 @@
   Inlining](https://tgerke.github.io/ducklake-r/articles/data-inlining.md):
 - [Choosing a
   Deployment](https://tgerke.github.io/ducklake-r/articles/deployment.md):
-- [ducklake
-  Cookbook](https://tgerke.github.io/ducklake-r/articles/ducklake.md):
+- [Getting Started with
+  ducklake](https://tgerke.github.io/ducklake-r/articles/ducklake.md):
+- [Loading
+  Data](https://tgerke.github.io/ducklake-r/articles/loading-data.md):
 - [Modifying Tables with Version
   Control](https://tgerke.github.io/ducklake-r/articles/modifying-tables.md):
 - [Quack Remote
@@ -20,5 +22,7 @@
   Queries](https://tgerke.github.io/ducklake-r/articles/time-travel.md):
 - [Working with
   Transactions](https://tgerke.github.io/ducklake-r/articles/transactions.md):
+- [Views, Comments, and
+  Labels](https://tgerke.github.io/ducklake-r/articles/views-comments-labels.md):
 - [Visualizing Your
   Lake](https://tgerke.github.io/ducklake-r/articles/visualizing-your-lake.md):

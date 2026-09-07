@@ -41,7 +41,7 @@ snapshot**. Whether you use
 [`replace_table()`](https://tgerke.github.io/ducklake-r/reference/replace_table.md),
 or raw SQL, DuckLake records what changed and you can time-travel back
 to any earlier state. (Earlier versions of this vignette said the
-`rows_*` functions skip versioning – that is not true in DuckLake v1.0.)
+`rows_*` functions skip versioning. That is not true in DuckLake v1.0.)
 The choice between the styles is about *what kind of change* you are
 making, not about whether it is audited.
 
@@ -201,8 +201,8 @@ in-place functions above exist.
 Whichever style you use, wrap *related* modifications in
 [`with_transaction()`](https://tgerke.github.io/ducklake-r/reference/with_transaction.md).
 All changes inside the transaction become **one** snapshot, and you can
-attach an author and commit message for the audit trail – valuable in
-any setting and essential for GxP/21 CFR Part 11 work:
+attach an author and commit message for the audit trail, valuable in any
+setting and essential for GxP/21 CFR Part 11 work:
 
 ``` r
 
@@ -235,12 +235,11 @@ with_transaction(
   author = "Fleet Manager",
   commit_message = "Initial fleet inventory"
 )
-#> Transaction started.
-#> Transaction committed.
+#> Committed snapshot 2 (Fleet Manager): Initial fleet inventory
 ```
 
 **Insert** new records by key. The new rows are appended in a single SQL
-statement – the existing rows are never read into R:
+statement, and the existing rows are never read into R:
 
 ``` r
 
@@ -297,7 +296,7 @@ get_ducklake_table("fleet") |> collect()
 ```
 
 Each call above created its own snapshot. To record an author and commit
-message – or to make several row operations land as **one** snapshot –
+message, or to make several row operations land as **one** snapshot,
 wrap them in
 [`with_transaction()`](https://tgerke.github.io/ducklake-r/reference/with_transaction.md):
 
@@ -313,17 +312,16 @@ with_transaction({
   author = "Fleet Manager",
   commit_message = "April intake; remove recalled Leaf"
 )
-#> Transaction started.
-#> Transaction committed.
+#> Committed snapshot 6 (Fleet Manager): April intake; remove recalled Leaf
 
 # The full history: every change is versioned, wrapped or not
 list_table_snapshots("fleet")
 #>   snapshot_id       snapshot_time schema_version
-#> 1           2 2026-09-07 00:46:20              2
-#> 2           3 2026-09-07 00:46:21              2
-#> 3           4 2026-09-07 00:46:21              2
-#> 4           5 2026-09-07 00:46:21              2
-#> 5           6 2026-09-07 00:46:21              2
+#> 1           2 2026-09-07 05:07:32              2
+#> 2           3 2026-09-07 05:07:32              2
+#> 3           4 2026-09-07 05:07:32              2
+#> 4           5 2026-09-07 05:07:33              2
+#> 5           6 2026-09-07 05:07:33              2
 #>                                         changes        author
 #> 1 tables_created, inlined_insert, main.fleet, 2 Fleet Manager
 #> 2                             inlined_insert, 2          <NA>
@@ -381,8 +379,7 @@ with_transaction(
   author = "Fleet Manager",
   commit_message = "Quarterly registry sync"
 )
-#> Transaction started.
-#> Transaction committed.
+#> Committed snapshot 8 (Fleet Manager): Quarterly registry sync
 
 get_ducklake_table("fleet") |> arrange(car_id) |> collect()
 #> # A tibble: 3 × 3
@@ -429,14 +426,13 @@ with_transaction(
   author = "Data Engineer",
   commit_message = "Update MPG for 4-cylinder vehicles"
 )
-#> Transaction started.
-#> Transaction committed.
+#> Committed snapshot 9 (Data Engineer): Update MPG for 4-cylinder vehicles
 
 # Check version history - should show the new snapshot
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-09-07 00:46:20              1
-#> 2           9 2026-09-07 00:46:22              3
+#> 1           1 2026-09-07 05:07:32              1
+#> 2           9 2026-09-07 05:07:34              3
 #>                                                                 changes
 #> 1                    tables_created, tables_inserted_into, main.cars, 1
 #> 2 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 3
@@ -455,7 +451,7 @@ Declare the column with
 [`mutate()`](https://dplyr.tidyverse.org/reference/mutate.html) pipeline
 through
 [`ducklake_exec()`](https://tgerke.github.io/ducklake-r/reference/ducklake_exec.md),
-which runs as an in-database UPDATE – nothing is collected into R:
+which runs as an in-database UPDATE. Nothing is collected into R:
 
 ``` r
 
@@ -473,19 +469,18 @@ with_transaction({
   author = "Data Engineer",
   commit_message = "Add HP per cylinder and performance flag"
 )
-#> Transaction started.
 #> Added column "hp_per_cyl" (DOUBLE) to "cars".
 #> ℹ Metadata-only change; no data files were rewritten.
 #> Added column "high_performance" (VARCHAR) to "cars".
 #> ℹ Metadata-only change; no data files were rewritten.
-#> Transaction committed.
+#> Committed snapshot 10 (Data Engineer): Add HP per cylinder and performance flag
 
 # Verify new columns exist
 get_ducklake_table("cars") |>
   filter(hp > 200) |>
   select(hp, cyl, hp_per_cyl, high_performance)
 #> # A query:  ?? x 4
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmp7BTDEn/ducklake/ducklake2cae2e56da1e.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmp0wxuc4/ducklake/ducklake2ce533ac211d.duckdb]
 #>      hp   cyl hp_per_cyl high_performance
 #>   <dbl> <dbl>      <dbl> <chr>           
 #> 1   245     8       30.6 Y               
@@ -497,10 +492,25 @@ get_ducklake_table("cars") |>
 #> 7   335     8       41.9 Y
 ```
 
+To see the statement a pipeline would run before committing to it, end
+the pipeline with
+[`show_ducklake_query()`](https://tgerke.github.io/ducklake-r/reference/show_ducklake_query.md)
+instead of
+[`ducklake_exec()`](https://tgerke.github.io/ducklake-r/reference/ducklake_exec.md):
+
+``` r
+
+get_ducklake_table("cars") |>
+  mutate(hp_per_cyl = round(hp_per_cyl, 1)) |>
+  show_ducklake_query()
+#> -- DuckLake SQL preview
+#> UPDATE cars SET hp_per_cyl = ROUND_EVEN(hp_per_cyl, CAST(ROUND(1.0, 0) AS INTEGER));
+```
+
 ### Reshaping the schema in place
 
 The rest of the schema evolution family works the same way. Widen a
-type, rename a column, drop one – each change is instant, and earlier
+type, rename a column, or drop one. Each change is instant, and earlier
 snapshots keep the earlier shape:
 
 ``` r
@@ -544,13 +554,12 @@ with_transaction(
   author = "Data Engineer",
   commit_message = "Filter to V8 engines only"
 )
-#> Transaction started.
-#> Transaction committed.
+#> Committed snapshot 14 (Data Engineer): Filter to V8 engines only
 
 # Show the filtered table
 get_ducklake_table("cars")
 #> # A query:  ?? x 12
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmp7BTDEn/ducklake/ducklake2cae2e56da1e.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmp0wxuc4/ducklake/ducklake2ce533ac211d.duckdb]
 #>      mpg   cyl  disp    hp  drat    wt  qsec    vs    am  gear  carb
 #>    <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>
 #>  1  18.7     8  360    175  3.15  3.44  17.0     0     0     3     2
@@ -572,12 +581,12 @@ get_ducklake_table("cars")
 # View version history - old versions still accessible via time travel
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-09-07 00:46:20              1
-#> 2           9 2026-09-07 00:46:22              3
-#> 3          10 2026-09-07 00:46:22              4
-#> 4          11 2026-09-07 00:46:22              5
-#> 5          12 2026-09-07 00:46:22              6
-#> 6          14 2026-09-07 00:46:23              8
+#> 1           1 2026-09-07 05:07:32              1
+#> 2           9 2026-09-07 05:07:34              3
+#> 3          10 2026-09-07 05:07:34              4
+#> 4          11 2026-09-07 05:07:34              5
+#> 5          12 2026-09-07 05:07:34              6
+#> 6          14 2026-09-07 05:07:34              8
 #>                                                                 changes
 #> 1                    tables_created, tables_inserted_into, main.cars, 1
 #> 2 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 3
@@ -605,12 +614,12 @@ current <- get_ducklake_table("cars") |> collect()
 snapshots <- list_table_snapshots("cars")
 snapshots
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-09-07 00:46:20              1
-#> 2           9 2026-09-07 00:46:22              3
-#> 3          10 2026-09-07 00:46:22              4
-#> 4          11 2026-09-07 00:46:22              5
-#> 5          12 2026-09-07 00:46:22              6
-#> 6          14 2026-09-07 00:46:23              8
+#> 1           1 2026-09-07 05:07:32              1
+#> 2           9 2026-09-07 05:07:34              3
+#> 3          10 2026-09-07 05:07:34              4
+#> 4          11 2026-09-07 05:07:34              5
+#> 5          12 2026-09-07 05:07:34              6
+#> 6          14 2026-09-07 05:07:34              8
 #>                                                                 changes
 #> 1                    tables_created, tables_inserted_into, main.cars, 1
 #> 2 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 3

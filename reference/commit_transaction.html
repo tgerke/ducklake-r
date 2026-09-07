@@ -9,7 +9,7 @@ metadata (author, commit message, and extra info) to the snapshot."><meta proper
 
     <a class="navbar-brand me-2" href="../index.html">ducklake</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -28,7 +28,9 @@ metadata (author, commit message, and extra info) to the snapshot."><meta proper
     <li><a class="dropdown-item" href="../articles/clinical-trial-datalake.html">Clinical Trial Data Lake</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Core Operations</h6></li>
+    <li><a class="dropdown-item" href="../articles/loading-data.html">Loading Data</a></li>
     <li><a class="dropdown-item" href="../articles/modifying-tables.html">Modifying Tables</a></li>
+    <li><a class="dropdown-item" href="../articles/views-comments-labels.html">Views, Comments, and Labels</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Advanced Features</h6></li>
     <li><a class="dropdown-item" href="../articles/data-inlining.html">Data Inlining</a></li>
@@ -50,7 +52,7 @@ metadata (author, commit message, and extra info) to the snapshot."><meta proper
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Commit a transaction</h1>
-      <small class="dont-index">Source: <a href="https://github.com/tgerke/ducklake-r/blob/v0.7.0/R/transactions.R" class="external-link"><code>R/transactions.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/tgerke/ducklake-r/blob/main/R/transactions.R" class="external-link"><code>R/transactions.R</code></a></small>
       <div class="d-none name"><code>commit_transaction.Rd</code></div>
     </div>
 
@@ -101,6 +103,13 @@ making them permanent in the database.</p>
 they will be set using <code>CALL ducklake.set_commit_message()</code> within the
 transaction before the <code>COMMIT</code> statement, as required by the DuckLake
 v1.0 specification.</p>
+<p>The commit is confirmed with one message naming the snapshot it created,
+with the author and commit message when they were given. The id is the
+newest snapshot in the lake right after the commit, so when several
+sessions write to the same lake it can belong to a commit that landed
+just after this one. A transaction that changed nothing creates no
+snapshot, and the message says so. <code>options(ducklake.verbose = FALSE)</code>
+silences these confirmations.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
@@ -120,22 +129,20 @@ v1.0 specification.</p>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Basic commit</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="begin_transaction.html">begin_transaction</a></span><span class="op">(</span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Transaction started.</span>
 <span class="r-in"><span><span class="fu"><a href="create_table.html">create_table</a></span><span class="op">(</span><span class="va">iris</span>, <span class="st">"flowers"</span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Converted factor column <span style="color: #00BB00;">Species</span> to character (DuckLake does not support ENUM</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> columns).</span>
 <span class="r-in"><span><span class="fu">commit_transaction</span><span class="op">(</span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Transaction committed.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Committed snapshot 1.</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Commit with metadata</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="begin_transaction.html">begin_transaction</a></span><span class="op">(</span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Transaction started.</span>
 <span class="r-in"><span><span class="fu"><a href="create_table.html">create_table</a></span><span class="op">(</span><span class="va">mtcars</span>, <span class="st">"cars"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">commit_transaction</span><span class="op">(</span></span></span>
 <span class="r-in"><span>  author <span class="op">=</span> <span class="st">"John Doe"</span>,</span></span>
 <span class="r-in"><span>  commit_message <span class="op">=</span> <span class="st">"Add cars dataset"</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Transaction committed.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Committed snapshot 2 (John Doe): Add cars dataset</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="fu"><a href="detach_ducklake.html">detach_ducklake</a></span><span class="op">(</span><span class="st">"commit_lake"</span>, shutdown <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/unlink.html" class="external-link">unlink</a></span><span class="op">(</span><span class="va">lake_dir</span>, recursive <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>

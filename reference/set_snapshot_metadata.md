@@ -85,10 +85,9 @@ dir.create(lake_dir)
 attach_ducklake("meta_lake", lake_path = lake_dir)
 
 begin_transaction()
-#> Transaction started.
 create_table(mtcars, "cars")
 commit_transaction()
-#> Transaction committed.
+#> Committed snapshot 1.
 
 # The snapshot has no author or message yet: fill them in
 set_snapshot_metadata(

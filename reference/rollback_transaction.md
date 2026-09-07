@@ -45,7 +45,6 @@ attach_ducklake("rollback_lake", lake_path = lake_dir)
 create_table(mtcars, "cars")
 
 begin_transaction()
-#> Transaction started.
 rows_delete(
   get_ducklake_table("cars"),
   data.frame(gear = 3),

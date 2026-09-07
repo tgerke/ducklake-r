@@ -13,7 +13,7 @@ and commit_transaction()."><meta property="og:image" content="https://tgerke.git
 
     <a class="navbar-brand me-2" href="../index.html">ducklake</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -32,7 +32,9 @@ and commit_transaction()."><meta property="og:image" content="https://tgerke.git
     <li><a class="dropdown-item" href="../articles/clinical-trial-datalake.html">Clinical Trial Data Lake</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Core Operations</h6></li>
+    <li><a class="dropdown-item" href="../articles/loading-data.html">Loading Data</a></li>
     <li><a class="dropdown-item" href="../articles/modifying-tables.html">Modifying Tables</a></li>
+    <li><a class="dropdown-item" href="../articles/views-comments-labels.html">Views, Comments, and Labels</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Advanced Features</h6></li>
     <li><a class="dropdown-item" href="../articles/data-inlining.html">Data Inlining</a></li>
@@ -54,7 +56,7 @@ and commit_transaction()."><meta property="og:image" content="https://tgerke.git
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Execute code within a transaction</h1>
-      <small class="dont-index">Source: <a href="https://github.com/tgerke/ducklake-r/blob/v0.7.0/R/transactions.R" class="external-link"><code>R/transactions.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/tgerke/ducklake-r/blob/main/R/transactions.R" class="external-link"><code>R/transactions.R</code></a></small>
       <div class="d-none name"><code>with_transaction.Rd</code></div>
     </div>
 
@@ -136,18 +138,16 @@ better safety guarantees than manually managing transactions.</p>
 <span class="r-in"><span>  author <span class="op">=</span> <span class="st">"Data Team"</span>,</span></span>
 <span class="r-in"><span>  commit_message <span class="op">=</span> <span class="st">"Add cars dataset"</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Transaction started.</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Transaction committed.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Committed snapshot 1 (Data Team): Add cars dataset</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Multiple operations in a block</span></span></span>
 <span class="r-in"><span><span class="fu">with_transaction</span><span class="op">(</span><span class="op">{</span></span></span>
 <span class="r-in"><span>  <span class="fu"><a href="create_table.html">create_table</a></span><span class="op">(</span><span class="va">iris</span>, <span class="st">"flowers"</span><span class="op">)</span></span></span>
 <span class="r-in"><span>  <span class="fu"><a href="create_table.html">create_table</a></span><span class="op">(</span><span class="va">airquality</span>, <span class="st">"air"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span>, author <span class="op">=</span> <span class="st">"Data Team"</span>, commit_message <span class="op">=</span> <span class="st">"Add datasets"</span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Transaction started.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Converted factor column <span style="color: #00BB00;">Species</span> to character (DuckLake does not support ENUM</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> columns).</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Transaction committed.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Committed snapshot 2 (Data Team): Add datasets</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># With dplyr pipeline</span></span></span>
 <span class="r-in"><span><span class="fu">with_transaction</span><span class="op">(</span></span></span>
@@ -157,8 +157,7 @@ better safety guarantees than manually managing transactions.</p>
 <span class="r-in"><span>  author <span class="op">=</span> <span class="st">"Data Team"</span>,</span></span>
 <span class="r-in"><span>  commit_message <span class="op">=</span> <span class="st">"Add km/L column"</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Transaction started.</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Transaction committed.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Committed snapshot 3 (Data Team): Add km/L column</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Automatic rollback on error</span></span></span>
 <span class="r-in"><span><span class="kw"><a href="https://rdrr.io/r/base/conditions.html" class="external-link">tryCatch</a></span><span class="op">(</span></span></span>
@@ -168,7 +167,6 @@ better safety guarantees than manually managing transactions.</p>
 <span class="r-in"><span>  <span class="op">}</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>  error <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">e</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/message.html" class="external-link">message</a></span><span class="op">(</span><span class="st">"Transaction was rolled back: "</span>, <span class="va">e</span><span class="op">$</span><span class="va">message</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Transaction started.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Converted factor columns <span style="color: #00BB00;">Chick</span> and <span style="color: #00BB00;">Diet</span> to character (DuckLake does not support</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> ENUM columns).</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Transaction rolled back.</span>

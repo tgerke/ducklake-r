@@ -130,6 +130,15 @@ latency per file. Sorting and partitioning large tables
 matter most on object storage, where every file skipped is a request
 avoided.
 
+``` r
+
+# Sorting suits high-cardinality columns like timestamps or ids
+set_table_sorting("events", "event_time")
+
+# Partitioning suits low-cardinality columns like year or region
+set_table_partitioning("sales", c("year(order_date)", "region"))
+```
+
 ## Who can reach it
 
 DuckLake has no user accounts of its own. Access control lives in the
@@ -227,7 +236,10 @@ attach_ducklake("trial", lake_path = "~/lakes/trial", automatic_migration = TRUE
 ## Where to next
 
 - [`vignette("ducklake")`](https://tgerke.github.io/ducklake-r/articles/ducklake.md)
-  for recipes covering the everyday operations
+  to attach a lake, add a table, and follow its history
+- [`vignette("loading-data")`](https://tgerke.github.io/ducklake-r/articles/loading-data.md)
+  for files, URLs, Parquet in place, and migrating from DuckDB or
+  Iceberg
 - [`vignette("storage-and-backups")`](https://tgerke.github.io/ducklake-r/articles/storage-and-backups.md)
   for the file layout, backups, and maintenance
 - [`vignette("transactions")`](https://tgerke.github.io/ducklake-r/articles/transactions.md)

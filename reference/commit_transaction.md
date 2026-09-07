@@ -49,6 +49,14 @@ will be set using `CALL ducklake.set_commit_message()` within the
 transaction before the `COMMIT` statement, as required by the DuckLake
 v1.0 specification.
 
+The commit is confirmed with one message naming the snapshot it created,
+with the author and commit message when they were given. The id is the
+newest snapshot in the lake right after the commit, so when several
+sessions write to the same lake it can belong to a commit that landed
+just after this one. A transaction that changed nothing creates no
+snapshot, and the message says so. `options(ducklake.verbose = FALSE)`
+silences these confirmations.
+
 ## See also
 
 Other transactions:
@@ -67,22 +75,20 @@ attach_ducklake("commit_lake", lake_path = lake_dir)
 
 # Basic commit
 begin_transaction()
-#> Transaction started.
 create_table(iris, "flowers")
 #> Converted factor column Species to character (DuckLake does not support ENUM
 #> columns).
 commit_transaction()
-#> Transaction committed.
+#> Committed snapshot 1.
 
 # Commit with metadata
 begin_transaction()
-#> Transaction started.
 create_table(mtcars, "cars")
 commit_transaction(
   author = "John Doe",
   commit_message = "Add cars dataset"
 )
-#> Transaction committed.
+#> Committed snapshot 2 (John Doe): Add cars dataset
 
 detach_ducklake("commit_lake", shutdown = TRUE)
 unlink(lake_dir, recursive = TRUE)

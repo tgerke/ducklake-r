@@ -58,8 +58,7 @@ with_transaction(
   author = "Sensor Team",
   commit_message = "Initial sensor readings"
 )
-#> Transaction started.
-#> Transaction committed.
+#> Committed snapshot 1 (Sensor Team): Initial sensor readings
 ```
 
 No Parquet files were created — all data is inlined in the catalog:
@@ -106,10 +105,9 @@ with_transaction({
   author = "Sensor Team",
   commit_message = "Add calibrated temperature"
 )
-#> Transaction started.
 #> Added column "temp_calibrated" (DOUBLE) to "readings".
 #> ℹ Metadata-only change; no data files were rewritten.
-#> Transaction committed.
+#> Committed snapshot 2 (Sensor Team): Add calibrated temperature
 
 get_ducklake_table("readings") |> collect()
 #> # A tibble: 3 × 4
@@ -137,8 +135,7 @@ with_transaction(
   author = "Sensor Team",
   commit_message = "Remove faulty sensor 2 reading"
 )
-#> Transaction started.
-#> Transaction committed.
+#> Committed snapshot 3 (Sensor Team): Remove faulty sensor 2 reading
 
 get_ducklake_table("readings") |> collect()
 #> # A tibble: 2 × 4
@@ -168,8 +165,7 @@ with_transaction(
   author = "Sensor Team",
   commit_message = "Bulk sensor upload"
 )
-#> Transaction started.
-#> Transaction committed.
+#> Committed snapshot 4 (Sensor Team): Bulk sensor upload
 
 # This table has a Parquet file
 DBI::dbGetQuery(
@@ -297,11 +293,11 @@ inlined insert or delete creates a snapshot, just like a regular write:
 snapshots <- list_table_snapshots("readings")
 snapshots
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-09-07 00:46:06              1
-#> 2           2 2026-09-07 00:46:06              2
-#> 3           3 2026-09-07 00:46:07              2
-#> 4           5 2026-09-07 00:46:07              3
-#> 5           6 2026-09-07 00:46:08              3
+#> 1           1 2026-09-07 05:07:17              1
+#> 2           2 2026-09-07 05:07:17              2
+#> 3           3 2026-09-07 05:07:18              2
+#> 4           5 2026-09-07 05:07:19              3
+#> 5           6 2026-09-07 05:07:19              3
 #>                                                   changes      author
 #> 1        tables_created, inlined_insert, main.readings, 1 Sensor Team
 #> 2 tables_altered, inlined_insert, inlined_delete, 1, 1, 1 Sensor Team
