@@ -258,9 +258,9 @@ a custom `commit_message` if the default ("Restored cars to snapshot 2")
 isn't descriptive enough for your audit trail.
 
 Nothing is lost in a restore: the rollback happens *forward*, as a new
-snapshot with its own author and commit message, so the full
-history — including the states after the restore point — remains available
-for time travel. That also means a restore is itself reversible with another
+snapshot with its own author and commit message, so the full history,
+including the states after the restore point, remains available for time
+travel. That also means a restore is itself reversible with another
 `restore_table_version()` call:
 
 ```{r after-restore}
@@ -269,8 +269,8 @@ list_table_snapshots("cars")
 
 ## Pinning a Whole Session to a Snapshot
 
-The queries above travel one table at a time. To freeze *everything* — say,
-to re-run a report exactly as it stood at a submission milestone — attach
+The queries above travel one table at a time. To freeze *everything*, say
+to re-run a report exactly as it stood at a submission milestone, attach
 the lake pinned to a snapshot:
 
 ```{r pinned-attach, eval=FALSE}

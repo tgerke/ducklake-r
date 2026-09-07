@@ -59,7 +59,7 @@ versioning. That is not true in DuckLake v1.0.) The choice between the
 styles is about *what kind of change* you are making, not about whether it is
 audited.
 
-One distinction matters before anything else: dplyr joins **read** --
+One distinction matters before anything else: dplyr joins **read**.
 `left_join()` and friends combine tables into a new result and never touch
 the stored data. Everything else in this table **writes**.
 

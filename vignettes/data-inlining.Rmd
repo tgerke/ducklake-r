@@ -58,8 +58,8 @@ attach_ducklake("sensor_lake", lake_path = vignette_temp_dir)
 
 ## Small writes are automatically inlined
 
-Let's create a small sensor-readings table. Because the data has only 3 rows —
-well below the default inlining threshold of 10 — DuckLake stores it directly
+Start with a small sensor-readings table. The data has only 3 rows, well
+below the default inlining threshold of 10, so DuckLake stores it directly
 in the catalog instead of writing a Parquet file.
 
 ```{r create-table}
@@ -79,7 +79,7 @@ with_transaction(
 )
 ```
 
-No Parquet files were created — all data is inlined in the catalog:
+No Parquet files were created. All of the data is inlined in the catalog:
 
 ```{r verify-no-parquet}
 conn <- get_ducklake_connection()
@@ -137,11 +137,11 @@ get_ducklake_table("readings") |> collect()
 
 ## Large writes bypass inlining automatically
 
-When a write exceeds the threshold, DuckLake writes directly to Parquet — no
-configuration needed:
+When a write exceeds the threshold, DuckLake writes directly to Parquet, with
+no configuration needed:
 
 ```{r large-insert}
-# 50 rows — well above the default threshold of 10
+# 50 rows, well above the default threshold of 10
 large_batch <- data.frame(
   sensor_id = 101:150,
   temperature = rnorm(50, mean = 22, sd = 1),
@@ -269,7 +269,7 @@ if (nrow(snapshots) > 0) {
 
 | Workload | Recommendation |
 |---|---|
-| Streaming / IoT sensors | Increase threshold (e.g., 50–100) |
+| Streaming / IoT sensors | Increase threshold (e.g., 50 to 100) |
 | Periodic large batch loads | Default (10) is fine |
 | Single-row corrections | Default handles it automatically |
 | Append-only bulk ETL | Consider disabling (`limit = 0`) |

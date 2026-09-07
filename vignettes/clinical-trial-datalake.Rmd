@@ -185,7 +185,7 @@ get_ducklake_table("dm") |>
 Notice the message when the bronze table was created: SDTM datasets carry
 CDISC variable labels as `label` attributes, and `create_table()` stored
 them in the lake as column comments. The labels are now part of the
-catalog itself -- queryable from R, Python, or SQL, and available as
+catalog itself, queryable from R, Python, or SQL, and available as
 context for AI tools reading the lake:
 
 ```{r dm-labels}
@@ -193,8 +193,8 @@ get_table_comments("dm_raw") |> head()
 ```
 
 They also come back on the way out. `collect()` reattaches stored
-comments as `label` attributes, so label-aware tools downstream --
-gtsummary and gt table headers, labelled-based workflows -- behave as if
+comments as `label` attributes, so label-aware tools downstream, such as
+gtsummary and gt table headers and labelled-based workflows, behave as if
 the data had never left R:
 
 ```{r dm-labels-collect}
@@ -501,7 +501,7 @@ with_transaction(
 )
 
 # Variables carried over from DM kept their SDTM labels automatically.
-# Derived variables are new, so label them now -- the ADaM way, but stored
+# Derived variables are new, so label them now: the ADaM way, but stored
 # in the catalog rather than a spec sidecar
 set_column_comments(
   "adsl",
@@ -1009,7 +1009,7 @@ with_transaction(
 
 Both operations create snapshots you can time-travel back to and include in
 your regulatory audit trail, with the author and commit message recorded by
-`with_transaction()` -- the pattern to keep for GxP/21 CFR Part 11 work.
+`with_transaction()`. That is the pattern to keep for GxP/21 CFR Part 11 work.
 
 #### Iterative Development with Full Audit Trail
 
@@ -1235,7 +1235,7 @@ audit_export
 DuckLake v1.0 enables **data inlining** by default: small modifications
 (inserts, deletes, updates affecting fewer than 10 rows) are stored directly in
 the catalog database rather than writing individual Parquet files. This is a
-pure storage optimisation — it does not affect ACID compliance, versioning, time
+pure storage optimization. It does not affect ACID compliance, versioning, time
 travel, or the audit trail. Clinical trial batch loads (full SDTM/ADaM domains)
 exceed the threshold and go directly to Parquet as usual.
 
