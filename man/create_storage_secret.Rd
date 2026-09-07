@@ -38,13 +38,13 @@ and dropped individually; unnamed ones act as the default for their
 type.}
 
 \item{persistent}{If \code{TRUE}, the secret is written (unencrypted) to
-DuckDB's secret directory and survives the session. Where that is
-depends on the duckdb R package: from 1.5.2 on it sits under the same
-"home" directory as extensions (\code{DUCKDB_R_HOME}, the \code{duckdb.home}
-option, or \verb{~/.duckdb}; see \code{\link[=install_ducklake]{install_ducklake()}}), and with the
-temporary default the secret is lost with the session anyway. The
-default \code{FALSE} keeps it in memory only, which is the right choice for
-credentials supplied from a vault or environment variable.}
+DuckDB's secret directory and survives the session. That directory sits
+under the same "home" directory as extensions (\verb{~/.duckdb} when it
+exists, or \code{DUCKDB_R_HOME} / the \code{duckdb.home} option; see
+\code{?duckdb::duckdb_storage}), and with the temporary default the secret
+is lost with the session anyway. The default \code{FALSE} keeps it in memory
+only, which is the right choice for credentials supplied from a vault
+or environment variable.}
 }
 \value{
 Invisibly returns the secret's name (or \code{NA_character_} for an

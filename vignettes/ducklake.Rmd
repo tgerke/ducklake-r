@@ -46,16 +46,14 @@ on disk and where the catalog and the data files can live.
 
 ```{r install, eval = FALSE}
 install.packages("ducklake")
-
-# The DuckLake extension for DuckDB is downloaded once per machine
-install_ducklake()
 ```
 
-ducklake needs the duckdb package at version 1.5.2 or newer. From that
-version on, DuckDB keeps downloaded extensions in a temporary directory
-that disappears with the session, unless `DUCKDB_R_HOME` points somewhere
-permanent. Setting it in `~/.Renviron` (for example
-`DUCKDB_R_HOME=~/.duckdb`) makes the download a one-time event.
+ducklake needs the duckdb package at version 1.5.5 or newer. DuckLake
+itself is a DuckDB extension, and the first `attach_ducklake()` downloads
+it and says where it went. The first time duckdb connects in an interactive
+session it offers to create `~/.duckdb`; say yes, and the download happens
+once instead of once per session. For scripts and CI, set `DUCKDB_R_HOME`
+in `~/.Renviron` or the job's environment.
 
 ## Attach a lake
 

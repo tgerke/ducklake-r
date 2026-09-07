@@ -51,8 +51,6 @@ files with a single call.
 ## Setup
 
 ```{r create-lake, message = FALSE}
-# The ducklake extension only needs installing once per machine:
-# install_ducklake()
 attach_ducklake("sensor_lake", lake_path = vignette_temp_dir)
 ```
 

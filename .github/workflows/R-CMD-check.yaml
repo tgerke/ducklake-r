@@ -29,9 +29,10 @@ jobs:
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
       R_KEEP_PKG_SOURCE: yes
-      # duckdb >= 1.5.2 keeps extensions in a per-process tempdir unless given
-      # a persistent home; without this, the pre-installed extension is invisible
-      # to the check's subprocesses and examples/vignettes silently skip.
+      # A non-interactive duckdb session keeps extensions in a per-process
+      # tempdir unless given a home; without this, the pre-installed extension
+      # is invisible to the check's subprocesses and examples/vignettes
+      # silently skip.
       DUCKDB_R_HOME: ~/.duckdb-ci
 
     steps:

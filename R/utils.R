@@ -14,9 +14,12 @@ db_execute <- function(sql, conn = get_ducklake_connection()) {
 
 #' Load a DuckDB extension, installing it first if needed
 #'
-#' Says so before installing: a download into DuckDB's extension directory
-#' should never be a silent side effect of calling an unrelated function.
-#' The message names the directory and warns when it is a temporary one.
+#' This is the package's one install path: the duckdb R client turns
+#' DuckDB's automatic extension install off, so a failed `LOAD` never
+#' downloads by itself. Says so before installing: a download into DuckDB's
+#' extension directory should never be a silent side effect of calling an
+#' unrelated function. The message names the directory and warns when it is
+#' a temporary one.
 #'
 #' @param ext Extension name.
 #' @param conn A DBI connection; defaults to the shared ducklake connection.
@@ -33,6 +36,9 @@ load_or_install_extension <- function(ext, conn = get_ducklake_connection()) {
       ))
       db_execute(sprintf("INSTALL %s;", ext), conn = conn)
       db_execute(sprintf("LOAD %s;", ext), conn = conn)
+      if (identical(ext, "ducklake")) {
+        reset_extension_available_cache()
+      }
     }
   )
   invisible(NULL)
@@ -320,11 +326,13 @@ extension_directory <- function(conn = get_ducklake_connection()) {
 
 #' cli bullets explaining how to keep extensions between sessions
 #'
-#' duckdb 1.5.2 and later resolve a "home" directory for extensions that
-#' defaults to a per-session temporary directory unless `DUCKDB_R_HOME`
-#' (or `options(duckdb.home = )`, or an existing `~/.duckdb`) points at
-#' somewhere durable. An install into a temporary directory is repeated on
-#' every session, so say so.
+#' duckdb resolves a "home" directory for extensions (`duckdb.home` option,
+#' `DUCKDB_R_HOME`, an existing `~/.duckdb`, else a per-session temporary
+#' directory; see `?duckdb::duckdb_storage`). An install into the temporary
+#' directory is repeated on every session, so say so. The check looks at the
+#' directory the connection in use reports rather than at
+#' `duckdb_storage_status()`, because a user-supplied connection may have
+#' been created with its own `home`.
 #'
 #' @param dir The extension directory, as reported by DuckDB.
 #' @returns A named character vector of bullets, empty when the directory
@@ -334,16 +342,20 @@ extension_persistence_hint <- function(dir) {
   if (length(dir) != 1 || is.na(dir) || !nzchar(dir)) {
     return(character())
   }
-  is_temp <- startsWith(
-    normalizePath(dir, mustWork = FALSE),
-    normalizePath(tempdir(), mustWork = FALSE)
-  )
+  # normalizePath() leaves a path that does not exist yet untouched (DuckDB
+  # creates the directory on INSTALL), and on macOS tempdir() is a symlinked
+  # path with a doubled slash, so compare raw and resolved forms of both
+  clean <- function(p) {
+    p <- c(p, normalizePath(p, winslash = "/", mustWork = FALSE))
+    gsub("/{2,}", "/", gsub("\\\\", "/", p))
+  }
+  is_temp <- any(outer(clean(dir), clean(tempdir()), startsWith))
   if (!is_temp) {
     return(character())
   }
   c(
     "!" = "This directory is temporary: the extension is gone when the R session ends.",
-    "i" = "To keep extensions between sessions, set {.envvar DUCKDB_R_HOME} to a durable directory (for example in {.file ~/.Renviron}) before duckdb is loaded."
+    "i" = "To keep extensions between sessions, create {.path ~/.duckdb} once (duckdb offers to create it the first time it connects in an interactive session), or set {.envvar DUCKDB_R_HOME} in {.file ~/.Renviron} for scripts and CI. See {.topic duckdb::duckdb_storage}."
   )
 }
 

@@ -2,7 +2,7 @@
 % Please edit documentation in R/install_ducklake.R
 \name{install_ducklake}
 \alias{install_ducklake}
-\title{Install the ducklake extension to duckdb}
+\title{Download the ducklake extension ahead of time}
 \usage{
 install_ducklake(backend = NULL)
 }
@@ -16,21 +16,24 @@ Invisibly, \code{NULL}. Called for its side effect of installing the
 DuckDB extensions into the local extension cache.
 }
 \description{
-Installs the ducklake DuckDB extension and optionally the extensions for
-alternative catalog backends (postgres, sqlite, mysql). Needs to run once
-per DuckDB version, provided DuckDB's extension directory survives the
-session (see Details).
+\code{\link[=attach_ducklake]{attach_ducklake()}} installs the ducklake DuckDB extension the first time
+it is needed, so most sessions never call this function. It downloads the
+extension now, and optionally the extensions for the other catalog
+backends (postgres, sqlite, mysql), for the cases where the download has
+to happen before a lake is attached: baking a container image, a CI setup
+step, or a machine that is offline at attach time.
 }
 \details{
-Where the extension lands depends on the duckdb R package. From duckdb
-1.5.2 on, extensions live under a "home" directory that defaults to a
-per-session temporary directory unless something durable is configured:
-the \code{DUCKDB_R_HOME} environment variable (set it in \verb{~/.Renviron} so every
-session sees it), the \code{duckdb.home} option, or an existing \verb{~/.duckdb}
-directory. With the temporary default, the extension is gone when R
-exits and the next session downloads it again. \code{install_ducklake()}
-reports the directory it installed into and says so when that directory
-is temporary.
+Where the extension lands is decided by the duckdb R package (see
+\code{?duckdb::duckdb_storage}). Extensions live under a "home" directory: the
+\code{duckdb.home} option or \code{DUCKDB_R_HOME} when set, otherwise \verb{~/.duckdb}
+when it exists (in an interactive session duckdb offers to create it the
+first time it connects), otherwise a per-session temporary directory.
+With the temporary directory the extension is gone when R exits and the
+next session downloads it again. \code{install_ducklake()} reports the
+directory it installed into and says so when that directory is temporary.
+For scripts and CI, set \code{DUCKDB_R_HOME} in \verb{~/.Renviron} or the job's
+environment to a directory that survives the session.
 }
 \note{
 On Windows the \code{postgres} and \code{mysql} extensions are not available

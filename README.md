@@ -62,19 +62,22 @@ pak::pak("tgerke/ducklake-r")
 ```
 
 ducklake requires the [duckdb](https://r.duckdb.org) R package version
-1.5.2 or newer: DuckDB 1.5.2 is the release that ships the stable
+1.5.5 or newer. DuckDB 1.5.2 is the release that ships the stable
 [DuckLake 1.0
-specification](https://ducklake.select/docs/stable/specification/introduction).
-The Quack remote-access features need DuckDB 1.5.3 or newer, which means
-duckdb 1.5.3 or newer from CRAN.
+specification](https://ducklake.select/docs/stable/specification/introduction),
+and duckdb 1.5.5 is where the R package settled how it stores downloaded
+extensions, which ducklake relies on.
 
-DuckLake itself ships as a DuckDB extension that is downloaded on first
-use. Run `install_ducklake()` once, or check whether you already have it
-with `ducklake_extension_available()`. From duckdb 1.5.2 on, extensions
-live in a per-session temporary directory unless you point
-`DUCKDB_R_HOME` (for example in `~/.Renviron`) at a directory of your
-choice. Do that, and the download happens once per machine instead of
-once per session.
+DuckLake itself ships as a DuckDB extension. `attach_ducklake()`
+downloads it the first time it is needed and says where it put it, so
+there is no install step. In an interactive session, duckdb offers to
+create `~/.duckdb` the first time it connects; say yes and the download
+happens once per machine rather than once per session. Scripts and CI
+jobs get the same by setting `DUCKDB_R_HOME` in `~/.Renviron` or the
+job’s environment. `install_ducklake()` fetches the extension ahead of
+time, for container images and machines that are offline when the lake
+is attached, and `ducklake_extension_available()` reports whether it is
+already there.
 
 ducklake manages its own DuckDB connection, so there is nothing to set
 up: just `attach_ducklake()` and go. If you prefer to supply your own
@@ -86,9 +89,6 @@ register it with `set_ducklake_connection()`.
 ``` r
 library(ducklake)
 library(dplyr)
-
-# Install the ducklake extension (requires duckdb R package >= 1.5.2)
-install_ducklake()
 
 # Create a data lake in a temporary directory
 attach_ducklake("my_data_lake", lake_path = tempdir())
@@ -146,7 +146,7 @@ get_ducklake_table("gold.vehicle_efficiency") |>
   select(mpg, cyl, efficiency) |>
   head(3)
 #> # A query:  ?? x 3
-#> # Database: DuckDB 1.5.5 [tgerke@Darwin 25.6.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/Rtmpt7y8Lw/ducklake/ducklake623c4db47890.duckdb]
+#> # Database: DuckDB 1.5.5 [tgerke@Darwin 25.6.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/Rtmpyfo6Cq/ducklake/ducklake11c574a450c21.duckdb]
 #>     mpg cyl   efficiency
 #>   <dbl> <chr> <chr>     
 #> 1  21   6.0   Medium    
@@ -156,12 +156,12 @@ get_ducklake_table("gold.vehicle_efficiency") |>
 # View complete audit trail across all layers with author and commit messages
 list_table_snapshots()
 #>   snapshot_id       snapshot_time schema_version
-#> 1           0 2026-09-04 23:25:48              0
-#> 2           1 2026-09-04 23:25:48              1
-#> 3           2 2026-09-04 23:25:48              2
-#> 4           3 2026-09-04 23:25:48              3
-#> 5           4 2026-09-04 23:25:48              4
-#> 6           5 2026-09-04 23:25:48              5
+#> 1           0 2026-09-07 18:08:04              0
+#> 2           1 2026-09-07 18:08:04              1
+#> 3           2 2026-09-07 18:08:04              2
+#> 4           3 2026-09-07 18:08:04              3
+#> 5           4 2026-09-07 18:08:04              4
+#> 6           5 2026-09-07 18:08:04              5
 #>                                                                       changes
 #> 1                                                       schemas_created, main
 #> 2                                       schemas_created, bronze, silver, gold
@@ -189,7 +189,7 @@ get_ducklake_table_version("silver.vehicles", version = 3) |>
   select(mpg, cyl, gear) |>
   head(3)
 #> # A query:  ?? x 3
-#> # Database: DuckDB 1.5.5 [tgerke@Darwin 25.6.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/Rtmpt7y8Lw/ducklake/ducklake623c4db47890.duckdb]
+#> # Database: DuckDB 1.5.5 [tgerke@Darwin 25.6.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/Rtmpyfo6Cq/ducklake/ducklake11c574a450c21.duckdb]
 #>     mpg cyl    gear
 #>   <dbl> <chr> <dbl>
 #> 1  21   6.0       4
@@ -309,7 +309,7 @@ detailed vignettes:
   spec](https://ducklake.select/docs/stable/specification/introduction))
 - **Remote access over Quack**: Serve a DuckLake to other R sessions
   over the network and let several people read and write it at once,
-  using DuckDB’s Quack protocol (requires DuckDB 1.5.3 or newer)
+  using DuckDB’s Quack protocol
 - **Lightweight snapshots**: Create unlimited snapshots without frequent
   compacting steps
 - **Medallion architecture**: Bronze/silver/gold layers for data lineage
