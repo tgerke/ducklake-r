@@ -104,6 +104,11 @@ it into a single snapshot, records who made the change and why, and rolls
 everything back if any step fails, so a half-finished change never lands
 in the lake.
 
+The name follows the [withr](https://withr.r-lib.org/) convention: a
+`with_*()` function runs the code you hand it inside a temporary state and
+cleans up afterward. Here the state is an open transaction, and the cleanup
+is a commit on success or a rollback on error.
+
 The first argument is one R expression. A single call needs nothing more.
 To commit several operations as one snapshot, wrap them in braces, exactly
 as you would write the body of a function. The change below does that.
@@ -152,10 +157,26 @@ columns you need, which matters once a table is larger than memory.
 
 ## Change a table
 
-A change is a transaction like any other. Here two steps make one
-snapshot: a new column is declared, then filled in place by a dplyr
-pipeline that `ducklake_exec()` turns into an `UPDATE`. The braces commit
-both steps as a unit:
+A dplyr pipeline on a lake table is a query. On its own, `mutate()`
+computes a column in the result you would collect and changes nothing in
+the lake. To change the stored rows, end the pipeline with something that
+writes. `create_table()` in the section above is one such function, which
+is why it needed nothing more. Which one to end with depends on what you
+want:
+
+| You want to                        | End the pipeline with |
+|------------------------------------|-----------------------|
+| Bring rows into R                  | `collect()`           |
+| Make a new table from the result   | `create_table()`      |
+| Change rows of this table in place | `ducklake_exec()`     |
+| Rewrite this table from the result | `replace_table()`     |
+
+`ducklake_exec()` turns `mutate()` into the new values and `filter()` into
+which rows receive them. `with_transaction()` is a separate matter: it
+decides how a write is recorded, not whether it happens.
+
+Here two steps make one snapshot: a new column is declared, then filled in
+place through `ducklake_exec()`. The braces commit both steps as a unit:
 
 ```{r change}
 with_transaction({

@@ -65,7 +65,7 @@ get_ducklake_table("cars") |>
 
 ## Approach 1: with_transaction() (Recommended)
 
-The `with_transaction()` function provides automatic error handling and cleanup, similar to the `withr::with_*()` pattern used throughout the R ecosystem. This is the **recommended approach** for most use cases.
+The `with_transaction()` function provides automatic error handling and cleanup, similar to the [withr](https://withr.r-lib.org/) `with_*()` pattern used throughout the R ecosystem. This is the **recommended approach** for most use cases.
 
 ### Why use with_transaction()?
 
