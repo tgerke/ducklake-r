@@ -96,6 +96,11 @@ makes the commit explicit. It groups everything inside it into a single
 snapshot, records who made the change and why, and rolls everything back
 if any step fails, so a half-finished change never lands in the lake.
 
+The name follows the [withr](https://withr.r-lib.org/) convention: a
+`with_*()` function runs the code you hand it inside a temporary state
+and cleans up afterward. Here the state is an open transaction, and the
+cleanup is a commit on success or a rollback on error.
+
 The first argument is one R expression. A single call needs nothing
 more. To commit several operations as one snapshot, wrap them in braces,
 exactly as you would write the body of a function. The change below does
@@ -125,7 +130,7 @@ cars_data |>
   select(mpg, cyl, hp) |>
   head(3)
 #> # A query:  ?? x 3
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmp1d9KVB/ducklake/ducklake2b9e55deeb31.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpK8zlTh/ducklake/ducklake2aef490749b5.duckdb]
 #>     mpg   cyl    hp
 #>   <dbl> <dbl> <dbl>
 #> 1  21       6   110
@@ -172,11 +177,35 @@ and columns you need, which matters once a table is larger than memory.
 
 ## Change a table
 
-A change is a transaction like any other. Here two steps make one
-snapshot: a new column is declared, then filled in place by a dplyr
-pipeline that
+A dplyr pipeline on a lake table is a query. On its own,
+[`mutate()`](https://dplyr.tidyverse.org/reference/mutate.html) computes
+a column in the result you would collect and changes nothing in the
+lake. To change the stored rows, end the pipeline with something that
+writes.
+[`create_table()`](https://tgerke.github.io/ducklake-r/reference/create_table.md)
+in the section above is one such function, which is why it needed
+nothing more. Which one to end with depends on what you want:
+
+| You want to | End the pipeline with |
+|----|----|
+| Bring rows into R | [`collect()`](https://dplyr.tidyverse.org/reference/compute.html) |
+| Make a new table from the result | [`create_table()`](https://tgerke.github.io/ducklake-r/reference/create_table.md) |
+| Change rows of this table in place | [`ducklake_exec()`](https://tgerke.github.io/ducklake-r/reference/ducklake_exec.md) |
+| Rewrite this table from the result | [`replace_table()`](https://tgerke.github.io/ducklake-r/reference/replace_table.md) |
+
 [`ducklake_exec()`](https://tgerke.github.io/ducklake-r/reference/ducklake_exec.md)
-turns into an `UPDATE`. The braces commit both steps as a unit:
+turns [`mutate()`](https://dplyr.tidyverse.org/reference/mutate.html)
+into the new values and
+[`filter()`](https://dplyr.tidyverse.org/reference/filter.html) into
+which rows receive them.
+[`with_transaction()`](https://tgerke.github.io/ducklake-r/reference/with_transaction.md)
+is a separate matter: it decides how a write is recorded, not whether it
+happens.
+
+Here two steps make one snapshot: a new column is declared, then filled
+in place through
+[`ducklake_exec()`](https://tgerke.github.io/ducklake-r/reference/ducklake_exec.md).
+The braces commit both steps as a unit:
 
 ``` r
 
@@ -197,7 +226,7 @@ get_ducklake_table("cars") |>
   select(mpg, kpl) |>
   head(3)
 #> # A query:  ?? x 2
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmp1d9KVB/ducklake/ducklake2b9e55deeb31.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpK8zlTh/ducklake/ducklake2aef490749b5.duckdb]
 #>     mpg   kpl
 #>   <dbl> <dbl>
 #> 1  21    8.93
@@ -229,8 +258,8 @@ lists every snapshot that touched a table:
 
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-09-07 17:03:02              1
-#> 2           2 2026-09-07 17:03:03              2
+#> 1           1 2026-09-07 17:11:51              1
+#> 2           2 2026-09-07 17:11:51              2
 #>                                                              changes
 #> 1                 tables_created, tables_inserted_into, main.cars, 1
 #> 2 tables_altered, tables_inserted_into, tables_deleted_from, 1, 1, 1
@@ -252,7 +281,7 @@ version can be read as a lazy table:
 get_ducklake_table_version("cars", version = 1) |>
   head(3)
 #> # A query:  ?? x 11
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmp1d9KVB/ducklake/ducklake2b9e55deeb31.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpK8zlTh/ducklake/ducklake2aef490749b5.duckdb]
 #>     mpg   cyl  disp    hp  drat    wt  qsec    vs    am  gear  carb
 #>   <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>
 #> 1  21       6   160   110  3.9   2.62  16.5     0     1     4     4
@@ -270,9 +299,9 @@ restore_table_version("cars", version = 1, author = "Data Engineer")
 
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-09-07 17:03:02              1
-#> 2           2 2026-09-07 17:03:03              2
-#> 3           3 2026-09-07 17:03:03              3
+#> 1           1 2026-09-07 17:11:51              1
+#> 2           2 2026-09-07 17:11:51              2
+#> 3           3 2026-09-07 17:11:51              3
 #>                                                                 changes
 #> 1                    tables_created, tables_inserted_into, main.cars, 1
 #> 2    tables_altered, tables_inserted_into, tables_deleted_from, 1, 1, 1

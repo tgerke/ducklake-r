@@ -77,7 +77,7 @@ with_transaction(
 
 get_ducklake_table("iris_sample") |> head(3)
 #> # A query:  ?? x 5
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpZ9kMHq/ducklake/ducklake2c24377b4357.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpFKXyoN/ducklake/ducklake2b754af7ad3e.duckdb]
 #>   Sepal.Length Sepal.Width Petal.Length Petal.Width Species
 #>          <dbl>       <dbl>        <dbl>       <dbl> <chr>  
 #> 1          5.1         3.5          1.4         0.2 setosa 
@@ -160,12 +160,12 @@ with_transaction({
 get_ducklake_table("staging.cars_raw") |>
   count(cyl)
 #> # A query:  ?? x 2
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpZ9kMHq/ducklake/ducklake2c24377b4357.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpFKXyoN/ducklake/ducklake2b754af7ad3e.duckdb]
 #>     cyl     n
 #>   <dbl> <dbl>
-#> 1     6     7
-#> 2     8    14
-#> 3     4    11
+#> 1     4    11
+#> 2     6     7
+#> 3     8    14
 
 list_ducklake_tables()
 #>   schema_name     table_name  type

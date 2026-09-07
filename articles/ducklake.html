@@ -168,6 +168,11 @@ author or a message. <code><a href="../reference/with_transaction.html">with_tra
 explicit. It groups everything inside it into a single snapshot, records
 who made the change and why, and rolls everything back if any step
 fails, so a half-finished change never lands in the lake.</p>
+<p>The name follows the <a href="https://withr.r-lib.org/" class="external-link">withr</a>
+convention: a <code>with_*()</code> function runs the code you hand it
+inside a temporary state and cleans up afterward. Here the state is an
+open transaction, and the cleanup is a commit on success or a rollback
+on error.</p>
 <p>The first argument is one R expression. A single call needs nothing
 more. To commit several operations as one snapshot, wrap them in braces,
 exactly as you would write the body of a function. The change below does
@@ -195,7 +200,7 @@ SQL that DuckDB runs against the lake:</p>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">mpg</span>, <span class="va">cyl</span>, <span class="va">hp</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">3</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A query:  ?? x 3</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmp1d9KVB/ducklake/ducklake2b9e55deeb31.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpK8zlTh/ducklake/ducklake2aef490749b5.duckdb]</span></span></span>
 <span><span class="co">#&gt;     mpg   cyl    hp</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>  21       6   110</span></span>
@@ -236,10 +241,43 @@ memory.</p>
 <div class="section level2">
 <h2 id="change-a-table">Change a table<a class="anchor" aria-label="anchor" href="#change-a-table"></a>
 </h2>
-<p>A change is a transaction like any other. Here two steps make one
-snapshot: a new column is declared, then filled in place by a dplyr
-pipeline that <code><a href="../reference/ducklake_exec.html">ducklake_exec()</a></code> turns into an
-<code>UPDATE</code>. The braces commit both steps as a unit:</p>
+<p>A dplyr pipeline on a lake table is a query. On its own,
+<code><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate()</a></code> computes a column in the result you would collect
+and changes nothing in the lake. To change the stored rows, end the
+pipeline with something that writes. <code><a href="../reference/create_table.html">create_table()</a></code> in the
+section above is one such function, which is why it needed nothing more.
+Which one to end with depends on what you want:</p>
+<table class="table">
+<thead><tr class="header">
+<th>You want to</th>
+<th>End the pipeline with</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>Bring rows into R</td>
+<td><code><a href="https://dplyr.tidyverse.org/reference/compute.html" class="external-link">collect()</a></code></td>
+</tr>
+<tr class="even">
+<td>Make a new table from the result</td>
+<td><code><a href="../reference/create_table.html">create_table()</a></code></td>
+</tr>
+<tr class="odd">
+<td>Change rows of this table in place</td>
+<td><code><a href="../reference/ducklake_exec.html">ducklake_exec()</a></code></td>
+</tr>
+<tr class="even">
+<td>Rewrite this table from the result</td>
+<td><code><a href="../reference/replace_table.html">replace_table()</a></code></td>
+</tr>
+</tbody>
+</table>
+<p><code><a href="../reference/ducklake_exec.html">ducklake_exec()</a></code> turns <code><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate()</a></code> into the new
+values and <code><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter()</a></code> into which rows receive them.
+<code><a href="../reference/with_transaction.html">with_transaction()</a></code> is a separate matter: it decides how a
+write is recorded, not whether it happens.</p>
+<p>Here two steps make one snapshot: a new column is declared, then
+filled in place through <code><a href="../reference/ducklake_exec.html">ducklake_exec()</a></code>. The braces commit
+both steps as a unit:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/with_transaction.html">with_transaction</a></span><span class="op">(</span><span class="op">{</span></span>
 <span>  <span class="fu"><a href="../reference/add_table_column.html">add_table_column</a></span><span class="op">(</span><span class="st">"cars"</span>, <span class="st">"kpl"</span>, <span class="st">"DOUBLE"</span><span class="op">)</span></span>
@@ -258,7 +296,7 @@ pipeline that <code><a href="../reference/ducklake_exec.html">ducklake_exec()</a
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">mpg</span>, <span class="va">kpl</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">3</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A query:  ?? x 2</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmp1d9KVB/ducklake/ducklake2b9e55deeb31.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpK8zlTh/ducklake/ducklake2aef490749b5.duckdb]</span></span></span>
 <span><span class="co">#&gt;     mpg   kpl</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>  21    8.93</span></span>
@@ -279,8 +317,8 @@ a table:</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 1           1 2026-09-07 17:03:02              1</span></span>
-<span><span class="co">#&gt; 2           2 2026-09-07 17:03:03              2</span></span>
+<span><span class="co">#&gt; 1           1 2026-09-07 17:11:51              1</span></span>
+<span><span class="co">#&gt; 2           2 2026-09-07 17:11:51              2</span></span>
 <span><span class="co">#&gt;                                                              changes</span></span>
 <span><span class="co">#&gt; 1                 tables_created, tables_inserted_into, main.cars, 1</span></span>
 <span><span class="co">#&gt; 2 tables_altered, tables_inserted_into, tables_deleted_from, 1, 1, 1</span></span>
@@ -298,7 +336,7 @@ table:</p>
 <span><span class="fu"><a href="../reference/get_ducklake_table_version.html">get_ducklake_table_version</a></span><span class="op">(</span><span class="st">"cars"</span>, version <span class="op">=</span> <span class="fl">1</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">3</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A query:  ?? x 11</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmp1d9KVB/ducklake/ducklake2b9e55deeb31.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpK8zlTh/ducklake/ducklake2aef490749b5.duckdb]</span></span></span>
 <span><span class="co">#&gt;     mpg   cyl  disp    hp  drat    wt  qsec    vs    am  gear  carb</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>  21       6   160   110  3.9   2.62  16.5     0     1     4     4</span></span>
@@ -312,9 +350,9 @@ snapshot, so the versions after it stay readable:</p>
 <span></span>
 <span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 1           1 2026-09-07 17:03:02              1</span></span>
-<span><span class="co">#&gt; 2           2 2026-09-07 17:03:03              2</span></span>
-<span><span class="co">#&gt; 3           3 2026-09-07 17:03:03              3</span></span>
+<span><span class="co">#&gt; 1           1 2026-09-07 17:11:51              1</span></span>
+<span><span class="co">#&gt; 2           2 2026-09-07 17:11:51              2</span></span>
+<span><span class="co">#&gt; 3           3 2026-09-07 17:11:51              3</span></span>
 <span><span class="co">#&gt;                                                                 changes</span></span>
 <span><span class="co">#&gt; 1                    tables_created, tables_inserted_into, main.cars, 1</span></span>
 <span><span class="co">#&gt; 2    tables_altered, tables_inserted_into, tables_deleted_from, 1, 1, 1</span></span>
