@@ -19,8 +19,8 @@ flush_inlined_data(ducklake_name = NULL, table_name = NULL, schema_name = NULL)
 
 - table_name:
 
-  Optional table name. When provided, only flushes inlined data for that
-  table.
+  Optional table name, optionally qualified as `"schema.table"`. When
+  provided, only flushes inlined data for that table.
 
 - schema_name:
 
@@ -51,17 +51,44 @@ sorted by those keys.
 [`set_inlining_row_limit()`](https://tgerke.github.io/ducklake-r/reference/set_inlining_row_limit.md),
 [`checkpoint_ducklake()`](https://tgerke.github.io/ducklake-r/reference/checkpoint_ducklake.md)
 
+Other data inlining:
+[`checkpoint_ducklake()`](https://tgerke.github.io/ducklake-r/reference/checkpoint_ducklake.md),
+[`get_inlining_row_limit()`](https://tgerke.github.io/ducklake-r/reference/get_inlining_row_limit.md),
+[`set_inlining_row_limit()`](https://tgerke.github.io/ducklake-r/reference/set_inlining_row_limit.md)
+
+Other maintenance:
+[`backup_ducklake()`](https://tgerke.github.io/ducklake-r/reference/backup_ducklake.md),
+[`checkpoint_ducklake()`](https://tgerke.github.io/ducklake-r/reference/checkpoint_ducklake.md),
+[`cleanup_old_files()`](https://tgerke.github.io/ducklake-r/reference/cleanup_old_files.md),
+[`delete_orphaned_files()`](https://tgerke.github.io/ducklake-r/reference/delete_orphaned_files.md),
+[`expire_snapshots()`](https://tgerke.github.io/ducklake-r/reference/expire_snapshots.md),
+[`get_table_info()`](https://tgerke.github.io/ducklake-r/reference/get_table_info.md),
+[`list_ducklake_files()`](https://tgerke.github.io/ducklake-r/reference/list_ducklake_files.md),
+[`merge_adjacent_files()`](https://tgerke.github.io/ducklake-r/reference/merge_adjacent_files.md),
+[`plot_table_files()`](https://tgerke.github.io/ducklake-r/reference/plot_table_files.md),
+[`rewrite_data_files()`](https://tgerke.github.io/ducklake-r/reference/rewrite_data_files.md)
+
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+lake_dir <- tempfile("flush_lake_")
+dir.create(lake_dir)
+attach_ducklake("flush_lake", lake_path = lake_dir,
+                data_inlining_row_limit = 10)
+create_table(head(mtcars, 3), "cars")
+
 # Flush everything
 flush_inlined_data()
+#> Flushed 3 rows from 1 table to Parquet.
+#>   schema_name table_name rows_flushed
+#> 1        main       cars            3
 
 # Flush a specific table
-flush_inlined_data(table_name = "readings")
+flush_inlined_data(table_name = "cars")
+#> No inlined data to flush.
+#> [1] schema_name  table_name   rows_flushed
+#> <0 rows> (or 0-length row.names)
 
-# Flush a specific schema
-flush_inlined_data(schema_name = "staging")
-} # }
+detach_ducklake("flush_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
 ```

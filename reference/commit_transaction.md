@@ -49,21 +49,41 @@ will be set using `CALL ducklake.set_commit_message()` within the
 transaction before the `COMMIT` statement, as required by the DuckLake
 v1.0 specification.
 
+## See also
+
+Other transactions:
+[`begin_transaction()`](https://tgerke.github.io/ducklake-r/reference/begin_transaction.md),
+[`rollback_transaction()`](https://tgerke.github.io/ducklake-r/reference/rollback_transaction.md),
+[`set_ducklake_retry()`](https://tgerke.github.io/ducklake-r/reference/set_ducklake_retry.md),
+[`set_snapshot_metadata()`](https://tgerke.github.io/ducklake-r/reference/set_snapshot_metadata.md),
+[`with_transaction()`](https://tgerke.github.io/ducklake-r/reference/with_transaction.md)
+
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+lake_dir <- tempfile("commit_lake_")
+dir.create(lake_dir)
+attach_ducklake("commit_lake", lake_path = lake_dir)
+
 # Basic commit
 begin_transaction()
-# ... make changes ...
+#> Transaction started.
+create_table(iris, "flowers")
+#> Converted factor column Species to character (DuckLake does not support ENUM
+#> columns).
 commit_transaction()
+#> Transaction committed.
 
 # Commit with metadata
 begin_transaction()
+#> Transaction started.
 create_table(mtcars, "cars")
 commit_transaction(
   author = "John Doe",
   commit_message = "Add cars dataset"
 )
-} # }
+#> Transaction committed.
+
+detach_ducklake("commit_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
 ```

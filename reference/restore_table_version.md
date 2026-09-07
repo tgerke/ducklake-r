@@ -1,7 +1,11 @@
 # Restore a table to a previous version
 
-Restores a table to a specific version or timestamp, reverting any
-changes made after that point.
+Rolls a table back to the state it had at an earlier snapshot or point
+in time, by recreating it from a time-travel read of itself. History is
+preserved: the restore is recorded as a **new** snapshot (with a commit
+message noting the restore), so nothing is rewritten or lost and you can
+still time-travel to any snapshot, including those after the restore
+point.
 
 ## Usage
 
@@ -10,6 +14,8 @@ restore_table_version(
   table_name,
   version = NULL,
   timestamp = NULL,
+  author = NULL,
+  commit_message = NULL,
   conn = NULL
 )
 ```
@@ -22,11 +28,23 @@ restore_table_version(
 
 - version:
 
-  Optional version number to restore to
+  Optional snapshot id to restore to (see
+  [`list_table_snapshots()`](https://tgerke.github.io/ducklake-r/reference/list_table_snapshots.md))
 
 - timestamp:
 
-  Optional timestamp to restore to (POSIXct or character)
+  Optional timestamp to restore to (POSIXct, converted to UTC, or
+  character already in UTC)
+
+- author:
+
+  Optional author to record on the restore snapshot, for the audit trail
+
+- commit_message:
+
+  Optional commit message for the restore snapshot. Defaults to a
+  message noting the restore point (e.g.
+  `"Restored my_table to snapshot 5"`).
 
 - conn:
 
@@ -39,20 +57,68 @@ Invisibly returns TRUE on success
 
 ## Details
 
-This function restores a table to a previous state. You must specify
-either `version` or `timestamp`, but not both.
+You must specify either `version` or `timestamp`, but not both.
 
-WARNING: This operation modifies the table and cannot be easily undone.
-Consider using within a transaction or backing up your data first.
+Under the hood this reads `SELECT * FROM t AT (VERSION => n)` into a
+temporary DuckDB table, then drops and recreates `t` from it inside a
+transaction. Because the restore creates a new snapshot, it is itself
+reversible with another `restore_table_version()` call.
+
+The restored table gets a new table id, and DuckLake keeps comments,
+partition keys, sort order, and table-scoped options against the id, so
+they are captured beforehand and put back: comments and keys for the
+columns the restored version still has, inside the restore transaction;
+table-scoped options right after it commits, as a small follow-up
+snapshot, since DuckLake cannot set options on a table created in the
+open transaction.
+
+## See also
+
+[`get_ducklake_table_version()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_table_version.md),
+[`get_ducklake_table_asof()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_table_asof.md),
+[`list_table_snapshots()`](https://tgerke.github.io/ducklake-r/reference/list_table_snapshots.md)
+
+Other time travel:
+[`get_ducklake_table_asof()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_table_asof.md),
+[`get_ducklake_table_version()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_table_version.md),
+[`get_table_changes()`](https://tgerke.github.io/ducklake-r/reference/get_table_changes.md),
+[`list_table_snapshots()`](https://tgerke.github.io/ducklake-r/reference/list_table_snapshots.md),
+[`plot_snapshots()`](https://tgerke.github.io/ducklake-r/reference/plot_snapshots.md),
+[`plot_table_changes()`](https://tgerke.github.io/ducklake-r/reference/plot_table_changes.md)
 
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-# Restore to version 5
-restore_table_version("my_table", version = 5)
+lake_dir <- tempfile("restore_lake_")
+dir.create(lake_dir)
+attach_ducklake("restore_lake", lake_path = lake_dir)
+create_table(data.frame(id = 1:3, amount = c(10, 20, 30)), "orders")
 
-# Restore to a specific timestamp
-restore_table_version("my_table", timestamp = "2024-01-15 10:00:00")
-} # }
+rows_delete(
+  get_ducklake_table("orders"),
+  data.frame(id = 1L),
+  by = "id"
+)
+snapshots <- list_table_snapshots("orders")
+first_version <- snapshots$snapshot_id[1]
+
+# Roll the table back to its first snapshot
+restore_table_version("orders", version = first_version)
+#> Transaction started.
+#> Transaction committed.
+#> Table "orders" restored to snapshot 1 (recorded as a new snapshot).
+
+# Record who performed the restore in the audit trail
+restore_table_version(
+  "orders",
+  version = first_version,
+  author = "Data Steward",
+  commit_message = "Roll back erroneous bulk update"
+)
+#> Transaction started.
+#> Transaction committed.
+#> Table "orders" restored to snapshot 1 (recorded as a new snapshot).
+
+detach_ducklake("restore_lake", shutdown = TRUE)
+unlink(lake_dir, recursive = TRUE)
 ```

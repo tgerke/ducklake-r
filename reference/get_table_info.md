@@ -79,14 +79,14 @@ create_table(mtcars, "cars")
 # File statistics for every table in the lake
 get_table_info()
 #>   table_name schema_id table_id                           table_uuid file_count
-#> 1       cars         0        1 01a06f58-7137-7c44-a762-d06e47b5dd47          1
+#> 1       cars         0        1 01a07953-aa59-752c-8b8f-d04ec393a970          1
 #>   file_size_bytes delete_file_count delete_file_size_bytes schema_name
 #> 1            2911                 0                      0        main
 
 # Just one table
 get_table_info("cars")
 #>   table_name schema_id table_id                           table_uuid file_count
-#> 1       cars         0        1 01a06f58-7137-7c44-a762-d06e47b5dd47          1
+#> 1       cars         0        1 01a07953-aa59-752c-8b8f-d04ec393a970          1
 #>   file_size_bytes delete_file_count delete_file_size_bytes schema_name
 #> 1            2911                 0                      0        main
 

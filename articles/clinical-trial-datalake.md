@@ -88,16 +88,8 @@ a shared network drive or project directory).
 ``` r
 
 # Install the ducklake extension to duckdb (required once per system)
-install_ducklake()
-#> duckdb keeps downloaded extensions and secrets in a temporary directory:
-#> ℹ /tmp/Rtmpszpne3/duckdb
-#> This is removed when the R session ends.
-#> • Extensions are re-downloaded each session.
-#> • Secrets are lost.
-#> ℹ Run duckdb(shared_home = TRUE) (or create ~/.duckdb) to keep them (suitable for most users).
-#> ℹ Run duckdb(shared_home = FALSE) to accept the temporary directory (and silence this message).
-#> ℹ See ?duckdb_storage for details and alternatives.
-#> Installed ducklake extension.
+# The ducklake extension only needs installing once per machine:
+# install_ducklake()
 
 # Define where to create a new data lake or access an existing one
 # For this vignette, we use vignette_temp_dir; in practice, use a permanent location
@@ -124,11 +116,9 @@ pattern common in modern data lakes:
 - **Bronze Layer (Raw)**: Data exactly as received from source systems,
   with no transformations. This preserves the original data for audit
   trails and reprocessing.
-- **Silver Layer (Cleaned)**: Standardized and cleaned data with
-  transformations like
-  [`convert_blanks_to_na()`](https:/pharmaverse.github.io/admiral/v1.5.0/cran-release/reference/convert_blanks_to_na.html),
-  type conversions, and validation. This is the trusted source for
-  deriving analysis datasets.
+- **Silver Layer (Cleaned)**: Standardized and cleaned data: SDTM blanks
+  converted to `NA`, type conversions, validation. This is the trusted
+  source for deriving analysis datasets.
 - **Gold Layer (Analytics)**: Business-logic datasets optimized for
   specific analyses, such as ADaM datasets. This is where analysis
   happens.
@@ -156,6 +146,33 @@ For each domain, we’ll: 1. Load raw data into the **bronze layer** (as
 received) 2. Apply cleaning transformations to create the **silver
 layer** (analysis-ready)
 
+The cleaning step here is the one every SDTM pipeline starts with: SDTM
+character variables use the empty string for missing values, and R
+analysis code expects `NA`. admiral’s
+[`convert_blanks_to_na()`](https:/pharmaverse.github.io/admiral/v1.5.0/cran-release/reference/convert_blanks_to_na.html)
+does that on a data frame. On a lazy lake table it has no effect,
+because nothing has been read into R yet, so we keep the conversion
+inside DuckDB instead. The helper below reads the table’s column types
+from a zero-row query (a lazy table cannot inspect its own types) and
+translates the conversion into SQL that runs where the data lives.
+[`create_table()`](https://tgerke.github.io/ducklake-r/reference/create_table.md)
+then runs the whole pipeline as `CREATE TABLE ... AS` inside DuckDB and
+writes the result straight into the lake, so a silver table is derived
+without its rows ever entering R. The pharmaverse test data already
+stores missing values as `NA`, so on these tables the conversion changes
+nothing; XPT exports read with haven do carry blanks, and there it does.
+
+``` r
+
+# Convert SDTM blanks to NA inside the database: dbplyr translates na_if()
+# to NULLIF(), and the zero-row read supplies the character column names
+blanks_to_na <- function(tbl) {
+  types <- tbl |> head(0) |> collect()
+  chr_cols <- names(types)[vapply(types, is.character, logical(1))]
+  tbl |> mutate(across(all_of(chr_cols), ~ na_if(.x, "")))
+}
+```
+
 ### Demographics (DM)
 
 The Demographics domain contains baseline characteristics for each
@@ -170,25 +187,27 @@ with_transaction(
   commit_message = "Add raw demographics"
 )
 #> Transaction started.
+#> Stored 28 column labels as column comments.
 #> Transaction committed.
 
 # Silver layer: Apply cleaning transformations
 with_transaction(
   get_ducklake_table("dm_raw") |> 
-    admiral::convert_blanks_to_na() |> 
+    blanks_to_na() |> 
     create_table("dm"),
   author = "T Gerke",
   commit_message = "Clean demographics data"
 )
 #> Transaction started.
+#> Stored 28 column labels as column comments.
 #> Transaction committed.
 
 # Verify the cleaned table
-get_ducklake_table("dm") |> 
-  select(USUBJID, AGE, SEX, RACE, ARM) |> 
+get_ducklake_table("dm") |>
+  select(USUBJID, AGE, SEX, RACE, ARM) |>
   head()
 #> # A query:  ?? x 5
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmpszpne3/duckplyr/duckplyr1d321070aad3.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpQh9hO8/ducklake/ducklake2ad94f2b99.duckdb]
 #>   USUBJID       AGE SEX   RACE  ARM                 
 #>   <chr>       <dbl> <chr> <chr> <chr>               
 #> 1 01-701-1015    63 F     WHITE Placebo             
@@ -198,6 +217,52 @@ get_ducklake_table("dm") |>
 #> 5 01-701-1034    77 F     WHITE Xanomeline High Dose
 #> 6 01-701-1047    85 F     WHITE Placebo
 ```
+
+Notice the message when the bronze table was created: SDTM datasets
+carry CDISC variable labels as `label` attributes, and
+[`create_table()`](https://tgerke.github.io/ducklake-r/reference/create_table.md)
+stored them in the lake as column comments. The labels are now part of
+the catalog itself – queryable from R, Python, or SQL, and available as
+context for AI tools reading the lake:
+
+``` r
+
+get_table_comments("dm_raw") |> head()
+#>   object_type schema_name table_name column_name
+#> 1      column        main     dm_raw      ACTARM
+#> 2      column        main     dm_raw    ACTARMCD
+#> 3      column        main     dm_raw    ACTARMUD
+#> 4      column        main     dm_raw         AGE
+#> 5      column        main     dm_raw        AGEU
+#> 6      column        main     dm_raw         ARM
+#>                               comment
+#> 1           Description of Actual Arm
+#> 2                     Actual Arm Code
+#> 3 Description of Unplanned Actual Arm
+#> 4                                 Age
+#> 5                           Age Units
+#> 6          Description of Planned Arm
+```
+
+They also come back on the way out.
+[`collect()`](https://dplyr.tidyverse.org/reference/compute.html)
+reattaches stored comments as `label` attributes, so label-aware tools
+downstream – gtsummary and gt table headers, labelled-based workflows –
+behave as if the data had never left R:
+
+``` r
+
+dm_check <- get_ducklake_table("dm_raw") |>
+  select(USUBJID, AGE, SEX) |>
+  collect()
+
+attr(dm_check$AGE, "label")
+#> [1] "Age"
+```
+
+For flat-file workflows, labels typically survive only inside `.rds` or
+XPT files and vanish through CSV round trips. Here they live with the
+data, versioned like everything else in the lake.
 
 ### Supplemental Demographics (SUPPDM)
 
@@ -213,17 +278,19 @@ with_transaction(
   commit_message = "Add raw supplemental demographics"
 )
 #> Transaction started.
+#> Stored 10 column labels as column comments.
 #> Transaction committed.
 
 # Silver layer: Cleaned data
 with_transaction(
   get_ducklake_table("suppdm_raw") |> 
-    admiral::convert_blanks_to_na() |> 
+    blanks_to_na() |> 
     create_table("suppdm"),
   author = "T Gerke",
   commit_message = "Clean supplemental demographics"
 )
 #> Transaction started.
+#> Stored 10 column labels as column comments.
 #> Transaction committed.
 ```
 
@@ -240,17 +307,19 @@ with_transaction(
   commit_message = "Add raw disposition"
 )
 #> Transaction started.
+#> Stored 13 column labels as column comments.
 #> Transaction committed.
 
 # Silver layer
 with_transaction(
-  ds <- get_ducklake_table("ds_raw") |> 
-    admiral::convert_blanks_to_na() |> 
+  get_ducklake_table("ds_raw") |> 
+    blanks_to_na() |> 
     create_table("ds"),
   author = "T Gerke",
   commit_message = "Clean disposition data"
 )
 #> Transaction started.
+#> Stored 13 column labels as column comments.
 #> Transaction committed.
 ```
 
@@ -267,17 +336,19 @@ with_transaction(
   commit_message = "Add raw exposure"
 )
 #> Transaction started.
+#> Stored 17 column labels as column comments.
 #> Transaction committed.
 
 # Silver layer
 with_transaction(
-  ex <- get_ducklake_table("ex_raw") |> 
-    admiral::convert_blanks_to_na() |> 
+  get_ducklake_table("ex_raw") |> 
+    blanks_to_na() |> 
     create_table("ex"),
   author = "T Gerke",
   commit_message = "Clean exposure data"
 )
 #> Transaction started.
+#> Stored 17 column labels as column comments.
 #> Transaction committed.
 ```
 
@@ -294,17 +365,19 @@ with_transaction(
   commit_message = "Add raw adverse events"
 )
 #> Transaction started.
+#> Stored 35 column labels as column comments.
 #> Transaction committed.
 
 # Silver layer
 with_transaction(
-  ae <- get_ducklake_table("ae_raw") |> 
-    admiral::convert_blanks_to_na() |> 
+  get_ducklake_table("ae_raw") |> 
+    blanks_to_na() |> 
     create_table("ae"),
   author = "T Gerke",
   commit_message = "Clean adverse events"
 )
 #> Transaction started.
+#> Stored 35 column labels as column comments.
 #> Transaction committed.
 ```
 
@@ -321,17 +394,19 @@ with_transaction(
   commit_message = "Add raw vital signs"
 )
 #> Transaction started.
+#> Stored 24 column labels as column comments.
 #> Transaction committed.
 
 # Silver layer
 with_transaction(
-  vs <- get_ducklake_table("vs_raw") |> 
-    admiral::convert_blanks_to_na() |> 
+  get_ducklake_table("vs_raw") |> 
+    blanks_to_na() |> 
     create_table("vs"),
   author = "T Gerke",
   commit_message = "Clean vital signs"
 )
 #> Transaction started.
+#> Stored 24 column labels as column comments.
 #> Transaction committed.
 ```
 
@@ -348,17 +423,19 @@ with_transaction(
   commit_message = "Add raw PK concentrations"
 )
 #> Transaction started.
+#> Stored 21 column labels as column comments.
 #> Transaction committed.
 
 # Silver layer
 with_transaction(
-  pc <- get_ducklake_table("pc_raw") |> 
-    admiral::convert_blanks_to_na() |> 
+  get_ducklake_table("pc_raw") |> 
+    blanks_to_na() |> 
     create_table("pc"),
   author = "T Gerke",
   commit_message = "Clean PK concentrations"
 )
 #> Transaction started.
+#> Stored 21 column labels as column comments.
 #> Transaction committed.
 ```
 
@@ -376,45 +453,45 @@ metadata.
 list_table_snapshots() |>
   head(5)
 #>   snapshot_id       snapshot_time schema_version
-#> 1           0 2026-09-07 00:42:45              0
-#> 2           1 2026-09-07 00:42:45              1
-#> 3           2 2026-09-07 00:42:45              2
-#> 4           3 2026-09-07 00:42:46              3
-#> 5           4 2026-09-07 00:42:46              4
-#>                                                    changes  author
-#> 1                                    schemas_created, main    <NA>
-#> 2     tables_created, tables_inserted_into, main.dm_raw, 1 T Gerke
-#> 3         tables_created, tables_inserted_into, main.dm, 2 T Gerke
-#> 4 tables_created, tables_inserted_into, main.suppdm_raw, 3 T Gerke
-#> 5     tables_created, tables_inserted_into, main.suppdm, 4 T Gerke
-#>                      commit_message commit_extra_info
-#> 1                              <NA>              <NA>
-#> 2              Add raw demographics              <NA>
-#> 3           Clean demographics data              <NA>
-#> 4 Add raw supplemental demographics              <NA>
-#> 5   Clean supplemental demographics              <NA>
+#> 1           0 2026-09-07 00:45:47              0
+#> 2           1 2026-09-07 00:45:47              1
+#> 3           2 2026-09-07 00:45:47              2
+#> 4           3 2026-09-07 00:45:48              3
+#> 5           4 2026-09-07 00:45:48              4
+#>                                                                       changes
+#> 1                                                       schemas_created, main
+#> 2     tables_created, tables_altered, tables_inserted_into, main.dm_raw, 1, 1
+#> 3         tables_created, tables_altered, tables_inserted_into, main.dm, 2, 2
+#> 4 tables_created, tables_altered, tables_inserted_into, main.suppdm_raw, 3, 3
+#> 5     tables_created, tables_altered, tables_inserted_into, main.suppdm, 4, 4
+#>    author                    commit_message commit_extra_info
+#> 1    <NA>                              <NA>              <NA>
+#> 2 T Gerke              Add raw demographics              <NA>
+#> 3 T Gerke           Clean demographics data              <NA>
+#> 4 T Gerke Add raw supplemental demographics              <NA>
+#> 5 T Gerke   Clean supplemental demographics              <NA>
 
 # Filter snapshots for specific tables
 list_table_snapshots("dm_raw")
 #>   snapshot_id       snapshot_time schema_version
-#> 2           1 2026-09-07 00:42:45              1
-#>                                                changes  author
-#> 2 tables_created, tables_inserted_into, main.dm_raw, 1 T Gerke
-#>         commit_message commit_extra_info
-#> 2 Add raw demographics              <NA>
+#> 1           1 2026-09-07 00:45:47              1
+#>                                                                   changes
+#> 1 tables_created, tables_altered, tables_inserted_into, main.dm_raw, 1, 1
+#>    author       commit_message commit_extra_info
+#> 1 T Gerke Add raw demographics              <NA>
 list_table_snapshots("dm")
 #>   snapshot_id       snapshot_time schema_version
-#> 3           2 2026-09-07 00:42:45              2
-#>                                            changes  author
-#> 3 tables_created, tables_inserted_into, main.dm, 2 T Gerke
+#> 1           2 2026-09-07 00:45:47              2
+#>                                                               changes  author
+#> 1 tables_created, tables_altered, tables_inserted_into, main.dm, 2, 2 T Gerke
 #>            commit_message commit_extra_info
-#> 3 Clean demographics data              <NA>
+#> 1 Clean demographics data              <NA>
 ```
 
 This demonstrates that:
 
-1.  **Every table creation is versioned** - Both bronze (`dm_raw`) and
-    silver (`dm`) layers have version 1.0
+1.  **Every table creation is versioned** - Both the bronze (`dm_raw`)
+    and silver (`dm`) layers have their own snapshot
 2.  **Metadata is captured** - Each snapshot includes timestamp and
     table information
 3.  **Time travel works** - We can retrieve any specific version using
@@ -564,14 +641,28 @@ with_transaction(
   commit_extra_info = "Derived from DM, SUPPDM, DS, EX; includes treatment dates, safety flags, age groups"
 )
 #> Transaction started.
+#> Stored 30 column labels as column comments.
 #> Transaction committed.
+
+# Variables carried over from DM kept their SDTM labels automatically.
+# Derived variables are new, so label them now -- the ADaM way, but stored
+# in the catalog rather than a spec sidecar
+set_column_comments(
+  "adsl",
+  TRT01P = "Planned Treatment for Period 01",
+  TRT01A = "Actual Treatment for Period 01",
+  AGEGR1 = "Pooled Age Group 1",
+  AGEGR1N = "Pooled Age Group 1 (N)",
+  SAFFL = "Safety Population Flag"
+)
+#> Commented 5 columns on "adsl".
 
 # Preview ADSL
 get_ducklake_table("adsl") |> 
   select(USUBJID, AGE, AGEGR1, TRT01P, TRTSDT, TRTEDT, SAFFL) |>
   head(10)
 #> # A query:  ?? x 7
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmpszpne3/duckplyr/duckplyr1d321070aad3.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpQh9hO8/ducklake/ducklake2ad94f2b99.duckdb]
 #>    USUBJID       AGE AGEGR1 TRT01P               TRTSDT     TRTEDT     SAFFL
 #>    <chr>       <dbl> <chr>  <chr>                <date>     <date>     <chr>
 #>  1 01-701-1015    63 18-64  Placebo              2014-01-02 2014-07-02 Y    
@@ -642,6 +733,7 @@ with_transaction(
   commit_extra_info = "Includes treatment-emergent flags and occurrence flags"
 )
 #> Transaction started.
+#> Stored 37 column labels as column comments.
 #> Transaction committed.
 
 # Preview ADAE
@@ -650,7 +742,7 @@ get_ducklake_table("adae") |>
   select(USUBJID, AEDECOD, ASTDT, AESEV, TRTEMFL) |>
   head(10)
 #> # A query:  ?? x 5
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmpszpne3/duckplyr/duckplyr1d321070aad3.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpQh9hO8/ducklake/ducklake2ad94f2b99.duckdb]
 #>    USUBJID     AEDECOD                              ASTDT      AESEV    TRTEMFL
 #>    <chr>       <chr>                                <date>     <chr>    <chr>  
 #>  1 01-701-1015 APPLICATION SITE ERYTHEMA            2014-01-03 MILD     Y      
@@ -746,6 +838,7 @@ with_transaction(
   commit_extra_info = "PK concentrations with dosing records for NCA"
 )
 #> Transaction started.
+#> Stored 26 column labels as column comments.
 #> Transaction committed.
 
 # Preview ADPC
@@ -754,7 +847,7 @@ get_ducklake_table("adpc") |>
   select(USUBJID, ADT, PCTPT, AVAL, PARAM) |>
   head(10)
 #> # A query:  ?? x 5
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmpszpne3/duckplyr/duckplyr1d321070aad3.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpQh9hO8/ducklake/ducklake2ad94f2b99.duckdb]
 #>    USUBJID     ADT        PCTPT             AVAL PARAM                   
 #>    <chr>       <date>     <chr>            <dbl> <chr>                   
 #>  1 01-701-1015 2014-01-01 Pre-dose         0     Xanomeline Concentration
@@ -808,7 +901,7 @@ with_transaction(
 
 get_ducklake_table("regulatory_documents")
 #> # A query:  ?? x 5
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmpszpne3/duckplyr/duckplyr1d321070aad3.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpQh9hO8/ducklake/ducklake2ad94f2b99.duckdb]
 #>   doc_type   doc_version content                        created_date description
 #>   <chr>      <chr>       <chr>                          <date>       <chr>      
 #> 1 define.xml 1.0         "<?xml version=\"1.0\" encodi… 2026-09-07   Dataset an…
@@ -976,13 +1069,13 @@ adsl_tbl |>
 #>    <chr>       <dbl> <chr>                <dbl>      <dbl>
 #>  1 01-701-1302    61 Xanomeline High Dose    23       3105
 #>  2 01-717-1004    80 Xanomeline Low Dose     19       3078
-#>  3 01-709-1029    82 Xanomeline High Dose    16       3024
-#>  4 01-718-1427    74 Xanomeline High Dose    16       2160
+#>  3 01-718-1427    74 Xanomeline High Dose    16       2160
+#>  4 01-709-1029    82 Xanomeline High Dose    16       3024
 #>  5 01-704-1266    82 Xanomeline High Dose    16       2160
 #>  6 01-701-1275    61 Xanomeline High Dose    15       2025
 #>  7 01-709-1309    65 Xanomeline High Dose    15       2835
-#>  8 01-713-1179    64 Placebo                 15          0
-#>  9 01-701-1192    80 Xanomeline Low Dose     15       2430
+#>  8 01-701-1192    80 Xanomeline Low Dose     15       2430
+#>  9 01-713-1179    64 Placebo                 15          0
 #> 10 01-711-1143    76 Xanomeline Low Dose     14       1512
 ```
 
@@ -995,13 +1088,26 @@ clinical trials:
 
 # 1. Single source of truth - all datasets in one repository
 # List all tables in the data lake
-DBI::dbListTables(duckplyr:::get_default_duckdb_connection())
-#>  [1] "adae"                 "adpc"                 "adsl"                
-#>  [4] "ae"                   "ae_raw"               "dm"                  
-#>  [7] "dm_raw"               "ds"                   "ds_raw"              
-#> [10] "ex"                   "ex_raw"               "pc"                  
-#> [13] "pc_raw"               "regulatory_documents" "suppdm"              
-#> [16] "suppdm_raw"           "vs"                   "vs_raw"
+list_ducklake_tables()
+#>    schema_name           table_name  type
+#> 1         main                 adae table
+#> 2         main                 adpc table
+#> 3         main                 adsl table
+#> 4         main                   ae table
+#> 5         main               ae_raw table
+#> 6         main                   dm table
+#> 7         main               dm_raw table
+#> 8         main                   ds table
+#> 9         main               ds_raw table
+#> 10        main                   ex table
+#> 11        main               ex_raw table
+#> 12        main                   pc table
+#> 13        main               pc_raw table
+#> 14        main regulatory_documents table
+#> 15        main               suppdm table
+#> 16        main           suppdm_raw table
+#> 17        main                   vs table
+#> 18        main               vs_raw table
 
 # 2. Efficient filtering before loading into R
 # Only load subjects with adverse events
@@ -1009,19 +1115,19 @@ get_ducklake_table("ae") |>
   filter(AESEV == "SEVERE") |>
   distinct(USUBJID)
 #> # A query:  ?? x 1
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmpszpne3/duckplyr/duckplyr1d321070aad3.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpQh9hO8/ducklake/ducklake2ad94f2b99.duckdb]
 #>    USUBJID    
 #>    <chr>      
-#>  1 01-701-1211
-#>  2 01-704-1135
-#>  3 01-708-1019
-#>  4 01-708-1178
-#>  5 01-704-1008
-#>  6 01-704-1445
-#>  7 01-710-1070
-#>  8 01-710-1368
-#>  9 01-714-1195
-#> 10 01-716-1189
+#>  1 01-703-1086
+#>  2 01-703-1119
+#>  3 01-706-1049
+#>  4 01-708-1428
+#>  5 01-703-1175
+#>  6 01-705-1393
+#>  7 01-708-1272
+#>  8 01-709-1007
+#>  9 01-710-1077
+#> 10 01-710-1154
 #> # ℹ more rows
 
 # 3. Aggregations performed at database level
@@ -1034,7 +1140,7 @@ get_ducklake_table("adae") |>
     .groups = "drop"
   )
 #> # A query:  ?? x 4
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmpszpne3/duckplyr/duckplyr1d321070aad3.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpQh9hO8/ducklake/ducklake2ad94f2b99.duckdb]
 #>   TRT01A               AESEV    n_events n_subjects
 #>   <chr>                <chr>       <dbl>      <dbl>
 #> 1 Xanomeline High Dose MILD          287         65
@@ -1042,10 +1148,10 @@ get_ducklake_table("adae") |>
 #> 3 Placebo              SEVERE          6          5
 #> 4 Placebo              MILD          210         58
 #> 5 Xanomeline High Dose SEVERE         10          8
-#> 6 Placebo              MODERATE       65         25
-#> 7 Xanomeline Low Dose  SEVERE         25         16
-#> 8 Xanomeline Low Dose  MILD          232         64
-#> 9 Xanomeline High Dose MODERATE      115         46
+#> 6 Xanomeline Low Dose  MILD          232         64
+#> 7 Xanomeline High Dose MODERATE      115         46
+#> 8 Placebo              MODERATE       65         25
+#> 9 Xanomeline Low Dose  SEVERE         25         16
 
 # 4. Joins across SDTM and ADaM layers
 # Example: Find date discrepancies between SDTM and ADaM
@@ -1068,7 +1174,7 @@ ae_sdtm |>
     adam_term = adae_term
   )
 #> # A query:  ?? x 5
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmpszpne3/duckplyr/duckplyr1d321070aad3.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpQh9hO8/ducklake/ducklake2ad94f2b99.duckdb]
 #> # ℹ 5 variables: USUBJID <chr>, sdtm_start_date <chr>, adam_start_date <date>,
 #> #   sdtm_term <chr>, adam_term <chr>
 # Note: This returns 0 rows with clean pharmaversesdtm data,
@@ -1082,13 +1188,26 @@ Let’s explore how our datasets are connected:
 ``` r
 
 # List all tables in the data lake
-DBI::dbListTables(duckplyr:::get_default_duckdb_connection())
-#>  [1] "adae"                 "adpc"                 "adsl"                
-#>  [4] "ae"                   "ae_raw"               "dm"                  
-#>  [7] "dm_raw"               "ds"                   "ds_raw"              
-#> [10] "ex"                   "ex_raw"               "pc"                  
-#> [13] "pc_raw"               "regulatory_documents" "suppdm"              
-#> [16] "suppdm_raw"           "vs"                   "vs_raw"
+list_ducklake_tables()
+#>    schema_name           table_name  type
+#> 1         main                 adae table
+#> 2         main                 adpc table
+#> 3         main                 adsl table
+#> 4         main                   ae table
+#> 5         main               ae_raw table
+#> 6         main                   dm table
+#> 7         main               dm_raw table
+#> 8         main                   ds table
+#> 9         main               ds_raw table
+#> 10        main                   ex table
+#> 11        main               ex_raw table
+#> 12        main                   pc table
+#> 13        main               pc_raw table
+#> 14        main regulatory_documents table
+#> 15        main               suppdm table
+#> 16        main           suppdm_raw table
+#> 17        main                   vs table
+#> 18        main               vs_raw table
 
 # View snapshot history for key tables
 metadata_tables <- c("dm", "ex", "ae", "pc", 
@@ -1101,21 +1220,23 @@ purrr::map_dfr(metadata_tables, ~{
 }) |>
   select(table, snapshot_id, snapshot_time, changes)
 #>   table snapshot_id       snapshot_time
-#> 1    dm           2 2026-09-07 00:42:45
-#> 2    ex           8 2026-09-07 00:42:46
-#> 3    ae          10 2026-09-07 00:42:46
-#> 4    pc          14 2026-09-07 00:42:47
-#> 5  adsl          15 2026-09-07 00:42:48
-#> 6  adae          16 2026-09-07 00:42:48
-#> 7  adpc          17 2026-09-07 00:42:49
-#>                                               changes
-#> 1    tables_created, tables_inserted_into, main.dm, 2
-#> 2    tables_created, tables_inserted_into, main.ex, 8
-#> 3   tables_created, tables_inserted_into, main.ae, 10
-#> 4   tables_created, tables_inserted_into, main.pc, 14
-#> 5 tables_created, tables_inserted_into, main.adsl, 15
-#> 6 tables_created, tables_inserted_into, main.adae, 16
-#> 7 tables_created, tables_inserted_into, main.adpc, 17
+#> 1    dm           2 2026-09-07 00:45:47
+#> 2    ex           8 2026-09-07 00:45:49
+#> 3    ae          10 2026-09-07 00:45:49
+#> 4    pc          14 2026-09-07 00:45:50
+#> 5  adsl          15 2026-09-07 00:45:52
+#> 6  adsl          16 2026-09-07 00:45:52
+#> 7  adae          17 2026-09-07 00:45:52
+#> 8  adpc          18 2026-09-07 00:45:53
+#>                                                                   changes
+#> 1     tables_created, tables_altered, tables_inserted_into, main.dm, 2, 2
+#> 2     tables_created, tables_altered, tables_inserted_into, main.ex, 8, 8
+#> 3   tables_created, tables_altered, tables_inserted_into, main.ae, 10, 10
+#> 4   tables_created, tables_altered, tables_inserted_into, main.pc, 14, 14
+#> 5 tables_created, tables_altered, tables_inserted_into, main.adsl, 15, 15
+#> 6                                                      tables_altered, 15
+#> 7 tables_created, tables_altered, tables_inserted_into, main.adae, 16, 16
+#> 8 tables_created, tables_altered, tables_inserted_into, main.adpc, 17, 17
 
 # Check all ADAE subjects exist in ADSL
 adae_tbl <- get_ducklake_table("adae")
@@ -1144,9 +1265,13 @@ demonstrate by adding new derived variables to ADSL:
 
 ``` r
 
-# Add new derived columns using dplyr syntax
-# replace_table() handles the DROP/CREATE cycle internally
-with_transaction(
+# Add derived columns in place: declare them, fill them with an in-database
+# UPDATE, and label them. Nothing is collected into R, and the three steps
+# land as one snapshot.
+with_transaction({
+  add_table_column("adsl", "AGE65FL", "VARCHAR")
+  add_table_column("adsl", "AGECAT", "VARCHAR")
+
   get_ducklake_table("adsl") |>
     mutate(
       AGE65FL = if_else(AGE >= 65, "Y", "N"),
@@ -1157,34 +1282,47 @@ with_transaction(
         TRUE ~ NA_character_
       )
     ) |>
-    replace_table("adsl"),
-  author = "T Gerke",
-  commit_message = "Add age categorization vars"
-)
+    ducklake_exec()
+
+  set_column_comments(
+    "adsl",
+    AGE65FL = "Age 65 or Older Flag",
+    AGECAT = "Age Category"
+  )
+}, author = "T Gerke", commit_message = "Add age categorization vars")
 #> Transaction started.
+#> Added column "AGE65FL" (VARCHAR) to "adsl".
+#> ℹ Metadata-only change; no data files were rewritten.
+#> Added column "AGECAT" (VARCHAR) to "adsl".
+#> ℹ Metadata-only change; no data files were rewritten.
+#> Commented 2 columns on "adsl".
 #> Transaction committed.
 
-# View version history - should now show 2 snapshots
+# View version history
 list_table_snapshots("adsl")
-#>    snapshot_id       snapshot_time schema_version
-#> 16          15 2026-09-07 00:42:48             15
-#> 22          21 2026-09-07 00:42:51             21
-#>                                                                    changes
-#> 16                     tables_created, tables_inserted_into, main.adsl, 15
-#> 22 tables_created, tables_dropped, tables_inserted_into, main.adsl, 15, 21
-#>     author              commit_message
-#> 16 T Gerke         Create ADSL dataset
-#> 22 T Gerke Add age categorization vars
-#>                                                                      commit_extra_info
-#> 16 Derived from DM, SUPPDM, DS, EX; includes treatment dates, safety flags, age groups
-#> 22                                                                                <NA>
+#>   snapshot_id       snapshot_time schema_version
+#> 1          15 2026-09-07 00:45:52             15
+#> 2          16 2026-09-07 00:45:52             16
+#> 3          22 2026-09-07 00:45:55             22
+#>                                                                   changes
+#> 1 tables_created, tables_altered, tables_inserted_into, main.adsl, 15, 15
+#> 2                                                      tables_altered, 15
+#> 3   tables_altered, tables_inserted_into, tables_deleted_from, 15, 15, 15
+#>    author              commit_message
+#> 1 T Gerke         Create ADSL dataset
+#> 2    <NA>                        <NA>
+#> 3 T Gerke Add age categorization vars
+#>                                                                     commit_extra_info
+#> 1 Derived from DM, SUPPDM, DS, EX; includes treatment dates, safety flags, age groups
+#> 2                                                                                <NA>
+#> 3                                                                                <NA>
 
 # Verify new columns exist
 get_ducklake_table("adsl") |>
   select(USUBJID, AGE, AGE65FL, AGECAT) |>
   head(5)
 #> # A query:  ?? x 4
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmpszpne3/duckplyr/duckplyr1d321070aad3.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpQh9hO8/ducklake/ducklake2ad94f2b99.duckdb]
 #>   USUBJID       AGE AGE65FL AGECAT
 #>   <chr>       <dbl> <chr>   <chr> 
 #> 1 01-701-1015    63 N       <65   
@@ -1194,52 +1332,68 @@ get_ducklake_table("adsl") |>
 #> 5 01-701-1034    77 Y       >=75
 ```
 
-#### Best Practice: Use replace_table() for All Modifications
+#### Best Practice: Choose the Right Modification Tool
 
-For clinical trial data workflows, **always use
-[`replace_table()`](https://tgerke.github.io/ducklake-r/reference/replace_table.md)
-wrapped in
-[`with_transaction()`](https://tgerke.github.io/ducklake-r/reference/with_transaction.md)**
-to ensure complete audit trails and regulatory compliance.
+Every committed change to a DuckLake table creates a versioned snapshot,
+so the audit trail is complete whichever function you use. The choice is
+about the *kind* of change (see
+[`vignette("modifying-tables")`](https://tgerke.github.io/ducklake-r/articles/modifying-tables.md)
+for the full guidance):
 
-**Why replace_table() is essential for GxP work:**
-
-- ✅ **Creates versioned snapshots** - Every change is recorded and can
-  be time-traveled back to
-- ✅ **Complete audit trails** - Records what changed, when, and by whom
-- ✅ **Regulatory compliance** - Meets 21 CFR Part 11 and ICH GCP
-  requirements
-- ✅ **Data lineage** - Proves data integrity for regulatory inspections
-- ✅ **Schema flexibility** - Add/remove columns or modify values with
-  the same approach
-- ✅ **Natural dplyr interface** -
-  `get_ducklake_table(name) |> mutate(...) |> replace_table(name)`
-
-**For all modifications in clinical trials**, use this pattern:
+- **New derived variables**: declare them with
+  [`add_table_column()`](https://tgerke.github.io/ducklake-r/reference/add_table_column.md)
+  and fill them with a
+  [`mutate()`](https://dplyr.tidyverse.org/reference/mutate.html)
+  pipeline through
+  [`ducklake_exec()`](https://tgerke.github.io/ducklake-r/reference/ducklake_exec.md),
+  as in the example above. The column is a metadata change and the fill
+  is an in-database UPDATE; nothing is collected into R.
+- **Targeted corrections** (fixing a flag for one subject, appending a
+  handful of records): use
+  [`rows_update()`](https://tgerke.github.io/ducklake-r/reference/rows_update.md),
+  [`rows_insert()`](https://tgerke.github.io/ducklake-r/reference/rows_insert.md),
+  or
+  [`rows_delete()`](https://tgerke.github.io/ducklake-r/reference/rows_delete.md).
+  The change runs as a single SQL statement without rewriting the rest
+  of the table, and small changesets benefit from DuckLake’s data
+  inlining.
+- **Bulk reshapes** (recomputing or filtering most of a dataset,
+  changing its grain): use
+  [`replace_table()`](https://tgerke.github.io/ducklake-r/reference/replace_table.md)
+  wrapped in
+  [`with_transaction()`](https://tgerke.github.io/ducklake-r/reference/with_transaction.md).
+  It rewrites the whole table, which is the right tool when most rows
+  change anyway, and it carries the table’s labels, partition keys, sort
+  order, and options over to the rewritten table.
 
 ``` r
 
-# Correcting a specific value - creates auditable snapshot
+# Targeted correction: fix one subject's safety flag with rows_update()
 with_transaction(
-  get_ducklake_table("adsl") |>
-    mutate(SAFFL = if_else(USUBJID == "01-701-1015", "N", SAFFL)) |>
-    replace_table("adsl"),
+  rows_update(
+    get_ducklake_table("adsl"),
+    data.frame(USUBJID = "01-701-1015", SAFFL = "N"),
+    by = "USUBJID"
+  ),
   author = "T Gerke",
-  commit_message = "Correct safety flag"
+  commit_message = "Correct safety flag for 01-701-1015"
 )
 
-# Adding new derived columns - creates auditable snapshot
+# Bulk reshape: restrict the dataset to the safety population
 with_transaction(
   get_ducklake_table("adsl") |>
-    mutate(AGE65FL = if_else(AGE >= 65, "Y", "N")) |>
+    filter(SAFFL == "Y") |>
     replace_table("adsl"),
   author = "T Gerke",
-  commit_message = "Add age 65+ flag"
+  commit_message = "Restrict ADSL to the safety population"
 )
 ```
 
 Both operations create snapshots you can time-travel back to and include
-in your regulatory audit trail.
+in your regulatory audit trail, with the author and commit message
+recorded by
+[`with_transaction()`](https://tgerke.github.io/ducklake-r/reference/with_transaction.md)
+– the pattern to keep for GxP/21 CFR Part 11 work.
 
 #### Iterative Development with Full Audit Trail
 
@@ -1248,21 +1402,22 @@ iteration to maintain a complete audit trail:
 
 ``` r
 
-# Iteration 1: First attempt (creates snapshot v2)
-with_transaction(
+# Iteration 1: First attempt, a new column filled in place
+with_transaction({
+  add_table_column("adsl", "AGECAT_TEST", "VARCHAR")
   get_ducklake_table("adsl") |>
     mutate(AGECAT_TEST = case_when(
       AGE < 50 ~ "Young",
       AGE >= 50 ~ "Older"
     )) |>
-    replace_table("adsl"),
-  author = "T Gerke",
-  commit_message = "Test age categories v1"
-)
+    ducklake_exec()
+}, author = "T Gerke", commit_message = "Test age categories v1")
 #> Transaction started.
+#> Added column "AGECAT_TEST" (VARCHAR) to "adsl".
+#> ℹ Metadata-only change; no data files were rewritten.
 #> Transaction committed.
 
-# Iteration 2: Refinement (creates snapshot v3)
+# Iteration 2: Refinement, an UPDATE of the same column
 with_transaction(
   get_ducklake_table("adsl") |>
     mutate(AGECAT_TEST = case_when(
@@ -1270,59 +1425,63 @@ with_transaction(
       AGE < 65 ~ "40-64",
       AGE >= 65 ~ "65+"
     )) |>
-    replace_table("adsl"),
+    ducklake_exec(),
   author = "T Gerke",
   commit_message = "Refine age categories v2"
 )
 #> Transaction started.
 #> Transaction committed.
 
-# Iteration 3: Final version (creates snapshot v4)
-with_transaction(
+# Iteration 3: Final version, replacing the test column with the real one
+with_transaction({
+  drop_table_column("adsl", "AGECAT_TEST")
+  add_table_column("adsl", "AGECAT2", "VARCHAR")
   get_ducklake_table("adsl") |>
-    mutate(
-      AGECAT_TEST = NULL,
-      AGECAT2 = case_when(
-        AGE < 40 ~ "18-39",
-        AGE < 65 ~ "40-64",
-        AGE >= 65 ~ "65+",
-        TRUE ~ "Missing"
-      )
-    ) |>
-    replace_table("adsl"),
-  author = "T Gerke",
-  commit_message = "Finalize age categories"
-)
+    mutate(AGECAT2 = case_when(
+      AGE < 40 ~ "18-39",
+      AGE < 65 ~ "40-64",
+      AGE >= 65 ~ "65+",
+      TRUE ~ "Missing"
+    )) |>
+    ducklake_exec()
+}, author = "T Gerke", commit_message = "Finalize age categories")
 #> Transaction started.
+#> Dropped column "AGECAT_TEST" from "adsl". Earlier snapshots still contain it.
+#> Added column "AGECAT2" (VARCHAR) to "adsl".
+#> ℹ Metadata-only change; no data files were rewritten.
 #> Transaction committed.
 
 # Complete audit trail available
 snapshots <- list_table_snapshots("adsl")
 snapshots  # Shows all iterations with snapshot metadata
-#>    snapshot_id       snapshot_time schema_version
-#> 16          15 2026-09-07 00:42:48             15
-#> 22          21 2026-09-07 00:42:51             21
-#> 23          22 2026-09-07 00:42:51             22
-#> 24          23 2026-09-07 00:42:51             23
-#> 25          24 2026-09-07 00:42:51             24
-#>                                                                    changes
-#> 16                     tables_created, tables_inserted_into, main.adsl, 15
-#> 22 tables_created, tables_dropped, tables_inserted_into, main.adsl, 15, 21
-#> 23 tables_created, tables_dropped, tables_inserted_into, main.adsl, 21, 22
-#> 24 tables_created, tables_dropped, tables_inserted_into, main.adsl, 22, 23
-#> 25 tables_created, tables_dropped, tables_inserted_into, main.adsl, 23, 24
-#>     author              commit_message
-#> 16 T Gerke         Create ADSL dataset
-#> 22 T Gerke Add age categorization vars
-#> 23 T Gerke      Test age categories v1
-#> 24 T Gerke    Refine age categories v2
-#> 25 T Gerke     Finalize age categories
-#>                                                                      commit_extra_info
-#> 16 Derived from DM, SUPPDM, DS, EX; includes treatment dates, safety flags, age groups
-#> 22                                                                                <NA>
-#> 23                                                                                <NA>
-#> 24                                                                                <NA>
-#> 25                                                                                <NA>
+#>   snapshot_id       snapshot_time schema_version
+#> 1          15 2026-09-07 00:45:52             15
+#> 2          16 2026-09-07 00:45:52             16
+#> 3          22 2026-09-07 00:45:55             22
+#> 4          23 2026-09-07 00:45:55             23
+#> 5          24 2026-09-07 00:45:56             23
+#> 6          25 2026-09-07 00:45:56             24
+#>                                                                   changes
+#> 1 tables_created, tables_altered, tables_inserted_into, main.adsl, 15, 15
+#> 2                                                      tables_altered, 15
+#> 3   tables_altered, tables_inserted_into, tables_deleted_from, 15, 15, 15
+#> 4   tables_altered, tables_inserted_into, tables_deleted_from, 15, 15, 15
+#> 5                       tables_inserted_into, tables_deleted_from, 15, 15
+#> 6   tables_altered, tables_inserted_into, tables_deleted_from, 15, 15, 15
+#>    author              commit_message
+#> 1 T Gerke         Create ADSL dataset
+#> 2    <NA>                        <NA>
+#> 3 T Gerke Add age categorization vars
+#> 4 T Gerke      Test age categories v1
+#> 5 T Gerke    Refine age categories v2
+#> 6 T Gerke     Finalize age categories
+#>                                                                     commit_extra_info
+#> 1 Derived from DM, SUPPDM, DS, EX; includes treatment dates, safety flags, age groups
+#> 2                                                                                <NA>
+#> 3                                                                                <NA>
+#> 4                                                                                <NA>
+#> 5                                                                                <NA>
+#> 6                                                                                <NA>
 
 # Each row represents a point in time you can restore to
 # - snapshot_id: Unique identifier for this version
@@ -1379,30 +1538,34 @@ adsl_current <- get_ducklake_table("adsl")
 # Get the version history for adsl
 versions <- list_table_snapshots("adsl")
 print(versions)
-#>    snapshot_id       snapshot_time schema_version
-#> 16          15 2026-09-07 00:42:48             15
-#> 22          21 2026-09-07 00:42:51             21
-#> 23          22 2026-09-07 00:42:51             22
-#> 24          23 2026-09-07 00:42:51             23
-#> 25          24 2026-09-07 00:42:51             24
-#>                                                                    changes
-#> 16                     tables_created, tables_inserted_into, main.adsl, 15
-#> 22 tables_created, tables_dropped, tables_inserted_into, main.adsl, 15, 21
-#> 23 tables_created, tables_dropped, tables_inserted_into, main.adsl, 21, 22
-#> 24 tables_created, tables_dropped, tables_inserted_into, main.adsl, 22, 23
-#> 25 tables_created, tables_dropped, tables_inserted_into, main.adsl, 23, 24
-#>     author              commit_message
-#> 16 T Gerke         Create ADSL dataset
-#> 22 T Gerke Add age categorization vars
-#> 23 T Gerke      Test age categories v1
-#> 24 T Gerke    Refine age categories v2
-#> 25 T Gerke     Finalize age categories
-#>                                                                      commit_extra_info
-#> 16 Derived from DM, SUPPDM, DS, EX; includes treatment dates, safety flags, age groups
-#> 22                                                                                <NA>
-#> 23                                                                                <NA>
-#> 24                                                                                <NA>
-#> 25                                                                                <NA>
+#>   snapshot_id       snapshot_time schema_version
+#> 1          15 2026-09-07 00:45:52             15
+#> 2          16 2026-09-07 00:45:52             16
+#> 3          22 2026-09-07 00:45:55             22
+#> 4          23 2026-09-07 00:45:55             23
+#> 5          24 2026-09-07 00:45:56             23
+#> 6          25 2026-09-07 00:45:56             24
+#>                                                                   changes
+#> 1 tables_created, tables_altered, tables_inserted_into, main.adsl, 15, 15
+#> 2                                                      tables_altered, 15
+#> 3   tables_altered, tables_inserted_into, tables_deleted_from, 15, 15, 15
+#> 4   tables_altered, tables_inserted_into, tables_deleted_from, 15, 15, 15
+#> 5                       tables_inserted_into, tables_deleted_from, 15, 15
+#> 6   tables_altered, tables_inserted_into, tables_deleted_from, 15, 15, 15
+#>    author              commit_message
+#> 1 T Gerke         Create ADSL dataset
+#> 2    <NA>                        <NA>
+#> 3 T Gerke Add age categorization vars
+#> 4 T Gerke      Test age categories v1
+#> 5 T Gerke    Refine age categories v2
+#> 6 T Gerke     Finalize age categories
+#>                                                                     commit_extra_info
+#> 1 Derived from DM, SUPPDM, DS, EX; includes treatment dates, safety flags, age groups
+#> 2                                                                                <NA>
+#> 3                                                                                <NA>
+#> 4                                                                                <NA>
+#> 5                                                                                <NA>
+#> 6                                                                                <NA>
 
 # Get data from the first snapshot version
 first_snapshot_id <- versions |>
@@ -1509,17 +1672,14 @@ trails:
 
 ``` r
 
-# Update a specific record with versioning
+# Correct one record by key: a single in-database UPDATE, versioned like
+# every other change, without rewriting the rest of the table
 with_transaction(
-  get_ducklake_table("adae") |>
-    mutate(
-      AESEV = if_else(
-        USUBJID == "01-701-1015" & AESEQ == 1,
-        "SEVERE",
-        AESEV
-      )
-    ) |>
-    replace_table("adae"),  # Creates versioned snapshot
+  rows_update(
+    get_ducklake_table("adae"),
+    data.frame(USUBJID = "01-701-1015", AESEQ = 1, AESEV = "SEVERE"),
+    by = c("USUBJID", "AESEQ")
+  ),
   author = "T Gerke",
   commit_message = "Correct AE severity"
 )
@@ -1531,7 +1691,7 @@ get_ducklake_table("adae") |>
   filter(USUBJID == "01-701-1015", AESEQ == 1) |>
   select(USUBJID, AEDECOD, AESEV)
 #> # A query:  ?? x 3
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmpszpne3/duckplyr/duckplyr1d321070aad3.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpQh9hO8/ducklake/ducklake2ad94f2b99.duckdb]
 #>   USUBJID     AEDECOD                   AESEV 
 #>   <chr>       <chr>                     <chr> 
 #> 1 01-701-1015 APPLICATION SITE ERYTHEMA SEVERE
@@ -1548,7 +1708,7 @@ get_ducklake_table("adsl") |>
   count(EOSSTT, TRT01P) |>
   arrange(TRT01P, EOSSTT)
 #> # A query:    ?? x 3
-#> # Database:   DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmpszpne3/duckplyr/duckplyr1d321070aad3.duckdb]
+#> # Database:   DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpQh9hO8/ducklake/ducklake2ad94f2b99.duckdb]
 #> # Ordered by: TRT01P, EOSSTT
 #>   EOSSTT    TRT01P                   n
 #>   <chr>     <chr>                <dbl>
@@ -1563,7 +1723,7 @@ get_ducklake_table("adae") |>
   count(TRT01A, AESEV) |>
   arrange(TRT01A, AESEV)
 #> # A query:    ?? x 3
-#> # Database:   DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmpszpne3/duckplyr/duckplyr1d321070aad3.duckdb]
+#> # Database:   DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpQh9hO8/ducklake/ducklake2ad94f2b99.duckdb]
 #> # Ordered by: TRT01A, AESEV
 #>   TRT01A               AESEV        n
 #>   <chr>                <chr>    <dbl>
@@ -1588,7 +1748,7 @@ get_ducklake_table("adpc") |>
   ) |>
   arrange(NFRLT)
 #> # A query:    ?? x 4
-#> # Database:   DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmpszpne3/duckplyr/duckplyr1d321070aad3.duckdb]
+#> # Database:   DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpQh9hO8/ducklake/ducklake2ad94f2b99.duckdb]
 #> # Ordered by: NFRLT
 #>    NFRLT     n mean_conc  sd_conc
 #>    <dbl> <dbl>     <dbl>    <dbl>
@@ -1622,7 +1782,7 @@ get_ducklake_table("adae") |>
   count(AGEGR1, TRT01A.x) |>
   arrange(AGEGR1, TRT01A.x)
 #> # A query:    ?? x 3
-#> # Database:   DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmpszpne3/duckplyr/duckplyr1d321070aad3.duckdb]
+#> # Database:   DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpQh9hO8/ducklake/ducklake2ad94f2b99.duckdb]
 #> # Ordered by: AGEGR1, TRT01A.x
 #>   AGEGR1 TRT01A.x                 n
 #>   <chr>  <chr>                <dbl>
@@ -1643,49 +1803,49 @@ For regulatory submissions, the complete audit trail is essential:
 # Generate audit report for ADSL
 audit_report <- list_table_snapshots("adsl")
 audit_report
-#>    snapshot_id       snapshot_time schema_version
-#> 16          15 2026-09-07 00:42:48             15
-#> 22          21 2026-09-07 00:42:51             21
-#> 23          22 2026-09-07 00:42:51             22
-#> 24          23 2026-09-07 00:42:51             23
-#> 25          24 2026-09-07 00:42:51             24
-#> 26          25 2026-09-07 00:42:52             25
-#>                                                                                       changes
-#> 16                                        tables_created, tables_inserted_into, main.adsl, 15
-#> 22                    tables_created, tables_dropped, tables_inserted_into, main.adsl, 15, 21
-#> 23                    tables_created, tables_dropped, tables_inserted_into, main.adsl, 21, 22
-#> 24                    tables_created, tables_dropped, tables_inserted_into, main.adsl, 22, 23
-#> 25                    tables_created, tables_dropped, tables_inserted_into, main.adsl, 23, 24
-#> 26 tables_created, tables_dropped, tables_inserted_into, main.adsl, main.adae, 16, 24, 25, 26
-#>     author              commit_message
-#> 16 T Gerke         Create ADSL dataset
-#> 22 T Gerke Add age categorization vars
-#> 23 T Gerke      Test age categories v1
-#> 24 T Gerke    Refine age categories v2
-#> 25 T Gerke     Finalize age categories
-#> 26 T Gerke           Add analysis flag
-#>                                                                      commit_extra_info
-#> 16 Derived from DM, SUPPDM, DS, EX; includes treatment dates, safety flags, age groups
-#> 22                                                                                <NA>
-#> 23                                                                                <NA>
-#> 24                                                                                <NA>
-#> 25                                                                                <NA>
-#> 26                                                                                <NA>
+#>   snapshot_id       snapshot_time schema_version
+#> 1          15 2026-09-07 00:45:52             15
+#> 2          16 2026-09-07 00:45:52             16
+#> 3          22 2026-09-07 00:45:55             22
+#> 4          23 2026-09-07 00:45:55             23
+#> 5          24 2026-09-07 00:45:56             23
+#> 6          25 2026-09-07 00:45:56             24
+#> 7          26 2026-09-07 00:45:56             25
+#>                                                                                                              changes
+#> 1                                            tables_created, tables_altered, tables_inserted_into, main.adsl, 15, 15
+#> 2                                                                                                 tables_altered, 15
+#> 3                                              tables_altered, tables_inserted_into, tables_deleted_from, 15, 15, 15
+#> 4                                              tables_altered, tables_inserted_into, tables_deleted_from, 15, 15, 15
+#> 5                                                                  tables_inserted_into, tables_deleted_from, 15, 15
+#> 6                                              tables_altered, tables_inserted_into, tables_deleted_from, 15, 15, 15
+#> 7 tables_created, tables_dropped, tables_altered, tables_inserted_into, main.adsl, main.adae, 15, 16, 21, 22, 21, 22
+#>    author              commit_message
+#> 1 T Gerke         Create ADSL dataset
+#> 2    <NA>                        <NA>
+#> 3 T Gerke Add age categorization vars
+#> 4 T Gerke      Test age categories v1
+#> 5 T Gerke    Refine age categories v2
+#> 6 T Gerke     Finalize age categories
+#> 7 T Gerke           Add analysis flag
+#>                                                                     commit_extra_info
+#> 1 Derived from DM, SUPPDM, DS, EX; includes treatment dates, safety flags, age groups
+#> 2                                                                                <NA>
+#> 3                                                                                <NA>
+#> 4                                                                                <NA>
+#> 5                                                                                <NA>
+#> 6                                                                                <NA>
+#> 7                                                                                <NA>
 
 # Get table metadata from DuckLake system tables
 adsl_table_meta <- get_metadata_table("ducklake_table") |>
   filter(table_name == "adsl") |>
   collect()
 adsl_table_meta
-#> # A tibble: 6 × 8
+#> # A tibble: 2 × 8
 #>   table_id table_uuid     begin_snapshot end_snapshot schema_id table_name path 
 #>      <dbl> <chr>                   <dbl>        <dbl>     <dbl> <chr>      <chr>
-#> 1       15 01a07951-5580…             15           21         0 adsl       adsl/
-#> 2       21 01a07951-60a2…             21           22         0 adsl       adsl/
-#> 3       22 01a07951-619a…             22           23         0 adsl       adsl/
-#> 4       23 01a07951-6247…             23           24         0 adsl       adsl/
-#> 5       24 01a07951-62f7…             24           25         0 adsl       adsl/
-#> 6       26 01a07951-6631…             25           NA         0 adsl       adsl/
+#> 1       15 01a07954-22f2…             15           26         0 adsl       adsl/
+#> 2       22 01a07954-34f6…             26           NA         0 adsl       adsl/
 #> # ℹ 1 more variable: path_is_relative <lgl>
 
 # Export audit information
@@ -1695,41 +1855,46 @@ audit_export <- audit_report |>
     dataset_label = "Subject-Level Analysis Dataset"
   )
 audit_export
-#>    snapshot_id       snapshot_time schema_version
-#> 16          15 2026-09-07 00:42:48             15
-#> 22          21 2026-09-07 00:42:51             21
-#> 23          22 2026-09-07 00:42:51             22
-#> 24          23 2026-09-07 00:42:51             23
-#> 25          24 2026-09-07 00:42:51             24
-#> 26          25 2026-09-07 00:42:52             25
-#>                                                                                       changes
-#> 16                                        tables_created, tables_inserted_into, main.adsl, 15
-#> 22                    tables_created, tables_dropped, tables_inserted_into, main.adsl, 15, 21
-#> 23                    tables_created, tables_dropped, tables_inserted_into, main.adsl, 21, 22
-#> 24                    tables_created, tables_dropped, tables_inserted_into, main.adsl, 22, 23
-#> 25                    tables_created, tables_dropped, tables_inserted_into, main.adsl, 23, 24
-#> 26 tables_created, tables_dropped, tables_inserted_into, main.adsl, main.adae, 16, 24, 25, 26
-#>     author              commit_message
-#> 16 T Gerke         Create ADSL dataset
-#> 22 T Gerke Add age categorization vars
-#> 23 T Gerke      Test age categories v1
-#> 24 T Gerke    Refine age categories v2
-#> 25 T Gerke     Finalize age categories
-#> 26 T Gerke           Add analysis flag
-#>                                                                      commit_extra_info
-#> 16 Derived from DM, SUPPDM, DS, EX; includes treatment dates, safety flags, age groups
-#> 22                                                                                <NA>
-#> 23                                                                                <NA>
-#> 24                                                                                <NA>
-#> 25                                                                                <NA>
-#> 26                                                                                <NA>
-#>    table_name                  dataset_label
-#> 16       adsl Subject-Level Analysis Dataset
-#> 22       adsl Subject-Level Analysis Dataset
-#> 23       adsl Subject-Level Analysis Dataset
-#> 24       adsl Subject-Level Analysis Dataset
-#> 25       adsl Subject-Level Analysis Dataset
-#> 26       adsl Subject-Level Analysis Dataset
+#>   snapshot_id       snapshot_time schema_version
+#> 1          15 2026-09-07 00:45:52             15
+#> 2          16 2026-09-07 00:45:52             16
+#> 3          22 2026-09-07 00:45:55             22
+#> 4          23 2026-09-07 00:45:55             23
+#> 5          24 2026-09-07 00:45:56             23
+#> 6          25 2026-09-07 00:45:56             24
+#> 7          26 2026-09-07 00:45:56             25
+#>                                                                                                              changes
+#> 1                                            tables_created, tables_altered, tables_inserted_into, main.adsl, 15, 15
+#> 2                                                                                                 tables_altered, 15
+#> 3                                              tables_altered, tables_inserted_into, tables_deleted_from, 15, 15, 15
+#> 4                                              tables_altered, tables_inserted_into, tables_deleted_from, 15, 15, 15
+#> 5                                                                  tables_inserted_into, tables_deleted_from, 15, 15
+#> 6                                              tables_altered, tables_inserted_into, tables_deleted_from, 15, 15, 15
+#> 7 tables_created, tables_dropped, tables_altered, tables_inserted_into, main.adsl, main.adae, 15, 16, 21, 22, 21, 22
+#>    author              commit_message
+#> 1 T Gerke         Create ADSL dataset
+#> 2    <NA>                        <NA>
+#> 3 T Gerke Add age categorization vars
+#> 4 T Gerke      Test age categories v1
+#> 5 T Gerke    Refine age categories v2
+#> 6 T Gerke     Finalize age categories
+#> 7 T Gerke           Add analysis flag
+#>                                                                     commit_extra_info
+#> 1 Derived from DM, SUPPDM, DS, EX; includes treatment dates, safety flags, age groups
+#> 2                                                                                <NA>
+#> 3                                                                                <NA>
+#> 4                                                                                <NA>
+#> 5                                                                                <NA>
+#> 6                                                                                <NA>
+#> 7                                                                                <NA>
+#>   table_name                  dataset_label
+#> 1       adsl Subject-Level Analysis Dataset
+#> 2       adsl Subject-Level Analysis Dataset
+#> 3       adsl Subject-Level Analysis Dataset
+#> 4       adsl Subject-Level Analysis Dataset
+#> 5       adsl Subject-Level Analysis Dataset
+#> 6       adsl Subject-Level Analysis Dataset
+#> 7       adsl Subject-Level Analysis Dataset
 ```
 
 ## Data Inlining and Regulatory Archival
@@ -1755,7 +1920,7 @@ of files:
 ``` r
 
 # Materialise any inlined data to Parquet before archival
-checkpoint_ducklake()
+flush_inlined_data()
 ```
 
 This ensures that the archived lake can be read by any Parquet-capable

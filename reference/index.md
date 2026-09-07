@@ -6,14 +6,22 @@ Initialize and manage DuckLake connections
 
 - [`install_ducklake()`](https://tgerke.github.io/ducklake-r/reference/install_ducklake.md)
   : Install the ducklake extension to duckdb
+- [`ducklake_extension_available()`](https://tgerke.github.io/ducklake-r/reference/ducklake_extension_available.md)
+  : Is the ducklake DuckDB extension usable?
 - [`attach_ducklake()`](https://tgerke.github.io/ducklake-r/reference/attach_ducklake.md)
   : Create or attach a ducklake
 - [`detach_ducklake()`](https://tgerke.github.io/ducklake-r/reference/detach_ducklake.md)
   : Detach from a ducklake
 - [`get_ducklake_connection()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_connection.md)
-  : Get the current DuckLake connection
+  : Get the DuckDB connection used by ducklake
+- [`set_ducklake_connection()`](https://tgerke.github.io/ducklake-r/reference/set_ducklake_connection.md)
+  : Use your own DuckDB connection with ducklake
 - [`get_ducklake_backend()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_backend.md)
-  : Get the current catalog backend type
+  : Get the catalog backend type of an attached lake
+- [`get_ducklake_info()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_info.md)
+  : Describe an attached DuckLake
+- [`create_storage_secret()`](https://tgerke.github.io/ducklake-r/reference/create_storage_secret.md)
+  : Store object storage credentials for a session
 
 ## Table Operations
 
@@ -25,6 +33,18 @@ Create and query tables
   : Get a DuckLake table
 - [`replace_table()`](https://tgerke.github.io/ducklake-r/reference/replace_table.md)
   : Replace a table with modified data and create a new snapshot
+- [`add_data_files()`](https://tgerke.github.io/ducklake-r/reference/add_data_files.md)
+  : Register existing Parquet files with a DuckLake table
+- [`create_view()`](https://tgerke.github.io/ducklake-r/reference/create_view.md)
+  : Create a DuckLake view from a dplyr pipeline
+- [`drop_view()`](https://tgerke.github.io/ducklake-r/reference/drop_view.md)
+  : Drop a DuckLake view
+- [`create_schema()`](https://tgerke.github.io/ducklake-r/reference/create_schema.md)
+  : Create a schema in a DuckLake
+- [`drop_schema()`](https://tgerke.github.io/ducklake-r/reference/drop_schema.md)
+  : Drop a schema from a DuckLake
+- [`list_ducklake_tables()`](https://tgerke.github.io/ducklake-r/reference/list_ducklake_tables.md)
+  : List the tables and views in a DuckLake catalog
 
 ## Row Operations
 
@@ -36,6 +56,27 @@ Modify table rows with dplyr-style functions
   : Update rows in a DuckLake table
 - [`rows_delete()`](https://tgerke.github.io/ducklake-r/reference/rows_delete.md)
   : Delete rows from a DuckLake table
+- [`rows_upsert()`](https://tgerke.github.io/ducklake-r/reference/rows_upsert.md)
+  : Upsert rows into a DuckLake table
+- [`merge_into()`](https://tgerke.github.io/ducklake-r/reference/merge_into.md)
+  : Merge a source table into a DuckLake table
+
+## Schema Evolution
+
+Change a table’s shape in place, preserving history
+
+- [`add_table_column()`](https://tgerke.github.io/ducklake-r/reference/add_table_column.md)
+  : Add a column to a DuckLake table
+- [`drop_table_column()`](https://tgerke.github.io/ducklake-r/reference/drop_table_column.md)
+  : Drop a column from a DuckLake table
+- [`rename_table_column()`](https://tgerke.github.io/ducklake-r/reference/rename_table_column.md)
+  : Rename a column in a DuckLake table
+- [`set_column_type()`](https://tgerke.github.io/ducklake-r/reference/set_column_type.md)
+  : Change the type of a DuckLake table column
+- [`set_column_not_null()`](https://tgerke.github.io/ducklake-r/reference/set_column_not_null.md)
+  : Require or allow NULL values in a column
+- [`rename_ducklake_table()`](https://tgerke.github.io/ducklake-r/reference/rename_ducklake_table.md)
+  : Rename a DuckLake table
 
 ## Query Execution
 
@@ -45,8 +86,6 @@ Execute and preview SQL queries
   : Execute DuckLake operations from dplyr queries
 - [`show_ducklake_query()`](https://tgerke.github.io/ducklake-r/reference/show_ducklake_query.md)
   : Show the SQL that would be executed by ducklake operations
-- [`extract_assignments_from_sql()`](https://tgerke.github.io/ducklake-r/reference/extract_assignments_from_sql.md)
-  : Extract column assignments from SQL SELECT statement
 
 ## Transactions
 
@@ -60,6 +99,8 @@ ACID transaction support
   : Commit a transaction
 - [`rollback_transaction()`](https://tgerke.github.io/ducklake-r/reference/rollback_transaction.md)
   : Rollback a transaction
+- [`set_ducklake_retry()`](https://tgerke.github.io/ducklake-r/reference/set_ducklake_retry.md)
+  : Configure how DuckLake retries conflicting transactions
 
 ## Time Travel
 
@@ -69,10 +110,27 @@ Query and restore historical data
   : Query a table at a specific timestamp (time travel)
 - [`get_ducklake_table_version()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_table_version.md)
   : Query a table at a specific version/snapshot
+- [`get_table_changes()`](https://tgerke.github.io/ducklake-r/reference/get_table_changes.md)
+  : Get the changes made to a table between two snapshots
 - [`list_table_snapshots()`](https://tgerke.github.io/ducklake-r/reference/list_table_snapshots.md)
   : List available snapshots for a table
+- [`plot_snapshots()`](https://tgerke.github.io/ducklake-r/reference/plot_snapshots.md)
+  : Plot the snapshot history of a table or lake
+- [`plot_table_changes()`](https://tgerke.github.io/ducklake-r/reference/plot_table_changes.md)
+  : Plot the rows changed in each snapshot of a table
 - [`restore_table_version()`](https://tgerke.github.io/ducklake-r/reference/restore_table_version.md)
   : Restore a table to a previous version
+
+## Table Documentation
+
+Comments and variable labels stored in the lake
+
+- [`set_table_comment()`](https://tgerke.github.io/ducklake-r/reference/set_table_comment.md)
+  : Set the comment on a DuckLake table
+- [`set_column_comments()`](https://tgerke.github.io/ducklake-r/reference/set_column_comments.md)
+  : Set column comments on a DuckLake table
+- [`get_table_comments()`](https://tgerke.github.io/ducklake-r/reference/get_table_comments.md)
+  : Read table, view, and column comments from a DuckLake catalog
 
 ## Metadata
 
@@ -96,9 +154,68 @@ Configure and manage data inlining for streaming workloads
 - [`checkpoint_ducklake()`](https://tgerke.github.io/ducklake-r/reference/checkpoint_ducklake.md)
   : Run a DuckLake checkpoint
 
+## Partitioning and Sorting
+
+Manage partition keys and sort orders for file pruning
+
+- [`set_table_partitioning()`](https://tgerke.github.io/ducklake-r/reference/set_table_partitioning.md)
+  : Set partitioning keys for a table
+- [`reset_table_partitioning()`](https://tgerke.github.io/ducklake-r/reference/reset_table_partitioning.md)
+  : Remove partitioning keys from a table
+- [`get_table_partitions()`](https://tgerke.github.io/ducklake-r/reference/get_table_partitions.md)
+  : List the partitioning keys of tables in a lake
+- [`set_table_sorting()`](https://tgerke.github.io/ducklake-r/reference/set_table_sorting.md)
+  : Set the sort order of a table
+- [`reset_table_sorting()`](https://tgerke.github.io/ducklake-r/reference/reset_table_sorting.md)
+  : Remove the sort order from a table
+- [`get_table_sorting()`](https://tgerke.github.io/ducklake-r/reference/get_table_sorting.md)
+  : List the sort keys of tables in a lake
+
+## Options
+
+Lake, schema, and table configuration
+
+- [`set_ducklake_option()`](https://tgerke.github.io/ducklake-r/reference/set_ducklake_option.md)
+  : Set a DuckLake option
+- [`get_ducklake_options()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_options.md)
+  : List the options set on a DuckLake
+
 ## Backup and Maintenance
 
-Backup and restore operations
+Backup, compaction, and storage reclamation
 
 - [`backup_ducklake()`](https://tgerke.github.io/ducklake-r/reference/backup_ducklake.md)
   : Create a DuckLake backup
+- [`expire_snapshots()`](https://tgerke.github.io/ducklake-r/reference/expire_snapshots.md)
+  : Expire old snapshots
+- [`merge_adjacent_files()`](https://tgerke.github.io/ducklake-r/reference/merge_adjacent_files.md)
+  : Merge adjacent Parquet files
+- [`cleanup_old_files()`](https://tgerke.github.io/ducklake-r/reference/cleanup_old_files.md)
+  : Delete files scheduled for removal
+- [`delete_orphaned_files()`](https://tgerke.github.io/ducklake-r/reference/delete_orphaned_files.md)
+  : Delete orphaned files
+- [`rewrite_data_files()`](https://tgerke.github.io/ducklake-r/reference/rewrite_data_files.md)
+  : Rewrite data files with many deletes
+- [`get_table_info()`](https://tgerke.github.io/ducklake-r/reference/get_table_info.md)
+  : Get file statistics for the tables in a lake
+- [`plot_table_files()`](https://tgerke.github.io/ducklake-r/reference/plot_table_files.md)
+  : Plot the file layout of a lake
+- [`list_ducklake_files()`](https://tgerke.github.io/ducklake-r/reference/list_ducklake_files.md)
+  : List the data files backing a DuckLake table
+
+## Quack remote access
+
+Connect to and serve DuckLake over the Quack protocol
+
+- [`install_quack()`](https://tgerke.github.io/ducklake-r/reference/install_quack.md)
+  : Install the Quack extension
+- [`attach_quack()`](https://tgerke.github.io/ducklake-r/reference/attach_quack.md)
+  : Connect to a remote Quack server
+- [`detach_quack()`](https://tgerke.github.io/ducklake-r/reference/detach_quack.md)
+  : Disconnect from a remote Quack server
+- [`quack_query()`](https://tgerke.github.io/ducklake-r/reference/quack_query.md)
+  : Run a one-off query against a remote Quack server
+- [`quack_serve()`](https://tgerke.github.io/ducklake-r/reference/quack_serve.md)
+  : Serve the current session over Quack
+- [`quack_stop()`](https://tgerke.github.io/ducklake-r/reference/quack_stop.md)
+  : Stop a Quack server
