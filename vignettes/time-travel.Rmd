@@ -45,10 +45,6 @@ This functionality is especially valuable in domains where data provenance and r
 We'll start by creating a new DuckLake and loading the mtcars dataset. We'll then make several modifications to demonstrate time travel functionality.
 
 ```{r create-datalake}
-# Install the ducklake extension (required once per system)
-# The ducklake extension only needs installing once per machine:
-# install_ducklake()
-
 # Create or attach to a data lake
 attach_ducklake(
   ducklake_name = "time_travel_demo",

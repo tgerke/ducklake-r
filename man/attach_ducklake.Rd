@@ -118,6 +118,15 @@ By default DuckDB is used as the catalog database. Alternative backends
 which enables concurrent multi-client access.
 See \url{https://ducklake.select/docs/stable/duckdb/usage/choosing_a_catalog_database}.
 
+The ducklake extension, and the extension for a non-DuckDB backend, are
+loaded on each attach and downloaded the first time they are needed; a
+message names the extension and the directory before any download. Where
+that directory is depends on duckdb (see \code{?duckdb::duckdb_storage}): in an
+interactive session duckdb offers to create \verb{~/.duckdb} the first time it
+connects, and with that the download happens once per machine. To fetch
+the extensions ahead of time, for a container image or a machine that is
+offline when the lake is attached, use \code{\link[=install_ducklake]{install_ducklake()}}.
+
 For credential management with PostgreSQL or MySQL, consider DuckDB's
 built-in secrets manager instead of embedding credentials in the connection
 string:

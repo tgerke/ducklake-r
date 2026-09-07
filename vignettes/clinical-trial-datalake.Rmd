@@ -73,10 +73,6 @@ This establishes the foundational infrastructure for our versioned data reposito
 We'll use a temporary directory for this vignette, but in practice you would specify a permanent location using the `lake_path` argument (e.g., a shared network drive or project directory).
 
 ```{r create-datalake}
-# Install the ducklake extension to duckdb (required once per system)
-# The ducklake extension only needs installing once per machine:
-# install_ducklake()
-
 # Define where to create a new data lake or access an existing one
 # For this vignette, we use vignette_temp_dir; in practice, use a permanent location
 # lake_path <- "/path/to/your/project/data_lake"

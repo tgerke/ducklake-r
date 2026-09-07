@@ -31,8 +31,6 @@ library(ducklake)
 library(dplyr)
 
 # Setup for examples
-# The ducklake extension only needs installing once per machine:
-# install_ducklake()
 attach_ducklake("modifying_tables_lake", lake_path = vignette_temp_dir)
 
 # Load a sample dataset

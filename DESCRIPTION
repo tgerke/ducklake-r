@@ -25,7 +25,7 @@ Imports:
     DBI,
     dbplyr (>= 2.5.0),
     dplyr,
-    duckdb (>= 1.5.2)
+    duckdb (>= 1.5.5)
 Suggests:
     admiral,
     askpass,

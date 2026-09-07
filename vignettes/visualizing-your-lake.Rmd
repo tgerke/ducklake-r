@@ -51,9 +51,6 @@ We'll create a small lake and put a table through a few changes, recording
 authors and commit messages along the way.
 
 ```{r create-datalake}
-# The ducklake extension only needs installing once per machine:
-# install_ducklake()
-
 attach_ducklake(
   ducklake_name = "lake_viz_demo",
   lake_path = vignette_temp_dir

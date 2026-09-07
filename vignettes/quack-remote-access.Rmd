@@ -11,9 +11,9 @@ vignette: >
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
-  # Quack needs a running server and DuckDB 1.5.3 or newer, neither of which is
-  # available when this vignette is built. The examples are shown with their
-  # expected output rather than executed.
+  # Quack needs a running server, which is not available when this vignette
+  # is built. The examples are shown with their expected output rather than
+  # executed.
   eval = FALSE
 )
 ```
@@ -45,13 +45,7 @@ everyday R user, so the examples stay close to ordinary analysis work and do not
 assume any server administration experience.
 
 The code below is shown with its expected output but is not run when the vignette
-is built, because Quack needs a live server and a recent DuckDB. To follow along
-you need the `duckdb` R package at version 1.5.3 or newer:
-
-```{r version-check}
-packageVersion("duckdb")
-#> [1] '1.5.3'
-```
+is built, because Quack needs a live server.
 
 ## Installing the extension
 

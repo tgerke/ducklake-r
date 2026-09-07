@@ -55,10 +55,10 @@ reference:
   - title: "Setup and Connection"
     desc: "Initialize and manage DuckLake connections"
     contents:
-    - install_ducklake
-    - ducklake_extension_available
     - attach_ducklake
     - detach_ducklake
+    - install_ducklake
+    - ducklake_extension_available
     - get_ducklake_connection
     - set_ducklake_connection
     - get_ducklake_backend

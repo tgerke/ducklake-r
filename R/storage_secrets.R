@@ -23,13 +23,13 @@
 #'   and dropped individually; unnamed ones act as the default for their
 #'   type.
 #' @param persistent If `TRUE`, the secret is written (unencrypted) to
-#'   DuckDB's secret directory and survives the session. Where that is
-#'   depends on the duckdb R package: from 1.5.2 on it sits under the same
-#'   "home" directory as extensions (`DUCKDB_R_HOME`, the `duckdb.home`
-#'   option, or `~/.duckdb`; see [install_ducklake()]), and with the
-#'   temporary default the secret is lost with the session anyway. The
-#'   default `FALSE` keeps it in memory only, which is the right choice for
-#'   credentials supplied from a vault or environment variable.
+#'   DuckDB's secret directory and survives the session. That directory sits
+#'   under the same "home" directory as extensions (`~/.duckdb` when it
+#'   exists, or `DUCKDB_R_HOME` / the `duckdb.home` option; see
+#'   `?duckdb::duckdb_storage`), and with the temporary default the secret
+#'   is lost with the session anyway. The default `FALSE` keeps it in memory
+#'   only, which is the right choice for credentials supplied from a vault
+#'   or environment variable.
 #'
 #' @details
 #' The httpfs extension (or the azure extension for `type = "azure"`) is

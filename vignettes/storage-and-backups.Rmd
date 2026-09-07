@@ -146,10 +146,6 @@ Let's create a sample DuckLake and explore what files it generates:
 lake_dir <- file.path(vignette_temp_dir, "storage_demo")
 dir.create(lake_dir, showWarnings = FALSE, recursive = TRUE)
 
-# Install ducklake extension
-# The ducklake extension only needs installing once per machine:
-# install_ducklake()
-
 # Create and populate a DuckLake
 attach_ducklake(
   ducklake_name = "demo_lake",

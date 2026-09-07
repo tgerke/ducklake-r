@@ -41,7 +41,8 @@ the user's home directory. Tests also call `skip_on_cran()`.
   external infrastructure: a running Quack server, a PostgreSQL or MySQL
   catalog, or a remote URL.
 * Vignettes evaluate their chunks only when the same predicate returns `TRUE`.
-* `install_ducklake()` is the one function that installs the extension, and it
-  only does so when the user calls it. Where the package loads an extension on
-  the user's behalf, it prints a message naming the extension and the
-  destination before any download.
+* Extensions are installed only on the user's behalf and never silently:
+  `attach_ducklake()` installs the extension the first time a lake is
+  attached, and `install_ducklake()` does so ahead of time. Both print a
+  message naming the extension and the destination before any download.
+  Nothing is downloaded at package load or by the availability probe.
