@@ -27,16 +27,15 @@ data files can live.
 ``` r
 
 install.packages("ducklake")
-
-# The DuckLake extension for DuckDB is downloaded once per machine
-install_ducklake()
 ```
 
-ducklake needs the duckdb package at version 1.5.2 or newer. From that
-version on, DuckDB keeps downloaded extensions in a temporary directory
-that disappears with the session, unless `DUCKDB_R_HOME` points
-somewhere permanent. Setting it in `~/.Renviron` (for example
-`DUCKDB_R_HOME=~/.duckdb`) makes the download a one-time event.
+ducklake needs the duckdb package at version 1.5.5 or newer. DuckLake
+itself is a DuckDB extension, and the first
+[`attach_ducklake()`](https://tgerke.github.io/ducklake-r/reference/attach_ducklake.md)
+downloads it and says where it went. The first time duckdb connects in
+an interactive session it offers to create `~/.duckdb`; say yes, and the
+download happens once instead of once per session. For scripts and CI,
+set `DUCKDB_R_HOME` in `~/.Renviron` or the job’s environment.
 
 ## Attach a lake
 
@@ -130,7 +129,7 @@ cars_data |>
   select(mpg, cyl, hp) |>
   head(3)
 #> # A query:  ?? x 3
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpK8zlTh/ducklake/ducklake2aef490749b5.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpuS6E94/ducklake/ducklake2bc97b4e7d18.duckdb]
 #>     mpg   cyl    hp
 #>   <dbl> <dbl> <dbl>
 #> 1  21       6   110
@@ -226,7 +225,7 @@ get_ducklake_table("cars") |>
   select(mpg, kpl) |>
   head(3)
 #> # A query:  ?? x 2
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpK8zlTh/ducklake/ducklake2aef490749b5.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpuS6E94/ducklake/ducklake2bc97b4e7d18.duckdb]
 #>     mpg   kpl
 #>   <dbl> <dbl>
 #> 1  21    8.93
@@ -258,8 +257,8 @@ lists every snapshot that touched a table:
 
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-09-07 17:11:51              1
-#> 2           2 2026-09-07 17:11:51              2
+#> 1           1 2026-09-07 18:16:57              1
+#> 2           2 2026-09-07 18:16:57              2
 #>                                                              changes
 #> 1                 tables_created, tables_inserted_into, main.cars, 1
 #> 2 tables_altered, tables_inserted_into, tables_deleted_from, 1, 1, 1
@@ -281,7 +280,7 @@ version can be read as a lazy table:
 get_ducklake_table_version("cars", version = 1) |>
   head(3)
 #> # A query:  ?? x 11
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpK8zlTh/ducklake/ducklake2aef490749b5.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpuS6E94/ducklake/ducklake2bc97b4e7d18.duckdb]
 #>     mpg   cyl  disp    hp  drat    wt  qsec    vs    am  gear  carb
 #>   <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>
 #> 1  21       6   160   110  3.9   2.62  16.5     0     1     4     4
@@ -299,9 +298,9 @@ restore_table_version("cars", version = 1, author = "Data Engineer")
 
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-09-07 17:11:51              1
-#> 2           2 2026-09-07 17:11:51              2
-#> 3           3 2026-09-07 17:11:51              3
+#> 1           1 2026-09-07 18:16:57              1
+#> 2           2 2026-09-07 18:16:57              2
+#> 3           3 2026-09-07 18:16:58              3
 #>                                                                 changes
 #> 1                    tables_created, tables_inserted_into, main.cars, 1
 #> 2    tables_altered, tables_inserted_into, tables_deleted_from, 1, 1, 1

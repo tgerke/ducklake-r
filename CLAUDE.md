@@ -70,9 +70,14 @@
 - **[`set_snapshot_metadata()`](https://tgerke.github.io/ducklake-r/reference/set_snapshot_metadata.md)
   fills blanks only** unless `overwrite = TRUE`; at-commit metadata is
   the audited path, and an overwrite is an edit to the audit trail.
-- **Minimum duckdb is 1.5.2**, the release that ships DuckLake 1.0. The
-  extension for 1.5.1 wrote 0.4-format catalogs; `automatic_migration`
-  upgrades them.
+- **Minimum duckdb is 1.5.5** (raised from 1.5.2 on 2026-09-07).
+  DuckLake 1.0 ships with DuckDB 1.5.2 (the 1.5.1 extension wrote
+  0.4-format catalogs; `automatic_migration` upgrades them); 1.5.5 is
+  where duckdb-r settled its extension storage policy and API
+  (`duckdb_storage_status()`, `duckdb(home = )`), which
+  [`ducklake_extension_available()`](https://tgerke.github.io/ducklake-r/reference/ducklake_extension_available.md)
+  uses. The 1.5.4.x releases carried a package-library extension cache
+  that upstream withdrew, and are excluded on purpose.
 - **`CHECKPOINT` expires and deletes nothing without a policy**
   (`expire_older_than`, `delete_older_than`); verified 2026-09-04.
 - **Schema-qualified names go through
@@ -85,10 +90,30 @@
   `sqlite_scanner`, `httpfs`, `quack`, and `ducklake` exist; `postgres`,
   `mysql`, `aws`, and `azure` do not (checked 2026-09-04 for v1.5.1 and
   v1.5.5).
-- **Extension persistence**: duckdb-r 1.5.2+ keeps extensions in a
-  per-session temp directory unless `DUCKDB_R_HOME` (or `duckdb.home`,
-  or an existing `~/.duckdb`) is set; local development and CI set
-  `DUCKDB_R_HOME`.
+- **Extension persistence** (duckdb-r 1.5.5, confirmed 2026-09-07):
+  every new `duckdb()` driver resolves one home root, `home` argument →
+  `duckdb.home` option → `DUCKDB_R_HOME` → existing `~/.duckdb` →
+  interactive one-time offer to create `~/.duckdb` (`askYesNo`, default
+  yes) → per-session tempdir; non-interactive sessions get a throttled
+  message instead. The R client sets
+  `autoinstall_known_extensions = false`, so an explicit `LOAD` never
+  downloads and `load_or_install_extension()` is the package’s only
+  install path. Local development and CI set `DUCKDB_R_HOME`.
+- **No load-time extension check or install** (2026-09-07).
+  [`install_ducklake()`](https://tgerke.github.io/ducklake-r/reference/install_ducklake.md)
+  is optional:
+  [`attach_ducklake()`](https://tgerke.github.io/ducklake-r/reference/attach_ducklake.md)
+  installs on first use after a message, and duckdb’s connect-time
+  prompt handles the durable directory. An `.onLoad()`/`.onAttach()`
+  probe would start DuckDB on every
+  [`library(ducklake)`](https://tgerke.github.io/ducklake-r/)
+  (dependency loads and `R CMD check` included) to answer a question the
+  attach path already answers; a load-time download would break CRAN’s
+  rule against writing outside the session tempdir without consent; a
+  startup message about the directory would fire in every session for
+  every user without the setting and duplicate duckdb’s prompt.
+  `create_ducklake_connection()` deliberately passes no `home`, so that
+  prompt is not suppressed.
 - **Iceberg interop is documented, not wrapped** (2026-09-04):
   `COPY FROM DATABASE lake TO iceberg_catalog` and
   `iceberg_to_ducklake()` live in DuckDB’s iceberg extension;

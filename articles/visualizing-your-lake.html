@@ -118,10 +118,7 @@ by ducklake.</p>
 <p>We’ll create a small lake and put a table through a few changes,
 recording authors and commit messages along the way.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># The ducklake extension only needs installing once per machine:</span></span>
-<span><span class="co"># install_ducklake()</span></span>
-<span></span>
-<span><span class="fu"><a href="../reference/attach_ducklake.html">attach_ducklake</a></span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/attach_ducklake.html">attach_ducklake</a></span><span class="op">(</span></span>
 <span>  ducklake_name <span class="op">=</span> <span class="st">"lake_viz_demo"</span>,</span>
 <span>  lake_path <span class="op">=</span> <span class="va">vignette_temp_dir</span></span>
 <span><span class="op">)</span></span>
@@ -178,10 +175,10 @@ recording authors and commit messages along the way.</p>
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"fleet"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">snapshot_id</span>, <span class="va">snapshot_time</span>, <span class="va">author</span>, <span class="va">commit_message</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time        author                  commit_message</span></span>
-<span><span class="co">#&gt; 1           1 2026-09-07 17:12:19 Data Engineer              Initial fleet load</span></span>
-<span><span class="co">#&gt; 2           2 2026-09-07 17:12:19 Fleet Manager              Add March arrivals</span></span>
-<span><span class="co">#&gt; 3           3 2026-09-07 17:12:19 Fleet Manager Record spring odometer readings</span></span>
-<span><span class="co">#&gt; 4           4 2026-09-07 17:12:19 Fleet Manager               Remove sold F-150</span></span></code></pre></div>
+<span><span class="co">#&gt; 1           1 2026-09-07 18:17:33 Data Engineer              Initial fleet load</span></span>
+<span><span class="co">#&gt; 2           2 2026-09-07 18:17:33 Fleet Manager              Add March arrivals</span></span>
+<span><span class="co">#&gt; 3           3 2026-09-07 18:17:33 Fleet Manager Record spring odometer readings</span></span>
+<span><span class="co">#&gt; 4           4 2026-09-07 18:17:33 Fleet Manager               Remove sold F-150</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="plotting-the-timeline">Plotting the Timeline<a class="anchor" aria-label="anchor" href="#plotting-the-timeline"></a>
@@ -254,8 +251,8 @@ size:</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/get_table_info.html">get_table_info</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   table_name schema_id table_id                           table_uuid file_count</span></span>
-<span><span class="co">#&gt; 1      fleet         0        1 01a07cdb-4215-701e-a8e4-22e31318da07          1</span></span>
-<span><span class="co">#&gt; 2  telemetry         0        2 01a07cdb-46f0-7c1d-831c-0563b23ef77e          2</span></span>
+<span><span class="co">#&gt; 1      fleet         0        1 01a07d16-fc45-71ac-a271-c4874b244083          1</span></span>
+<span><span class="co">#&gt; 2  telemetry         0        2 01a07d17-024f-753c-8dab-a4c51d921da6          2</span></span>
 <span><span class="co">#&gt;   file_size_bytes delete_file_count delete_file_size_bytes schema_name</span></span>
 <span><span class="co">#&gt; 1            1027                 1                   1120        main</span></span>
 <span><span class="co">#&gt; 2           65525                 0                      0        main</span></span></code></pre></div>

@@ -215,6 +215,14 @@ DuckLake catalog to the package's DuckDB connection.</p>
 (PostgreSQL, SQLite, MySQL) can be selected with the <code>backend</code> parameter,
 which enables concurrent multi-client access.
 See <a href="https://ducklake.select/docs/stable/duckdb/usage/choosing_a_catalog_database" class="external-link">https://ducklake.select/docs/stable/duckdb/usage/choosing_a_catalog_database</a>.</p>
+<p>The ducklake extension, and the extension for a non-DuckDB backend, are
+loaded on each attach and downloaded the first time they are needed; a
+message names the extension and the directory before any download. Where
+that directory is depends on duckdb (see <code><a href="https://r.duckdb.org/reference/duckdb_storage.html" class="external-link">?duckdb::duckdb_storage</a></code>): in an
+interactive session duckdb offers to create <code>~/.duckdb</code> the first time it
+connects, and with that the download happens once per machine. To fetch
+the extensions ahead of time, for a container image or a machine that is
+offline when the lake is attached, use <code><a href="install_ducklake.html">install_ducklake()</a></code>.</p>
 <p>For credential management with PostgreSQL or MySQL, consider DuckDB's
 built-in secrets manager instead of embedding credentials in the connection
 string:</p>

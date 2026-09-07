@@ -2,6 +2,35 @@
 
 ## ducklake (development version)
 
+- The ducklake DuckDB extension no longer needs an install step. The
+  code never required one:
+  [`attach_ducklake()`](https://tgerke.github.io/ducklake-r/reference/attach_ducklake.md)
+  has always installed it on first use, after a message naming the
+  directory. The README and the articles now say so, and
+  [`install_ducklake()`](https://tgerke.github.io/ducklake-r/reference/install_ducklake.md)
+  is documented as the way to download the extension ahead of time
+  (container images, CI, machines that are offline when the lake is
+  attached). A first-use install now also clears the answer
+  [`ducklake_extension_available()`](https://tgerke.github.io/ducklake-r/reference/ducklake_extension_available.md)
+  cached, so it reports `TRUE` afterwards. The hint that follows an
+  install into a temporary directory did not show on macOS for a
+  first-use install, because the directory does not exist until
+  `INSTALL` creates it and the check only recognized existing paths; it
+  shows now. No load-time check was added: the package neither downloads
+  nor starts DuckDB when it is loaded.
+
+- The minimum duckdb version is now 1.5.5, the release that settled
+  where the R package keeps downloaded extensions: `~/.duckdb` when it
+  exists (duckdb offers to create it the first time it connects in an
+  interactive session), `DUCKDB_R_HOME` or the `duckdb.home` option when
+  set, otherwise a per-session temporary directory
+  ([`?duckdb::duckdb_storage`](https://r.duckdb.org/reference/duckdb_storage.html)).
+  [`ducklake_extension_available()`](https://tgerke.github.io/ducklake-r/reference/ducklake_extension_available.md)
+  now opens its probe on the directory duckdb would resolve for a new
+  connection, so it finds an existing `~/.duckdb` without triggering
+  that offer, and the hint printed after an install into a temporary
+  directory describes these options.
+
 - [`with_transaction()`](https://tgerke.github.io/ducklake-r/reference/with_transaction.md)
   and
   [`commit_transaction()`](https://tgerke.github.io/ducklake-r/reference/commit_transaction.md)

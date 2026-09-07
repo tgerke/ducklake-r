@@ -126,8 +126,8 @@
 </h3>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">pak</span><span class="fu">::</span><span class="fu"><a href="https://pak.r-lib.org/reference/pak.html" class="external-link">pak</a></span><span class="op">(</span><span class="st">"tgerke/ducklake-r"</span><span class="op">)</span></span></code></pre></div>
-<p>ducklake requires the <a href="https://r.duckdb.org" class="external-link">duckdb</a> R package version 1.5.2 or newer: DuckDB 1.5.2 is the release that ships the stable <a href="https://ducklake.select/docs/stable/specification/introduction" class="external-link">DuckLake 1.0 specification</a>. The Quack remote-access features need DuckDB 1.5.3 or newer, which means duckdb 1.5.3 or newer from CRAN.</p>
-<p>DuckLake itself ships as a DuckDB extension that is downloaded on first use. Run <code><a href="reference/install_ducklake.html">install_ducklake()</a></code> once, or check whether you already have it with <code><a href="reference/ducklake_extension_available.html">ducklake_extension_available()</a></code>. From duckdb 1.5.2 on, extensions live in a per-session temporary directory unless you point <code>DUCKDB_R_HOME</code> (for example in <code>~/.Renviron</code>) at a directory of your choice. Do that, and the download happens once per machine instead of once per session.</p>
+<p>ducklake requires the <a href="https://r.duckdb.org" class="external-link">duckdb</a> R package version 1.5.5 or newer. DuckDB 1.5.2 is the release that ships the stable <a href="https://ducklake.select/docs/stable/specification/introduction" class="external-link">DuckLake 1.0 specification</a>, and duckdb 1.5.5 is where the R package settled how it stores downloaded extensions, which ducklake relies on.</p>
+<p>DuckLake itself ships as a DuckDB extension. <code><a href="reference/attach_ducklake.html">attach_ducklake()</a></code> downloads it the first time it is needed and says where it put it, so there is no install step. In an interactive session, duckdb offers to create <code>~/.duckdb</code> the first time it connects; say yes and the download happens once per machine rather than once per session. Scripts and CI jobs get the same by setting <code>DUCKDB_R_HOME</code> in <code>~/.Renviron</code> or the job’s environment. <code><a href="reference/install_ducklake.html">install_ducklake()</a></code> fetches the extension ahead of time, for container images and machines that are offline when the lake is attached, and <code><a href="reference/ducklake_extension_available.html">ducklake_extension_available()</a></code> reports whether it is already there.</p>
 <p>ducklake manages its own DuckDB connection, so there is nothing to set up: just <code><a href="reference/attach_ducklake.html">attach_ducklake()</a></code> and go. If you prefer to supply your own connection (for example, one shared with other DBI-based tools), register it with <code><a href="reference/set_ducklake_connection.html">set_ducklake_connection()</a></code>.</p>
 </div>
 </div>
@@ -137,9 +137,6 @@
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://tgerke.github.io/ducklake-r/">ducklake</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Install the ducklake extension (requires duckdb R package &gt;= 1.5.2)</span></span>
-<span><span class="fu"><a href="reference/install_ducklake.html">install_ducklake</a></span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Create a data lake in a temporary directory</span></span>
 <span><span class="fu"><a href="reference/attach_ducklake.html">attach_ducklake</a></span><span class="op">(</span><span class="st">"my_data_lake"</span>, lake_path <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
@@ -197,7 +194,7 @@
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">mpg</span>, <span class="va">cyl</span>, <span class="va">efficiency</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">3</span><span class="op">)</span></span>
 <span><span class="co">#&gt; # A query:  ?? x 3</span></span>
-<span><span class="co">#&gt; # Database: DuckDB 1.5.5 [tgerke@Darwin 25.6.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/Rtmpt7y8Lw/ducklake/ducklake623c4db47890.duckdb]</span></span>
+<span><span class="co">#&gt; # Database: DuckDB 1.5.5 [tgerke@Darwin 25.6.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/Rtmpyfo6Cq/ducklake/ducklake11c574a450c21.duckdb]</span></span>
 <span><span class="co">#&gt;     mpg cyl   efficiency</span></span>
 <span><span class="co">#&gt;   &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt;     </span></span>
 <span><span class="co">#&gt; 1  21   6.0   Medium    </span></span>
@@ -207,12 +204,12 @@
 <span><span class="co"># View complete audit trail across all layers with author and commit messages</span></span>
 <span><span class="fu"><a href="reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 1           0 2026-09-04 23:25:48              0</span></span>
-<span><span class="co">#&gt; 2           1 2026-09-04 23:25:48              1</span></span>
-<span><span class="co">#&gt; 3           2 2026-09-04 23:25:48              2</span></span>
-<span><span class="co">#&gt; 4           3 2026-09-04 23:25:48              3</span></span>
-<span><span class="co">#&gt; 5           4 2026-09-04 23:25:48              4</span></span>
-<span><span class="co">#&gt; 6           5 2026-09-04 23:25:48              5</span></span>
+<span><span class="co">#&gt; 1           0 2026-09-07 18:08:04              0</span></span>
+<span><span class="co">#&gt; 2           1 2026-09-07 18:08:04              1</span></span>
+<span><span class="co">#&gt; 3           2 2026-09-07 18:08:04              2</span></span>
+<span><span class="co">#&gt; 4           3 2026-09-07 18:08:04              3</span></span>
+<span><span class="co">#&gt; 5           4 2026-09-07 18:08:04              4</span></span>
+<span><span class="co">#&gt; 6           5 2026-09-07 18:08:04              5</span></span>
 <span><span class="co">#&gt;                                                                       changes</span></span>
 <span><span class="co">#&gt; 1                                                       schemas_created, main</span></span>
 <span><span class="co">#&gt; 2                                       schemas_created, bronze, silver, gold</span></span>
@@ -240,7 +237,7 @@
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">mpg</span>, <span class="va">cyl</span>, <span class="va">gear</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">3</span><span class="op">)</span></span>
 <span><span class="co">#&gt; # A query:  ?? x 3</span></span>
-<span><span class="co">#&gt; # Database: DuckDB 1.5.5 [tgerke@Darwin 25.6.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/Rtmpt7y8Lw/ducklake/ducklake623c4db47890.duckdb]</span></span>
+<span><span class="co">#&gt; # Database: DuckDB 1.5.5 [tgerke@Darwin 25.6.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/Rtmpyfo6Cq/ducklake/ducklake11c574a450c21.duckdb]</span></span>
 <span><span class="co">#&gt;     mpg cyl    gear</span></span>
 <span><span class="co">#&gt;   &lt;dbl&gt; &lt;chr&gt; &lt;dbl&gt;</span></span>
 <span><span class="co">#&gt; 1  21   6.0       4</span></span>
@@ -332,7 +329,7 @@
 <li>
 <strong>Multi-backend catalogs</strong>: Use DuckDB (default), PostgreSQL, SQLite, or MySQL as the catalog database — enables concurrent multi-client access with PostgreSQL or SQLite (<a href="https://ducklake.select/docs/stable/specification/introduction" class="external-link">DuckLake 1.0 spec</a>)</li>
 <li>
-<strong>Remote access over Quack</strong>: Serve a DuckLake to other R sessions over the network and let several people read and write it at once, using DuckDB’s Quack protocol (requires DuckDB 1.5.3 or newer)</li>
+<strong>Remote access over Quack</strong>: Serve a DuckLake to other R sessions over the network and let several people read and write it at once, using DuckDB’s Quack protocol</li>
 <li>
 <strong>Lightweight snapshots</strong>: Create unlimited snapshots without frequent compacting steps</li>
 <li>

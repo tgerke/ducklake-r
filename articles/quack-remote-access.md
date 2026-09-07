@@ -29,15 +29,7 @@ here is the everyday R user, so the examples stay close to ordinary
 analysis work and do not assume any server administration experience.
 
 The code below is shown with its expected output but is not run when the
-vignette is built, because Quack needs a live server and a recent
-DuckDB. To follow along you need the `duckdb` R package at version 1.5.3
-or newer:
-
-``` r
-
-packageVersion("duckdb")
-#> [1] '1.5.3'
-```
+vignette is built, because Quack needs a live server.
 
 ## Installing the extension
 

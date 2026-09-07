@@ -79,7 +79,7 @@
 <li>
 <strong><code><a href="reference/set_snapshot_metadata.html">set_snapshot_metadata()</a></code> fills blanks only</strong> unless <code>overwrite = TRUE</code>; at-commit metadata is the audited path, and an overwrite is an edit to the audit trail.</li>
 <li>
-<strong>Minimum duckdb is 1.5.2</strong>, the release that ships DuckLake 1.0. The extension for 1.5.1 wrote 0.4-format catalogs; <code>automatic_migration</code> upgrades them.</li>
+<strong>Minimum duckdb is 1.5.5</strong> (raised from 1.5.2 on 2026-09-07). DuckLake 1.0 ships with DuckDB 1.5.2 (the 1.5.1 extension wrote 0.4-format catalogs; <code>automatic_migration</code> upgrades them); 1.5.5 is where duckdb-r settled its extension storage policy and API (<code>duckdb_storage_status()</code>, <code>duckdb(home = )</code>), which <code><a href="reference/ducklake_extension_available.html">ducklake_extension_available()</a></code> uses. The 1.5.4.x releases carried a package-library extension cache that upstream withdrew, and are excluded on purpose.</li>
 <li>
 <strong><code>CHECKPOINT</code> expires and deletes nothing without a policy</strong> (<code>expire_older_than</code>, <code>delete_older_than</code>); verified 2026-09-04.</li>
 <li>
@@ -87,7 +87,9 @@
 <li>
 <strong>Windows (<code>windows_amd64_mingw</code>, what duckdb-r uses)</strong>: <code>sqlite_scanner</code>, <code>httpfs</code>, <code>quack</code>, and <code>ducklake</code> exist; <code>postgres</code>, <code>mysql</code>, <code>aws</code>, and <code>azure</code> do not (checked 2026-09-04 for v1.5.1 and v1.5.5).</li>
 <li>
-<strong>Extension persistence</strong>: duckdb-r 1.5.2+ keeps extensions in a per-session temp directory unless <code>DUCKDB_R_HOME</code> (or <code>duckdb.home</code>, or an existing <code>~/.duckdb</code>) is set; local development and CI set <code>DUCKDB_R_HOME</code>.</li>
+<strong>Extension persistence</strong> (duckdb-r 1.5.5, confirmed 2026-09-07): every new <code>duckdb()</code> driver resolves one home root, <code>home</code> argument → <code>duckdb.home</code> option → <code>DUCKDB_R_HOME</code> → existing <code>~/.duckdb</code> → interactive one-time offer to create <code>~/.duckdb</code> (<code>askYesNo</code>, default yes) → per-session tempdir; non-interactive sessions get a throttled message instead. The R client sets <code>autoinstall_known_extensions = false</code>, so an explicit <code>LOAD</code> never downloads and <code>load_or_install_extension()</code> is the package’s only install path. Local development and CI set <code>DUCKDB_R_HOME</code>.</li>
+<li>
+<strong>No load-time extension check or install</strong> (2026-09-07). <code><a href="reference/install_ducklake.html">install_ducklake()</a></code> is optional: <code><a href="reference/attach_ducklake.html">attach_ducklake()</a></code> installs on first use after a message, and duckdb’s connect-time prompt handles the durable directory. An <code>.onLoad()</code>/<code>.onAttach()</code> probe would start DuckDB on every <code><a href="https://tgerke.github.io/ducklake-r/">library(ducklake)</a></code> (dependency loads and <code>R CMD check</code> included) to answer a question the attach path already answers; a load-time download would break CRAN’s rule against writing outside the session tempdir without consent; a startup message about the directory would fire in every session for every user without the setting and duplicate duckdb’s prompt. <code>create_ducklake_connection()</code> deliberately passes no <code>home</code>, so that prompt is not suppressed.</li>
 <li>
 <strong>Iceberg interop is documented, not wrapped</strong> (2026-09-04): <code>COPY FROM DATABASE lake TO iceberg_catalog</code> and <code>iceberg_to_ducklake()</code> live in DuckDB’s iceberg extension; <code><a href="articles/loading-data.html">vignette("loading-data")</a></code> shows them. This closes the “one-command Iceberg catalog export” watch item above.</li>
 <li>

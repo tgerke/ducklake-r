@@ -113,12 +113,7 @@ audience here is the everyday R user, so the examples stay close to
 ordinary analysis work and do not assume any server administration
 experience.</p>
 <p>The code below is shown with its expected output but is not run when
-the vignette is built, because Quack needs a live server and a recent
-DuckDB. To follow along you need the <code>duckdb</code> R package at
-version 1.5.3 or newer:</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/packageDescription.html" class="external-link">packageVersion</a></span><span class="op">(</span><span class="st">"duckdb"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] '1.5.3'</span></span></code></pre></div>
+the vignette is built, because Quack needs a live server.</p>
 </div>
 <div class="section level2">
 <h2 id="installing-the-extension">Installing the extension<a class="anchor" aria-label="anchor" href="#installing-the-extension"></a>
@@ -126,7 +121,7 @@ version 1.5.3 or newer:</p>
 <p>Quack is a core extension, so DuckDB loads it automatically the first
 time it is used. On a machine that has no internet access at query time
 you can install it ahead of time:</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/install_quack.html">install_quack</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Installed quack extension.</span></span>
 <span><span class="co">#&gt; Loaded quack extension.</span></span></code></pre></div>
@@ -141,7 +136,7 @@ own R session and pull the data you need.</p>
 returns the result as a data frame. The lake is named by its catalog on
 the server, which is the name it was attached under (here,
 <code>trial</code>):</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">adsl</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/quack_query.html">quack_query</a></span><span class="op">(</span></span>
 <span>  <span class="st">"quack:trial-server.example.org"</span>,</span>
 <span>  <span class="st">"SELECT * FROM trial.adsl"</span>,</span>
@@ -158,7 +153,7 @@ different one as <code>quack:host:port</code>. The <code>token</code> is
 whatever password the server was started with.</p>
 <p>Once a query comes back you have an ordinary data frame, so the rest
 of your analysis is the dplyr and base R you already use:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">adsl</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by</a></span><span class="op">(</span><span class="va">SAFFL</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/summarise.html" class="external-link">summarise</a></span><span class="op">(</span>n <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/context.html" class="external-link">n</a></span><span class="op">(</span><span class="op">)</span>, mean_age <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">AGE</span><span class="op">)</span><span class="op">)</span></span>
@@ -170,7 +165,7 @@ of your analysis is the dplyr and base R you already use:</p>
 <p>For large tables it is faster to let the server do the filtering and
 summarising and send back only what you need, rather than pulling every
 row across the network:</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/quack_query.html">quack_query</a></span><span class="op">(</span></span>
 <span>  <span class="st">"quack:trial-server.example.org"</span>,</span>
 <span>  <span class="st">"SELECT USUBJID, AGE FROM trial.adsl WHERE SAFFL = 'Y' AND AGE &gt;= 18"</span>,</span>
@@ -181,7 +176,7 @@ row across the network:</p>
 <p>Because Quack supports concurrent writers, you can also add data to
 the shared lake. The query runs on the server, so it refers to the lake
 by its catalog name and returns the number of rows affected:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/quack_query.html">quack_query</a></span><span class="op">(</span></span>
 <span>  <span class="st">"quack:trial-server.example.org"</span>,</span>
 <span>  <span class="st">"INSERT INTO trial.adsl VALUES ('01-099', 'Y', 70)"</span>,</span>
@@ -197,7 +192,7 @@ DuckLake, you can attach it as a catalog and work with it through the
 familiar <code><a href="../reference/get_ducklake_table.html">get_ducklake_table()</a></code> and dplyr path.
 <code><a href="../reference/attach_quack.html">attach_quack()</a></code> gives the remote a local name; its tables
 are then reached as <code>name.table</code>:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/attach_quack.html">attach_quack</a></span><span class="op">(</span><span class="st">"warehouse"</span>, <span class="st">"quack:data.example.org"</span>, token <span class="op">=</span> <span class="st">"super_secret"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"warehouse.sales"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -218,7 +213,7 @@ name, as in the previous section.</p>
 connect to it. Say you have built a small medallion lake and a few
 colleagues want to read from it. You attach the lake as usual, then
 start a server.</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/attach_ducklake.html">attach_ducklake</a></span><span class="op">(</span><span class="st">"trial"</span>, lake_path <span class="op">=</span> <span class="st">"~/lakes/trial"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/with_transaction.html">with_transaction</a></span><span class="op">(</span></span>
@@ -226,7 +221,7 @@ start a server.</p>
 <span>  author <span class="op">=</span> <span class="st">"You"</span>,</span>
 <span>  commit_message <span class="op">=</span> <span class="st">"Seed the shared lake"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/install_quack.html">install_quack</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/quack_serve.html">quack_serve</a></span><span class="op">(</span>token <span class="op">=</span> <span class="st">"super_secret"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Quack server listening on "quack:localhost".</span></span></code></pre></div>
@@ -239,7 +234,7 @@ your machine and using the same token.</p>
 which is useful for trying things out. To accept connections from other
 machines, listen on a host name or address they can route to.</p>
 <p>When you are finished, stop the server:</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/quack_stop.html">quack_stop</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Quack server on "quack:localhost" stopped.</span></span></code></pre></div>
 <div class="section level3">

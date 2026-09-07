@@ -1,9 +1,12 @@
-# Install the ducklake extension to duckdb
+# Download the ducklake extension ahead of time
 
-Installs the ducklake DuckDB extension and optionally the extensions for
-alternative catalog backends (postgres, sqlite, mysql). Needs to run
-once per DuckDB version, provided DuckDB's extension directory survives
-the session (see Details).
+[`attach_ducklake()`](https://tgerke.github.io/ducklake-r/reference/attach_ducklake.md)
+installs the ducklake DuckDB extension the first time it is needed, so
+most sessions never call this function. It downloads the extension now,
+and optionally the extensions for the other catalog backends (postgres,
+sqlite, mysql), for the cases where the download has to happen before a
+lake is attached: baking a container image, a CI setup step, or a
+machine that is offline at attach time.
 
 ## Usage
 
@@ -26,15 +29,17 @@ extensions into the local extension cache.
 
 ## Details
 
-Where the extension lands depends on the duckdb R package. From duckdb
-1.5.2 on, extensions live under a "home" directory that defaults to a
-per-session temporary directory unless something durable is configured:
-the `DUCKDB_R_HOME` environment variable (set it in `~/.Renviron` so
-every session sees it), the `duckdb.home` option, or an existing
-`~/.duckdb` directory. With the temporary default, the extension is gone
-when R exits and the next session downloads it again.
-`install_ducklake()` reports the directory it installed into and says so
-when that directory is temporary.
+Where the extension lands is decided by the duckdb R package (see
+[`?duckdb::duckdb_storage`](https://r.duckdb.org/reference/duckdb_storage.html)).
+Extensions live under a "home" directory: the `duckdb.home` option or
+`DUCKDB_R_HOME` when set, otherwise `~/.duckdb` when it exists (in an
+interactive session duckdb offers to create it the first time it
+connects), otherwise a per-session temporary directory. With the
+temporary directory the extension is gone when R exits and the next
+session downloads it again. `install_ducklake()` reports the directory
+it installed into and says so when that directory is temporary. For
+scripts and CI, set `DUCKDB_R_HOME` in `~/.Renviron` or the job's
+environment to a directory that survives the session.
 
 ## Note
 

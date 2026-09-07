@@ -54,11 +54,10 @@ create_storage_secret(
 - persistent:
 
   If `TRUE`, the secret is written (unencrypted) to DuckDB's secret
-  directory and survives the session. Where that is depends on the
-  duckdb R package: from 1.5.2 on it sits under the same "home"
-  directory as extensions (`DUCKDB_R_HOME`, the `duckdb.home` option, or
-  `~/.duckdb`; see
-  [`install_ducklake()`](https://tgerke.github.io/ducklake-r/reference/install_ducklake.md)),
+  directory and survives the session. That directory sits under the same
+  "home" directory as extensions (`~/.duckdb` when it exists, or
+  `DUCKDB_R_HOME` / the `duckdb.home` option; see
+  [`?duckdb::duckdb_storage`](https://r.duckdb.org/reference/duckdb_storage.html)),
   and with the temporary default the secret is lost with the session
   anyway. The default `FALSE` keeps it in memory only, which is the
   right choice for credentials supplied from a vault or environment

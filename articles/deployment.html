@@ -310,10 +310,10 @@ months later.</p>
 <p>A few settings pay for themselves later. Set them when you create the
 lake, and they persist in the catalog for every client.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># 1. Keep DuckDB's downloaded extensions between sessions (duckdb &gt;= 1.5.2</span></span>
-<span><span class="co">#    keeps them in a per-session temporary directory otherwise). Put this</span></span>
-<span><span class="co">#    in ~/.Renviron, not in a script:</span></span>
-<span><span class="co">#    DUCKDB_R_HOME=~/.duckdb</span></span>
+<code class="sourceCode R"><span><span class="co"># 1. Keep DuckDB's downloaded extensions between sessions. Interactively,</span></span>
+<span><span class="co">#    say yes when duckdb offers to create ~/.duckdb. For scripts and CI,</span></span>
+<span><span class="co">#    set DUCKDB_R_HOME=~/.duckdb in ~/.Renviron or the job's environment.</span></span>
+<span><span class="co">#    A container image runs install_ducklake() at build time instead.</span></span>
 <span></span>
 <span><span class="co"># 2. Create the lake, and its schemas, in one snapshot</span></span>
 <span><span class="fu"><a href="../reference/attach_ducklake.html">attach_ducklake</a></span><span class="op">(</span><span class="st">"trial"</span>, lake_path <span class="op">=</span> <span class="st">"~/lakes/trial"</span><span class="op">)</span></span>
