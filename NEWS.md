@@ -1,3 +1,5 @@
+# ducklake (development version)
+
 # ducklake 0.7.0
 
 * New article "Choosing a Deployment" (`vignette("deployment")`): what a
