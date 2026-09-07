@@ -261,7 +261,12 @@ detailed vignettes:
 
 - [Getting
   Started](https://tgerke.github.io/ducklake-r/articles/ducklake.html) -
-  Quick recipes for common operations
+  Attach a lake, add a table, read it back, change it, and see its
+  history
+- [Loading
+  Data](https://tgerke.github.io/ducklake-r/articles/loading-data.html) -
+  Files, URLs, pipelines, schemas, Parquet in place, and migrating from
+  DuckDB or Iceberg
 - [Choosing a
   Deployment](https://tgerke.github.io/ducklake-r/articles/deployment.html) -
   Which catalog, where the data goes, who can reach it, and what to set
@@ -273,6 +278,9 @@ detailed vignettes:
   Tables](https://tgerke.github.io/ducklake-r/articles/modifying-tables.html) -
   Choosing how to change a table: joins vs. `rows_*`, upserts,
   `merge_into()`, and `replace_table()`
+- [Views, Comments, and
+  Labels](https://tgerke.github.io/ducklake-r/articles/views-comments-labels.html) -
+  Shared query logic and documentation that live in the lake
 - [Data
   Inlining](https://tgerke.github.io/ducklake-r/articles/data-inlining.html) -
   Streaming-friendly small writes

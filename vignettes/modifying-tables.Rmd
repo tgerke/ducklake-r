@@ -55,7 +55,7 @@ Good news first: **every committed change to a DuckLake table creates a
 snapshot**. Whether you use `rows_insert()`, `replace_table()`, or raw SQL,
 DuckLake records what changed and you can time-travel back to any earlier
 state. (Earlier versions of this vignette said the `rows_*` functions skip
-versioning -- that is not true in DuckLake v1.0.) The choice between the
+versioning. That is not true in DuckLake v1.0.) The choice between the
 styles is about *what kind of change* you are making, not about whether it is
 audited.
 
@@ -188,7 +188,7 @@ that the in-place functions above exist.
 Whichever style you use, wrap *related* modifications in
 `with_transaction()`. All changes inside the transaction become **one**
 snapshot, and you can attach an author and commit message for the audit
-trail -- valuable in any setting and essential for GxP/21 CFR Part 11 work:
+trail, valuable in any setting and essential for GxP/21 CFR Part 11 work:
 
 ```r
 with_transaction({
@@ -222,7 +222,7 @@ with_transaction(
 ```
 
 **Insert** new records by key. The new rows are appended in a single SQL
-statement -- the existing rows are never read into R:
+statement, and the existing rows are never read into R:
 
 ```{r rows-insert}
 new_cars <- data.frame(
@@ -257,7 +257,7 @@ get_ducklake_table("fleet") |> collect()
 ```
 
 Each call above created its own snapshot. To record an author and commit
-message -- or to make several row operations land as **one** snapshot -- wrap
+message, or to make several row operations land as **one** snapshot, wrap
 them in `with_transaction()`:
 
 ```{r rows-transaction}
@@ -345,7 +345,7 @@ list_table_snapshots("cars")
 Derived columns no longer need `replace_table()`. Declare the column with
 `add_table_column()` (instant, metadata-only), then fill it with a
 `mutate()` pipeline through `ducklake_exec()`, which runs as an in-database
-UPDATE -- nothing is collected into R:
+UPDATE. Nothing is collected into R:
 
 ```{r add-columns}
 with_transaction({
@@ -369,10 +369,19 @@ get_ducklake_table("cars") |>
   select(hp, cyl, hp_per_cyl, high_performance)
 ```
 
+To see the statement a pipeline would run before committing to it, end the
+pipeline with `show_ducklake_query()` instead of `ducklake_exec()`:
+
+```{r preview-update}
+get_ducklake_table("cars") |>
+  mutate(hp_per_cyl = round(hp_per_cyl, 1)) |>
+  show_ducklake_query()
+```
+
 ### Reshaping the schema in place
 
 The rest of the schema evolution family works the same way. Widen a type,
-rename a column, drop one -- each change is instant, and earlier snapshots
+rename a column, or drop one. Each change is instant, and earlier snapshots
 keep the earlier shape:
 
 ```{r schema-evolution}

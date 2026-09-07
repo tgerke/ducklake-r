@@ -1,5 +1,25 @@
 # ducklake (development version)
 
+* `with_transaction()` and `commit_transaction()` confirm a commit with one
+  line naming the snapshot it created, with the author and commit message
+  when they were given: "Committed snapshot 3 (Data Engineer): Add the
+  Motor Trend car data". A transaction that changed nothing says so, and
+  `begin_transaction()` is silent. The two lines they replace ("Transaction
+  started.", "Transaction committed.") said nothing about the snapshot; the
+  new one gives the version number that time travel uses.
+
+* The Getting Started article (`vignette("ducklake")`) is rewritten as one
+  short session: install, attach a lake, add a table, read it back, change
+  it, see its history, and detach, with the reasons to wrap changes in
+  `with_transaction()` explained along the way. Its recipes move to two new
+  articles. "Loading Data" (`vignette("loading-data")`) collects the ways
+  data gets into a lake, from data frames and files to registering Parquet
+  in place and migrating from DuckDB or Iceberg. "Views, Comments, and
+  Labels" (`vignette("views-comments-labels")`) covers the query logic and
+  documentation that live in the catalog, and its labels example uses
+  `labelled::set_variable_labels()`, so labelled is now a suggested
+  package.
+
 # ducklake 0.7.0
 
 * New article "Choosing a Deployment" (`vignette("deployment")`): what a
