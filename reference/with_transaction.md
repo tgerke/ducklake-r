@@ -65,73 +65,39 @@ transactions:
 This pattern is similar to `withr::with_*()` functions and provides
 better safety guarantees than manually managing transactions.
 
-## See also
-
-Other transactions:
-[`begin_transaction()`](https://tgerke.github.io/ducklake-r/reference/begin_transaction.md),
-[`commit_transaction()`](https://tgerke.github.io/ducklake-r/reference/commit_transaction.md),
-[`rollback_transaction()`](https://tgerke.github.io/ducklake-r/reference/rollback_transaction.md),
-[`set_ducklake_retry()`](https://tgerke.github.io/ducklake-r/reference/set_ducklake_retry.md),
-[`set_snapshot_metadata()`](https://tgerke.github.io/ducklake-r/reference/set_snapshot_metadata.md)
-
 ## Examples
 
 ``` r
-lake_dir <- tempfile("with_tx_lake_")
-dir.create(lake_dir)
-attach_ducklake("with_tx_lake", lake_path = lake_dir)
-
+if (FALSE) { # \dontrun{
 # Single operation
 with_transaction(
   create_table(mtcars, "cars"),
   author = "Data Team",
   commit_message = "Add cars dataset"
 )
-#> Transaction started.
-#> Transaction committed.
 
 # Multiple operations in a block
 with_transaction({
+  create_table(mtcars, "cars")
   create_table(iris, "flowers")
-  create_table(airquality, "air")
 }, author = "Data Team", commit_message = "Add datasets")
-#> Transaction started.
-#> Converted factor column Species to character (DuckLake does not support ENUM
-#> columns).
-#> Transaction committed.
 
 # With dplyr pipeline
 with_transaction(
   get_ducklake_table("cars") |>
-    dplyr::mutate(kpl = mpg * 0.425144) |>
+    mutate(kpl = mpg * 0.425144) |>
     replace_table("cars"),
   author = "Data Team",
   commit_message = "Add km/L column"
 )
-#> Transaction started.
-#> Transaction committed.
 
 # Automatic rollback on error
 tryCatch(
   with_transaction({
-    create_table(ChickWeight, "chicks")
-    stop("Simulated error") # Transaction will be rolled back
+    create_table(mtcars, "cars")
+    stop("Simulated error")  # Transaction will be rolled back
   }),
   error = function(e) message("Transaction was rolled back: ", e$message)
 )
-#> Transaction started.
-#> Converted factor columns Chick and Diet to character (DuckLake does not support
-#> ENUM columns).
-#> Transaction rolled back.
-#> Transaction was rolled back: Transaction rolled back due to error: Simulated error
-
-# "chicks" was never committed
-list_ducklake_tables()
-#>   schema_name table_name  type
-#> 1        main        air table
-#> 2        main       cars table
-#> 3        main    flowers table
-
-detach_ducklake("with_tx_lake", shutdown = TRUE)
-unlink(lake_dir, recursive = TRUE)
+} # }
 ```

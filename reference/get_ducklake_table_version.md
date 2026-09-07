@@ -27,9 +27,8 @@ get_ducklake_table_version(table_name, version, conn = NULL)
 
 ## Value
 
-A lazy table (class `tbl_ducklake`) that works with dplyr verbs. Like
-[`get_ducklake_table()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_table.md),
-collecting it restores stored column labels.
+A dplyr lazy query object (tbl_lazy) that can be further manipulated
+with dplyr verbs
 
 ## Details
 
@@ -45,43 +44,16 @@ snapshot identifier.
 Use `list_table_snapshots(table_name)` to see all available snapshots
 and their IDs.
 
-## See also
-
-Other time travel:
-[`get_ducklake_table_asof()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_table_asof.md),
-[`get_table_changes()`](https://tgerke.github.io/ducklake-r/reference/get_table_changes.md),
-[`list_table_snapshots()`](https://tgerke.github.io/ducklake-r/reference/list_table_snapshots.md),
-[`plot_snapshots()`](https://tgerke.github.io/ducklake-r/reference/plot_snapshots.md),
-[`plot_table_changes()`](https://tgerke.github.io/ducklake-r/reference/plot_table_changes.md),
-[`restore_table_version()`](https://tgerke.github.io/ducklake-r/reference/restore_table_version.md)
-
 ## Examples
 
 ``` r
-lake_dir <- tempfile("version_lake_")
-dir.create(lake_dir)
-attach_ducklake("version_lake", lake_path = lake_dir)
-create_table(data.frame(id = 1:3, amount = c(10, 20, 30)), "orders")
-
-rows_insert(
-  get_ducklake_table("orders"),
-  data.frame(id = 4L, amount = 40),
-  by = "id"
-)
-
+if (FALSE) { # \dontrun{
 # Get available snapshots
-snapshots <- list_table_snapshots("orders")
+snapshots <- list_table_snapshots("my_table")
 
 # Query the first snapshot version
-get_ducklake_table_version("orders", snapshots$snapshot_id[1]) |>
-  dplyr::collect()
-#> # A tibble: 3 × 2
-#>      id amount
-#>   <int>  <dbl>
-#> 1     1     10
-#> 2     2     20
-#> 3     3     30
-
-detach_ducklake("version_lake", shutdown = TRUE)
-unlink(lake_dir, recursive = TRUE)
+get_ducklake_table_version("my_table", snapshots$snapshot_id[1]) |>
+  filter(status == "active") |>
+  collect()
+} # }
 ```

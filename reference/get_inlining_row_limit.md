@@ -18,8 +18,7 @@ get_inlining_row_limit(
 
 - table_name:
 
-  Optional table name to query the table-level override, optionally
-  qualified as `"schema.table"`.
+  Optional table name to query the table-level override.
 
 - schema_name:
 
@@ -38,30 +37,14 @@ An integer: the effective inlining row limit.
 
 [`set_inlining_row_limit()`](https://tgerke.github.io/ducklake-r/reference/set_inlining_row_limit.md)
 
-Other data inlining:
-[`checkpoint_ducklake()`](https://tgerke.github.io/ducklake-r/reference/checkpoint_ducklake.md),
-[`flush_inlined_data()`](https://tgerke.github.io/ducklake-r/reference/flush_inlined_data.md),
-[`set_inlining_row_limit()`](https://tgerke.github.io/ducklake-r/reference/set_inlining_row_limit.md)
-
 ## Examples
 
 ``` r
-lake_dir <- tempfile("inline_get_lake_")
-dir.create(lake_dir)
-attach_ducklake("inline_get_lake", lake_path = lake_dir)
-create_table(mtcars, "cars")
-
-set_inlining_row_limit(100, table_name = "cars")
-#> Data inlining row limit for table {.val cars} set to 100.
-
+if (FALSE) { # \dontrun{
 # Global default
 get_inlining_row_limit()
-#> [1] 10
 
 # Table-specific limit
-get_inlining_row_limit(table_name = "cars")
-#> [1] 100
-
-detach_ducklake("inline_get_lake", shutdown = TRUE)
-unlink(lake_dir, recursive = TRUE)
+get_inlining_row_limit(table_name = "readings")
+} # }
 ```

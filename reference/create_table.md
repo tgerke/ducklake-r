@@ -5,7 +5,7 @@ Create a DuckLake table
 ## Usage
 
 ``` r
-create_table(data_source, table_name, labels = TRUE)
+create_table(data_source, table_name)
 ```
 
 ## Arguments
@@ -20,79 +20,28 @@ create_table(data_source, table_name, labels = TRUE)
 
   - An R data.frame or tibble
 
-  - A lazy table (tbl_duckdb_connection or tbl_lazy). A lazy table on
-    the package's connection, such as a dplyr pipeline built on
-    [`get_ducklake_table()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_table.md),
-    is written with `CREATE TABLE ... AS` inside DuckDB, so its rows
-    never pass through R. A lazy table on another connection is
-    collected first.
+  - A lazy table (tbl_duckdb_connection or tbl_lazy)
 
 - table_name:
 
   Name of the new table
 
-- labels:
-
-  When `TRUE` (the default), store variable labels in the lake as column
-  comments, in the same transaction as the table creation, so both land
-  as one snapshot. For a data frame the labels are its haven/labelled
-  `label` attributes; for a lazy table, each output column keeps the
-  comment of the same-named column in the tables the query reads, so
-  labels follow the data through a pipeline (a renamed or derived column
-  starts without one). Collecting the table later restores the labels
-  (see
-  [`get_table_comments()`](https://tgerke.github.io/ducklake-r/reference/get_table_comments.md)),
-  and every other client of the lake can read them too. Set to `FALSE`
-  to skip.
-
-## Value
-
-Invisibly, `NULL`. Called for its side effect of creating the table in
-the lake.
-
-## See also
-
-Other table operations:
-[`add_data_files()`](https://tgerke.github.io/ducklake-r/reference/add_data_files.md),
-[`create_schema()`](https://tgerke.github.io/ducklake-r/reference/create_schema.md),
-[`create_view()`](https://tgerke.github.io/ducklake-r/reference/create_view.md),
-[`drop_schema()`](https://tgerke.github.io/ducklake-r/reference/drop_schema.md),
-[`drop_view()`](https://tgerke.github.io/ducklake-r/reference/drop_view.md),
-[`ducklake_exec()`](https://tgerke.github.io/ducklake-r/reference/ducklake_exec.md),
-[`get_ducklake_table()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_table.md),
-[`get_metadata_table()`](https://tgerke.github.io/ducklake-r/reference/get_metadata_table.md),
-[`list_ducklake_tables()`](https://tgerke.github.io/ducklake-r/reference/list_ducklake_tables.md),
-[`replace_table()`](https://tgerke.github.io/ducklake-r/reference/replace_table.md),
-[`show_ducklake_query()`](https://tgerke.github.io/ducklake-r/reference/show_ducklake_query.md)
-
 ## Examples
 
 ``` r
-lake_dir <- tempfile("create_lake_")
-dir.create(lake_dir)
-attach_ducklake("create_lake", lake_path = lake_dir)
+if (FALSE) { # \dontrun{
+# From URL
+create_table("https://example.com/data.csv", "my_table")
+
+# From local file
+create_table("data.csv", "my_table")
 
 # From data.frame
-create_table(mtcars, "cars")
+create_table(mtcars, "my_table")
 
-# From a local file
-csv_path <- tempfile(fileext = ".csv")
-utils::write.csv(mtcars, csv_path, row.names = FALSE)
-create_table(csv_path, "cars_from_csv")
-
-# From a lazy table: the query runs inside DuckDB and writes straight
-# into the lake, without collecting into R
-get_ducklake_table("cars") |>
-  dplyr::filter(cyl > 4) |>
-  create_table("big_cars")
-
-# From a URL -- needs network access and the httpfs extension
-if (FALSE) { # \dontrun{
-create_table("https://example.com/data.csv", "remote_table")
+# From lazy table (pipe-friendly)
+get_ducklake_table("source_table") %>% 
+  filter(x > 5) %>%
+  create_table("filtered_table")
 } # }
-
-unlink(csv_path)
-
-detach_ducklake("create_lake", shutdown = TRUE)
-unlink(lake_dir, recursive = TRUE)
 ```

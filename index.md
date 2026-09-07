@@ -39,41 +39,12 @@ implementing a **versioned data lake** architecture that:
 
 ## Installation
 
-``` r
-
-install.packages("ducklake")
-```
-
-### Development version
+Install the development version of ducklake with:
 
 ``` r
 
 pak::pak("tgerke/ducklake-r")
 ```
-
-ducklake requires the [duckdb](https://r.duckdb.org) R package version
-1.5.2 or newer: DuckDB 1.5.2 is the release that ships the stable
-[DuckLake 1.0
-specification](https://ducklake.select/docs/stable/specification/introduction).
-The Quack remote-access features need DuckDB 1.5.3 or newer, which means
-duckdb 1.5.3 or newer from CRAN.
-
-DuckLake itself ships as a DuckDB extension that is downloaded on first
-use. Run
-[`install_ducklake()`](https://tgerke.github.io/ducklake-r/reference/install_ducklake.md)
-once, or check whether you already have it with
-[`ducklake_extension_available()`](https://tgerke.github.io/ducklake-r/reference/ducklake_extension_available.md).
-From duckdb 1.5.2 on, extensions live in a per-session temporary
-directory unless you point `DUCKDB_R_HOME` (for example in
-`~/.Renviron`) at a directory of your choice. Do that, and the download
-happens once per machine instead of once per session.
-
-ducklake manages its own DuckDB connection, so there is nothing to set
-up: just
-[`attach_ducklake()`](https://tgerke.github.io/ducklake-r/reference/attach_ducklake.md)
-and go. If you prefer to supply your own connection (for example, one
-shared with other DBI-based tools), register it with
-[`set_ducklake_connection()`](https://tgerke.github.io/ducklake-r/reference/set_ducklake_connection.md).
 
 ## Quick example: Layered data workflow
 
@@ -82,39 +53,31 @@ shared with other DBI-based tools), register it with
 library(ducklake)
 library(dplyr)
 
-# Install the ducklake extension (requires duckdb R package >= 1.5.2)
+# Install the ducklake extension (requires duckdb R package >= 1.5.1)
 install_ducklake()
 
 # Create a data lake in a temporary directory
 attach_ducklake("my_data_lake", lake_path = tempdir())
 
-# One schema per medallion layer, created in a single snapshot
-with_transaction({
-  create_schema("bronze")
-  create_schema("silver")
-  create_schema("gold")
-}, author = "Data Engineer", commit_message = "Create medallion layers")
-
 # Bronze layer: Load raw data exactly as received
 with_transaction(
-  create_table(mtcars, "bronze.vehicles"),
+  create_table(mtcars, "vehicles_raw"),
   author = "Data Engineer",
   commit_message = "Initial load of raw vehicle data"
 )
 
-# Silver layer: Apply cleaning transformations. The pipeline runs inside
-# DuckDB and writes straight into the lake
+# Silver layer: Apply cleaning transformations
 with_transaction(
-  get_ducklake_table("bronze.vehicles") |>
+  get_ducklake_table("vehicles_raw") |>
     mutate(cyl = as.character(cyl)) |>
-    create_table("silver.vehicles"),
+    create_table("vehicles_clean"),
   author = "Data Engineer", 
   commit_message = "Clean and standardize vehicle data"
 )
 
 # Gold layer: Create analysis dataset with business logic
 with_transaction(
-  get_ducklake_table("silver.vehicles") |>
+  get_ducklake_table("vehicles_clean") |>
     mutate(
       efficiency = case_when(
         mpg < 15 ~ "Low",
@@ -122,26 +85,26 @@ with_transaction(
         TRUE ~ "High"
       )
     ) |>
-    create_table("gold.vehicle_efficiency"),
+    create_table("vehicles_analysis"),
   author = "Data Analyst",
   commit_message = "Create analysis-ready dataset with efficiency categories"
 )
 
 # Update the silver layer with additional transformations
 with_transaction(
-  get_ducklake_table("silver.vehicles") |>
+  get_ducklake_table("vehicles_clean") |>
     mutate(gear = as.integer(gear)) |>
-    replace_table("silver.vehicles"),
+    replace_table("vehicles_clean"),
   author = "Data Engineer",
   commit_message = "Add gear type conversion to silver layer"
 )
 
 # View the analysis dataset
-get_ducklake_table("gold.vehicle_efficiency") |>
+get_ducklake_table("vehicles_analysis") |>
   select(mpg, cyl, efficiency) |>
   head(3)
-#> # A query:  ?? x 3
-#> # Database: DuckDB 1.5.5 [tgerke@Darwin 25.6.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/Rtmpt7y8Lw/ducklake/ducklake623c4db47890.duckdb]
+#> # Source:   SQL [?? x 3]
+#> # Database: DuckDB 1.5.1 [tgerke@Darwin 23.6.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpdGcD7M/duckplyr/duckplyra5c5e1b369d.duckdb]
 #>     mpg cyl   efficiency
 #>   <dbl> <chr> <chr>     
 #> 1  21   6.0   Medium    
@@ -151,40 +114,36 @@ get_ducklake_table("gold.vehicle_efficiency") |>
 # View complete audit trail across all layers with author and commit messages
 list_table_snapshots()
 #>   snapshot_id       snapshot_time schema_version
-#> 1           0 2026-09-04 23:25:48              0
-#> 2           1 2026-09-04 23:25:48              1
-#> 3           2 2026-09-04 23:25:48              2
-#> 4           3 2026-09-04 23:25:48              3
-#> 5           4 2026-09-04 23:25:48              4
-#> 6           5 2026-09-04 23:25:48              5
-#>                                                                       changes
-#> 1                                                       schemas_created, main
-#> 2                                       schemas_created, bronze, silver, gold
-#> 3                    tables_created, tables_inserted_into, bronze.vehicles, 4
-#> 4                    tables_created, tables_inserted_into, silver.vehicles, 5
-#> 5            tables_created, tables_inserted_into, gold.vehicle_efficiency, 6
-#> 6 tables_created, tables_dropped, tables_inserted_into, silver.vehicles, 5, 7
+#> 1           0 2026-04-14 19:30:38              0
+#> 2           1 2026-04-14 19:30:38              1
+#> 3           2 2026-04-14 19:30:39              2
+#> 4           3 2026-04-14 19:30:39              3
+#> 5           4 2026-04-14 19:30:39              4
+#>                                                                           changes
+#> 1                                                           schemas_created, main
+#> 2                      tables_created, tables_inserted_into, main.vehicles_raw, 1
+#> 3                    tables_created, tables_inserted_into, main.vehicles_clean, 2
+#> 4                 tables_created, tables_inserted_into, main.vehicles_analysis, 3
+#> 5 tables_created, tables_dropped, tables_inserted_into, main.vehicles_clean, 2, 4
 #>          author                                           commit_message
 #> 1          <NA>                                                     <NA>
-#> 2 Data Engineer                                  Create medallion layers
-#> 3 Data Engineer                         Initial load of raw vehicle data
-#> 4 Data Engineer                       Clean and standardize vehicle data
-#> 5  Data Analyst Create analysis-ready dataset with efficiency categories
-#> 6 Data Engineer                 Add gear type conversion to silver layer
+#> 2 Data Engineer                         Initial load of raw vehicle data
+#> 3 Data Engineer                       Clean and standardize vehicle data
+#> 4  Data Analyst Create analysis-ready dataset with efficiency categories
+#> 5 Data Engineer                 Add gear type conversion to silver layer
 #>   commit_extra_info
 #> 1              <NA>
 #> 2              <NA>
 #> 3              <NA>
 #> 4              <NA>
 #> 5              <NA>
-#> 6              <NA>
 
-# Time travel: Query the silver layer as it existed at snapshot 3 (before updates)
-get_ducklake_table_version("silver.vehicles", version = 3) |>
+# Time travel: Query the silver layer as it existed at snapshot 2 (before updates)
+get_ducklake_table_version("vehicles_clean", version = 2) |>
   select(mpg, cyl, gear) |>
   head(3)
-#> # A query:  ?? x 3
-#> # Database: DuckDB 1.5.5 [tgerke@Darwin 25.6.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/Rtmpt7y8Lw/ducklake/ducklake623c4db47890.duckdb]
+#> # Source:   SQL [?? x 3]
+#> # Database: DuckDB 1.5.1 [tgerke@Darwin 23.6.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/RtmpdGcD7M/duckplyr/duckplyra5c5e1b369d.duckdb]
 #>     mpg cyl    gear
 #>   <dbl> <chr> <dbl>
 #> 1  21   6.0       4
@@ -208,12 +167,8 @@ ensures data quality and traceability:
   specific analyses, dashboards, or reports
 
 Each layer is automatically versioned, providing complete data lineage
-from raw source through to analysis-ready datasets. Each layer can live
-in a schema of its own
-([`create_schema()`](https://tgerke.github.io/ducklake-r/reference/create_schema.md)),
-which keeps `bronze.vehicles`, `silver.vehicles`, and
-`gold.vehicle_efficiency` one lineage under three roofs, and lets access
-to raw data be restricted at the schema level. This approach enables:
+from raw source through to analysis-ready datasets. This approach
+enables:
 
 - **Complete audit trail**: Original data preserved alongside all
   transformations
@@ -225,70 +180,25 @@ to raw data be restricted at the schema level. This approach enables:
 - **Quality assurance**: Separate concerns between ingestion, cleaning,
   and analysis
 
-## Column-level lineage with dplyneage
-
-ducklake tracks lineage at the table level: which tables changed at each
-snapshot, and why. For lineage *within* a query — which source columns
-feed each output column — the companion package
-[dplyneage](https://github.com/tgerke/dplyneage) picks up where ducklake
-leaves off. Lake tables are ordinary dbplyr lazy tables, so any query
-pipes straight into an interactive diagram:
-
-``` r
-
-library(dplyneage)
-
-get_ducklake_table("orders") |>
-  dplyr::left_join(get_ducklake_table("customers"), by = "customer_id") |>
-  dplyr::group_by(region) |>
-  dplyr::summarise(total_sales = sum(amount, na.rm = TRUE)) |>
-  extract_lineage() |>
-  lineage_flow()
-```
-
-dplyneage’s [ducklake lineage
-vignette](https://tgerke.github.io/dplyneage/articles/ducklake-lineage.html)
-walks through a full example, including per-layer diagrams for medallion
-pipelines and lineage for time-travel queries.
-
 ## Learn more
 
 Check out the [pkgdown site](https://tgerke.github.io/ducklake-r/) for
 detailed vignettes:
 
-- [Getting
-  Started](https://tgerke.github.io/ducklake-r/articles/ducklake.html) -
-  Quick recipes for common operations
-- [Choosing a
-  Deployment](https://tgerke.github.io/ducklake-r/articles/deployment.html) -
-  Which catalog, where the data goes, who can reach it, and what to set
-  up on day one
 - [Clinical Trial Data
   Lake](https://tgerke.github.io/ducklake-r/articles/clinical-trial-datalake.html) -
-  Complete workflow from SDTM to ADaM with regulatory artifacts
+  **Start here**: Complete workflow from SDTM to ADaM with regulatory
+  artifacts
+- [Cookbook](https://tgerke.github.io/ducklake-r/articles/ducklake.html) -
+  Quick recipes for common operations
 - [Modifying
   Tables](https://tgerke.github.io/ducklake-r/articles/modifying-tables.html) -
-  Choosing how to change a table: joins vs. `rows_*`, upserts,
-  [`merge_into()`](https://tgerke.github.io/ducklake-r/reference/merge_into.md),
-  and
-  [`replace_table()`](https://tgerke.github.io/ducklake-r/reference/replace_table.md)
-- [Data
-  Inlining](https://tgerke.github.io/ducklake-r/articles/data-inlining.html) -
-  Streaming-friendly small writes
+  Two approaches for table modifications
 - [Transactions](https://tgerke.github.io/ducklake-r/articles/transactions.html) -
   ACID transaction support
 - [Time
   Travel](https://tgerke.github.io/ducklake-r/articles/time-travel.html) -
-  Query and restore historical data
-- [Storage and
-  Backups](https://tgerke.github.io/ducklake-r/articles/storage-and-backups.html) -
-  Back up and recover your lake
-- [Visualizing Your
-  Lake](https://tgerke.github.io/ducklake-r/articles/visualizing-your-lake.html) -
-  Plot snapshot history, change volume, and storage layout
-- [Quack Remote
-  Access](https://tgerke.github.io/ducklake-r/articles/quack-remote-access.html) -
-  Share a DuckLake over the network with the Quack protocol
+  Query historical data
 
 ## Key features
 
@@ -298,87 +208,23 @@ detailed vignettes:
   or MySQL as the catalog database — enables concurrent multi-client
   access with PostgreSQL or SQLite ([DuckLake 1.0
   spec](https://ducklake.select/docs/stable/specification/introduction))
-- **Remote access over Quack**: Serve a DuckLake to other R sessions
-  over the network and let several people read and write it at once,
-  using DuckDB’s Quack protocol (requires DuckDB 1.5.3 or newer)
 - **Lightweight snapshots**: Create unlimited snapshots without frequent
   compacting steps
 - **Medallion architecture**: Bronze/silver/gold layers for data lineage
   and quality
 - **ACID transactions**: Atomic updates with concurrent access and
-  transactional guarantees over multi-table operations;
-  [`set_ducklake_retry()`](https://tgerke.github.io/ducklake-r/reference/set_ducklake_retry.md)
-  tunes how DuckLake retries transactions that race with another writer
+  transactional guarantees over multi-table operations
 - **Time travel**: Query data exactly as it existed at any point in
-  time—essential for reproducibility. Pin a whole session to a snapshot
-  with `attach_ducklake(snapshot_version = ...)`
+  time—essential for reproducibility
 - **Performance-oriented**: Uses Parquet columnar storage with
   statistics for filter pushdown, enabling fast queries on large
-  datasets. Partitioning
-  ([`set_table_partitioning()`](https://tgerke.github.io/ducklake-r/reference/set_table_partitioning.md))
-  and sorted tables
-  ([`set_table_sorting()`](https://tgerke.github.io/ducklake-r/reference/set_table_sorting.md))
-  prune files on large tables
-- **Migrate Parquet in place**:
-  [`add_data_files()`](https://tgerke.github.io/ducklake-r/reference/add_data_files.md)
-  registers existing Parquet files with the lake without copying or
-  rewriting them
-- **Cloud storage**: Keep data files on S3, GCS, R2, or Azure —
-  [`create_storage_secret()`](https://tgerke.github.io/ducklake-r/reference/create_storage_secret.md)
-  handles credentials
-- **Tunable**:
-  [`set_ducklake_option()`](https://tgerke.github.io/ducklake-r/reference/set_ducklake_option.md)
-  adjusts DuckLake’s persisted settings (compression, file sizes,
-  commit-message policy) at lake, schema, or table scope
-- **Schema evolution in place**:
-  [`add_table_column()`](https://tgerke.github.io/ducklake-r/reference/add_table_column.md),
-  [`drop_table_column()`](https://tgerke.github.io/ducklake-r/reference/drop_table_column.md),
-  [`rename_table_column()`](https://tgerke.github.io/ducklake-r/reference/rename_table_column.md),
-  [`set_column_type()`](https://tgerke.github.io/ducklake-r/reference/set_column_type.md),
-  and
-  [`rename_ducklake_table()`](https://tgerke.github.io/ducklake-r/reference/rename_ducklake_table.md)
-  change a table’s shape as metadata-only operations — no data rewrite,
-  and every earlier schema stays reachable through time travel
-- **Variable labels survive the lake**:
-  [`create_table()`](https://tgerke.github.io/ducklake-r/reference/create_table.md)
-  stores haven/labelled column labels as catalog comments and
-  [`collect()`](https://dplyr.tidyverse.org/reference/compute.html)
-  restores them, so gtsummary and gt keep displaying them;
-  [`set_table_comment()`](https://tgerke.github.io/ducklake-r/reference/set_table_comment.md),
-  [`set_column_comments()`](https://tgerke.github.io/ducklake-r/reference/set_column_comments.md),
-  and
-  [`get_table_comments()`](https://tgerke.github.io/ducklake-r/reference/get_table_comments.md)
-  manage documentation any client of the lake can read
-- **Views**:
-  [`create_view()`](https://tgerke.github.io/ducklake-r/reference/create_view.md)
-  stores a dplyr pipeline as a SQL view in the lake — shared logic that
-  always reads current data;
-  [`list_ducklake_tables()`](https://tgerke.github.io/ducklake-r/reference/list_ducklake_tables.md)
-  shows what’s there
-- **Schemas**: Organize layers or studies with
-  [`create_schema()`](https://tgerke.github.io/ducklake-r/reference/create_schema.md);
-  every function accepts `"schema.table"`
+  datasets
+- **Schema evolution**: Adapt table schemas over time as requirements
+  change
 - **Tidyverse interface**: Familiar dplyr syntax for data manipulation
-- **In-database writes**:
-  [`create_table()`](https://tgerke.github.io/ducklake-r/reference/create_table.md)
-  and
-  [`replace_table()`](https://tgerke.github.io/ducklake-r/reference/replace_table.md)
-  run dplyr pipelines inside DuckDB and write the result straight into
-  the lake, so derived layers never pass through R memory
-- **Encryption**: Opt-in Parquet encryption with
-  `attach_ducklake(encrypted = TRUE)`
-- **A write style for every job**:
-  [`rows_insert()`](https://tgerke.github.io/ducklake-r/reference/rows_insert.md),
-  [`rows_update()`](https://tgerke.github.io/ducklake-r/reference/rows_update.md),
-  [`rows_delete()`](https://tgerke.github.io/ducklake-r/reference/rows_delete.md),
-  and
-  [`rows_upsert()`](https://tgerke.github.io/ducklake-r/reference/rows_upsert.md)
-  for incremental changes;
-  [`merge_into()`](https://tgerke.github.io/ducklake-r/reference/merge_into.md)
-  for conditional merges and staging-table syncs;
-  [`replace_table()`](https://tgerke.github.io/ducklake-r/reference/replace_table.md)
-  pipelines for bulk rewrites — all fully versioned
+- **Two complementary approaches**: `rows_*` functions for data.frames
+  and pipeline functions for dplyr workflows
 - **Complete audit trails**: Who changed what, when, and why—suitable
   for regulated industries
-- **Seamless integration**: Works with duckdb, DBI, dbplyr, and the
-  broader tidyverse ecosystem
+- **Seamless integration**: Works with duckdb, duckplyr, and the broader
+  R ecosystem

@@ -25,9 +25,9 @@ set_inlining_row_limit(
 
 - table_name:
 
-  Optional table name, optionally qualified as `"schema.table"`. When
-  provided the limit is persisted for that table in the DuckLake
-  metadata (takes priority over the global setting).
+  Optional table name. When provided the limit is persisted for that
+  table in the DuckLake metadata (takes priority over the global
+  setting).
 
 - schema_name:
 
@@ -76,31 +76,17 @@ to materialise inlined data to Parquet when ready.
 [`flush_inlined_data()`](https://tgerke.github.io/ducklake-r/reference/flush_inlined_data.md),
 [`checkpoint_ducklake()`](https://tgerke.github.io/ducklake-r/reference/checkpoint_ducklake.md)
 
-Other data inlining:
-[`checkpoint_ducklake()`](https://tgerke.github.io/ducklake-r/reference/checkpoint_ducklake.md),
-[`flush_inlined_data()`](https://tgerke.github.io/ducklake-r/reference/flush_inlined_data.md),
-[`get_inlining_row_limit()`](https://tgerke.github.io/ducklake-r/reference/get_inlining_row_limit.md)
-
 ## Examples
 
 ``` r
-lake_dir <- tempfile("inline_set_lake_")
-dir.create(lake_dir)
-attach_ducklake("inline_set_lake", lake_path = lake_dir)
-create_table(mtcars, "cars")
-
+if (FALSE) { # \dontrun{
 # Change the global default
 set_inlining_row_limit(50)
-#> Global data inlining row limit set to 50.
 
 # Override for a specific table
-set_inlining_row_limit(100, table_name = "cars")
-#> Data inlining row limit for table {.val cars} set to 100.
+set_inlining_row_limit(100, table_name = "readings")
 
 # Disable inlining globally
 set_inlining_row_limit(0)
-#> Global data inlining row limit set to 0.
-
-detach_ducklake("inline_set_lake", shutdown = TRUE)
-unlink(lake_dir, recursive = TRUE)
+} # }
 ```

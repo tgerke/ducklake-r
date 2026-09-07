@@ -92,50 +92,6 @@ attach_ducklake(
 - **Security**: Consider using DuckLake’s encryption features for cloud
   storage
 
-### Cloud Storage Credentials
-
-Object storage needs credentials before a remote `lake_path` will work.
-[`create_storage_secret()`](https://tgerke.github.io/ducklake-r/reference/create_storage_secret.md)
-registers them with DuckDB’s secrets manager:
-
-``` r
-
-# Explicit keys, scoped to one bucket
-create_storage_secret(
-  "s3",
-  key_id = Sys.getenv("AWS_ACCESS_KEY_ID"),
-  secret = Sys.getenv("AWS_SECRET_ACCESS_KEY"),
-  region = "us-east-1",
-  scope = "s3://my-bucket"
-)
-
-# Or let the AWS credential chain find them (env vars, profiles,
-# instance metadata) -- no keys in code
-create_storage_secret("s3", provider = "credential_chain")
-
-# Then attach. With the default duckdb backend the catalog file must stay
-# on local disk (DuckDB cannot write a database file to object storage), so
-# name its location with catalog_connection_string; lake_path only sets
-# where the Parquet data goes.
-attach_ducklake(
-  "shared_lake",
-  lake_path = "s3://my-bucket/ducklake/data",
-  catalog_connection_string = "shared_lake.ducklake"
-)
-```
-
-Secrets are in-memory by default and disappear with the session; pass
-`persistent = TRUE` only if you are comfortable with DuckDB writing
-them, unencrypted, under `~/.duckdb/`. GCS, Cloudflare R2, and Azure use
-the same function with `type = "gcs"`, `"r2"`, or `"azure"`.
-
-Note that
-[`backup_ducklake()`](https://tgerke.github.io/ducklake-r/reference/backup_ducklake.md)
-works on local data paths only. For a lake on object storage, use your
-provider’s replication or sync tooling (bucket versioning,
-`aws s3 sync`, and similar) for the data files, and back up the catalog
-database with the tools for its backend.
-
 ## Inspecting DuckLake Files
 
 Let’s create a sample DuckLake and explore what files it generates:
@@ -147,8 +103,16 @@ lake_dir <- file.path(vignette_temp_dir, "storage_demo")
 dir.create(lake_dir, showWarnings = FALSE, recursive = TRUE)
 
 # Install ducklake extension
-# The ducklake extension only needs installing once per machine:
-# install_ducklake()
+install_ducklake()
+#> duckdb keeps downloaded extensions and secrets in a temporary directory:
+#> ℹ /tmp/RtmphcYIly/duckdb
+#> This is removed when the R session ends.
+#> • Extensions are re-downloaded each session.
+#> • Secrets are lost.
+#> ℹ Run duckdb(shared_home = TRUE) (or create ~/.duckdb) to keep them (suitable for most users).
+#> ℹ Run duckdb(shared_home = FALSE) to accept the temporary directory (and silence this message).
+#> ℹ See ?duckdb_storage for details and alternatives.
+#> Installed ducklake extension.
 
 # Create and populate a DuckLake
 attach_ducklake(
@@ -193,14 +157,14 @@ The catalog is a single database file containing all metadata:
 ``` r
 
 dir_tree(lake_dir)
-#> /tmp/RtmpdcrWV9/storage_backups_vignette/storage_demo
+#> /tmp/RtmphcYIly/storage_backups_vignette/storage_demo
 #> ├── demo_lake.ducklake
 #> ├── demo_lake.ducklake.wal
 #> └── main
 #>     └── cars
-#>         ├── ducklake-01a06f59-6670-7e2f-86b2-8add662f0b89.parquet
-#>         ├── ducklake-01a06f59-6800-7c51-803f-a13e418f4ae6.parquet
-#>         └── ducklake-01a06f59-690d-79d9-a160-f80b54fb7c61.parquet
+#>         ├── ducklake-01a07951-bb5d-7a09-b573-fb2daac4ae3b.parquet
+#>         ├── ducklake-01a07951-bc3a-7b23-b7fd-f8fe92e87726.parquet
+#>         └── ducklake-01a07951-bd21-7664-980c-01794e3b3880.parquet
 ```
 
 The catalog files (`demo_lake.ducklake` and `.wal`) contain all metadata
@@ -216,11 +180,11 @@ Data files are stored in Parquet format in a structured directory:
 main_dir <- file.path(lake_dir, "main")
 
 dir_tree(main_dir, recurse = 2)
-#> /tmp/RtmpdcrWV9/storage_backups_vignette/storage_demo/main
+#> /tmp/RtmphcYIly/storage_backups_vignette/storage_demo/main
 #> └── cars
-#>     ├── ducklake-01a06f59-6670-7e2f-86b2-8add662f0b89.parquet
-#>     ├── ducklake-01a06f59-6800-7c51-803f-a13e418f4ae6.parquet
-#>     └── ducklake-01a06f59-690d-79d9-a160-f80b54fb7c61.parquet
+#>     ├── ducklake-01a07951-bb5d-7a09-b573-fb2daac4ae3b.parquet
+#>     ├── ducklake-01a07951-bc3a-7b23-b7fd-f8fe92e87726.parquet
+#>     └── ducklake-01a07951-bd21-7664-980c-01794e3b3880.parquet
   
 # Get details about parquet files
 parquet_files <- dir_ls(main_dir, recurse = TRUE, regexp = "\\.parquet$")
@@ -229,9 +193,9 @@ for (f in parquet_files) {
               path_file(f), 
               file.size(f)))
 }
-#>   ducklake-01a06f59-6670-7e2f-86b2-8add662f0b89.parquet (2307 bytes)
-#>   ducklake-01a06f59-6800-7c51-803f-a13e418f4ae6.parquet (2501 bytes)
-#>   ducklake-01a06f59-690d-79d9-a160-f80b54fb7c61.parquet (2724 bytes)
+#>   ducklake-01a07951-bb5d-7a09-b573-fb2daac4ae3b.parquet (2307 bytes)
+#>   ducklake-01a07951-bc3a-7b23-b7fd-f8fe92e87726.parquet (2501 bytes)
+#>   ducklake-01a07951-bd21-7664-980c-01794e3b3880.parquet (2724 bytes)
 ```
 
 ### Understanding File Organization
@@ -246,15 +210,14 @@ snapshots <- list_table_snapshots("cars")
 snapshots |>
   select(snapshot_id, author, commit_message)
 #>   snapshot_id    author                       commit_message
-#> 1           1 Demo User                         Initial load
-#> 2           2 Demo User                Add hp_per_cyl metric
-#> 3           3 Demo User Add adjusted MPG for 4-cylinder cars
+#> 2           1 Demo User                         Initial load
+#> 3           2 Demo User                Add hp_per_cyl metric
+#> 4           3 Demo User Add adjusted MPG for 4-cylinder cars
 ```
 
-The key insight is that **DuckLake never modifies existing Parquet
-files**. Each change creates new files, preserving the complete history
-for time travel queries; files are only ever deleted by the maintenance
-functions described below, once no snapshot needs them.
+The key insight is that **DuckLake never modifies or deletes existing
+Parquet files**. Each change creates new files, preserving the complete
+history for time travel queries.
 
 ## Backup Strategies
 
@@ -263,13 +226,9 @@ functions described below, once no snapshot needs them.
 The catalog is the most critical component—it maps snapshots to data
 files. Regular backups are essential.
 
-#### Copying the Catalog
+#### Simple File Copy
 
-[`backup_ducklake()`](https://tgerke.github.io/ducklake-r/reference/backup_ducklake.md)
-copies the catalog with DuckDB’s `COPY FROM DATABASE` while the lake
-stays attached. The copy is taken inside one transaction, so it is a
-consistent snapshot of the metadata, and nothing is detached or shut
-down along the way. The same statement works by hand:
+For local databases, the simplest backup is a file copy:
 
 ``` r
 
@@ -277,17 +236,12 @@ down along the way. The same statement works by hand:
 backup_dir <- file.path(lake_dir, "backups")
 dir.create(backup_dir, showWarnings = FALSE)
 
-# Copy the catalog through DuckDB: the metadata catalog of an attached lake
-# is the database __ducklake_metadata_<name>
-conn <- get_ducklake_connection()
-DBI::dbExecute(conn, sprintf(
-  "ATTACH '%s' AS backup;", file.path(backup_dir, "demo_lake.ducklake")
-))
-#> [1] 0
-DBI::dbExecute(conn, "COPY FROM DATABASE __ducklake_metadata_demo_lake TO backup;")
-#> [1] 0
-DBI::dbExecute(conn, "DETACH backup;")
-#> [1] 0
+# Copy the catalog file to create a backup
+file.copy(
+  from = file.path(lake_dir, "demo_lake.ducklake"),
+  to = file.path(backup_dir, "demo_lake.ducklake")
+)
+#> [1] TRUE
 
 # Copy the data directory as well
 dir_copy(
@@ -297,49 +251,38 @@ dir_copy(
 
 # Verify the backup was created
 dir_tree(backup_dir)
-#> /tmp/RtmpdcrWV9/storage_backups_vignette/storage_demo/backups
+#> /tmp/RtmphcYIly/storage_backups_vignette/storage_demo/backups
 #> ├── demo_lake.ducklake
 #> └── main
 #>     └── cars
-#>         ├── ducklake-01a06f59-6670-7e2f-86b2-8add662f0b89.parquet
-#>         ├── ducklake-01a06f59-6800-7c51-803f-a13e418f4ae6.parquet
-#>         └── ducklake-01a06f59-690d-79d9-a160-f80b54fb7c61.parquet
-```
+#>         ├── ducklake-01a07951-bb5d-7a09-b573-fb2daac4ae3b.parquet
+#>         ├── ducklake-01a07951-bc3a-7b23-b7fd-f8fe92e87726.parquet
+#>         └── ducklake-01a07951-bd21-7664-980c-01794e3b3880.parquet
 
-A plain file copy of the `.ducklake` file works too, but only after
-releasing DuckDB’s lock on it: detach with `shutdown = TRUE`, copy, then
-re-attach. Copying a live catalog produces a corrupt (or, on Windows,
-unreadable) file.
-
-To work with the backup, attach it. `override_data_path` is needed
-because the catalog remembers the original data location, which the
-backup no longer matches, and `create = FALSE` turns a mistyped path
-into an error instead of a new, empty lake:
-
-``` r
-
+# To use the backup, detach the current lake and attach to the backup
+# First detach the original
 detach_ducklake("demo_lake")
+
+# Attach to the backup location
 attach_ducklake(
   ducklake_name = "demo_lake",
-  lake_path = backup_dir,
-  override_data_path = TRUE,
-  create = FALSE
+  lake_path = backup_dir
 )
 
 # Verify you're working with the backup
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-09-05 02:15:25              1
-#> 2           2 2026-09-05 02:15:25              2
-#> 3           3 2026-09-05 02:15:25              3
+#> 2           1 2026-09-07 00:43:14              1
+#> 3           2 2026-09-07 00:43:14              2
+#> 4           3 2026-09-07 00:43:14              3
 #>                                                                 changes
-#> 1                    tables_created, tables_inserted_into, main.cars, 1
-#> 2 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2
-#> 3 tables_created, tables_dropped, tables_inserted_into, main.cars, 2, 3
+#> 2                    tables_created, tables_inserted_into, main.cars, 1
+#> 3 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 2
+#> 4 tables_created, tables_dropped, tables_inserted_into, main.cars, 2, 3
 #>      author                       commit_message commit_extra_info
-#> 1 Demo User                         Initial load              <NA>
-#> 2 Demo User                Add hp_per_cyl metric              <NA>
-#> 3 Demo User Add adjusted MPG for 4-cylinder cars              <NA>
+#> 2 Demo User                         Initial load              <NA>
+#> 3 Demo User                Add hp_per_cyl metric              <NA>
+#> 4 Demo User Add adjusted MPG for 4-cylinder cars              <NA>
 
 # You can switch back to the original by detaching and reattaching
 detach_ducklake("demo_lake")
@@ -413,16 +356,15 @@ If your catalog is corrupted or lost:
 ``` r
 
 # Restore from backup by copying the backup file
-# (backup_dir here is a directory created earlier, e.g. by backup_ducklake())
 file.copy(
-  from = file.path(backup_dir, "demo_lake.ducklake"),
+  from = file.path(lake_dir, "backups", 
+                   paste0("demo_lake_backup_", Sys.Date(), ".ducklake")),
   to = file.path(lake_dir, "demo_lake.ducklake"),
   overwrite = TRUE
 )
 
-# Reattach to the restored database (detach with shutdown = TRUE before
-# overwriting the file, so DuckDB is not holding it open)
-attach_ducklake("demo_lake", lake_path = lake_dir, create = FALSE)
+# Reattach to the restored database
+attach_ducklake("demo_lake", lake_path = lake_dir)
 
 # Verify recovery by listing snapshots
 list_table_snapshots("cars")
@@ -445,65 +387,6 @@ dir_copy(
 # since the catalog maintains the file paths
 ```
 
-## Routine Maintenance
-
-A lake that sees regular writes accumulates small Parquet files (one per
-insert) and old snapshots whose files cannot be reclaimed until the
-snapshots are expired.
-[`checkpoint_ducklake()`](https://tgerke.github.io/ducklake-r/reference/checkpoint_ducklake.md)
-runs DuckLake’s maintenance steps in one call: it flushes inlined data,
-merges small files, and rewrites heavily deleted files. Two steps only
-happen under a retention policy: snapshots are expired when the lake
-carries an `expire_older_than` option, and released files are deleted
-when it carries `delete_older_than`. Without them a checkpoint keeps
-every snapshot and every file, so the policy is the first thing to
-decide. It is set once, persists in the catalog, and applies to every
-client of the lake:
-
-``` r
-
-# Keep 90 days of time travel; delete released files a week after release
-set_ducklake_option("expire_older_than", "90 days")
-set_ducklake_option("delete_older_than", "7 days")
-
-# From now on every checkpoint applies the policy
-checkpoint_ducklake()
-```
-
-Choose `expire_older_than` to match how far back you need to audit or
-restore, since expiring a snapshot gives up time travel to it. For finer
-control, each step has its own function:
-
-``` r
-
-# Compact small adjacent Parquet files into larger ones
-merge_adjacent_files()
-
-# Preview a retention policy, then apply it
-expire_snapshots(older_than = Sys.time() - 30 * 24 * 60 * 60, dry_run = TRUE)
-expire_snapshots(older_than = Sys.time() - 30 * 24 * 60 * 60)
-
-# Expired snapshots only *schedule* file deletion; this reclaims the storage
-cleanup_old_files(cleanup_all = TRUE)
-
-# Rewrite data files whose rows have mostly been deleted
-rewrite_data_files(delete_threshold = 0.5)
-
-# Remove untracked files from the data path -- always dry-run this one first
-delete_orphaned_files(dry_run = TRUE, cleanup_all = TRUE)
-```
-
-The typical cycle is merge, then expire, then clean up: merging and
-expiring both mark files as unreferenced, and
-[`cleanup_old_files()`](https://tgerke.github.io/ducklake-r/reference/cleanup_old_files.md)
-deletes them. Expiring a snapshot gives up time travel to it, so choose
-`older_than` to match how far back you need to audit or restore.
-
-One task lives outside DuckLake itself: the catalog database. If you use
-a PostgreSQL or SQLite catalog, occasionally run `VACUUM` there with
-that database’s own tooling so metadata queries stay fast. The default
-DuckDB-file catalog does not need this.
-
 ## Maintenance Considerations
 
 When planning backups, coordinate with maintenance operations:
@@ -518,19 +401,23 @@ When planning backups, coordinate with maintenance operations:
 # Recommended backup sequence
 
 # 1. Run maintenance operations (if needed)
-merge_adjacent_files()
-expire_snapshots(older_than = Sys.time() - 30 * 24 * 60 * 60)
-cleanup_old_files(cleanup_all = TRUE)
+# See maintenance vignettes for details
 
 # 2. Ensure all transactions are committed
 # (no pending work)
 
-# 3. Back up: the catalog through COPY FROM DATABASE, the data files by
-#    copy, with the lake still attached
-backup_ducklake(
-  "demo_lake",
-  lake_path = lake_dir,
-  backup_path = file.path(lake_dir, "backups")
+# 3. Back up catalog
+dir.create(file.path(lake_dir, "backups"), showWarnings = FALSE)
+file.copy(
+  from = file.path(lake_dir, "demo_lake.ducklake"),
+  to = file.path(lake_dir, "backups", 
+                 paste0("backup_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".ducklake"))
+)
+
+# 4. Back up data files
+dir_copy(
+  path = file.path(lake_dir, "main"),
+  new_path = file.path(lake_dir, "backups", "main_latest")
 )
 ```
 
@@ -548,22 +435,29 @@ backup_dir <- backup_ducklake(
   lake_path = lake_dir,
   backup_path = file.path(lake_dir, "backups")
 )
+#> duckdb keeps downloaded extensions and secrets in a temporary directory:
+#> ℹ /tmp/RtmphcYIly/duckdb
+#> This is removed when the R session ends.
+#> • Extensions are re-downloaded each session.
+#> • Secrets are lost.
+#> ℹ Run duckdb(shared_home = TRUE) (or create ~/.duckdb) to keep them (suitable for most users).
+#> ℹ Run duckdb(shared_home = FALSE) to accept the temporary directory (and silence this message).
+#> ℹ See ?duckdb_storage for details and alternatives.
 #> Catalog backed up successfully.
-#> Data files backed up successfully (1 directory).
+#> Data files backed up successfully.
 #> Backup completed:
-#> /tmp/RtmpdcrWV9/storage_backups_vignette/storage_demo/backups/backup_20260905_021526
+#> /tmp/RtmphcYIly/storage_backups_vignette/storage_demo/backups/backup_20260907_004315
 
 # The function returns the backup directory path
 print(backup_dir)
-#> [1] "/tmp/RtmpdcrWV9/storage_backups_vignette/storage_demo/backups/backup_20260905_021526"
+#> [1] "/tmp/RtmphcYIly/storage_backups_vignette/storage_demo/backups/backup_20260907_004315"
 ```
 
 The
 [`backup_ducklake()`](https://tgerke.github.io/ducklake-r/reference/backup_ducklake.md)
 function: - Creates a timestamped backup directory - Copies the catalog
-through `COPY FROM DATABASE`, with the lake still attached - Copies the
-data files from every schema directory in the lake - Returns the backup
-directory path for reference
+database file - Copies all data files from the main/ directory - Returns
+the backup directory path for reference
 
 ## Cleanup
 
