@@ -189,10 +189,12 @@ dplyneage's [ducklake lineage vignette](https://tgerke.github.io/dplyneage/artic
 
 Check out the [pkgdown site](https://tgerke.github.io/ducklake-r/) for detailed vignettes:
 
-- [Getting Started](https://tgerke.github.io/ducklake-r/articles/ducklake.html) - Quick recipes for common operations
+- [Getting Started](https://tgerke.github.io/ducklake-r/articles/ducklake.html) - Attach a lake, add a table, read it back, change it, and see its history
+- [Loading Data](https://tgerke.github.io/ducklake-r/articles/loading-data.html) - Files, URLs, pipelines, schemas, Parquet in place, and migrating from DuckDB or Iceberg
 - [Choosing a Deployment](https://tgerke.github.io/ducklake-r/articles/deployment.html) - Which catalog, where the data goes, who can reach it, and what to set up on day one
 - [Clinical Trial Data Lake](https://tgerke.github.io/ducklake-r/articles/clinical-trial-datalake.html) - Complete workflow from SDTM to ADaM with regulatory artifacts
 - [Modifying Tables](https://tgerke.github.io/ducklake-r/articles/modifying-tables.html) - Choosing how to change a table: joins vs. `rows_*`, upserts, `merge_into()`, and `replace_table()`
+- [Views, Comments, and Labels](https://tgerke.github.io/ducklake-r/articles/views-comments-labels.html) - Shared query logic and documentation that live in the lake
 - [Data Inlining](https://tgerke.github.io/ducklake-r/articles/data-inlining.html) - Streaming-friendly small writes
 - [Transactions](https://tgerke.github.io/ducklake-r/articles/transactions.html) - ACID transaction support
 - [Time Travel](https://tgerke.github.io/ducklake-r/articles/time-travel.html) - Query and restore historical data

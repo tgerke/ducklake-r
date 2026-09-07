@@ -45,7 +45,9 @@ begin_transaction <- function(conn = NULL) {
   }
 
   DBI::dbExecute(conn, "BEGIN TRANSACTION;")
-  dl_inform("Transaction started.")
+  # Remember where the lake stood, so the commit can report whether it
+  # moved and to which snapshot
+  .ducklake_env$txn_snapshot_before <- current_snapshot_id(conn)
   invisible(TRUE)
 }
 
@@ -71,6 +73,14 @@ begin_transaction <- function(conn = NULL) {
 #' they will be set using \code{CALL ducklake.set_commit_message()} within the
 #' transaction before the \code{COMMIT} statement, as required by the DuckLake
 #' v1.0 specification.
+#'
+#' The commit is confirmed with one message naming the snapshot it created,
+#' with the author and commit message when they were given. The id is the
+#' newest snapshot in the lake right after the commit, so when several
+#' sessions write to the same lake it can belong to a commit that landed
+#' just after this one. A transaction that changed nothing creates no
+#' snapshot, and the message says so. `options(ducklake.verbose = FALSE)`
+#' silences these confirmations.
 #'
 #' @examplesIf ducklake_extension_available()
 #' lake_dir <- tempfile("commit_lake_")
@@ -155,7 +165,14 @@ commit_transaction <- function(
   }
 
   DBI::dbExecute(conn, "COMMIT;")
-  dl_inform("Transaction committed.")
+
+  # Report the snapshot this commit made. The template names locals of
+  # this frame, so user text is substituted as a value, never parsed as
+  # cli markup.
+  before <- .ducklake_env$txn_snapshot_before
+  .ducklake_env$txn_snapshot_before <- NULL
+  snapshot <- current_snapshot_id(conn)
+  dl_inform(commit_confirmation(snapshot, before, author, commit_message))
 
   invisible(TRUE)
 }
@@ -433,6 +450,46 @@ rollback_transaction <- function(conn = NULL) {
   }
 
   DBI::dbExecute(conn, "ROLLBACK;")
+  .ducklake_env$txn_snapshot_before <- NULL
   dl_inform("Transaction rolled back.")
   invisible(TRUE)
+}
+
+#' The lake's current snapshot id, or NA when it cannot be read
+#'
+#' Inside an open transaction this is the snapshot the transaction started
+#' from: DuckLake assigns the next id only at commit.
+#' @noRd
+current_snapshot_id <- function(conn) {
+  tryCatch(
+    {
+      name <- infer_ducklake_name(NULL, conn)
+      id <- DBI::dbGetQuery(
+        conn,
+        sprintf("FROM %s.current_snapshot()", quote_ident(name, conn))
+      )[[1]]
+      as.integer(id)
+    },
+    error = function(e) NA_integer_
+  )
+}
+
+#' The cli template for a commit confirmation
+#'
+#' Returns a template that refers to `snapshot`, `author`, and
+#' `commit_message` in the caller's frame, where `dl_inform()` interpolates
+#' them.
+#' @noRd
+commit_confirmation <- function(snapshot, before, author, commit_message) {
+  if (is.na(snapshot)) {
+    return("Transaction committed.")
+  }
+  if (isTRUE(snapshot == before)) {
+    return("Committed with no changes: the lake stays at snapshot {snapshot}.")
+  }
+  paste0(
+    "Committed snapshot {snapshot}",
+    if (!is.null(author)) " ({author})" else "",
+    if (!is.null(commit_message)) ": {commit_message}" else "."
+  )
 }

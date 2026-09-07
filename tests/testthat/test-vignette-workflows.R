@@ -5,7 +5,7 @@
 # work as documented, rather than testing individual low-level functions.
 #
 # Each test corresponds to a specific vignette:
-# - ducklake.Rmd: Basic create/update workflow
+# - ducklake.Rmd: create a table, change it, read a version, restore it
 # - time-travel.Rmd: Version history and time travel queries
 # - clinical-trial-datalake.Rmd: Medallion architecture with related tables
 # - transactions.Rmd: Manual transaction control with rollback
@@ -163,16 +163,19 @@ test_that("ducklake.Rmd workflow: create lake, load data, update table", {
   result <- get_ducklake_table("cars") |> dplyr::collect()
   expect_equal(nrow(result), nrow(mtcars))
 
-  # Update an existing table (as shown in vignette)
-  with_transaction(
+  # Change the table in place (as shown in vignette): declare a column,
+  # then fill it, as one snapshot
+  with_transaction({
+    add_table_column("cars", "kpl", "DOUBLE")
     get_ducklake_table("cars") |>
       dplyr::mutate(kpl = mpg * 0.425144) |>
-      replace_table("cars"),
+      ducklake_exec()
+  },
     author = "Data Engineer",
-    commit_message = "Add km/L metric"
+    commit_message = "Add fuel efficiency in km/L"
   )
 
-  # Verify the update worked
+  # Verify the change worked
   result2 <- get_ducklake_table("cars") |> dplyr::collect()
   expect_true("kpl" %in% names(result2))
   expect_equal(nrow(result2), nrow(mtcars))
@@ -181,6 +184,16 @@ test_that("ducklake.Rmd workflow: create lake, load data, update table", {
   snapshots <- list_table_snapshots("cars")
   expect_equal(nrow(snapshots), 2)
   expect_true(all(c("snapshot_id", "snapshot_time", "changes") %in% names(snapshots)))
+
+  # The first version is still readable without the new column, and a
+  # restore brings it back as a third snapshot
+  first_id <- snapshots$snapshot_id[[1]]
+  expect_false(
+    "kpl" %in% colnames(get_ducklake_table_version("cars", version = first_id))
+  )
+  restore_table_version("cars", version = first_id, author = "Data Engineer")
+  expect_false("kpl" %in% colnames(get_ducklake_table("cars")))
+  expect_equal(nrow(list_table_snapshots("cars")), 3)
 
   cleanup_temp_ducklake(lake)
 })

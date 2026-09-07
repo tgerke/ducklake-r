@@ -30,8 +30,12 @@ navbar:
         href: articles/clinical-trial-datalake.html
       - text: -------
       - text: Core Operations
+      - text: Loading Data
+        href: articles/loading-data.html
       - text: Modifying Tables
         href: articles/modifying-tables.html
+      - text: Views, Comments, and Labels
+        href: articles/views-comments-labels.html
       - text: -------
       - text: Advanced Features
       - text: Data Inlining
