@@ -35,6 +35,14 @@ If \code{author}, \code{commit_message}, or \code{commit_extra_info} are provide
 they will be set using \code{CALL ducklake.set_commit_message()} within the
 transaction before the \code{COMMIT} statement, as required by the DuckLake
 v1.0 specification.
+
+The commit is confirmed with one message naming the snapshot it created,
+with the author and commit message when they were given. The id is the
+newest snapshot in the lake right after the commit, so when several
+sessions write to the same lake it can belong to a commit that landed
+just after this one. A transaction that changed nothing creates no
+snapshot, and the message says so. \code{options(ducklake.verbose = FALSE)}
+silences these confirmations.
 }
 \examples{
 \dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}
