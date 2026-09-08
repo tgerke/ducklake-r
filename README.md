@@ -285,9 +285,6 @@ the silver and gold layers above are also their lineage recipes. Pass
 them to `extract_lineage()` under the names they were materialized as,
 and it stitches the layers into one graph:
 
-<!-- warning = FALSE: dplyneage's check for unstitched models fires when layers
-share a table name across schemas. Remove it once that is fixed upstream. -->
-
 ``` r
 library(dplyneage)
 

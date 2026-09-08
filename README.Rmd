@@ -203,10 +203,7 @@ Detaching deletes nothing. It releases the lock DuckDB holds on the catalog file
 
 ducklake records lineage at the table level: which tables each snapshot touched, and why. The companion package [dplyneage](https://github.com/tgerke/dplyneage) traces lineage within a query, from each output column back to the source columns it came from. Lake tables are ordinary dbplyr lazy tables, so the pipelines that built the silver and gold layers above are also their lineage recipes. Pass them to `extract_lineage()` under the names they were materialized as, and it stitches the layers into one graph:
 
-<!-- warning = FALSE: dplyneage's check for unstitched models fires when layers
-share a table name across schemas. Remove it once that is fixed upstream. -->
-
-```{r lineage, message = FALSE, warning = FALSE, screenshot.opts = list(vwidth = 1200, vheight = 700), fig.alt = "Column-level lineage diagram of the lake built in this README: the bronze.vehicles source table on the left feeds the silver.vehicles table in the middle, which feeds the gold.vehicle_efficiency table on the right. Each edge connects a column to the column it becomes, and the two computed columns carry their expressions as labels."}
+```{r lineage, message = FALSE, screenshot.opts = list(vwidth = 1200, vheight = 700), fig.alt = "Column-level lineage diagram of the lake built in this README: the bronze.vehicles source table on the left feeds the silver.vehicles table in the middle, which feeds the gold.vehicle_efficiency table on the right. Each edge connects a column to the column it becomes, and the two computed columns carry their expressions as labels."}
 library(dplyneage)
 
 lake_lineage <- extract_lineage(list(
