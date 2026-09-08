@@ -84,55 +84,129 @@ up: just `attach_ducklake()` and go. If you prefer to supply your own
 connection (for example, one shared with other DBI-based tools),
 register it with `set_ducklake_connection()`.
 
-## Quick example: Layered data workflow
+## Quick start: a layered lake
+
+The medallion pattern organizes a lake in layers: bronze holds data
+exactly as it arrived, silver holds the cleaned and standardized
+version, and gold holds the tables an analysis reads. This session
+builds one table per layer and follows the same steps as the [Getting
+Started](https://tgerke.github.io/ducklake-r/articles/ducklake.html)
+article: attach a lake, add tables, read them, change one, look at the
+history, detach.
+
+### Attach a lake
 
 ``` r
 library(ducklake)
 library(dplyr)
 
-# Create a data lake in a temporary directory
 attach_ducklake("my_data_lake", lake_path = tempdir())
+```
 
-# One schema per medallion layer, created in a single snapshot
+One call opens a lake, and creates it first when nothing is at the path
+yet. By default the catalog is a DuckDB file stored next to the data. A
+lake that several people write to keeps its catalog in SQLite or
+PostgreSQL instead, and [Choosing a
+Deployment](https://tgerke.github.io/ducklake-r/articles/deployment.html)
+walks through that choice.
+
+### Load the raw layer
+
+Each layer gets a schema of its own. That keeps `bronze.vehicles`,
+`silver.vehicles`, and `gold.vehicle_efficiency` one lineage under three
+roofs, and lets access to raw data be restricted at the schema level.
+
+``` r
 with_transaction({
   create_schema("bronze")
   create_schema("silver")
   create_schema("gold")
 }, author = "Data Engineer", commit_message = "Create medallion layers")
+#> Created schema "bronze".
+#> Created schema "silver".
+#> Created schema "gold".
+#> Committed snapshot 1 (Data Engineer): Create medallion layers
 
-# Bronze layer: Load raw data exactly as received
 with_transaction(
   create_table(mtcars, "bronze.vehicles"),
   author = "Data Engineer",
   commit_message = "Initial load of raw vehicle data"
 )
+#> Committed snapshot 2 (Data Engineer): Initial load of raw vehicle data
+```
 
-# Silver layer: Apply cleaning transformations. The pipeline runs inside
-# DuckDB and writes straight into the lake
+Every write to a lake is a commit. `with_transaction()` makes the commit
+explicit: everything inside it lands as one snapshot, with a record of
+who made the change and why, and it all rolls back if any step fails.
+The confirmation names the snapshot, and the history section below uses
+that number to look back.
+
+### Derive the cleaned and analysis-ready layers
+
+A dplyr pipeline on a lake table is a query. Ending it with
+`create_table()` runs the query inside DuckDB and writes the result
+straight into the lake, so the rows never pass through R. Each pipeline
+is kept in a variable here, because the recipe that builds a layer is
+also its lineage, which the last section draws.
+
+``` r
+silver <- get_ducklake_table("bronze.vehicles") |>
+  select(mpg, cyl, hp, wt, gear) |>
+  mutate(cyl = as.integer(cyl))
+
 with_transaction(
-  get_ducklake_table("bronze.vehicles") |>
-    mutate(cyl = as.character(cyl)) |>
-    create_table("silver.vehicles"),
-  author = "Data Engineer", 
+  create_table(silver, "silver.vehicles"),
+  author = "Data Engineer",
   commit_message = "Clean and standardize vehicle data"
 )
+#> Committed snapshot 3 (Data Engineer): Clean and standardize vehicle data
 
-# Gold layer: Create analysis dataset with business logic
+gold <- get_ducklake_table("silver.vehicles") |>
+  mutate(efficient = mpg > 25)
+
 with_transaction(
-  get_ducklake_table("silver.vehicles") |>
-    mutate(
-      efficiency = case_when(
-        mpg < 15 ~ "Low",
-        mpg < 25 ~ "Medium",
-        TRUE ~ "High"
-      )
-    ) |>
-    create_table("gold.vehicle_efficiency"),
+  create_table(gold, "gold.vehicle_efficiency"),
   author = "Data Analyst",
-  commit_message = "Create analysis-ready dataset with efficiency categories"
+  commit_message = "Flag efficient vehicles"
 )
+#> Committed snapshot 4 (Data Analyst): Flag efficient vehicles
 
-# Update the silver layer with additional transformations
+list_ducklake_tables()
+#>   schema_name         table_name  type
+#> 1      bronze           vehicles table
+#> 2        gold vehicle_efficiency table
+#> 3      silver           vehicles table
+```
+
+### Read a table
+
+`get_ducklake_table()` returns a lazy table. The dplyr verbs you pipe
+onto it become SQL that DuckDB runs against the lake, and `collect()`
+brings the result into R. Filter, select, and summarize before you
+collect, so DuckDB does the work and only the result reaches R.
+
+``` r
+get_ducklake_table("gold.vehicle_efficiency") |>
+  count(cyl, efficient) |>
+  arrange(cyl, efficient) |>
+  collect()
+#> # A tibble: 4 × 3
+#>     cyl efficient     n
+#>   <int> <lgl>     <dbl>
+#> 1     4 FALSE         5
+#> 2     4 TRUE          6
+#> 3     6 FALSE         7
+#> 4     8 FALSE        14
+```
+
+### Rebuild a layer
+
+When the cleaning logic changes, a layer is rewritten from a pipeline
+rather than re-extracted from the source system. `replace_table()` does
+that as one versioned change, and the version before the rewrite stays
+readable.
+
+``` r
 with_transaction(
   get_ducklake_table("silver.vehicles") |>
     mutate(gear = as.integer(gear)) |>
@@ -140,119 +214,116 @@ with_transaction(
   author = "Data Engineer",
   commit_message = "Add gear type conversion to silver layer"
 )
+#> Committed snapshot 5 (Data Engineer): Add gear type conversion to silver layer
+```
 
-# View the analysis dataset
-get_ducklake_table("gold.vehicle_efficiency") |>
-  select(mpg, cyl, efficiency) |>
-  head(3)
-#> # A query:  ?? x 3
-#> # Database: DuckDB 1.5.5 [tgerke@Darwin 25.6.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/Rtmpyfo6Cq/ducklake/ducklake11c574a450c21.duckdb]
-#>     mpg cyl   efficiency
-#>   <dbl> <chr> <chr>     
-#> 1  21   6.0   Medium    
-#> 2  21   6.0   Medium    
-#> 3  22.8 4.0   Medium
+[Modifying
+Tables](https://tgerke.github.io/ducklake-r/articles/modifying-tables.html)
+covers the other ways to change a table: `rows_insert()`,
+`rows_update()`, and `rows_delete()` for specific rows, `rows_upsert()`
+and `merge_into()` for batches, and `ducklake_exec()` for changing rows
+in place. All of them are versioned in the same way.
 
-# View complete audit trail across all layers with author and commit messages
-list_table_snapshots()
-#>   snapshot_id       snapshot_time schema_version
-#> 1           0 2026-09-07 18:08:04              0
-#> 2           1 2026-09-07 18:08:04              1
-#> 3           2 2026-09-07 18:08:04              2
-#> 4           3 2026-09-07 18:08:04              3
-#> 5           4 2026-09-07 18:08:04              4
-#> 6           5 2026-09-07 18:08:04              5
-#>                                                                       changes
-#> 1                                                       schemas_created, main
-#> 2                                       schemas_created, bronze, silver, gold
-#> 3                    tables_created, tables_inserted_into, bronze.vehicles, 4
-#> 4                    tables_created, tables_inserted_into, silver.vehicles, 5
-#> 5            tables_created, tables_inserted_into, gold.vehicle_efficiency, 6
-#> 6 tables_created, tables_dropped, tables_inserted_into, silver.vehicles, 5, 7
-#>          author                                           commit_message
-#> 1          <NA>                                                     <NA>
-#> 2 Data Engineer                                  Create medallion layers
-#> 3 Data Engineer                         Initial load of raw vehicle data
-#> 4 Data Engineer                       Clean and standardize vehicle data
-#> 5  Data Analyst Create analysis-ready dataset with efficiency categories
-#> 6 Data Engineer                 Add gear type conversion to silver layer
-#>   commit_extra_info
-#> 1              <NA>
-#> 2              <NA>
-#> 3              <NA>
-#> 4              <NA>
-#> 5              <NA>
-#> 6              <NA>
+### See the history
 
-# Time travel: Query the silver layer as it existed at snapshot 3 (before updates)
+`list_table_snapshots()` lists every commit in the lake, across all
+layers. The ids are the ones the confirmations printed, and snapshot 0
+is the lake’s creation.
+
+``` r
+list_table_snapshots() |>
+  select(snapshot_id, author, commit_message)
+#>   snapshot_id        author                           commit_message
+#> 1           0          <NA>                                     <NA>
+#> 2           1 Data Engineer                  Create medallion layers
+#> 3           2 Data Engineer         Initial load of raw vehicle data
+#> 4           3 Data Engineer       Clean and standardize vehicle data
+#> 5           4  Data Analyst                  Flag efficient vehicles
+#> 6           5 Data Engineer Add gear type conversion to silver layer
+```
+
+Any earlier version of a table can be read as a lazy table. Here is the
+silver layer as it was at snapshot 3, before the rebuild:
+
+``` r
 get_ducklake_table_version("silver.vehicles", version = 3) |>
   select(mpg, cyl, gear) |>
-  head(3)
-#> # A query:  ?? x 3
-#> # Database: DuckDB 1.5.5 [tgerke@Darwin 25.6.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/Rtmpyfo6Cq/ducklake/ducklake11c574a450c21.duckdb]
-#>     mpg cyl    gear
-#>   <dbl> <chr> <dbl>
-#> 1  21   6.0       4
-#> 2  21   6.0       4
-#> 3  22.8 4.0       4
+  head(3) |>
+  collect()
+#> # A tibble: 3 × 3
+#>     mpg   cyl  gear
+#>   <dbl> <int> <dbl>
+#> 1  21       6     4
+#> 2  21       6     4
+#> 3  22.8     4     4
+```
 
-# Clean up
+[Time
+Travel](https://tgerke.github.io/ducklake-r/articles/time-travel.html)
+covers reading a table as of a timestamp, comparing versions, restoring
+one, and pinning a whole session to a snapshot.
+
+### Detach
+
+``` r
 detach_ducklake("my_data_lake")
 ```
 
-## Medallion architecture
-
-ducklake implements a layered data architecture (medallion pattern) that
-ensures data quality and traceability:
-
-- **Bronze layer** (raw): Data exactly as received from source
-  systems—preserves original data for audit trails
-- **Silver layer** (cleaned): Standardized, cleaned data with
-  transformations and validations—the trusted source for analysis
-- **Gold layer** (analytics): Business-logic datasets optimized for
-  specific analyses, dashboards, or reports
-
-Each layer is automatically versioned, providing complete data lineage
-from raw source through to analysis-ready datasets. Each layer can live
-in a schema of its own (`create_schema()`), which keeps
-`bronze.vehicles`, `silver.vehicles`, and `gold.vehicle_efficiency` one
-lineage under three roofs, and lets access to raw data be restricted at
-the schema level. This approach enables:
-
-- **Complete audit trail**: Original data preserved alongside all
-  transformations
-- **Reprocessability**: Reprocess from bronze if cleaning logic changes
-  without re-extracting from source
-- **Data lineage**: Clear progression from raw → cleaned →
-  analysis-ready
-- **Validation**: Compare layers to verify transformations
-- **Quality assurance**: Separate concerns between ingestion, cleaning,
-  and analysis
+Detaching deletes nothing. It releases the lock DuckDB holds on the
+catalog file, so another session or a backup can open the lake.
+Attaching the same path again picks up where you left off, history
+included.
 
 ## Column-level lineage with dplyneage
 
-ducklake tracks lineage at the table level: which tables changed at each
-snapshot, and why. For lineage *within* a query — which source columns
-feed each output column — the companion package
-[dplyneage](https://github.com/tgerke/dplyneage) picks up where ducklake
-leaves off. Lake tables are ordinary dbplyr lazy tables, so any query
-pipes straight into an interactive diagram:
+ducklake records lineage at the table level: which tables each snapshot
+touched, and why. The companion package
+[dplyneage](https://github.com/tgerke/dplyneage) traces lineage within a
+query, from each output column back to the source columns it came from.
+Lake tables are ordinary dbplyr lazy tables, so the pipelines that built
+the silver and gold layers above are also their lineage recipes. Pass
+them to `extract_lineage()` under the names they were materialized as,
+and it stitches the layers into one graph:
+
+<!-- warning = FALSE: dplyneage's check for unstitched models fires when layers
+share a table name across schemas. Remove it once that is fixed upstream. -->
 
 ``` r
 library(dplyneage)
 
-get_ducklake_table("orders") |>
-  dplyr::left_join(get_ducklake_table("customers"), by = "customer_id") |>
-  dplyr::group_by(region) |>
-  dplyr::summarise(total_sales = sum(amount, na.rm = TRUE)) |>
-  extract_lineage() |>
-  lineage_flow()
+lake_lineage <- extract_lineage(list(
+  "silver.vehicles" = silver,
+  "gold.vehicle_efficiency" = gold
+))
+
+lineage_flow(lake_lineage, height = "450px")
 ```
 
-dplyneage’s [ducklake lineage
-vignette](https://tgerke.github.io/dplyneage/articles/ducklake-lineage.html)
-walks through a full example, including per-layer diagrams for medallion
-pipelines and lineage for time-travel queries.
+<img src="man/figures/README-lineage-1.png" alt="Column-level lineage diagram of the lake built in this README: the bronze.vehicles source table on the left feeds the silver.vehicles table in the middle, which feeds the gold.vehicle_efficiency table on the right. Each edge connects a column to the column it becomes, and the two computed columns carry their expressions as labels." width="100%" />
+
+`bronze.vehicles` feeds `silver.vehicles`, which feeds
+`gold.vehicle_efficiency`. A column that passes through unchanged
+connects with a plain edge. A column a pipeline computes carries its
+expression as a label, with `as.integer(cyl)` on the way into silver and
+`mpg > 25` on the way into gold. In an R session the diagram is
+interactive: drag tables, zoom, hover a column for its type and label,
+click one to isolate everything upstream and downstream of it. The same
+lineage answers impact questions as data:
+
+``` r
+lineage_upstream(lake_lineage, "gold.vehicle_efficiency.efficient")
+#> [1] "bronze.vehicles.mpg" "silver.vehicles.mpg"
+```
+
+Lineage reads the structure of a pipeline, not its data, which is why
+this works after the lake was detached. dplyneage’s [ducklake lineage
+article](https://tgerke.github.io/dplyneage/articles/ducklake-lineage.html)
+draws one diagram per layer and extracts lineage from time-travel
+queries. Its [lineage that travels with the
+data](https://tgerke.github.io/dplyneage/articles/ducklake-versioned-lineage.html)
+article stores each layer’s lineage on the commit that wrote it, through
+`commit_extra_info`, so a snapshot’s rows and their derivation come back
+together.
 
 ## Learn more
 
