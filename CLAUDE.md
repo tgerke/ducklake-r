@@ -142,3 +142,14 @@
   articles (Loading Data; Views, Comments, and Labels; Modifying Tables;
   Choosing a Deployment). New recipes go to those, not to Getting
   Started.
+- **The README follows the Getting Started arc** (2026-09-08): one
+  layered session in short headed steps (attach, load, derive, read,
+  rebuild, history, detach), commit confirmations visible, printed
+  results collected so no temp path shows. The dplyneage section
+  screenshots the lake’s stitched bronze/silver/gold lineage. Rendering
+  `README.Rmd` needs dplyneage (GitHub only), webshot2, and Chrome, none
+  of them package dependencies, so `README.Rmd` stays build-ignored and
+  `README.md` is rendered locally with `devtools::build_readme()`. The
+  lineage chunk renders without a warning only with dplyneage newer than
+  0.3.1, which exempts a model’s own sources from its unstitched-model
+  check.

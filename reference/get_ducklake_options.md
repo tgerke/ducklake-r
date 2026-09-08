@@ -53,7 +53,7 @@ get_ducklake_options()
 #> 5                                                                          DuckLake format version
 #>                                       value  scope scope_entry
 #> 1                         DuckDB d8cdaa33fd GLOBAL        <NA>
-#> 2 /tmp/Rtmpp5hXvc/getopt_lake_1ab94563afcd/ GLOBAL        <NA>
+#> 2 /tmp/Rtmp1Hz4TR/getopt_lake_1a8e2b180687/ GLOBAL        <NA>
 #> 3                                     false GLOBAL        <NA>
 #> 4                                      zstd GLOBAL        <NA>
 #> 5                                       1.0 GLOBAL        <NA>

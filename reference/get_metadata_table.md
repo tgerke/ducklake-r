@@ -66,8 +66,8 @@ get_metadata_table("ducklake_snapshot") |> dplyr::collect()
 #> # A tibble: 2 × 5
 #>   snapshot_id snapshot_time       schema_version next_catalog_id next_file_id
 #>         <dbl> <dttm>                       <dbl>           <dbl>        <dbl>
-#> 1           0 2026-09-07 18:16:02              0               1            0
-#> 2           1 2026-09-07 18:16:02              1               2            1
+#> 1           0 2026-09-08 15:13:02              0               1            0
+#> 2           1 2026-09-08 15:13:02              1               2            1
 
 # Which Parquet files back the lake?
 get_metadata_table("ducklake_data_file") |>
@@ -76,7 +76,7 @@ get_metadata_table("ducklake_data_file") |>
 #> # A tibble: 1 × 2
 #>   data_file_id path                                                 
 #>          <dbl> <chr>                                                
-#> 1            0 ducklake-01a07d15-99f3-712e-b0a6-210b6818315b.parquet
+#> 1            0 ducklake-01a08194-6998-7ddd-b96b-3cb64d978602.parquet
 
 detach_ducklake("meta_lake", shutdown = TRUE)
 unlink(lake_dir, recursive = TRUE)

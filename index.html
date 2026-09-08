@@ -132,161 +132,161 @@
 </div>
 </div>
 <div class="section level2">
-<h2 id="quick-example-layered-data-workflow">Quick example: Layered data workflow<a class="anchor" aria-label="anchor" href="#quick-example-layered-data-workflow"></a>
+<h2 id="quick-start-a-layered-lake">Quick start: a layered lake<a class="anchor" aria-label="anchor" href="#quick-start-a-layered-lake"></a>
 </h2>
+<p>The medallion pattern organizes a lake in layers: bronze holds data exactly as it arrived, silver holds the cleaned and standardized version, and gold holds the tables an analysis reads. This session builds one table per layer and follows the same steps as the <a href="https://tgerke.github.io/ducklake-r/articles/ducklake.html">Getting Started</a> article: attach a lake, add tables, read them, change one, look at the history, detach.</p>
+<div class="section level3">
+<h3 id="attach-a-lake">Attach a lake<a class="anchor" aria-label="anchor" href="#attach-a-lake"></a>
+</h3>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://tgerke.github.io/ducklake-r/">ducklake</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Create a data lake in a temporary directory</span></span>
-<span><span class="fu"><a href="reference/attach_ducklake.html">attach_ducklake</a></span><span class="op">(</span><span class="st">"my_data_lake"</span>, lake_path <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># One schema per medallion layer, created in a single snapshot</span></span>
-<span><span class="fu"><a href="reference/with_transaction.html">with_transaction</a></span><span class="op">(</span><span class="op">{</span></span>
+<span><span class="fu"><a href="reference/attach_ducklake.html">attach_ducklake</a></span><span class="op">(</span><span class="st">"my_data_lake"</span>, lake_path <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p>One call opens a lake, and creates it first when nothing is at the path yet. By default the catalog is a DuckDB file stored next to the data. A lake that several people write to keeps its catalog in SQLite or PostgreSQL instead, and <a href="https://tgerke.github.io/ducklake-r/articles/deployment.html">Choosing a Deployment</a> walks through that choice.</p>
+</div>
+<div class="section level3">
+<h3 id="load-the-raw-layer">Load the raw layer<a class="anchor" aria-label="anchor" href="#load-the-raw-layer"></a>
+</h3>
+<p>Each layer gets a schema of its own. That keeps <code>bronze.vehicles</code>, <code>silver.vehicles</code>, and <code>gold.vehicle_efficiency</code> one lineage under three roofs, and lets access to raw data be restricted at the schema level.</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="reference/with_transaction.html">with_transaction</a></span><span class="op">(</span><span class="op">{</span></span>
 <span>  <span class="fu"><a href="reference/create_schema.html">create_schema</a></span><span class="op">(</span><span class="st">"bronze"</span><span class="op">)</span></span>
 <span>  <span class="fu"><a href="reference/create_schema.html">create_schema</a></span><span class="op">(</span><span class="st">"silver"</span><span class="op">)</span></span>
 <span>  <span class="fu"><a href="reference/create_schema.html">create_schema</a></span><span class="op">(</span><span class="st">"gold"</span><span class="op">)</span></span>
 <span><span class="op">}</span>, author <span class="op">=</span> <span class="st">"Data Engineer"</span>, commit_message <span class="op">=</span> <span class="st">"Create medallion layers"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Created schema "bronze".</span></span>
+<span><span class="co">#&gt; Created schema "silver".</span></span>
+<span><span class="co">#&gt; Created schema "gold".</span></span>
+<span><span class="co">#&gt; Committed snapshot 1 (Data Engineer): Create medallion layers</span></span>
 <span></span>
-<span><span class="co"># Bronze layer: Load raw data exactly as received</span></span>
 <span><span class="fu"><a href="reference/with_transaction.html">with_transaction</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="reference/create_table.html">create_table</a></span><span class="op">(</span><span class="va">mtcars</span>, <span class="st">"bronze.vehicles"</span><span class="op">)</span>,</span>
 <span>  author <span class="op">=</span> <span class="st">"Data Engineer"</span>,</span>
 <span>  commit_message <span class="op">=</span> <span class="st">"Initial load of raw vehicle data"</span></span>
 <span><span class="op">)</span></span>
+<span><span class="co">#&gt; Committed snapshot 2 (Data Engineer): Initial load of raw vehicle data</span></span></code></pre></div>
+<p>Every write to a lake is a commit. <code><a href="reference/with_transaction.html">with_transaction()</a></code> makes the commit explicit: everything inside it lands as one snapshot, with a record of who made the change and why, and it all rolls back if any step fails. The confirmation names the snapshot, and the history section below uses that number to look back.</p>
+</div>
+<div class="section level3">
+<h3 id="derive-the-cleaned-and-analysis-ready-layers">Derive the cleaned and analysis-ready layers<a class="anchor" aria-label="anchor" href="#derive-the-cleaned-and-analysis-ready-layers"></a>
+</h3>
+<p>A dplyr pipeline on a lake table is a query. Ending it with <code><a href="reference/create_table.html">create_table()</a></code> runs the query inside DuckDB and writes the result straight into the lake, so the rows never pass through R. Each pipeline is kept in a variable here, because the recipe that builds a layer is also its lineage, which the last section draws.</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">silver</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"bronze.vehicles"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">mpg</span>, <span class="va">cyl</span>, <span class="va">hp</span>, <span class="va">wt</span>, <span class="va">gear</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>cyl <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/integer.html" class="external-link">as.integer</a></span><span class="op">(</span><span class="va">cyl</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Silver layer: Apply cleaning transformations. The pipeline runs inside</span></span>
-<span><span class="co"># DuckDB and writes straight into the lake</span></span>
 <span><span class="fu"><a href="reference/with_transaction.html">with_transaction</a></span><span class="op">(</span></span>
-<span>  <span class="fu"><a href="reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"bronze.vehicles"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>cyl <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span><span class="va">cyl</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>    <span class="fu"><a href="reference/create_table.html">create_table</a></span><span class="op">(</span><span class="st">"silver.vehicles"</span><span class="op">)</span>,</span>
-<span>  author <span class="op">=</span> <span class="st">"Data Engineer"</span>, </span>
+<span>  <span class="fu"><a href="reference/create_table.html">create_table</a></span><span class="op">(</span><span class="va">silver</span>, <span class="st">"silver.vehicles"</span><span class="op">)</span>,</span>
+<span>  author <span class="op">=</span> <span class="st">"Data Engineer"</span>,</span>
 <span>  commit_message <span class="op">=</span> <span class="st">"Clean and standardize vehicle data"</span></span>
 <span><span class="op">)</span></span>
+<span><span class="co">#&gt; Committed snapshot 3 (Data Engineer): Clean and standardize vehicle data</span></span>
 <span></span>
-<span><span class="co"># Gold layer: Create analysis dataset with business logic</span></span>
+<span><span class="va">gold</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"silver.vehicles"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>efficient <span class="op">=</span> <span class="va">mpg</span> <span class="op">&gt;</span> <span class="fl">25</span><span class="op">)</span></span>
+<span></span>
 <span><span class="fu"><a href="reference/with_transaction.html">with_transaction</a></span><span class="op">(</span></span>
-<span>  <span class="fu"><a href="reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"silver.vehicles"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span></span>
-<span>      efficiency <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/case-and-replace-when.html" class="external-link">case_when</a></span><span class="op">(</span></span>
-<span>        <span class="va">mpg</span> <span class="op">&lt;</span> <span class="fl">15</span> <span class="op">~</span> <span class="st">"Low"</span>,</span>
-<span>        <span class="va">mpg</span> <span class="op">&lt;</span> <span class="fl">25</span> <span class="op">~</span> <span class="st">"Medium"</span>,</span>
-<span>        <span class="cn">TRUE</span> <span class="op">~</span> <span class="st">"High"</span></span>
-<span>      <span class="op">)</span></span>
-<span>    <span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>    <span class="fu"><a href="reference/create_table.html">create_table</a></span><span class="op">(</span><span class="st">"gold.vehicle_efficiency"</span><span class="op">)</span>,</span>
+<span>  <span class="fu"><a href="reference/create_table.html">create_table</a></span><span class="op">(</span><span class="va">gold</span>, <span class="st">"gold.vehicle_efficiency"</span><span class="op">)</span>,</span>
 <span>  author <span class="op">=</span> <span class="st">"Data Analyst"</span>,</span>
-<span>  commit_message <span class="op">=</span> <span class="st">"Create analysis-ready dataset with efficiency categories"</span></span>
+<span>  commit_message <span class="op">=</span> <span class="st">"Flag efficient vehicles"</span></span>
 <span><span class="op">)</span></span>
+<span><span class="co">#&gt; Committed snapshot 4 (Data Analyst): Flag efficient vehicles</span></span>
 <span></span>
-<span><span class="co"># Update the silver layer with additional transformations</span></span>
-<span><span class="fu"><a href="reference/with_transaction.html">with_transaction</a></span><span class="op">(</span></span>
+<span><span class="fu"><a href="reference/list_ducklake_tables.html">list_ducklake_tables</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   schema_name         table_name  type</span></span>
+<span><span class="co">#&gt; 1      bronze           vehicles table</span></span>
+<span><span class="co">#&gt; 2        gold vehicle_efficiency table</span></span>
+<span><span class="co">#&gt; 3      silver           vehicles table</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="read-a-table">Read a table<a class="anchor" aria-label="anchor" href="#read-a-table"></a>
+</h3>
+<p><code><a href="reference/get_ducklake_table.html">get_ducklake_table()</a></code> returns a lazy table. The dplyr verbs you pipe onto it become SQL that DuckDB runs against the lake, and <code><a href="https://dplyr.tidyverse.org/reference/compute.html" class="external-link">collect()</a></code> brings the result into R. Filter, select, and summarize before you collect, so DuckDB does the work and only the result reaches R.</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"gold.vehicle_efficiency"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">cyl</span>, <span class="va">efficient</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/arrange.html" class="external-link">arrange</a></span><span class="op">(</span><span class="va">cyl</span>, <span class="va">efficient</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/compute.html" class="external-link">collect</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt; # A tibble: 4 × 3</span></span>
+<span><span class="co">#&gt;     cyl efficient     n</span></span>
+<span><span class="co">#&gt;   &lt;int&gt; &lt;lgl&gt;     &lt;dbl&gt;</span></span>
+<span><span class="co">#&gt; 1     4 FALSE         5</span></span>
+<span><span class="co">#&gt; 2     4 TRUE          6</span></span>
+<span><span class="co">#&gt; 3     6 FALSE         7</span></span>
+<span><span class="co">#&gt; 4     8 FALSE        14</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="rebuild-a-layer">Rebuild a layer<a class="anchor" aria-label="anchor" href="#rebuild-a-layer"></a>
+</h3>
+<p>When the cleaning logic changes, a layer is rewritten from a pipeline rather than re-extracted from the source system. <code><a href="reference/replace_table.html">replace_table()</a></code> does that as one versioned change, and the version before the rewrite stays readable.</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="reference/with_transaction.html">with_transaction</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"silver.vehicles"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>gear <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/integer.html" class="external-link">as.integer</a></span><span class="op">(</span><span class="va">gear</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>    <span class="fu"><a href="reference/replace_table.html">replace_table</a></span><span class="op">(</span><span class="st">"silver.vehicles"</span><span class="op">)</span>,</span>
 <span>  author <span class="op">=</span> <span class="st">"Data Engineer"</span>,</span>
 <span>  commit_message <span class="op">=</span> <span class="st">"Add gear type conversion to silver layer"</span></span>
 <span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># View the analysis dataset</span></span>
-<span><span class="fu"><a href="reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"gold.vehicle_efficiency"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">mpg</span>, <span class="va">cyl</span>, <span class="va">efficiency</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">3</span><span class="op">)</span></span>
-<span><span class="co">#&gt; # A query:  ?? x 3</span></span>
-<span><span class="co">#&gt; # Database: DuckDB 1.5.5 [tgerke@Darwin 25.6.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/Rtmpyfo6Cq/ducklake/ducklake11c574a450c21.duckdb]</span></span>
-<span><span class="co">#&gt;     mpg cyl   efficiency</span></span>
-<span><span class="co">#&gt;   &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt;     </span></span>
-<span><span class="co">#&gt; 1  21   6.0   Medium    </span></span>
-<span><span class="co">#&gt; 2  21   6.0   Medium    </span></span>
-<span><span class="co">#&gt; 3  22.8 4.0   Medium</span></span>
-<span></span>
-<span><span class="co"># View complete audit trail across all layers with author and commit messages</span></span>
-<span><span class="fu"><a href="reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 1           0 2026-09-07 18:08:04              0</span></span>
-<span><span class="co">#&gt; 2           1 2026-09-07 18:08:04              1</span></span>
-<span><span class="co">#&gt; 3           2 2026-09-07 18:08:04              2</span></span>
-<span><span class="co">#&gt; 4           3 2026-09-07 18:08:04              3</span></span>
-<span><span class="co">#&gt; 5           4 2026-09-07 18:08:04              4</span></span>
-<span><span class="co">#&gt; 6           5 2026-09-07 18:08:04              5</span></span>
-<span><span class="co">#&gt;                                                                       changes</span></span>
-<span><span class="co">#&gt; 1                                                       schemas_created, main</span></span>
-<span><span class="co">#&gt; 2                                       schemas_created, bronze, silver, gold</span></span>
-<span><span class="co">#&gt; 3                    tables_created, tables_inserted_into, bronze.vehicles, 4</span></span>
-<span><span class="co">#&gt; 4                    tables_created, tables_inserted_into, silver.vehicles, 5</span></span>
-<span><span class="co">#&gt; 5            tables_created, tables_inserted_into, gold.vehicle_efficiency, 6</span></span>
-<span><span class="co">#&gt; 6 tables_created, tables_dropped, tables_inserted_into, silver.vehicles, 5, 7</span></span>
-<span><span class="co">#&gt;          author                                           commit_message</span></span>
-<span><span class="co">#&gt; 1          &lt;NA&gt;                                                     &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 2 Data Engineer                                  Create medallion layers</span></span>
-<span><span class="co">#&gt; 3 Data Engineer                         Initial load of raw vehicle data</span></span>
-<span><span class="co">#&gt; 4 Data Engineer                       Clean and standardize vehicle data</span></span>
-<span><span class="co">#&gt; 5  Data Analyst Create analysis-ready dataset with efficiency categories</span></span>
-<span><span class="co">#&gt; 6 Data Engineer                 Add gear type conversion to silver layer</span></span>
-<span><span class="co">#&gt;   commit_extra_info</span></span>
-<span><span class="co">#&gt; 1              &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 2              &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 3              &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 4              &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 5              &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 6              &lt;NA&gt;</span></span>
-<span></span>
-<span><span class="co"># Time travel: Query the silver layer as it existed at snapshot 3 (before updates)</span></span>
-<span><span class="fu"><a href="reference/get_ducklake_table_version.html">get_ducklake_table_version</a></span><span class="op">(</span><span class="st">"silver.vehicles"</span>, version <span class="op">=</span> <span class="fl">3</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">mpg</span>, <span class="va">cyl</span>, <span class="va">gear</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">3</span><span class="op">)</span></span>
-<span><span class="co">#&gt; # A query:  ?? x 3</span></span>
-<span><span class="co">#&gt; # Database: DuckDB 1.5.5 [tgerke@Darwin 25.6.0:R 4.5.2//private/var/folders/b7/664jmq55319dcb7y4jdb39zr0000gq/T/Rtmpyfo6Cq/ducklake/ducklake11c574a450c21.duckdb]</span></span>
-<span><span class="co">#&gt;     mpg cyl    gear</span></span>
-<span><span class="co">#&gt;   &lt;dbl&gt; &lt;chr&gt; &lt;dbl&gt;</span></span>
-<span><span class="co">#&gt; 1  21   6.0       4</span></span>
-<span><span class="co">#&gt; 2  21   6.0       4</span></span>
-<span><span class="co">#&gt; 3  22.8 4.0       4</span></span>
-<span></span>
-<span><span class="co"># Clean up</span></span>
-<span><span class="fu"><a href="reference/detach_ducklake.html">detach_ducklake</a></span><span class="op">(</span><span class="st">"my_data_lake"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="co">#&gt; Committed snapshot 5 (Data Engineer): Add gear type conversion to silver layer</span></span></code></pre></div>
+<p><a href="https://tgerke.github.io/ducklake-r/articles/modifying-tables.html">Modifying Tables</a> covers the other ways to change a table: <code><a href="reference/rows_insert.html">rows_insert()</a></code>, <code><a href="reference/rows_update.html">rows_update()</a></code>, and <code><a href="reference/rows_delete.html">rows_delete()</a></code> for specific rows, <code><a href="reference/rows_upsert.html">rows_upsert()</a></code> and <code><a href="reference/merge_into.html">merge_into()</a></code> for batches, and <code><a href="reference/ducklake_exec.html">ducklake_exec()</a></code> for changing rows in place. All of them are versioned in the same way.</p>
 </div>
-<div class="section level2">
-<h2 id="medallion-architecture">Medallion architecture<a class="anchor" aria-label="anchor" href="#medallion-architecture"></a>
-</h2>
-<p>ducklake implements a layered data architecture (medallion pattern) that ensures data quality and traceability:</p>
-<ul>
-<li>
-<strong>Bronze layer</strong> (raw): Data exactly as received from source systems—preserves original data for audit trails</li>
-<li>
-<strong>Silver layer</strong> (cleaned): Standardized, cleaned data with transformations and validations—the trusted source for analysis</li>
-<li>
-<strong>Gold layer</strong> (analytics): Business-logic datasets optimized for specific analyses, dashboards, or reports</li>
-</ul>
-<p>Each layer is automatically versioned, providing complete data lineage from raw source through to analysis-ready datasets. Each layer can live in a schema of its own (<code><a href="reference/create_schema.html">create_schema()</a></code>), which keeps <code>bronze.vehicles</code>, <code>silver.vehicles</code>, and <code>gold.vehicle_efficiency</code> one lineage under three roofs, and lets access to raw data be restricted at the schema level. This approach enables:</p>
-<ul>
-<li>
-<strong>Complete audit trail</strong>: Original data preserved alongside all transformations</li>
-<li>
-<strong>Reprocessability</strong>: Reprocess from bronze if cleaning logic changes without re-extracting from source</li>
-<li>
-<strong>Data lineage</strong>: Clear progression from raw → cleaned → analysis-ready</li>
-<li>
-<strong>Validation</strong>: Compare layers to verify transformations</li>
-<li>
-<strong>Quality assurance</strong>: Separate concerns between ingestion, cleaning, and analysis</li>
-</ul>
+<div class="section level3">
+<h3 id="see-the-history">See the history<a class="anchor" aria-label="anchor" href="#see-the-history"></a>
+</h3>
+<p><code><a href="reference/list_table_snapshots.html">list_table_snapshots()</a></code> lists every commit in the lake, across all layers. The ids are the ones the confirmations printed, and snapshot 0 is the lake’s creation.</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">snapshot_id</span>, <span class="va">author</span>, <span class="va">commit_message</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   snapshot_id        author                           commit_message</span></span>
+<span><span class="co">#&gt; 1           0          &lt;NA&gt;                                     &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 2           1 Data Engineer                  Create medallion layers</span></span>
+<span><span class="co">#&gt; 3           2 Data Engineer         Initial load of raw vehicle data</span></span>
+<span><span class="co">#&gt; 4           3 Data Engineer       Clean and standardize vehicle data</span></span>
+<span><span class="co">#&gt; 5           4  Data Analyst                  Flag efficient vehicles</span></span>
+<span><span class="co">#&gt; 6           5 Data Engineer Add gear type conversion to silver layer</span></span></code></pre></div>
+<p>Any earlier version of a table can be read as a lazy table. Here is the silver layer as it was at snapshot 3, before the rebuild:</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="reference/get_ducklake_table_version.html">get_ducklake_table_version</a></span><span class="op">(</span><span class="st">"silver.vehicles"</span>, version <span class="op">=</span> <span class="fl">3</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">mpg</span>, <span class="va">cyl</span>, <span class="va">gear</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">3</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/compute.html" class="external-link">collect</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt; # A tibble: 3 × 3</span></span>
+<span><span class="co">#&gt;     mpg   cyl  gear</span></span>
+<span><span class="co">#&gt;   &lt;dbl&gt; &lt;int&gt; &lt;dbl&gt;</span></span>
+<span><span class="co">#&gt; 1  21       6     4</span></span>
+<span><span class="co">#&gt; 2  21       6     4</span></span>
+<span><span class="co">#&gt; 3  22.8     4     4</span></span></code></pre></div>
+<p><a href="https://tgerke.github.io/ducklake-r/articles/time-travel.html">Time Travel</a> covers reading a table as of a timestamp, comparing versions, restoring one, and pinning a whole session to a snapshot.</p>
+</div>
+<div class="section level3">
+<h3 id="detach">Detach<a class="anchor" aria-label="anchor" href="#detach"></a>
+</h3>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="reference/detach_ducklake.html">detach_ducklake</a></span><span class="op">(</span><span class="st">"my_data_lake"</span><span class="op">)</span></span></code></pre></div>
+<p>Detaching deletes nothing. It releases the lock DuckDB holds on the catalog file, so another session or a backup can open the lake. Attaching the same path again picks up where you left off, history included.</p>
+</div>
 </div>
 <div class="section level2">
 <h2 id="column-level-lineage-with-dplyneage">Column-level lineage with dplyneage<a class="anchor" aria-label="anchor" href="#column-level-lineage-with-dplyneage"></a>
 </h2>
-<p>ducklake tracks lineage at the table level: which tables changed at each snapshot, and why. For lineage <em>within</em> a query — which source columns feed each output column — the companion package <a href="https://github.com/tgerke/dplyneage" class="external-link">dplyneage</a> picks up where ducklake leaves off. Lake tables are ordinary dbplyr lazy tables, so any query pipes straight into an interactive diagram:</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<p>ducklake records lineage at the table level: which tables each snapshot touched, and why. The companion package <a href="https://github.com/tgerke/dplyneage" class="external-link">dplyneage</a> traces lineage within a query, from each output column back to the source columns it came from. Lake tables are ordinary dbplyr lazy tables, so the pipelines that built the silver and gold layers above are also their lineage recipes. Pass them to <code>extract_lineage()</code> under the names they were materialized as, and it stitches the layers into one graph:</p>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">dplyneage</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"orders"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate-joins.html" class="external-link">left_join</a></span><span class="op">(</span><span class="fu"><a href="reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"customers"</span><span class="op">)</span>, by <span class="op">=</span> <span class="st">"customer_id"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by</a></span><span class="op">(</span><span class="va">region</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/summarise.html" class="external-link">summarise</a></span><span class="op">(</span>total_sales <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">amount</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">extract_lineage</span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">lineage_flow</span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<p>dplyneage’s <a href="https://tgerke.github.io/dplyneage/articles/ducklake-lineage.html" class="external-link">ducklake lineage vignette</a> walks through a full example, including per-layer diagrams for medallion pipelines and lineage for time-travel queries.</p>
+<span><span class="va">lake_lineage</span> <span class="op">&lt;-</span> <span class="fu">extract_lineage</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
+<span>  <span class="st">"silver.vehicles"</span> <span class="op">=</span> <span class="va">silver</span>,</span>
+<span>  <span class="st">"gold.vehicle_efficiency"</span> <span class="op">=</span> <span class="va">gold</span></span>
+<span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">lineage_flow</span><span class="op">(</span><span class="va">lake_lineage</span>, height <span class="op">=</span> <span class="st">"450px"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="reference/figures/README-lineage-1.png" alt="Column-level lineage diagram of the lake built in this README: the bronze.vehicles source table on the left feeds the silver.vehicles table in the middle, which feeds the gold.vehicle_efficiency table on the right. Each edge connects a column to the column it becomes, and the two computed columns carry their expressions as labels." width="100%"></p>
+<p><code>bronze.vehicles</code> feeds <code>silver.vehicles</code>, which feeds <code>gold.vehicle_efficiency</code>. A column that passes through unchanged connects with a plain edge. A column a pipeline computes carries its expression as a label, with <code>as.integer(cyl)</code> on the way into silver and <code>mpg &gt; 25</code> on the way into gold. In an R session the diagram is interactive: drag tables, zoom, hover a column for its type and label, click one to isolate everything upstream and downstream of it. The same lineage answers impact questions as data:</p>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">lineage_upstream</span><span class="op">(</span><span class="va">lake_lineage</span>, <span class="st">"gold.vehicle_efficiency.efficient"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] "bronze.vehicles.mpg" "silver.vehicles.mpg"</span></span></code></pre></div>
+<p>Lineage reads the structure of a pipeline, not its data, which is why this works after the lake was detached. dplyneage’s <a href="https://tgerke.github.io/dplyneage/articles/ducklake-lineage.html" class="external-link">ducklake lineage article</a> draws one diagram per layer and extracts lineage from time-travel queries. Its <a href="https://tgerke.github.io/dplyneage/articles/ducklake-versioned-lineage.html" class="external-link">lineage that travels with the data</a> article stores each layer’s lineage on the commit that wrote it, through <code>commit_extra_info</code>, so a snapshot’s rows and their derivation come back together.</p>
 </div>
 <div class="section level2">
 <h2 id="learn-more">Learn more<a class="anchor" aria-label="anchor" href="#learn-more"></a>
