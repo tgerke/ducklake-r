@@ -4,164 +4,180 @@
 
 library(ducklake)
 library(dplyr)
-library(tidyr)
-library(pharmaversesdtm)
 library(admiral)
-library(lubridate)
 library(stringr)
 ```
 
-## Introduction
+An EDC system logs every change to the data it holds. Once SDTM datasets
+leave it for statistical programming, that protection stops. Domains
+travel as XPT files, derived datasets pile up as copies in folders, and
+the questions a reviewer asks later get answered from memory and file
+names: which version of ADAE fed this table, what changed between two
+data cuts, who corrected that record and why.
 
-While Electronic Data Capture (EDC) systems provide built-in logging and
-audit trails for collected clinical trial data, significant data
-management challenges emerge once data is exported from the EDC for
-statistical programming and analysis. Once SDTM datasets are created and
-analysis begins, traditional file-based approaches often result in:
+This article builds a clinical trial data lake with ducklake that keeps
+those answers in the catalog. It loads an SDTM transfer as received,
+standardizes it, derives ADSL and ADAE with
+[admiral](https://pharmaverse.github.io/admiral/), stores an analysis
+result next to the datasets that produced it, and then does the things
+that happen after the datasets exist: adds a derived variable, pushes a
+correction from SDTM through ADaM to the result, and reads an earlier
+version back. Every write is a commit with an author and a message, and
+the history is one query away. The data is the CDISC pilot study as
+shipped by
+[pharmaversesdtm](https://pharmaverse.github.io/pharmaversesdtm/).
 
-- **Disconnected Flat Files**: CDISC datasets are inherently relational
-  (linked by `USUBJID`, domain keys) but are typically stored as
-  separate XPT/CSV files or isolated SAS datasets, often requiring
-  manual loading and joining for cross-domain analyses
-- **Loss of Audit Trail**: EDC protections disappear; tracking changes
-  to derived datasets becomes manual
-- **Version Control Challenges**: Multiple versions of analysis datasets
-  scattered across folders and drives
-- **Data Lineage Issues**: Unclear provenance of derived variables and
-  ADaM datasets
-- **Reproducibility Concerns**: Inability to recreate analyses from
-  specific time points
-- **Collaboration Friction**: Multiple statistical programmers working
-  with different versions of data
-- **Regulatory Gaps**: Difficulty demonstrating 21 CFR Part 11
-  compliance for derived datasets
+## A lake with four layers
 
-The [ducklake](https://tgerke.github.io/ducklake-r/) package addresses
-these post-EDC challenges by implementing a versioned data lake
-architecture specifically designed for statistical programming workflows
-in R. Rather than managing disconnected flat files,
-[DuckLake](https://ducklake.select/) provides a modern relational
-database structure that preserves the inherent relationships between
-CDISC datasets while adding enterprise-grade version control. By storing
-SDTM (Study Data Tabulation Model) and ADaM (Analysis Data Model)
-datasets along with regulatory submission artifacts (define.xml, ARD,
-ARM, specifications) in a DuckLake, statistical programmers gain:
-
-1.  **Relational Data Model**: CDISC datasets are inherently relational
-    with explicit keys (`USUBJID`, domain relationships) but
-    traditionally stored as disconnected flat files (XPT, CSV). DuckLake
-    preserves the relational structure, enabling efficient joins and
-    queries across domains without loading multiple files
-2.  **Modern Data Architecture**: Move from file-based to
-    database-backed workflows while maintaining R’s familiar data frame
-    interface
-3.  **Automatic Versioning**: Every data modification is tracked with
-    timestamps and metadata
-4.  **Time Travel**: Query data as it existed at any point in time
-5.  **Audit Trail**: Complete history of data changes for regulatory
-    compliance
-6.  **Reproducibility**: Recreate analyses exactly as they were run
-    previously
-7.  **Collaboration**: Multiple analysts can work safely with shared
-    data
-8.  **Performance**: Fast queries on large datasets using DuckDB’s
-    columnar storage and query optimization
-9.  **Transactions**: Atomic updates ensure data consistency across
-    related datasets
-10. **Unified Storage**: Keep datasets alongside regulatory artifacts
-    (define.xml, ARD, ARM) in one versioned repository
-
-This vignette demonstrates how to set up a clinical trial data lake,
-starting with SDTM domains and building through to analysis-ready ADaM
-datasets, including storage of regulatory submission artifacts.
-
-## Setting Up the Data Lake
-
-First, we’ll create a new DuckLake to store our clinical trial data.
-This establishes the foundational infrastructure for our versioned data
-repository.
-
-We’ll use a temporary directory for this vignette, but in practice you
-would specify a permanent location using the `lake_path` argument (e.g.,
-a shared network drive or project directory).
+[`attach_ducklake()`](https://tgerke.github.io/ducklake-r/reference/attach_ducklake.md)
+opens a lake, creating it first when nothing is at the path yet. The
+article uses a temporary directory; a study would use a project
+directory or a shared location, and [Choosing a
+Deployment](https://tgerke.github.io/ducklake-r/articles/deployment.md)
+covers the catalog options for a team.
 
 ``` r
 
-# Define where to create a new data lake or access an existing one
-# For this vignette, we use vignette_temp_dir; in practice, use a permanent location
-# lake_path <- "/path/to/your/project/data_lake"
-trial_lake_path <- vignette_temp_dir
-
-# attach_ducklake creates or attaches (if it already exists) a data lake
-attach_ducklake(
-  ducklake_name = "clinical_trial_lake",
-  lake_path = trial_lake_path
-)
-
-# Verify the lake was created
-list.files(trial_lake_path, pattern = "clinical_trial_lake")
-#> [1] "clinical_trial_lake.ducklake"     "clinical_trial_lake.ducklake.wal"
+attach_ducklake("clinical_trial_lake", lake_path = article_dir)
 ```
 
-## Data Lake Architecture: Medallion Layers
+The lake follows the medallion pattern, one schema per layer, so a
+table’s name says how far from the source it is and access can be
+granted layer by layer:
 
-Before loading data, it’s important to understand the layered
-architecture we’ll use. This follows the **medallion architecture**
-pattern common in modern data lakes:
-
-- **Bronze Layer (Raw)**: Data exactly as received from source systems,
-  with no transformations. This preserves the original data for audit
-  trails and reprocessing.
-- **Silver Layer (Cleaned)**: Standardized and cleaned data: SDTM blanks
-  converted to `NA`, type conversions, validation. This is the trusted
-  source for deriving analysis datasets.
-- **Gold Layer (Analytics)**: Business-logic datasets optimized for
-  specific analyses, such as ADaM datasets. This is where analysis
-  happens.
-
-This approach provides:
-
-1.  **Complete Audit Trail**: Original data is preserved alongside
-    transformations
-2.  **Reprocessability**: If cleaning logic changes, reprocess from
-    bronze without re-extracting
-3.  **Data Lineage**: Clear progression from raw → cleaned →
-    analysis-ready
-4.  **Validation**: Compare layers to verify transformations
-5.  **Regulatory Compliance**: Demonstrate no source data was lost or
-    improperly altered
-
-## Loading SDTM Domains
-
-SDTM datasets form the foundation of clinical trial data. We’ll load
-several key domains from the [pharmaverse SDTM
-collection](https://pharmaverse.github.io/pharmaversesdtm/), which
-contains realistic test data from the CDISC pilot study.
-
-For each domain, we’ll: 1. Load raw data into the **bronze layer** (as
-received) 2. Apply cleaning transformations to create the **silver
-layer** (analysis-ready)
-
-The cleaning step here is the one every SDTM pipeline starts with: SDTM
-character variables use the empty string for missing values, and R
-analysis code expects `NA`. admiral’s
-[`convert_blanks_to_na()`](https:/pharmaverse.github.io/admiral/v1.5.0/cran-release/reference/convert_blanks_to_na.html)
-does that on a data frame. On a lazy lake table it has no effect,
-because nothing has been read into R yet, so we keep the conversion
-inside DuckDB instead. The helper below reads the table’s column types
-from a zero-row query (a lazy table cannot inspect its own types) and
-translates the conversion into SQL that runs where the data lives.
-[`create_table()`](https://tgerke.github.io/ducklake-r/reference/create_table.md)
-then runs the whole pipeline as `CREATE TABLE ... AS` inside DuckDB and
-writes the result straight into the lake, so a silver table is derived
-without its rows ever entering R. The pharmaverse test data already
-stores missing values as `NA`, so on these tables the conversion changes
-nothing; XPT exports read with haven do carry blanks, and there it does.
+    bronze    SDTM as received: XPT files, blanks for missing values, labels
+    silver    SDTM standardized: blanks are NA, labels live in the catalog
+    gold      ADaM datasets, derived with admiral
+    results   analysis results, derived from gold
 
 ``` r
 
-# Convert SDTM blanks to NA inside the database: dbplyr translates na_if()
-# to NULLIF(), and the zero-row read supplies the character column names
+with_transaction({
+  create_schema("bronze")
+  create_schema("silver")
+  create_schema("gold")
+  create_schema("results")
+}, author = "Data Manager", commit_message = "Create the lake's layers")
+#> Created schema "bronze".
+#> Created schema "silver".
+#> Created schema "gold".
+#> Created schema "results".
+#> Committed snapshot 1 (Data Manager): Create the lake's layers
+```
+
+Every write to a lake is a commit.
+[`with_transaction()`](https://tgerke.github.io/ducklake-r/reference/with_transaction.md)
+records who made it and why, lands everything inside it as one snapshot,
+and rolls the whole thing back if any step fails. The confirmation names
+the snapshot, and those numbers are what the history section reads back
+at the end.
+
+## Bronze: the SDTM transfer
+
+SDTM reaches the statistical programmers as SAS transport (XPT) files,
+the format FDA accepts. pharmaversesdtm ships the pilot domains as data
+frames, so the article writes four of them out as XPT first, to stand in
+for a transfer from data management. Version 5 of the format caps
+dataset and variable names at eight characters, which is one reason SDTM
+and ADaM names look the way they do.
+
+``` r
+
+sdtm <- list(
+  dm = pharmaversesdtm::dm,
+  ds = pharmaversesdtm::ds,
+  ex = pharmaversesdtm::ex,
+  ae = pharmaversesdtm::ae
+)
+
+sdtm_transfer <- file.path(article_dir, "sdtm_transfer")
+dir.create(sdtm_transfer, showWarnings = FALSE)
+for (domain in names(sdtm)) {
+  haven::write_xpt(
+    sdtm[[domain]],
+    file.path(sdtm_transfer, paste0(domain, ".xpt")),
+    version = 5,
+    name = domain
+  )
+}
+```
+
+The bronze layer keeps the transfer exactly as it arrived, so the lake
+can always show what data management sent and reprocess it when the
+cleaning logic changes. One commit loads the four domains:
+
+``` r
+
+with_transaction({
+  for (domain in names(sdtm)) {
+    create_table(
+      haven::read_xpt(file.path(sdtm_transfer, paste0(domain, ".xpt"))),
+      paste0("bronze.", domain)
+    )
+  }
+}, author = "Data Manager", commit_message = "Load the SDTM transfer as received")
+#> Stored 28 column labels as column comments.
+#> Stored 13 column labels as column comments.
+#> Stored 17 column labels as column comments.
+#> Stored 35 column labels as column comments.
+#> Committed snapshot 2 (Data Manager): Load the SDTM transfer as received
+```
+
+Each
+[`create_table()`](https://tgerke.github.io/ducklake-r/reference/create_table.md)
+reported the labels it stored. haven reads the XPT variable labels into
+`label` attributes, and the lake keeps them as column comments, where
+any client of the catalog can read them:
+
+``` r
+
+get_table_comments("bronze.dm") |>
+  filter(object_type == "column") |>
+  select(column_name, comment) |>
+  head(5)
+#>   column_name                             comment
+#> 1      ACTARM           Description of Actual Arm
+#> 2    ACTARMCD                     Actual Arm Code
+#> 3    ACTARMUD Description of Unplanned Actual Arm
+#> 4         AGE                                 Age
+#> 5        AGEU                           Age Units
+```
+
+XPT also preserves the SDTM convention for a missing character value,
+which is a blank. `DTHDTC` holds the date of death, so it is blank for
+most subjects:
+
+``` r
+
+get_ducklake_table("bronze.dm") |>
+  count(dthdtc_blank = DTHDTC == "") |>
+  collect()
+#> # A tibble: 2 × 2
+#>   dthdtc_blank     n
+#>   <lgl>        <dbl>
+#> 1 FALSE            3
+#> 2 TRUE           303
+```
+
+## Silver: blanks to NA, inside DuckDB
+
+R analysis code, admiral included, expects `NA` where SAS had a blank.
+admiral’s
+[`convert_blanks_to_na()`](https:/pharmaverse.github.io/admiral/v1.5.0/cran-release/reference/convert_blanks_to_na.html)
+does the conversion on a data frame. On a lazy lake table it would do
+nothing, because nothing has been read into R yet, so the silver layer
+writes the same conversion as a dplyr pipeline: dbplyr translates
+[`na_if()`](https://dplyr.tidyverse.org/reference/na_if.html) into
+`NULLIF()`, and
+[`create_table()`](https://tgerke.github.io/ducklake-r/reference/create_table.md)
+runs the whole query inside DuckDB and writes the result straight into
+the lake. A silver table is derived without its rows entering R.
+
+``` r
+
+# The in-database counterpart of admiral::convert_blanks_to_na(). A lazy
+# table cannot inspect its own types, so a zero-row read supplies the
+# character column names.
 blanks_to_na <- function(tbl) {
   types <- tbl |> head(0) |> collect()
   chr_cols <- names(types)[vapply(types, is.character, logical(1))]
@@ -169,1802 +185,760 @@ blanks_to_na <- function(tbl) {
 }
 ```
 
-### Demographics (DM)
-
-The Demographics domain contains baseline characteristics for each
-subject.
+Each silver recipe is kept in a named list, under the name it is
+materialized as, because the recipe that builds a layer is also its
+lineage, which the results section comes back to.
 
 ``` r
 
-# Bronze layer: Load raw SDTM Demographics exactly as received
-with_transaction(
-  create_table(pharmaversesdtm::dm, "dm_raw"),
-  author = "T Gerke",
-  commit_message = "Add raw demographics"
+silver_recipes <- list(
+  "silver.dm" = get_ducklake_table("bronze.dm") |> blanks_to_na(),
+  "silver.ds" = get_ducklake_table("bronze.ds") |> blanks_to_na(),
+  "silver.ex" = get_ducklake_table("bronze.ex") |> blanks_to_na(),
+  "silver.ae" = get_ducklake_table("bronze.ae") |> blanks_to_na()
 )
+
+with_transaction({
+  for (name in names(silver_recipes)) {
+    create_table(silver_recipes[[name]], name)
+  }
+}, author = "Data Manager", commit_message = "Standardize SDTM: blanks to NA")
 #> Stored 28 column labels as column comments.
-#> Committed snapshot 1 (T Gerke): Add raw demographics
+#> Stored 13 column labels as column comments.
+#> Stored 17 column labels as column comments.
+#> Stored 35 column labels as column comments.
+#> Committed snapshot 3 (Data Manager): Standardize SDTM: blanks to NA
 
-# Silver layer: Apply cleaning transformations
-with_transaction(
-  get_ducklake_table("dm_raw") |> 
-    blanks_to_na() |> 
-    create_table("dm"),
-  author = "T Gerke",
-  commit_message = "Clean demographics data"
-)
-#> Stored 28 column labels as column comments.
-#> Committed snapshot 2 (T Gerke): Clean demographics data
-
-# Verify the cleaned table
-get_ducklake_table("dm") |>
-  select(USUBJID, AGE, SEX, RACE, ARM) |>
-  head()
-#> # A query:  ?? x 5
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpvzdrHY/ducklake/ducklake2a663f5b4cc0.duckdb]
-#>   USUBJID       AGE SEX   RACE  ARM                 
-#>   <chr>       <dbl> <chr> <chr> <chr>               
-#> 1 01-701-1015    63 F     WHITE Placebo             
-#> 2 01-701-1023    64 M     WHITE Placebo             
-#> 3 01-701-1028    71 M     WHITE Xanomeline High Dose
-#> 4 01-701-1033    74 M     WHITE Xanomeline Low Dose 
-#> 5 01-701-1034    77 F     WHITE Xanomeline High Dose
-#> 6 01-701-1047    85 F     WHITE Placebo
-```
-
-Notice the message when the bronze table was created: SDTM datasets
-carry CDISC variable labels as `label` attributes, and
-[`create_table()`](https://tgerke.github.io/ducklake-r/reference/create_table.md)
-stored them in the lake as column comments. The labels are now part of
-the catalog itself, queryable from R, Python, or SQL, and available as
-context for AI tools reading the lake:
-
-``` r
-
-get_table_comments("dm_raw") |> head()
-#>   object_type schema_name table_name column_name
-#> 1      column        main     dm_raw      ACTARM
-#> 2      column        main     dm_raw    ACTARMCD
-#> 3      column        main     dm_raw    ACTARMUD
-#> 4      column        main     dm_raw         AGE
-#> 5      column        main     dm_raw        AGEU
-#> 6      column        main     dm_raw         ARM
-#>                               comment
-#> 1           Description of Actual Arm
-#> 2                     Actual Arm Code
-#> 3 Description of Unplanned Actual Arm
-#> 4                                 Age
-#> 5                           Age Units
-#> 6          Description of Planned Arm
-```
-
-They also come back on the way out.
-[`collect()`](https://dplyr.tidyverse.org/reference/compute.html)
-reattaches stored comments as `label` attributes, so label-aware tools
-downstream, such as gtsummary and gt table headers and labelled-based
-workflows, behave as if the data had never left R:
-
-``` r
-
-dm_check <- get_ducklake_table("dm_raw") |>
-  select(USUBJID, AGE, SEX) |>
+get_ducklake_table("silver.dm") |>
+  count(dthdtc_missing = is.na(DTHDTC)) |>
   collect()
+#> # A tibble: 2 × 2
+#>   dthdtc_missing     n
+#>   <lgl>          <dbl>
+#> 1 FALSE              3
+#> 2 TRUE             303
+```
 
-attr(dm_check$AGE, "label")
+The labels followed the columns: a table derived from a lake table keeps
+the comments of the columns it selects, so the silver layer is
+documented without another step. [Views, Comments, and
+Labels](https://tgerke.github.io/ducklake-r/articles/views-comments-labels.md)
+covers what else lives in the catalog.
+
+## Gold: ADaM datasets with admiral
+
+admiral works on data frames, so the gold layer starts by collecting the
+silver tables.
+[`collect()`](https://dplyr.tidyverse.org/reference/compute.html)
+reattaches the stored comments as `label` attributes, and the frames
+look the way they would have coming straight from haven, labels and all.
+
+``` r
+
+dm <- get_ducklake_table("silver.dm") |> collect()
+ds <- get_ducklake_table("silver.ds") |> collect()
+ex <- get_ducklake_table("silver.ex") |> collect()
+ae <- get_ducklake_table("silver.ae") |> collect()
+
+attr(dm$AGE, "label")
 #> [1] "Age"
 ```
 
-For flat-file workflows, labels typically survive only inside `.rds` or
-XPT files and vanish through CSV round trips. Here they live with the
-data, versioned like everything else in the lake.
+### ADSL
 
-### Supplemental Demographics (SUPPDM)
-
-Supplemental domains contain additional variables not in the parent
-domain.
-
-``` r
-
-# Bronze layer: Raw data
-with_transaction(
-  create_table(pharmaversesdtm::suppdm, "suppdm_raw"),
-  author = "T Gerke",
-  commit_message = "Add raw supplemental demographics"
-)
-#> Stored 10 column labels as column comments.
-#> Committed snapshot 3 (T Gerke): Add raw supplemental demographics
-
-# Silver layer: Cleaned data
-with_transaction(
-  get_ducklake_table("suppdm_raw") |> 
-    blanks_to_na() |> 
-    create_table("suppdm"),
-  author = "T Gerke",
-  commit_message = "Clean supplemental demographics"
-)
-#> Stored 10 column labels as column comments.
-#> Committed snapshot 4 (T Gerke): Clean supplemental demographics
-```
-
-### Disposition (DS)
-
-The Disposition domain tracks subject progress through the study.
+ADSL holds one record per subject: treatment, treatment dates,
+population flags, disposition, and the groupings the analyses use. The
+derivation below follows admiral’s ADSL template
+(`admiral::use_ad_template("adsl")`) and keeps the parts a safety
+analysis needs.
 
 ``` r
 
-# Bronze layer
-with_transaction(
-  create_table(pharmaversesdtm::ds, "ds_raw"),
-  author = "T Gerke",
-  commit_message = "Add raw disposition"
-)
-#> Stored 13 column labels as column comments.
-#> Committed snapshot 5 (T Gerke): Add raw disposition
-
-# Silver layer
-with_transaction(
-  get_ducklake_table("ds_raw") |> 
-    blanks_to_na() |> 
-    create_table("ds"),
-  author = "T Gerke",
-  commit_message = "Clean disposition data"
-)
-#> Stored 13 column labels as column comments.
-#> Committed snapshot 6 (T Gerke): Clean disposition data
-```
-
-### Exposure (EX)
-
-The Exposure domain contains treatment administration records.
-
-``` r
-
-# Bronze layer
-with_transaction(
-  create_table(pharmaversesdtm::ex, "ex_raw"),
-  author = "T Gerke",
-  commit_message = "Add raw exposure"
-)
-#> Stored 17 column labels as column comments.
-#> Committed snapshot 7 (T Gerke): Add raw exposure
-
-# Silver layer
-with_transaction(
-  get_ducklake_table("ex_raw") |> 
-    blanks_to_na() |> 
-    create_table("ex"),
-  author = "T Gerke",
-  commit_message = "Clean exposure data"
-)
-#> Stored 17 column labels as column comments.
-#> Committed snapshot 8 (T Gerke): Clean exposure data
-```
-
-### Adverse Events (AE)
-
-The Adverse Events domain records safety data.
-
-``` r
-
-# Bronze layer
-with_transaction(
-  create_table(pharmaversesdtm::ae, "ae_raw"),
-  author = "T Gerke",
-  commit_message = "Add raw adverse events"
-)
-#> Stored 35 column labels as column comments.
-#> Committed snapshot 9 (T Gerke): Add raw adverse events
-
-# Silver layer
-with_transaction(
-  get_ducklake_table("ae_raw") |> 
-    blanks_to_na() |> 
-    create_table("ae"),
-  author = "T Gerke",
-  commit_message = "Clean adverse events"
-)
-#> Stored 35 column labels as column comments.
-#> Committed snapshot 10 (T Gerke): Clean adverse events
-```
-
-### Vital Signs (VS)
-
-Vital Signs data will be used for deriving baseline values.
-
-``` r
-
-# Bronze layer
-with_transaction(
-  create_table(pharmaversesdtm::vs, "vs_raw"),
-  author = "T Gerke",
-  commit_message = "Add raw vital signs"
-)
-#> Stored 24 column labels as column comments.
-#> Committed snapshot 11 (T Gerke): Add raw vital signs
-
-# Silver layer
-with_transaction(
-  get_ducklake_table("vs_raw") |> 
-    blanks_to_na() |> 
-    create_table("vs"),
-  author = "T Gerke",
-  commit_message = "Clean vital signs"
-)
-#> Stored 24 column labels as column comments.
-#> Committed snapshot 12 (T Gerke): Clean vital signs
-```
-
-### Pharmacokinetic Concentrations (PC)
-
-For PK analysis, we’ll also load concentration data.
-
-``` r
-
-# Bronze layer
-with_transaction(
-  create_table(pharmaversesdtm::pc, "pc_raw"),
-  author = "T Gerke",
-  commit_message = "Add raw PK concentrations"
-)
-#> Stored 21 column labels as column comments.
-#> Committed snapshot 13 (T Gerke): Add raw PK concentrations
-
-# Silver layer
-with_transaction(
-  get_ducklake_table("pc_raw") |> 
-    blanks_to_na() |> 
-    create_table("pc"),
-  author = "T Gerke",
-  commit_message = "Clean PK concentrations"
-)
-#> Stored 21 column labels as column comments.
-#> Committed snapshot 14 (T Gerke): Clean PK concentrations
-```
-
-### Verifying SDTM Version Control
-
-Let’s verify that our SDTM data in the bronze and silver layers is
-indeed versioned. Each
-[`create_table()`](https://tgerke.github.io/ducklake-r/reference/create_table.md)
-call within a transaction automatically creates a snapshot with
-metadata.
-
-``` r
-
-# View the first 5 of all snapshots in the data lake
-list_table_snapshots() |>
-  head(5)
-#>   snapshot_id       snapshot_time schema_version
-#> 1           0 2026-09-09 16:06:58              0
-#> 2           1 2026-09-09 16:06:58              1
-#> 3           2 2026-09-09 16:06:58              2
-#> 4           3 2026-09-09 16:06:59              3
-#> 5           4 2026-09-09 16:06:59              4
-#>                                                                       changes
-#> 1                                                       schemas_created, main
-#> 2     tables_created, tables_altered, tables_inserted_into, main.dm_raw, 1, 1
-#> 3         tables_created, tables_altered, tables_inserted_into, main.dm, 2, 2
-#> 4 tables_created, tables_altered, tables_inserted_into, main.suppdm_raw, 3, 3
-#> 5     tables_created, tables_altered, tables_inserted_into, main.suppdm, 4, 4
-#>    author                    commit_message commit_extra_info
-#> 1    <NA>                              <NA>              <NA>
-#> 2 T Gerke              Add raw demographics              <NA>
-#> 3 T Gerke           Clean demographics data              <NA>
-#> 4 T Gerke Add raw supplemental demographics              <NA>
-#> 5 T Gerke   Clean supplemental demographics              <NA>
-
-# Filter snapshots for specific tables
-list_table_snapshots("dm_raw")
-#>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-09-09 16:06:58              1
-#>                                                                   changes
-#> 1 tables_created, tables_altered, tables_inserted_into, main.dm_raw, 1, 1
-#>    author       commit_message commit_extra_info
-#> 1 T Gerke Add raw demographics              <NA>
-list_table_snapshots("dm")
-#>   snapshot_id       snapshot_time schema_version
-#> 1           2 2026-09-09 16:06:58              2
-#>                                                               changes  author
-#> 1 tables_created, tables_altered, tables_inserted_into, main.dm, 2, 2 T Gerke
-#>            commit_message commit_extra_info
-#> 1 Clean demographics data              <NA>
-```
-
-This demonstrates that:
-
-1.  **Every table creation is versioned** - Both the bronze (`dm_raw`)
-    and silver (`dm`) layers have their own snapshot
-2.  **Metadata is captured** - Each snapshot includes timestamp and
-    table information
-3.  **Time travel works** - We can retrieve any specific version using
-    [`get_ducklake_table_version()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_table_version.md)
-4.  **Audit trail exists** - Complete history is maintained for
-    regulatory compliance
-
-## Building the Analytics Layer: ADaM Datasets (Gold Layer)
-
-Now that our SDTM data is loaded and versioned in the **silver layer**,
-we’ll create analysis datasets following ADaM standards for the **gold
-layer**. These datasets apply business logic and derivations optimized
-for specific analyses. Each dataset will be stored in the data lake with
-full version control.
-
-The gold layer reads from the silver layer (cleaned SDTM), ensuring all
-analysis datasets are built from trusted, standardized source data.
-
-### ADSL: Subject-Level Analysis Dataset
-
-ADSL is the fundamental ADaM dataset containing one record per subject
-with key analysis variables.
-
-``` r
-
-# Read SDTM data from the lake and collect into memory
-# Admiral functions require tibbles/data.frames, not lazy database connections
-dm <- get_ducklake_table("dm") |> collect()
-suppdm <- get_ducklake_table("suppdm") |> collect()
-ds <- get_ducklake_table("ds") |> collect()
-ex <- get_ducklake_table("ex") |> collect()
-ae <- get_ducklake_table("ae") |> collect()
-vs <- get_ducklake_table("vs") |> collect()
-
-# Combine DM and SUPPDM
-dm_suppdm <- dm |> 
-  left_join(
-    suppdm |> 
-      filter(QNAM %in% c("EDUCLVL", "DISCONFL", "DSRAEFL")) |> 
-      pivot_wider(
-        id_cols = c(STUDYID, USUBJID),
-        names_from = QNAM,
-        values_from = QVAL
-      ),
-    by = c("STUDYID", "USUBJID")
+# End of study status from the disposition event, in the SBJTSTAT terms
+format_eosstt <- function(x) {
+  case_when(
+    x == "COMPLETED" ~ "COMPLETED",
+    x == "SCREEN FAILURE" ~ NA_character_,
+    !is.na(x) ~ "DISCONTINUED",
+    TRUE ~ "ONGOING"
   )
+}
 
-# Derive treatment dates and durations
-ex_ext <- ex |> 
-  derive_vars_dtm(
-    dtc = EXSTDTC,
-    new_vars_prefix = "EXST"
-  ) |> 
-  derive_vars_dtm(
-    dtc = EXENDTC,
-    new_vars_prefix = "EXEN",
-    time_imputation = "last"
-  )
+# One lookup derives the character and numeric versions of a grouping
+agegr1_lookup <- exprs(
+  ~condition,           ~AGEGR1, ~AGEGR1N,
+  AGE < 18,               "<18",        1,
+  between(AGE, 18, 64), "18-64",        2,
+  AGE > 64,               ">64",        3,
+  is.na(AGE),         "Missing",        4
+)
 
-# Derive disposition variables first (needed for later derivations)
-ds_ext <- ds |> 
-  derive_vars_dt(
-    dtc = DSSTDTC,
-    new_vars_prefix = "DSST"
-  )
+# Exposure datetimes: impute start times to the first and end times to the
+# last moment of the day, and keep the flags that say so
+ex_ext <- ex |>
+  derive_vars_dtm(dtc = EXSTDTC, new_vars_prefix = "EXST") |>
+  derive_vars_dtm(dtc = EXENDTC, new_vars_prefix = "EXEN", time_imputation = "last")
 
-# Build ADSL with all derivations in a single pipeline
-adsl <- dm_suppdm |> 
-  # Treatment Start Datetime
+ds_ext <- ds |>
+  derive_vars_dt(dtc = DSSTDTC, new_vars_prefix = "DSST")
+
+adsl <- dm |>
+  # DOMAIN is an SDTM variable; ADSL has none
+  select(-DOMAIN) |>
+  mutate(TRT01P = ARM, TRT01A = ACTARM) |>
+  # First and last exposure
   derive_vars_merged(
     dataset_add = ex_ext,
-    filter_add = (EXDOSE > 0 | (EXDOSE == 0 & str_detect(EXTRT, "PLACEBO"))) & 
-                 !is.na(EXSTDTM),
-    new_vars = exprs(TRTSDTM = EXSTDTM),
+    filter_add = (EXDOSE > 0 | (EXDOSE == 0 & str_detect(EXTRT, "PLACEBO"))) &
+      !is.na(EXSTDTM),
+    new_vars = exprs(TRTSDTM = EXSTDTM, TRTSTMF = EXSTTMF),
     order = exprs(EXSTDTM, EXSEQ),
     mode = "first",
     by_vars = exprs(STUDYID, USUBJID)
-  ) |> 
-  # Treatment End Datetime
+  ) |>
   derive_vars_merged(
     dataset_add = ex_ext,
-    filter_add = (EXDOSE > 0 | (EXDOSE == 0 & str_detect(EXTRT, "PLACEBO"))) & 
-                 !is.na(EXENDTM),
-    new_vars = exprs(TRTEDTM = EXENDTM),
+    filter_add = (EXDOSE > 0 | (EXDOSE == 0 & str_detect(EXTRT, "PLACEBO"))) &
+      !is.na(EXENDTM),
+    new_vars = exprs(TRTEDTM = EXENDTM, TRTETMF = EXENTMF),
     order = exprs(EXENDTM, EXSEQ),
     mode = "last",
     by_vars = exprs(STUDYID, USUBJID)
-  ) |> 
-  # Convert to dates
-  derive_vars_dtm_to_dt(source_vars = exprs(TRTSDTM, TRTEDTM)) |> 
-  # Treatment duration
-  derive_var_trtdurd() |> 
-  # Safety population flag
-  derive_var_merged_exist_flag(
-    dataset_add = ex,
-    by_vars = exprs(STUDYID, USUBJID),
-    new_var = SAFFL,
-    condition = (EXDOSE > 0 | (EXDOSE == 0 & str_detect(EXTRT, "PLACEBO")))
-  ) |> 
-  # Treatment variables
-  mutate(
-    TRT01P = ARM,
-    TRT01A = ACTARM
-  ) |> 
-  # Age groups
-  mutate(
-    AGEGR1 = case_when(
-      AGE < 18 ~ "<18",
-      between(AGE, 18, 64) ~ "18-64",
-      AGE > 64 ~ ">64",
-      TRUE ~ "Missing"
-    ),
-    AGEGR1N = case_when(
-      AGE < 18 ~ 1,
-      between(AGE, 18, 64) ~ 2,
-      AGE > 64 ~ 3,
-      TRUE ~ 4
-    )
-  ) |> 
-  # Randomization date
+  ) |>
+  derive_vars_dtm_to_dt(source_vars = exprs(TRTSDTM, TRTEDTM)) |>
+  derive_var_trtdurd() |>
+  # Disposition: randomization, end of study, death
   derive_vars_merged(
     dataset_add = ds_ext,
     by_vars = exprs(STUDYID, USUBJID),
     new_vars = exprs(RANDDT = DSSTDT),
     filter_add = DSDECOD == "RANDOMIZED"
-  ) |> 
-  # End of study date
+  ) |>
   derive_vars_merged(
     dataset_add = ds_ext,
     by_vars = exprs(STUDYID, USUBJID),
     new_vars = exprs(EOSDT = DSSTDT),
     filter_add = DSCAT == "DISPOSITION EVENT" & DSDECOD != "SCREEN FAILURE"
-  ) |> 
-  # End of study status
-  mutate(
-    EOSSTT = case_when(
-      is.na(EOSDT) ~ "ONGOING",
-      TRUE ~ "COMPLETED"
-    )
-  )
+  ) |>
+  derive_vars_merged(
+    dataset_add = ds_ext,
+    by_vars = exprs(STUDYID, USUBJID),
+    filter_add = DSCAT == "DISPOSITION EVENT",
+    new_vars = exprs(EOSSTT = format_eosstt(DSDECOD)),
+    missing_values = exprs(EOSSTT = "ONGOING")
+  ) |>
+  derive_vars_dt(
+    new_vars_prefix = "DTH",
+    dtc = DTHDTC,
+    highest_imputation = "M",
+    date_imputation = "first"
+  ) |>
+  # Population flags are Y or N, never blank
+  derive_var_merged_exist_flag(
+    dataset_add = ex,
+    by_vars = exprs(STUDYID, USUBJID),
+    new_var = SAFFL,
+    false_value = "N",
+    missing_value = "N",
+    condition = (EXDOSE > 0 | (EXDOSE == 0 & str_detect(EXTRT, "PLACEBO")))
+  ) |>
+  derive_var_merged_exist_flag(
+    dataset_add = ds,
+    by_vars = exprs(STUDYID, USUBJID),
+    new_var = RANDFL,
+    false_value = "N",
+    missing_value = "N",
+    condition = DSDECOD == "RANDOMIZED"
+  ) |>
+  derive_vars_cat(definition = agegr1_lookup)
+```
 
-# Store ADSL in the data lake
-with_transaction(
-  create_table(adsl, "adsl"),
-  author = "T Gerke",
-  commit_message = "Create ADSL dataset",
-  commit_extra_info = "Derived from DM, SUPPDM, DS, EX; includes treatment dates, safety flags, age groups"
-)
-#> Stored 30 column labels as column comments.
-#> Committed snapshot 15 (T Gerke): Create ADSL dataset
+The DM variables kept their SDTM labels through the pipeline. The
+derived variables are new, so they get theirs here, in the standard ADaM
+wording;
+[`create_table()`](https://tgerke.github.io/ducklake-r/reference/create_table.md)
+stores every `label` attribute it finds, and the dataset label goes on
+the table itself.
 
-# Variables carried over from DM kept their SDTM labels automatically.
-# Derived variables are new, so label them now: the ADaM way, but stored
-# in the catalog rather than a spec sidecar
-set_column_comments(
-  "adsl",
+``` r
+
+adsl_labels <- list(
   TRT01P = "Planned Treatment for Period 01",
   TRT01A = "Actual Treatment for Period 01",
+  TRTSDTM = "Datetime of First Exposure to Treatment",
+  TRTSTMF = "Time of First Exposure Imput. Flag",
+  TRTEDTM = "Datetime of Last Exposure to Treatment",
+  TRTETMF = "Time of Last Exposure Imput. Flag",
+  TRTSDT = "Date of First Exposure to Treatment",
+  TRTEDT = "Date of Last Exposure to Treatment",
+  TRTDURD = "Total Treatment Duration (Days)",
+  RANDDT = "Date of Randomization",
+  EOSDT = "End of Study Date",
+  EOSSTT = "End of Study Status",
+  DTHDT = "Date of Death",
+  DTHDTF = "Date of Death Imputation Flag",
+  SAFFL = "Safety Population Flag",
+  RANDFL = "Randomized Population Flag",
   AGEGR1 = "Pooled Age Group 1",
-  AGEGR1N = "Pooled Age Group 1 (N)",
-  SAFFL = "Safety Population Flag"
+  AGEGR1N = "Pooled Age Group 1 (N)"
 )
-#> Commented 5 columns on "adsl".
+adsl <- labelled::set_variable_labels(adsl, .labels = adsl_labels)
 
-# Preview ADSL
-get_ducklake_table("adsl") |> 
-  select(USUBJID, AGE, AGEGR1, TRT01P, TRTSDT, TRTEDT, SAFFL) |>
-  head(10)
-#> # A query:  ?? x 7
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpvzdrHY/ducklake/ducklake2a663f5b4cc0.duckdb]
-#>    USUBJID       AGE AGEGR1 TRT01P               TRTSDT     TRTEDT     SAFFL
-#>    <chr>       <dbl> <chr>  <chr>                <date>     <date>     <chr>
-#>  1 01-701-1015    63 18-64  Placebo              2014-01-02 2014-07-02 Y    
-#>  2 01-701-1023    64 18-64  Placebo              2012-08-05 2012-09-01 Y    
-#>  3 01-701-1028    71 >64    Xanomeline High Dose 2013-07-19 2014-01-14 Y    
-#>  4 01-701-1033    74 >64    Xanomeline Low Dose  2014-03-18 2014-03-31 Y    
-#>  5 01-701-1034    77 >64    Xanomeline High Dose 2014-07-01 2014-12-30 Y    
-#>  6 01-701-1047    85 >64    Placebo              2013-02-12 2013-03-09 Y    
-#>  7 01-701-1057    59 18-64  Screen Failure       NA         NA         NA   
-#>  8 01-701-1097    68 >64    Xanomeline Low Dose  2014-01-01 2014-07-09 Y    
-#>  9 01-701-1111    81 >64    Xanomeline Low Dose  2012-09-07 2012-09-16 Y    
-#> 10 01-701-1115    84 >64    Xanomeline Low Dose  2012-11-30 2013-01-23 Y
+with_transaction({
+  create_table(adsl, "gold.adsl")
+  set_table_comment("gold.adsl", "Subject-Level Analysis Dataset")
+}, author = "Statistical Programmer", commit_message = "Build ADSL")
+#> Stored 45 column labels as column comments.
+#> Commented table "gold.adsl".
+#> Committed snapshot 4 (Statistical Programmer): Build ADSL
 ```
-
-### ADAE: Adverse Events Analysis Dataset
-
-ADAE provides analysis-ready adverse event data with treatment-emergent
-flags and severity grades.
 
 ``` r
 
-# Read ADSL for merging
-adsl <- get_ducklake_table("adsl") |> collect()
-ae <- get_ducklake_table("ae") |> collect()
+get_ducklake_table("gold.adsl") |>
+  select(USUBJID, TRT01A, TRTSDT, TRTDURD, SAFFL, EOSSTT, AGEGR1) |>
+  arrange(USUBJID) |>
+  head(5) |>
+  collect()
+#> # A tibble: 5 × 7
+#>   USUBJID     TRT01A               TRTSDT     TRTDURD SAFFL EOSSTT       AGEGR1
+#>   <chr>       <chr>                <date>       <dbl> <chr> <chr>        <chr> 
+#> 1 01-701-1015 Placebo              2014-01-02     182 Y     COMPLETED    18-64 
+#> 2 01-701-1023 Placebo              2012-08-05      28 Y     DISCONTINUED 18-64 
+#> 3 01-701-1028 Xanomeline High Dose 2013-07-19     180 Y     COMPLETED    >64   
+#> 4 01-701-1033 Xanomeline Low Dose  2014-03-18      14 Y     DISCONTINUED >64   
+#> 5 01-701-1034 Xanomeline High Dose 2014-07-01     183 Y     COMPLETED    >64
 
-# Build ADAE
-adae <- ae |>
-  # Merge ADSL variables
-  derive_vars_merged(
-    dataset_add = adsl,
-    new_vars = exprs(TRTSDT, TRTEDT, TRT01A, TRT01P),
-    by_vars = exprs(STUDYID, USUBJID)
-  ) |>
-  # Derive analysis dates
-  derive_vars_dt(
-    dtc = AESTDTC,
-    new_vars_prefix = "AST"
-  ) |>
-  derive_vars_dt(
-    dtc = AEENDTC,
-    new_vars_prefix = "AEN",
-    date_imputation = "last"
-  ) |>
-  # Derive treatment-emergent flag
-  mutate(
-    TRTEMFL = if_else(
-      !is.na(ASTDT) & !is.na(TRTSDT) & ASTDT >= TRTSDT,
-      "Y",
-      NA_character_
-    )
-  ) |>
-  # Derive analysis variables
-  mutate(
-    AOCCPFL = if_else(AESEQ == min(AESEQ), "Y", NA_character_),
-    AOCC01FL = AOCCPFL
-  ) |>
-  group_by(USUBJID, AEDECOD) |>
-  mutate(
-    AOCC01FL = if_else(row_number() == 1, "Y", NA_character_)
-  ) |>
-  ungroup()
+get_ducklake_table("gold.adsl") |>
+  count(EOSSTT) |>
+  arrange(EOSSTT) |>
+  collect()
+#> # A tibble: 3 × 2
+#>   EOSSTT           n
+#>   <chr>        <dbl>
+#> 1 COMPLETED      110
+#> 2 DISCONTINUED   144
+#> 3 NA              52
+```
 
-# Store ADAE in the data lake
-with_transaction(
-  create_table(adae, "adae"),
-  author = "T Gerke",
-  commit_message = "Create ADAE dataset",
-  commit_extra_info = "Includes treatment-emergent flags and occurrence flags"
+Screen failures have no end-of-study status, and the population flags
+say which subjects the safety analyses count.
+
+### ADAE
+
+ADAE is an occurrence dataset: one record per adverse event, with
+analysis dates, the treatment-emergent flag, and the first-occurrence
+flag the incidence tables need. The derivation is a function, because
+the correction section rebuilds the dataset with it. It follows
+admiral’s ADAE template.
+
+``` r
+
+adsl_vars <- exprs(TRTSDT, TRTEDT, DTHDT, EOSDT)
+
+adae_labels <- list(
+  ASTDTM = "Analysis Start Datetime",
+  ASTDTF = "Analysis Start Date Imputation Flag",
+  ASTTMF = "Analysis Start Time Imputation Flag",
+  AENDTM = "Analysis End Datetime",
+  AENDTF = "Analysis End Date Imputation Flag",
+  AENTMF = "Analysis End Time Imputation Flag",
+  ASTDT = "Analysis Start Date",
+  AENDT = "Analysis End Date",
+  ASTDY = "Analysis Start Relative Day",
+  AENDY = "Analysis End Relative Day",
+  ADURN = "Analysis Duration (N)",
+  ADURU = "Analysis Duration Units",
+  ASEV = "Analysis Severity/Intensity",
+  AREL = "Analysis Causality",
+  TRTEMFL = "Treatment Emergent Analysis Flag",
+  AOCCPFL = "1st Occurrence of Preferred Term Flag"
 )
-#> Stored 37 column labels as column comments.
-#> Committed snapshot 17 (T Gerke): Create ADAE dataset
 
-# Preview ADAE
-get_ducklake_table("adae") |>
+build_adae <- function(ae, adsl) {
+  ae |>
+    derive_vars_merged(
+      dataset_add = adsl,
+      new_vars = adsl_vars,
+      by_vars = exprs(STUDYID, USUBJID)
+    ) |>
+    # Analysis dates: partial dates are imputed, and the flags record how.
+    # A start date cannot fall before first dose, nor an end date after
+    # death or the end of study
+    derive_vars_dtm(
+      dtc = AESTDTC,
+      new_vars_prefix = "AST",
+      highest_imputation = "M",
+      min_dates = exprs(TRTSDT)
+    ) |>
+    derive_vars_dtm(
+      dtc = AEENDTC,
+      new_vars_prefix = "AEN",
+      highest_imputation = "M",
+      date_imputation = "last",
+      time_imputation = "last",
+      max_dates = exprs(DTHDT, EOSDT)
+    ) |>
+    derive_vars_dtm_to_dt(exprs(ASTDTM, AENDTM)) |>
+    derive_vars_dy(reference_date = TRTSDT, source_vars = exprs(ASTDT, AENDT)) |>
+    derive_vars_duration(
+      new_var = ADURN,
+      new_var_unit = ADURU,
+      start_date = ASTDT,
+      end_date = AENDT
+    ) |>
+    mutate(ASEV = AESEV, AREL = AEREL) |>
+    # Treatment emergent: on or after first dose, up to 30 days after the
+    # last one
+    derive_var_trtemfl(
+      trt_start_date = TRTSDT,
+      trt_end_date = TRTEDT,
+      end_window = 30
+    ) |>
+    # First occurrence of each preferred term, among treatment-emergent
+    # events only
+    restrict_derivation(
+      derivation = derive_var_extreme_flag,
+      args = params(
+        by_vars = exprs(USUBJID, AEDECOD),
+        order = exprs(ASTDTM, AESEQ),
+        new_var = AOCCPFL,
+        mode = "first"
+      ),
+      filter = TRTEMFL == "Y"
+    ) |>
+    # The rest of ADSL, so the dataset analyzes on its own
+    derive_vars_merged(
+      dataset_add = select(adsl, !!!negate_vars(adsl_vars)),
+      by_vars = exprs(STUDYID, USUBJID)
+    ) |>
+    # restrict_derivation() rebinds the rows and drops label attributes on
+    # the way, so the SDTM and ADSL labels are copied back
+    labelled::copy_labels_from(ae) |>
+    labelled::copy_labels_from(adsl) |>
+    labelled::set_variable_labels(.labels = adae_labels)
+}
+
+adae <- build_adae(ae, adsl)
+
+with_transaction({
+  create_table(adae, "gold.adae")
+  set_table_comment("gold.adae", "Adverse Events Analysis Dataset")
+}, author = "Statistical Programmer", commit_message = "Build ADAE")
+#> Stored 94 column labels as column comments.
+#> Commented table "gold.adae".
+#> Committed snapshot 5 (Statistical Programmer): Build ADAE
+```
+
+``` r
+
+get_ducklake_table("gold.adae") |>
   filter(TRTEMFL == "Y") |>
-  select(USUBJID, AEDECOD, ASTDT, AESEV, TRTEMFL) |>
-  head(10)
-#> # A query:  ?? x 5
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpvzdrHY/ducklake/ducklake2a663f5b4cc0.duckdb]
-#>    USUBJID     AEDECOD                              ASTDT      AESEV    TRTEMFL
-#>    <chr>       <chr>                                <date>     <chr>    <chr>  
-#>  1 01-701-1015 APPLICATION SITE ERYTHEMA            2014-01-03 MILD     Y      
-#>  2 01-701-1015 APPLICATION SITE PRURITUS            2014-01-03 MILD     Y      
-#>  3 01-701-1015 DIARRHOEA                            2014-01-09 MILD     Y      
-#>  4 01-701-1023 ATRIOVENTRICULAR BLOCK SECOND DEGREE 2012-08-26 MILD     Y      
-#>  5 01-701-1023 ERYTHEMA                             2012-08-07 MILD     Y      
-#>  6 01-701-1023 ERYTHEMA                             2012-08-07 MODERATE Y      
-#>  7 01-701-1023 ERYTHEMA                             2012-08-07 MILD     Y      
-#>  8 01-701-1028 APPLICATION SITE ERYTHEMA            2013-07-21 MILD     Y      
-#>  9 01-701-1028 APPLICATION SITE PRURITUS            2013-08-08 MILD     Y      
-#> 10 01-701-1034 APPLICATION SITE PRURITUS            2014-08-27 MILD     Y
+  arrange(USUBJID, ASTDT, AESEQ) |>
+  select(USUBJID, AEDECOD, ASTDT, ASTDTF, ASEV, AOCCPFL) |>
+  head(5) |>
+  collect()
+#> # A tibble: 5 × 6
+#>   USUBJID     AEDECOD                   ASTDT      ASTDTF ASEV     AOCCPFL
+#>   <chr>       <chr>                     <date>     <chr>  <chr>    <chr>  
+#> 1 01-701-1015 APPLICATION SITE ERYTHEMA 2014-01-03 NA     MILD     Y      
+#> 2 01-701-1015 APPLICATION SITE PRURITUS 2014-01-03 NA     MILD     Y      
+#> 3 01-701-1015 DIARRHOEA                 2014-01-09 NA     MILD     Y      
+#> 4 01-701-1023 ERYTHEMA                  2012-08-07 NA     MILD     Y      
+#> 5 01-701-1023 ERYTHEMA                  2012-08-07 NA     MODERATE NA
 ```
 
-### ADPC: Pharmacokinetic Concentrations Analysis Dataset
+The other analysis datasets a study needs come from the same templates
+and land in the lake the same way: build the data frame with admiral,
+label it, and
+[`create_table()`](https://tgerke.github.io/ducklake-r/reference/create_table.md)
+it into `gold` inside a commit.
 
-ADPC supports non-compartmental analysis by combining PK concentrations
-with dosing records.
+## Results: an analysis result stored with its inputs
+
+A treatment-emergent adverse event summary is a query over gold: events
+by actual treatment and severity, with the safety population as the
+denominator, which has to come from ADSL because subjects with no events
+are not in ADAE. Written as a lazy pipeline, the summary runs inside
+DuckDB and lands in the results layer as a table of its own, versioned
+like everything else, with the commit saying which display it belongs
+to.
 
 ``` r
 
-# Read required datasets
-adsl <- get_ducklake_table("adsl") |> collect()
-pc <- get_ducklake_table("pc") |> collect()
-ex <- get_ducklake_table("ex") |> collect()
-vs <- get_ducklake_table("vs") |> collect()
-
-# Get ADSL variables needed
-adsl_vars <- exprs(TRTSDT, TRTSDTM, TRT01P, TRT01A)
-
-# Derive PC dates and times
-pc_dates <- pc |>
-  derive_vars_merged(
-    dataset_add = adsl,
-    new_vars = adsl_vars,
-    by_vars = exprs(STUDYID, USUBJID)
-  ) |>
-  derive_vars_dtm(
-    new_vars_prefix = "A",
-    dtc = PCDTC,
-    time_imputation = "00:00:00",
-    ignore_seconds_flag = FALSE
-  ) |>
-  derive_vars_dtm_to_dt(exprs(ADTM)) |>
-  derive_vars_dtm_to_tm(exprs(ADTM)) |>
-  derive_vars_dy(reference_date = TRTSDT, source_vars = exprs(ADT)) |>
-  mutate(
-    EVID = 0,
-    NFRLT = if_else(PCTPTNUM < 0, 0, PCTPTNUM)
-  )
-
-# Process exposure records
-ex_dates <- ex |>
-  derive_vars_merged(
-    dataset_add = adsl,
-    new_vars = adsl_vars,
-    by_vars = exprs(STUDYID, USUBJID)
-  ) |>
-  filter(EXDOSE > 0) |>
-  derive_vars_dtm(
-    new_vars_prefix = "AST",
-    dtc = EXSTDTC,
-    time_imputation = "00:00:00"
-  ) |>
-  mutate(
-    EVID = 1,
-    NFRLT = 24 * VISITDY
-  ) |>
-  derive_vars_dtm_to_dt(exprs(ASTDTM))
-
-# Combine PC and EX
-adpc <- bind_rows(pc_dates, ex_dates) |>
-  arrange(STUDYID, USUBJID, ADTM) |>
-  mutate(
-    PARAMCD = coalesce(PCTESTCD, "DOSE"),
-    AVAL = case_when(
-      EVID == 1 ~ EXDOSE,
-      PCSTRESC == "<BLQ" & NFRLT == 0 ~ 0,
-      PCSTRESC == "<BLQ" & NFRLT > 0 ~ 0.5 * PCLLOQ,
-      TRUE ~ PCSTRESN
-    ),
-    PARAM = case_when(
-      PARAMCD == "XAN" ~ "Xanomeline Concentration",
-      PARAMCD == "DOSE" ~ "Xanomeline Dose"
-    )
-  )
-
-# Store ADPC in the data lake
-with_transaction(
-  create_table(adpc, "adpc"),
-  author = "T Gerke",
-  commit_message = "Create ADPC dataset",
-  commit_extra_info = "PK concentrations with dosing records for NCA"
-)
-#> Stored 26 column labels as column comments.
-#> Committed snapshot 18 (T Gerke): Create ADPC dataset
-
-# Preview ADPC
-get_ducklake_table("adpc") |>
-  filter(PARAMCD == "XAN") |>
-  select(USUBJID, ADT, PCTPT, AVAL, PARAM) |>
-  head(10)
-#> # A query:  ?? x 5
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpvzdrHY/ducklake/ducklake2a663f5b4cc0.duckdb]
-#>    USUBJID     ADT        PCTPT             AVAL PARAM                   
-#>    <chr>       <date>     <chr>            <dbl> <chr>                   
-#>  1 01-701-1015 2014-01-01 Pre-dose         0     Xanomeline Concentration
-#>  2 01-701-1015 2014-01-02 5 Min Post-dose  0.005 Xanomeline Concentration
-#>  3 01-701-1015 2014-01-02 30 Min Post-dose 0.005 Xanomeline Concentration
-#>  4 01-701-1015 2014-01-02 1h Post-dose     0.005 Xanomeline Concentration
-#>  5 01-701-1015 2014-01-02 1.5h Post-dose   0.005 Xanomeline Concentration
-#>  6 01-701-1015 2014-01-02 2h Post-dose     0.005 Xanomeline Concentration
-#>  7 01-701-1015 2014-01-02 4h Post-dose     0.005 Xanomeline Concentration
-#>  8 01-701-1015 2014-01-02 6h Post-dose     0.005 Xanomeline Concentration
-#>  9 01-701-1015 2014-01-02 0-6h Post-dose   0.005 Xanomeline Concentration
-#> 10 01-701-1015 2014-01-02 8h Post-dose     0.005 Xanomeline Concentration
-```
-
-## Storing Regulatory Submission Artifacts
-
-Beyond datasets, regulatory submissions require metadata and
-documentation. The data lake can store various types of artifacts
-including define.xml files and other structured data:
-
-### Define.xml Metadata
-
-The define.xml file provides dataset and variable-level metadata
-required for regulatory submissions. Store it as a versioned artifact:
-
-``` r
-
-# Example: Store define.xml content
-# In practice, you might read this from a file generated by your metadata system
-define_xml <- '<?xml version="1.0" encoding="UTF-8"?>
-<ODM xmlns="http://www.cdisc.org/ns/odm/v1.3">
-  <!-- Define.xml content for ADSL, ADAE, ADPC datasets -->
-</ODM>'
-
-# Create a table for regulatory documents
-regulatory_docs <- tibble(
-  doc_type = "define.xml",
-  doc_version = "1.0",
-  content = define_xml,
-  created_date = Sys.Date(),
-  description = "Dataset and variable metadata for regulatory submission"
-)
-
-with_transaction(
-  create_table(regulatory_docs, "regulatory_documents"),
-  author = "T Gerke",
-  commit_message = "Add define.xml metadata"
-)
-#> Committed snapshot 19 (T Gerke): Add define.xml metadata
-
-get_ducklake_table("regulatory_documents")
-#> # A query:  ?? x 5
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpvzdrHY/ducklake/ducklake2a663f5b4cc0.duckdb]
-#>   doc_type   doc_version content                        created_date description
-#>   <chr>      <chr>       <chr>                          <date>       <chr>      
-#> 1 define.xml 1.0         "<?xml version=\"1.0\" encodi… 2026-09-09   Dataset an…
-```
-
-### Storing Different Data Types (JSON Example)
-
-While Analysis Results Metadata (ARM) and Analysis Results Data (ARD)
-might be stored as separate data tables in practice, this example
-demonstrates how to store structured data in JSON format within the data
-lake:
-
-``` r
-
-# Example: Store Analysis Results Metadata (ARM)
-arm_content <- tibble(
-  analysis_id = "DEMO01",
-  analysis_name = "Demographics Table",
-  dataset_used = "ADSL",
-  program_name = "t_demographics.R",
-  output_file = "t_demographics.rtf",
-  analysis_date = Sys.Date()
-)
-
-# Add to or update regulatory documents table
-with_transaction(
-  get_ducklake_table("regulatory_documents") |>
-    collect() |>
-    mutate(content = as.character(content)) |>
-    bind_rows(
-      tibble(
-        doc_type = "ARM",
-        doc_version = "1.0",
-        content = as.character(jsonlite::toJSON(arm_content)),
-        created_date = Sys.Date(),
-        description = "Analysis Results Metadata"
-      )
-    ) |>
-    distinct(doc_type, doc_version, .keep_all = TRUE) |>
-    replace_table("regulatory_documents"),
-  author = "T Gerke",
-  commit_message = "Add ARM metadata"
-)
-#> Committed snapshot 20 (T Gerke): Add ARM metadata
-
-# Example: Store Analysis Results Data (ARD)
-ard_content <- tibble(
-  analysis_id = "DEMO01",
-  row_type = "header",
-  row_label = "Age (years)",
-  treatment = c("Placebo", "Xanomeline Low", "Xanomeline High"),
-  n = c(86, 84, 84),
-  mean = c(75.2, 75.7, 74.4),
-  sd = c(8.59, 7.89, 7.89)
-)
-
-with_transaction(
-  get_ducklake_table("regulatory_documents") |>
-    collect() |>
-    mutate(content = as.character(content)) |>
-    bind_rows(
-      tibble(
-        doc_type = "ARD",
-        doc_version = "1.0",
-        content = as.character(jsonlite::toJSON(ard_content)),
-        created_date = Sys.Date(),
-        description = "Analysis Results Data for Demographics Table"
-      )
-    ) |>
-    distinct(doc_type, doc_version, .keep_all = TRUE) |>
-    replace_table("regulatory_documents"),
-  author = "T Gerke",
-  commit_message = "Add demographics ARD"
-)
-#> Committed snapshot 21 (T Gerke): Add demographics ARD
-```
-
-### Dataset Specifications
-
-Store dataset specifications alongside the data:
-
-``` r
-
-# Example: Store ADSL specifications
-adsl_spec <- tibble(
-  dataset = "ADSL",
-  variable = c("USUBJID", "AGE", "AGEGR1", "TRT01P", "SAFFL"),
-  label = c(
-    "Unique Subject Identifier",
-    "Age",
-    "Age Group 1",
-    "Planned Treatment",
-    "Safety Population Flag"
-  ),
-  type = c("text", "num", "text", "text", "text"),
-  length = c(20, 8, 10, 40, 1),
-  derivation = c("DM.USUBJID", "DM.AGE", "Derived from AGE", "DM.ARM", "Derived")
-)
-
-with_transaction(
-  create_table(adsl_spec, "dataset_specifications"),
-  author = "T Gerke",
-  commit_message = "Add ADSL specifications"
-)
-
-# Query specifications when needed
-get_ducklake_table("dataset_specifications") |>
-  filter(dataset == "ADSL")
-```
-
-This unified approach ensures that all submission artifacts are
-version-controlled alongside the datasets they describe, maintaining
-perfect alignment between data and documentation.
-
-## Organizational Structure and Cohesion
-
-One of the key advantages of the data lake approach is that it preserves
-and leverages the inherently relational structure of CDISC data.
-
-### Relational Structure: Beyond Flat Files
-
-Many clinical trial workflows store each SDTM domain and ADaM dataset as
-separate flat files (XPT, SAS7BDAT, CSV). While this meets regulatory
-requirements for submission formats, it often loses the relational
-structure inherent in CDISC standards during day-to-day analysis work.
-Every SDTM domain shares `STUDYID` and `USUBJID` as keys, and domains
-are explicitly designed to relate to each other (e.g., EX records link
-to DM subjects, AE records link to both DM and EX).
-
-While some organizations use SAS datasets in databases or other database
-solutions, DuckLake provides an R-native approach that preserves these
-relationships with version control built in:
-
-``` r
-
-# Traditional approach: Load multiple files, manually join
-# adsl <- read_xpt("adsl.xpt")
-# ex <- read_xpt("ex.xpt")
-# ae <- read_xpt("ae.xpt")
-# result <- adsl |> left_join(ex, ...) |> left_join(ae, ...)
-
-# DuckLake approach: Query across related tables directly using dplyr
-# Complex cross-domain query without loading all data
-adsl_tbl <- get_ducklake_table("adsl")
-ex_tbl <- get_ducklake_table("ex")
-ae_tbl <- get_ducklake_table("ae")
-
-adsl_tbl |>
+safety_n <- get_ducklake_table("gold.adsl") |>
   filter(SAFFL == "Y") |>
-  left_join(ex_tbl, by = "USUBJID") |>
-  left_join(ae_tbl, by = "USUBJID") |>
-  group_by(USUBJID, AGE, TRT01P) |>
+  group_by(TRT01A) |>
+  summarise(n_saf = n_distinct(USUBJID), .groups = "drop")
+
+teae_recipe <- get_ducklake_table("gold.adae") |>
+  filter(TRTEMFL == "Y") |>
+  group_by(TRT01A, ASEV) |>
   summarise(
-    n_aes = n_distinct(AESEQ, na.rm = TRUE),
-    total_dose = sum(EXDOSE, na.rm = TRUE),
+    n_subjects = n_distinct(USUBJID),
+    n_events = n(),
     .groups = "drop"
   ) |>
-  arrange(desc(n_aes)) |>
-  head(10) |>
+  left_join(safety_n, by = "TRT01A") |>
+  mutate(pct_subjects = 100 * n_subjects / n_saf) |>
+  arrange(TRT01A, ASEV)
+
+with_transaction(
+  create_table(teae_recipe, "results.teae_summary"),
+  author = "Statistician",
+  commit_message = "Table 14.3.1: TEAEs by treatment and severity"
+)
+#> Stored 2 column labels as column comments.
+#> Committed snapshot 6 (Statistician): Table 14.3.1: TEAEs by treatment and
+#> severity
+
+get_ducklake_table("results.teae_summary") |> collect()
+#> # A tibble: 9 × 6
+#>   TRT01A               ASEV     n_subjects n_events n_saf pct_subjects
+#>   <chr>                <chr>         <dbl>    <dbl> <dbl>        <dbl>
+#> 1 Placebo              MILD             58      210    86        67.4 
+#> 2 Placebo              MODERATE         25       65    86        29.1 
+#> 3 Placebo              SEVERE            5        6    86         5.81
+#> 4 Xanomeline High Dose MILD             64      286    72        88.9 
+#> 5 Xanomeline High Dose MODERATE         46      118    72        63.9 
+#> 6 Xanomeline High Dose SEVERE            8       10    72        11.1 
+#> 7 Xanomeline Low Dose  MILD             64      232    96        66.7 
+#> 8 Xanomeline Low Dose  MODERATE         58      170    96        60.4 
+#> 9 Xanomeline Low Dose  SEVERE           16       25    96        16.7
+```
+
+### Where the numbers came from
+
+ducklake records lineage at the table level: which tables each snapshot
+touched, and why. The companion package
+[dplyneage](https://tgerke.github.io/dplyneage/) traces lineage within a
+query, from each output column back to the source columns it came from.
+The recipe that built the summary is a lazy table, which is what
+[`extract_lineage()`](https://tgerke.github.io/dplyneage/reference/extract_lineage.html)
+reads. Passing it under the name it was materialized as draws the hop
+from gold to results, and the gold nodes show only the columns the
+recipe touched.
+
+``` r
+
+library(dplyneage)
+
+teae_lineage <- extract_lineage(list("results.teae_summary" = teae_recipe))
+lineage_flow(teae_lineage, height = "450px")
+```
+
+In an R session the diagram is interactive: hover a column for its type
+and label, click one to isolate what feeds it. The same lineage answers
+as data:
+
+``` r
+
+lineage_upstream(teae_lineage, "results.teae_summary.pct_subjects")
+#> [1] "gold.adae.USUBJID" "gold.adsl.USUBJID"
+```
+
+The admiral layers are not in the picture, and cannot be: admiral runs
+on data frames and leaves no query tree behind. Their traceability is
+the metadata a submission carries anyway, since the ADaM Implementation
+Guide (section 2.2) asks for the derivation of every analysis variable
+to be described in metadata. So the division of labor is: lineage from
+the lake wherever the pipeline is a query, ADaM metadata where the
+standard asks for it. The silver recipes stitch into the same graph with
+`extract_lineage(silver_recipes)`, and dplyneage’s [lineage that travels
+with the
+data](https://tgerke.github.io/dplyneage/articles/ducklake-versioned-lineage.html)
+article stores each hop’s lineage on the commit that wrote it, through
+`commit_extra_info`, so a snapshot’s rows and their derivation come back
+together.
+
+## Working with the lake
+
+### Queries across layers
+
+Lake tables are lazy: dplyr verbs become SQL that DuckDB runs, and only
+the result reaches R. A check that every adverse event record belongs to
+a subject in ADSL reads the silver and gold layers together without
+collecting either:
+
+``` r
+
+get_ducklake_table("silver.ae") |>
+  anti_join(get_ducklake_table("gold.adsl"), by = "USUBJID") |>
+  count(name = "ae_records_without_adsl_subject") |>
   collect()
-#> # A tibble: 10 × 5
-#>    USUBJID       AGE TRT01P               n_aes total_dose
-#>    <chr>       <dbl> <chr>                <dbl>      <dbl>
-#>  1 01-701-1302    61 Xanomeline High Dose    23       3105
-#>  2 01-717-1004    80 Xanomeline Low Dose     19       3078
-#>  3 01-709-1029    82 Xanomeline High Dose    16       3024
-#>  4 01-704-1266    82 Xanomeline High Dose    16       2160
-#>  5 01-718-1427    74 Xanomeline High Dose    16       2160
-#>  6 01-701-1192    80 Xanomeline Low Dose     15       2430
-#>  7 01-709-1309    65 Xanomeline High Dose    15       2835
-#>  8 01-713-1179    64 Placebo                 15          0
-#>  9 01-701-1275    61 Xanomeline High Dose    15       2025
-#> 10 01-711-1143    76 Xanomeline Low Dose     14       1512
+#> # A tibble: 1 × 1
+#>   ae_records_without_adsl_subject
+#>                             <dbl>
+#> 1                               0
 ```
 
-### Data Warehouse Benefits
+### A derived variable added in place
 
-This approach provides traditional data warehouse capabilities for
-clinical trials:
+When a reviewer asks for the protocol’s age grouping as well, the column
+is declared, filled with an in-database `UPDATE`, and labelled, as one
+commit. No rows pass through R, and the versions before and after are
+both readable.
 
 ``` r
 
-# 1. Single source of truth - all datasets in one repository
-# List all tables in the data lake
-list_ducklake_tables()
-#>    schema_name           table_name  type
-#> 1         main                 adae table
-#> 2         main                 adpc table
-#> 3         main                 adsl table
-#> 4         main                   ae table
-#> 5         main               ae_raw table
-#> 6         main                   dm table
-#> 7         main               dm_raw table
-#> 8         main                   ds table
-#> 9         main               ds_raw table
-#> 10        main                   ex table
-#> 11        main               ex_raw table
-#> 12        main                   pc table
-#> 13        main               pc_raw table
-#> 14        main regulatory_documents table
-#> 15        main               suppdm table
-#> 16        main           suppdm_raw table
-#> 17        main                   vs table
-#> 18        main               vs_raw table
-
-# 2. Efficient filtering before loading into R
-# Only load subjects with adverse events
-get_ducklake_table("ae") |>
-  filter(AESEV == "SEVERE") |>
-  distinct(USUBJID)
-#> # A query:  ?? x 1
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpvzdrHY/ducklake/ducklake2a663f5b4cc0.duckdb]
-#>    USUBJID    
-#>    <chr>      
-#>  1 01-703-1086
-#>  2 01-703-1119
-#>  3 01-706-1049
-#>  4 01-708-1428
-#>  5 01-710-1083
-#>  6 01-718-1079
-#>  7 01-718-1170
-#>  8 01-701-1211
-#>  9 01-704-1135
-#> 10 01-708-1019
-#> # ℹ more rows
-
-# 3. Aggregations performed at database level
-get_ducklake_table("adae") |>
-  filter(TRTEMFL == "Y") |>
-  group_by(TRT01A, AESEV) |>
-  summarise(
-    n_events = n(),
-    n_subjects = n_distinct(USUBJID),
-    .groups = "drop"
-  )
-#> # A query:  ?? x 4
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpvzdrHY/ducklake/ducklake2a663f5b4cc0.duckdb]
-#>   TRT01A               AESEV    n_events n_subjects
-#>   <chr>                <chr>       <dbl>      <dbl>
-#> 1 Xanomeline High Dose MILD          287         65
-#> 2 Xanomeline Low Dose  MODERATE      170         58
-#> 3 Placebo              SEVERE          6          5
-#> 4 Placebo              MILD          210         58
-#> 5 Xanomeline High Dose SEVERE         10          8
-#> 6 Placebo              MODERATE       65         25
-#> 7 Xanomeline Low Dose  SEVERE         25         16
-#> 8 Xanomeline Low Dose  MILD          232         64
-#> 9 Xanomeline High Dose MODERATE      115         46
-
-# 4. Joins across SDTM and ADaM layers
-# Example: Find date discrepancies between SDTM and ADaM
-ae_sdtm <- get_ducklake_table("ae") |>
-  select(USUBJID, AESEQ, ae_date = AESTDTC, ae_term = AEDECOD)
-
-adae_adam <- get_ducklake_table("adae") |>
-  select(USUBJID, AESEQ, adae_date = ASTDT, adae_term = AEDECOD)
-
-ae_sdtm |>
-  inner_join(adae_adam, by = c("USUBJID", "AESEQ")) |>
-  # Convert SDTM character date to comparable format for filtering
-  mutate(ae_date_comparable = substr(ae_date, 1, 10)) |>
-  filter(ae_date_comparable != as.character(adae_date)) |>
-  select(
-    USUBJID,
-    sdtm_start_date = ae_date,
-    adam_start_date = adae_date,
-    sdtm_term = ae_term,
-    adam_term = adae_term
-  )
-#> # A query:  ?? x 5
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpvzdrHY/ducklake/ducklake2a663f5b4cc0.duckdb]
-#> # ℹ 5 variables: USUBJID <chr>, sdtm_start_date <chr>, adam_start_date <date>,
-#> #   sdtm_term <chr>, adam_term <chr>
-# Note: This returns 0 rows with clean pharmaversesdtm data,
-# but demonstrates how to check for data quality issues across layers
-```
-
-### Cohesive Dataset Relationships
-
-Let’s explore how our datasets are connected:
-
-``` r
-
-# List all tables in the data lake
-list_ducklake_tables()
-#>    schema_name           table_name  type
-#> 1         main                 adae table
-#> 2         main                 adpc table
-#> 3         main                 adsl table
-#> 4         main                   ae table
-#> 5         main               ae_raw table
-#> 6         main                   dm table
-#> 7         main               dm_raw table
-#> 8         main                   ds table
-#> 9         main               ds_raw table
-#> 10        main                   ex table
-#> 11        main               ex_raw table
-#> 12        main                   pc table
-#> 13        main               pc_raw table
-#> 14        main regulatory_documents table
-#> 15        main               suppdm table
-#> 16        main           suppdm_raw table
-#> 17        main                   vs table
-#> 18        main               vs_raw table
-
-# View snapshot history for key tables
-metadata_tables <- c("dm", "ex", "ae", "pc", 
-                     "adsl", "adae", "adpc")
-
-# Collect snapshots for all tables
-purrr::map_dfr(metadata_tables, ~{
-  list_table_snapshots(.x) |>
-    mutate(table = .x, .before = 1)
-}) |>
-  select(table, snapshot_id, snapshot_time, changes)
-#>   table snapshot_id       snapshot_time
-#> 1    dm           2 2026-09-09 16:06:58
-#> 2    ex           8 2026-09-09 16:07:00
-#> 3    ae          10 2026-09-09 16:07:00
-#> 4    pc          14 2026-09-09 16:07:01
-#> 5  adsl          15 2026-09-09 16:07:03
-#> 6  adsl          16 2026-09-09 16:07:03
-#> 7  adae          17 2026-09-09 16:07:03
-#> 8  adpc          18 2026-09-09 16:07:04
-#>                                                                   changes
-#> 1     tables_created, tables_altered, tables_inserted_into, main.dm, 2, 2
-#> 2     tables_created, tables_altered, tables_inserted_into, main.ex, 8, 8
-#> 3   tables_created, tables_altered, tables_inserted_into, main.ae, 10, 10
-#> 4   tables_created, tables_altered, tables_inserted_into, main.pc, 14, 14
-#> 5 tables_created, tables_altered, tables_inserted_into, main.adsl, 15, 15
-#> 6                                                      tables_altered, 15
-#> 7 tables_created, tables_altered, tables_inserted_into, main.adae, 16, 16
-#> 8 tables_created, tables_altered, tables_inserted_into, main.adpc, 17, 17
-
-# Check all ADAE subjects exist in ADSL
-adae_tbl <- get_ducklake_table("adae")
-adsl_tbl <- get_ducklake_table("adsl")
-
-integrity_check <- adae_tbl |>
-  anti_join(adsl_tbl, by = "USUBJID") |>
-  summarise(orphaned_records = n()) |>
-  collect()
-
-# ADAE records without ADSL subject:
-integrity_check |> pull(orphaned_records)
-#> [1] 0
-```
-
-This relational approach means your clinical trial data lake functions
-as a purpose-built data warehouse, designed specifically for the
-relational nature of CDISC standards.
-
-## Demonstrating Core Functionality
-
-### Version Control and Snapshots
-
-Every modification to tables is automatically versioned. Let’s
-demonstrate by adding new derived variables to ADSL:
-
-``` r
-
-# Add derived columns in place: declare them, fill them with an in-database
-# UPDATE, and label them. Nothing is collected into R, and the three steps
-# land as one snapshot.
 with_transaction({
-  add_table_column("adsl", "AGE65FL", "VARCHAR")
-  add_table_column("adsl", "AGECAT", "VARCHAR")
-
-  get_ducklake_table("adsl") |>
+  add_table_column("gold.adsl", "AGEGR2", "VARCHAR")
+  add_table_column("gold.adsl", "AGEGR2N", "INTEGER")
+  get_ducklake_table("gold.adsl") |>
     mutate(
-      AGE65FL = if_else(AGE >= 65, "Y", "N"),
-      AGECAT = case_when(
-        AGE < 65 ~ "<65",
-        AGE >= 65 & AGE < 75 ~ "65-74",
-        AGE >= 75 ~ ">=75",
-        TRUE ~ NA_character_
-      )
+      AGEGR2 = case_when(AGE < 65 ~ "<65", AGE <= 80 ~ "65-80", TRUE ~ ">80"),
+      AGEGR2N = case_when(AGE < 65 ~ 1L, AGE <= 80 ~ 2L, TRUE ~ 3L)
     ) |>
     ducklake_exec()
-
   set_column_comments(
-    "adsl",
-    AGE65FL = "Age 65 or Older Flag",
-    AGECAT = "Age Category"
+    "gold.adsl",
+    AGEGR2 = "Pooled Age Group 2",
+    AGEGR2N = "Pooled Age Group 2 (N)"
   )
-}, author = "T Gerke", commit_message = "Add age categorization vars")
-#> Added column "AGE65FL" (VARCHAR) to "adsl".
+}, author = "Statistical Programmer", commit_message = "Add the protocol's age grouping, AGEGR2")
+#> Added column "AGEGR2" (VARCHAR) to "gold.adsl".
 #> ℹ Metadata-only change; no data files were rewritten.
-#> Added column "AGECAT" (VARCHAR) to "adsl".
+#> Added column "AGEGR2N" (INTEGER) to "gold.adsl".
 #> ℹ Metadata-only change; no data files were rewritten.
-#> Commented 2 columns on "adsl".
-#> Committed snapshot 22 (T Gerke): Add age categorization vars
+#> Commented 2 columns on "gold.adsl".
+#> Committed snapshot 7 (Statistical Programmer): Add the protocol's age grouping,
+#> AGEGR2
 
-# View version history
-list_table_snapshots("adsl")
-#>   snapshot_id       snapshot_time schema_version
-#> 1          15 2026-09-09 16:07:03             15
-#> 2          16 2026-09-09 16:07:03             16
-#> 3          22 2026-09-09 16:07:06             22
-#>                                                                   changes
-#> 1 tables_created, tables_altered, tables_inserted_into, main.adsl, 15, 15
-#> 2                                                      tables_altered, 15
-#> 3   tables_altered, tables_inserted_into, tables_deleted_from, 15, 15, 15
-#>    author              commit_message
-#> 1 T Gerke         Create ADSL dataset
-#> 2    <NA>                        <NA>
-#> 3 T Gerke Add age categorization vars
-#>                                                                     commit_extra_info
-#> 1 Derived from DM, SUPPDM, DS, EX; includes treatment dates, safety flags, age groups
-#> 2                                                                                <NA>
-#> 3                                                                                <NA>
-
-# Verify new columns exist
-get_ducklake_table("adsl") |>
-  select(USUBJID, AGE, AGE65FL, AGECAT) |>
-  head(5)
-#> # A query:  ?? x 4
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpvzdrHY/ducklake/ducklake2a663f5b4cc0.duckdb]
-#>   USUBJID       AGE AGE65FL AGECAT
-#>   <chr>       <dbl> <chr>   <chr> 
-#> 1 01-701-1015    63 N       <65   
-#> 2 01-701-1023    64 N       <65   
-#> 3 01-701-1028    71 Y       65-74 
-#> 4 01-701-1033    74 Y       65-74 
-#> 5 01-701-1034    77 Y       >=75
+get_ducklake_table("gold.adsl") |>
+  count(AGEGR2N, AGEGR2) |>
+  arrange(AGEGR2N) |>
+  collect()
+#> # A tibble: 3 × 3
+#>   AGEGR2N AGEGR2     n
+#>     <int> <chr>  <dbl>
+#> 1       1 <65       42
+#> 2       2 65-80    172
+#> 3       3 >80       92
 ```
 
-#### Best Practice: Choose the Right Modification Tool
+[Modifying
+Tables](https://tgerke.github.io/ducklake-r/articles/modifying-tables.md)
+covers the choice between
+[`ducklake_exec()`](https://tgerke.github.io/ducklake-r/reference/ducklake_exec.md),
+the `rows_*()` functions,
+[`merge_into()`](https://tgerke.github.io/ducklake-r/reference/merge_into.md),
+and
+[`replace_table()`](https://tgerke.github.io/ducklake-r/reference/replace_table.md).
 
-Every committed change to a DuckLake table creates a versioned snapshot,
-so the audit trail is complete whichever function you use. The choice is
-about the *kind* of change (see
-[`vignette("modifying-tables")`](https://tgerke.github.io/ducklake-r/articles/modifying-tables.md)
-for the full guidance):
+### A correction that flows downstream
 
-- **New derived variables**: declare them with
-  [`add_table_column()`](https://tgerke.github.io/ducklake-r/reference/add_table_column.md)
-  and fill them with a
-  [`mutate()`](https://dplyr.tidyverse.org/reference/mutate.html)
-  pipeline through
-  [`ducklake_exec()`](https://tgerke.github.io/ducklake-r/reference/ducklake_exec.md),
-  as in the example above. The column is a metadata change and the fill
-  is an in-database UPDATE; nothing is collected into R.
-- **Targeted corrections** (fixing a flag for one subject, appending a
-  handful of records): use
-  [`rows_update()`](https://tgerke.github.io/ducklake-r/reference/rows_update.md),
-  [`rows_insert()`](https://tgerke.github.io/ducklake-r/reference/rows_insert.md),
-  or
-  [`rows_delete()`](https://tgerke.github.io/ducklake-r/reference/rows_delete.md).
-  The change runs as a single SQL statement without rewriting the rest
-  of the table, and small changesets benefit from DuckLake’s data
-  inlining.
-- **Bulk reshapes** (recomputing or filtering most of a dataset,
-  changing its grain): use
-  [`replace_table()`](https://tgerke.github.io/ducklake-r/reference/replace_table.md)
-  wrapped in
-  [`with_transaction()`](https://tgerke.github.io/ducklake-r/reference/with_transaction.md).
-  It rewrites the whole table, which is the right tool when most rows
-  change anyway, and it carries the table’s labels, partition keys, sort
-  order, and options over to the rewritten table.
+Data corrections do not start in ADaM. A query on an adverse event
+resolves, the SDTM record changes, and everything derived from it is
+rebuilt by running the same programs again. In the lake that is one
+transaction: the SDTM correction as a single in-place update through
+[`rows_update()`](https://tgerke.github.io/ducklake-r/reference/rows_update.md),
+ADAE rebuilt by the same `build_adae()`, and the summary rebuilt from
+its recipe.
+[`replace_table()`](https://tgerke.github.io/ducklake-r/reference/replace_table.md)
+rewrites a table as one versioned change and carries its labels and
+settings over. Either all three land as one snapshot, or none of them
+does.
 
 ``` r
 
-# Targeted correction: fix one subject's safety flag with rows_update()
-with_transaction(
+with_transaction({
   rows_update(
-    get_ducklake_table("adsl"),
-    data.frame(USUBJID = "01-701-1015", SAFFL = "N"),
-    by = "USUBJID"
-  ),
-  author = "T Gerke",
-  commit_message = "Correct safety flag for 01-701-1015"
-)
-
-# Bulk reshape: restrict the dataset to the safety population
-with_transaction(
-  get_ducklake_table("adsl") |>
-    filter(SAFFL == "Y") |>
-    replace_table("adsl"),
-  author = "T Gerke",
-  commit_message = "Restrict ADSL to the safety population"
-)
-```
-
-Both operations create snapshots you can time-travel back to and include
-in your regulatory audit trail, with the author and commit message
-recorded by
-[`with_transaction()`](https://tgerke.github.io/ducklake-r/reference/with_transaction.md).
-That is the pattern to keep for GxP/21 CFR Part 11 work.
-
-#### Iterative Development with Full Audit Trail
-
-When developing derivations, create a snapshot at each meaningful
-iteration to maintain a complete audit trail:
-
-``` r
-
-# Iteration 1: First attempt, a new column filled in place
-with_transaction({
-  add_table_column("adsl", "AGECAT_TEST", "VARCHAR")
-  get_ducklake_table("adsl") |>
-    mutate(AGECAT_TEST = case_when(
-      AGE < 50 ~ "Young",
-      AGE >= 50 ~ "Older"
-    )) |>
-    ducklake_exec()
-}, author = "T Gerke", commit_message = "Test age categories v1")
-#> Added column "AGECAT_TEST" (VARCHAR) to "adsl".
-#> ℹ Metadata-only change; no data files were rewritten.
-#> Committed snapshot 23 (T Gerke): Test age categories v1
-
-# Iteration 2: Refinement, an UPDATE of the same column
-with_transaction(
-  get_ducklake_table("adsl") |>
-    mutate(AGECAT_TEST = case_when(
-      AGE < 40 ~ "18-39",
-      AGE < 65 ~ "40-64",
-      AGE >= 65 ~ "65+"
-    )) |>
-    ducklake_exec(),
-  author = "T Gerke",
-  commit_message = "Refine age categories v2"
-)
-#> Committed snapshot 24 (T Gerke): Refine age categories v2
-
-# Iteration 3: Final version, replacing the test column with the real one
-with_transaction({
-  drop_table_column("adsl", "AGECAT_TEST")
-  add_table_column("adsl", "AGECAT2", "VARCHAR")
-  get_ducklake_table("adsl") |>
-    mutate(AGECAT2 = case_when(
-      AGE < 40 ~ "18-39",
-      AGE < 65 ~ "40-64",
-      AGE >= 65 ~ "65+",
-      TRUE ~ "Missing"
-    )) |>
-    ducklake_exec()
-}, author = "T Gerke", commit_message = "Finalize age categories")
-#> Dropped column "AGECAT_TEST" from "adsl". Earlier snapshots still contain it.
-#> Added column "AGECAT2" (VARCHAR) to "adsl".
-#> ℹ Metadata-only change; no data files were rewritten.
-#> Committed snapshot 25 (T Gerke): Finalize age categories
-
-# Complete audit trail available
-snapshots <- list_table_snapshots("adsl")
-snapshots  # Shows all iterations with snapshot metadata
-#>   snapshot_id       snapshot_time schema_version
-#> 1          15 2026-09-09 16:07:03             15
-#> 2          16 2026-09-09 16:07:03             16
-#> 3          22 2026-09-09 16:07:06             22
-#> 4          23 2026-09-09 16:07:06             23
-#> 5          24 2026-09-09 16:07:07             23
-#> 6          25 2026-09-09 16:07:07             24
-#>                                                                   changes
-#> 1 tables_created, tables_altered, tables_inserted_into, main.adsl, 15, 15
-#> 2                                                      tables_altered, 15
-#> 3   tables_altered, tables_inserted_into, tables_deleted_from, 15, 15, 15
-#> 4   tables_altered, tables_inserted_into, tables_deleted_from, 15, 15, 15
-#> 5                       tables_inserted_into, tables_deleted_from, 15, 15
-#> 6   tables_altered, tables_inserted_into, tables_deleted_from, 15, 15, 15
-#>    author              commit_message
-#> 1 T Gerke         Create ADSL dataset
-#> 2    <NA>                        <NA>
-#> 3 T Gerke Add age categorization vars
-#> 4 T Gerke      Test age categories v1
-#> 5 T Gerke    Refine age categories v2
-#> 6 T Gerke     Finalize age categories
-#>                                                                     commit_extra_info
-#> 1 Derived from DM, SUPPDM, DS, EX; includes treatment dates, safety flags, age groups
-#> 2                                                                                <NA>
-#> 3                                                                                <NA>
-#> 4                                                                                <NA>
-#> 5                                                                                <NA>
-#> 6                                                                                <NA>
-
-# Each row represents a point in time you can restore to
-# - snapshot_id: Unique identifier for this version
-# - snapshot_time: When this version was created
-# - changes: What operations created this snapshot
-
-# Time-travel to specific snapshots using snapshot_id
-# Use actual snapshot IDs from the list (first, second, and last)
-snapshot_ids <- snapshots$snapshot_id
-adsl_v1 <- get_ducklake_table_version("adsl", snapshot_ids[1])
-adsl_v2 <- get_ducklake_table_version("adsl", snapshot_ids[2])
-adsl_final <- get_ducklake_table_version("adsl", snapshot_ids[length(snapshot_ids)])
-
-# Or use snapshot times for time-travel
-# Note: Add 1 second to ensure we query AFTER the snapshot was created
-adsl_asof <- get_ducklake_table_asof("adsl", snapshots$snapshot_time[2] + 1)
-
-# Compare columns across iterations
-colnames(adsl_v1 |> collect())  # Initial version
-#>  [1] "STUDYID"  "DOMAIN"   "USUBJID"  "SUBJID"   "RFSTDTC"  "RFENDTC" 
-#>  [7] "RFXSTDTC" "RFXENDTC" "RFICDTC"  "RFPENDTC" "DTHDTC"   "DTHFL"   
-#> [13] "SITEID"   "BRTHDTC"  "AGE"      "AGEU"     "SEX"      "RACE"    
-#> [19] "ETHNIC"   "ARMCD"    "ARM"      "ACTARMCD" "ACTARM"   "COUNTRY" 
-#> [25] "DMDTC"    "DMDY"     "ARMNRS"   "ACTARMUD" "TRTSDTM"  "TRTEDTM" 
-#> [31] "TRTSDT"   "TRTEDT"   "TRTDURD"  "SAFFL"    "TRT01P"   "TRT01A"  
-#> [37] "AGEGR1"   "AGEGR1N"  "RANDDT"   "EOSDT"    "EOSSTT"
-colnames(adsl_final |> collect())  # Final version with all derivations
-#>  [1] "STUDYID"  "DOMAIN"   "USUBJID"  "SUBJID"   "RFSTDTC"  "RFENDTC" 
-#>  [7] "RFXSTDTC" "RFXENDTC" "RFICDTC"  "RFPENDTC" "DTHDTC"   "DTHFL"   
-#> [13] "SITEID"   "BRTHDTC"  "AGE"      "AGEU"     "SEX"      "RACE"    
-#> [19] "ETHNIC"   "ARMCD"    "ARM"      "ACTARMCD" "ACTARM"   "COUNTRY" 
-#> [25] "DMDTC"    "DMDY"     "ARMNRS"   "ACTARMUD" "TRTSDTM"  "TRTEDTM" 
-#> [31] "TRTSDT"   "TRTEDT"   "TRTDURD"  "SAFFL"    "TRT01P"   "TRT01A"  
-#> [37] "AGEGR1"   "AGEGR1N"  "RANDDT"   "EOSDT"    "EOSSTT"   "AGE65FL" 
-#> [43] "AGECAT"   "AGECAT2"
-```
-
-This GxP-compliant approach ensures:
-
-- Complete audit trail of all derivation iterations
-- Ability to recreate any intermediate state
-- Proof of what changed and when for regulatory inspections
-- Data lineage from initial to final derivation
-
-### Time Travel
-
-Query data as it existed at a specific point in time:
-
-``` r
-
-# Get the current version
-adsl_current <- get_ducklake_table("adsl")
-
-# Get the version history for adsl
-versions <- list_table_snapshots("adsl")
-print(versions)
-#>   snapshot_id       snapshot_time schema_version
-#> 1          15 2026-09-09 16:07:03             15
-#> 2          16 2026-09-09 16:07:03             16
-#> 3          22 2026-09-09 16:07:06             22
-#> 4          23 2026-09-09 16:07:06             23
-#> 5          24 2026-09-09 16:07:07             23
-#> 6          25 2026-09-09 16:07:07             24
-#>                                                                   changes
-#> 1 tables_created, tables_altered, tables_inserted_into, main.adsl, 15, 15
-#> 2                                                      tables_altered, 15
-#> 3   tables_altered, tables_inserted_into, tables_deleted_from, 15, 15, 15
-#> 4   tables_altered, tables_inserted_into, tables_deleted_from, 15, 15, 15
-#> 5                       tables_inserted_into, tables_deleted_from, 15, 15
-#> 6   tables_altered, tables_inserted_into, tables_deleted_from, 15, 15, 15
-#>    author              commit_message
-#> 1 T Gerke         Create ADSL dataset
-#> 2    <NA>                        <NA>
-#> 3 T Gerke Add age categorization vars
-#> 4 T Gerke      Test age categories v1
-#> 5 T Gerke    Refine age categories v2
-#> 6 T Gerke     Finalize age categories
-#>                                                                     commit_extra_info
-#> 1 Derived from DM, SUPPDM, DS, EX; includes treatment dates, safety flags, age groups
-#> 2                                                                                <NA>
-#> 3                                                                                <NA>
-#> 4                                                                                <NA>
-#> 5                                                                                <NA>
-#> 6                                                                                <NA>
-
-# Get data from the first snapshot version
-first_snapshot_id <- versions |>
-  slice(1) |>
-  pull(snapshot_id)
-
-adsl_v1 <- get_ducklake_table_version(
-  table_name = "adsl",
-  version = first_snapshot_id
-)
-
-# Compare versions - earlier version shouldn't have derived variables added later
-adsl_v1 |> collect()
-#> # A tibble: 306 × 41
-#>    STUDYID      DOMAIN USUBJID  SUBJID RFSTDTC RFENDTC RFXSTDTC RFXENDTC RFICDTC
-#>    <chr>        <chr>  <chr>    <chr>  <chr>   <chr>   <chr>    <chr>    <chr>  
-#>  1 CDISCPILOT01 DM     01-701-… 1015   2014-0… 2014-0… 2014-01… 2014-07… NA     
-#>  2 CDISCPILOT01 DM     01-701-… 1023   2012-0… 2012-0… 2012-08… 2012-09… NA     
-#>  3 CDISCPILOT01 DM     01-701-… 1028   2013-0… 2014-0… 2013-07… 2014-01… NA     
-#>  4 CDISCPILOT01 DM     01-701-… 1033   2014-0… 2014-0… 2014-03… 2014-03… NA     
-#>  5 CDISCPILOT01 DM     01-701-… 1034   2014-0… 2014-1… 2014-07… 2014-12… NA     
-#>  6 CDISCPILOT01 DM     01-701-… 1047   2013-0… 2013-0… 2013-02… 2013-03… NA     
-#>  7 CDISCPILOT01 DM     01-701-… 1057   NA      NA      NA       NA       NA     
-#>  8 CDISCPILOT01 DM     01-701-… 1097   2014-0… 2014-0… 2014-01… 2014-07… NA     
-#>  9 CDISCPILOT01 DM     01-701-… 1111   2012-0… 2012-0… 2012-09… 2012-09… NA     
-#> 10 CDISCPILOT01 DM     01-701-… 1115   2012-1… 2013-0… 2012-11… 2013-01… NA     
-#> # ℹ 296 more rows
-#> # ℹ 32 more variables: RFPENDTC <chr>, DTHDTC <chr>, DTHFL <chr>, SITEID <chr>,
-#> #   BRTHDTC <chr>, AGE <dbl>, AGEU <chr>, SEX <chr>, RACE <chr>, ETHNIC <chr>,
-#> #   ARMCD <chr>, ARM <chr>, ACTARMCD <chr>, ACTARM <chr>, COUNTRY <chr>,
-#> #   DMDTC <chr>, DMDY <dbl>, ARMNRS <chr>, ACTARMUD <chr>, TRTSDTM <dttm>,
-#> #   TRTEDTM <dttm>, TRTSDT <date>, TRTEDT <date>, TRTDURD <dbl>, SAFFL <chr>,
-#> #   TRT01P <chr>, TRT01A <chr>, AGEGR1 <chr>, AGEGR1N <dbl>, RANDDT <date>, …
-adsl_current |> collect()
-#> # A tibble: 306 × 44
-#>    STUDYID      DOMAIN USUBJID  SUBJID RFSTDTC RFENDTC RFXSTDTC RFXENDTC RFICDTC
-#>    <chr>        <chr>  <chr>    <chr>  <chr>   <chr>   <chr>    <chr>    <chr>  
-#>  1 CDISCPILOT01 DM     01-701-… 1015   2014-0… 2014-0… 2014-01… 2014-07… NA     
-#>  2 CDISCPILOT01 DM     01-701-… 1023   2012-0… 2012-0… 2012-08… 2012-09… NA     
-#>  3 CDISCPILOT01 DM     01-701-… 1028   2013-0… 2014-0… 2013-07… 2014-01… NA     
-#>  4 CDISCPILOT01 DM     01-701-… 1033   2014-0… 2014-0… 2014-03… 2014-03… NA     
-#>  5 CDISCPILOT01 DM     01-701-… 1034   2014-0… 2014-1… 2014-07… 2014-12… NA     
-#>  6 CDISCPILOT01 DM     01-701-… 1047   2013-0… 2013-0… 2013-02… 2013-03… NA     
-#>  7 CDISCPILOT01 DM     01-701-… 1057   NA      NA      NA       NA       NA     
-#>  8 CDISCPILOT01 DM     01-701-… 1097   2014-0… 2014-0… 2014-01… 2014-07… NA     
-#>  9 CDISCPILOT01 DM     01-701-… 1111   2012-0… 2012-0… 2012-09… 2012-09… NA     
-#> 10 CDISCPILOT01 DM     01-701-… 1115   2012-1… 2013-0… 2012-11… 2013-01… NA     
-#> # ℹ 296 more rows
-#> # ℹ 35 more variables: RFPENDTC <chr>, DTHDTC <chr>, DTHFL <chr>, SITEID <chr>,
-#> #   BRTHDTC <chr>, AGE <dbl>, AGEU <chr>, SEX <chr>, RACE <chr>, ETHNIC <chr>,
-#> #   ARMCD <chr>, ARM <chr>, ACTARMCD <chr>, ACTARM <chr>, COUNTRY <chr>,
-#> #   DMDTC <chr>, DMDY <dbl>, ARMNRS <chr>, ACTARMUD <chr>, TRTSDTM <dttm>,
-#> #   TRTEDTM <dttm>, TRTSDT <date>, TRTEDT <date>, TRTDURD <dbl>, SAFFL <chr>,
-#> #   TRT01P <chr>, TRT01A <chr>, AGEGR1 <chr>, AGEGR1N <dbl>, RANDDT <date>, …
-```
-
-### Transactions for Atomic Updates
-
-Transactions ensure that related table updates either all succeed or all
-fail together, maintaining data consistency. This is critical when
-adding derived variables that must stay synchronized across datasets.
-
-Here’s an example of adding a new analysis flag to both ADSL and ADAE
-atomically:
-
-``` r
-
-# Add ANALYSISFL to both ADSL and ADAE in a single atomic operation
-# with_transaction() automatically handles rollback on error
-with_transaction({
-  # First, add the flag to ADSL
-  get_ducklake_table("adsl") |>
-    mutate(ANALYSISFL = if_else(SAFFL == "Y" & !is.na(TRTSDT), "Y", "N")) |>
-    replace_table("adsl")  # Creates versioned snapshot
-  
-  # Then propagate to ADAE by joining
-  adsl_flags <- get_ducklake_table("adsl") |>
-    select(USUBJID, ANALYSISFL)
-  
-  get_ducklake_table("adae") |>
-    select(-any_of("ANALYSISFL")) |>  # Remove if exists
-    left_join(adsl_flags, by = "USUBJID") |>
-    replace_table("adae")  # Creates versioned snapshot
-  
-  # Both updates succeed together
-  cat("Both tables updated successfully\n")
-}, author = "T Gerke", commit_message = "Add analysis flag")
-#> Both tables updated successfully
-#> Committed snapshot 26 (T Gerke): Add analysis flag
-```
-
-This ensures ADSL and ADAE stay synchronized - either both get the new
-`ANALYSISFL` column or neither does. The
-[`with_transaction()`](https://tgerke.github.io/ducklake-r/reference/with_transaction.md)
-function automatically handles rollback if any operation fails, making
-it safer than manually managing transactions. Both updates are also
-versioned for audit trails.
-
-### Updating Records
-
-Update existing records while maintaining version control and audit
-trails:
-
-``` r
-
-# Correct one record by key: a single in-database UPDATE, versioned like
-# every other change, without rewriting the rest of the table
-with_transaction(
-  rows_update(
-    get_ducklake_table("adae"),
+    get_ducklake_table("silver.ae"),
     data.frame(USUBJID = "01-701-1015", AESEQ = 1, AESEV = "SEVERE"),
     by = c("USUBJID", "AESEQ")
-  ),
-  author = "T Gerke",
-  commit_message = "Correct AE severity"
-)
-#> Committed snapshot 27 (T Gerke): Correct AE severity
-
-# Verify the update
-get_ducklake_table("adae") |>
-  filter(USUBJID == "01-701-1015", AESEQ == 1) |>
-  select(USUBJID, AEDECOD, AESEV)
-#> # A query:  ?? x 3
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpvzdrHY/ducklake/ducklake2a663f5b4cc0.duckdb]
-#>   USUBJID     AEDECOD                   AESEV 
-#>   <chr>       <chr>                     <chr> 
-#> 1 01-701-1015 APPLICATION SITE ERYTHEMA SEVERE
-```
-
-## Querying and Analysis
-
-The data lake enables efficient querying across all datasets:
-
-``` r
-
-# Example 1: Subject disposition summary
-get_ducklake_table("adsl") |>
-  count(EOSSTT, TRT01P) |>
-  arrange(TRT01P, EOSSTT)
-#> # A query:    ?? x 3
-#> # Database:   DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpvzdrHY/ducklake/ducklake2a663f5b4cc0.duckdb]
-#> # Ordered by: TRT01P, EOSSTT
-#>   EOSSTT    TRT01P                   n
-#>   <chr>     <chr>                <dbl>
-#> 1 COMPLETED Placebo                 86
-#> 2 ONGOING   Screen Failure          52
-#> 3 COMPLETED Xanomeline High Dose    84
-#> 4 COMPLETED Xanomeline Low Dose     84
-
-# Example 2: Treatment-emergent AE summary by severity
-get_ducklake_table("adae") |>
-  filter(TRTEMFL == "Y") |>
-  count(TRT01A, AESEV) |>
-  arrange(TRT01A, AESEV)
-#> # A query:    ?? x 3
-#> # Database:   DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpvzdrHY/ducklake/ducklake2a663f5b4cc0.duckdb]
-#> # Ordered by: TRT01A, AESEV
-#>   TRT01A               AESEV        n
-#>   <chr>                <chr>    <dbl>
-#> 1 Placebo              MILD       209
-#> 2 Placebo              MODERATE    65
-#> 3 Placebo              SEVERE       7
-#> 4 Xanomeline High Dose MILD       287
-#> 5 Xanomeline High Dose MODERATE   115
-#> 6 Xanomeline High Dose SEVERE      10
-#> 7 Xanomeline Low Dose  MILD       232
-#> 8 Xanomeline Low Dose  MODERATE   170
-#> 9 Xanomeline Low Dose  SEVERE      25
-
-# Example 3: PK concentration profile
-get_ducklake_table("adpc") |>
-  filter(PARAMCD == "XAN", EVID == 0) |>
-  group_by(NFRLT) |>
-  summarise(
-    n = n(),
-    mean_conc = mean(AVAL, na.rm = TRUE),
-    sd_conc = sd(AVAL, na.rm = TRUE)
-  ) |>
-  arrange(NFRLT)
-#> # A query:    ?? x 4
-#> # Database:   DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpvzdrHY/ducklake/ducklake2a663f5b4cc0.duckdb]
-#> # Ordered by: NFRLT
-#>    NFRLT     n mean_conc  sd_conc
-#>    <dbl> <dbl>     <dbl>    <dbl>
-#>  1  0      254   0        0      
-#>  2  0.08   254   0.0682   0.0455 
-#>  3  0.5    254   0.362    0.257  
-#>  4  1      254   0.616    0.439  
-#>  5  1.5    254   0.795    0.568  
-#>  6  2      254   0.922    0.658  
-#>  7  3      254  17.7     12.7    
-#>  8  4      254   1.15     0.821  
-#>  9  6      254   1.21     0.862  
-#> 10  8      254   1.22     0.872  
-#> 11  9      254  14.9     10.8    
-#> 12 12      254   0.366    0.260  
-#> 13 16      254   0.110    0.0767 
-#> 14 18      254   9.39     6.92   
-#> 15 24      254   0.0114   0.00520
-#> 16 36      254   0.00500  0      
-#> 17 37      254   0.165    0.426  
-#> 18 48      254   0.00500  0
-
-# Example 4: Cross-domain analysis: AEs by age group
-get_ducklake_table("adae") |>
-  filter(TRTEMFL == "Y") |>
-  left_join(
-    get_ducklake_table("adsl") |>
-      select(USUBJID, AGEGR1, TRT01A),
-    by = "USUBJID"
-  ) |>
-  count(AGEGR1, TRT01A.x) |>
-  arrange(AGEGR1, TRT01A.x)
-#> # A query:    ?? x 3
-#> # Database:   DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpvzdrHY/ducklake/ducklake2a663f5b4cc0.duckdb]
-#> # Ordered by: AGEGR1, TRT01A.x
-#>   AGEGR1 TRT01A.x                 n
-#>   <chr>  <chr>                <dbl>
-#> 1 18-64  Placebo                 57
-#> 2 18-64  Xanomeline High Dose    86
-#> 3 18-64  Xanomeline Low Dose     20
-#> 4 >64    Placebo                224
-#> 5 >64    Xanomeline High Dose   326
-#> 6 >64    Xanomeline Low Dose    407
-```
-
-## Audit Trail and Compliance
-
-For regulatory submissions, the complete audit trail is essential:
-
-``` r
-
-# Generate audit report for ADSL
-audit_report <- list_table_snapshots("adsl")
-audit_report
-#>   snapshot_id       snapshot_time schema_version
-#> 1          15 2026-09-09 16:07:03             15
-#> 2          16 2026-09-09 16:07:03             16
-#> 3          22 2026-09-09 16:07:06             22
-#> 4          23 2026-09-09 16:07:06             23
-#> 5          24 2026-09-09 16:07:07             23
-#> 6          25 2026-09-09 16:07:07             24
-#> 7          26 2026-09-09 16:07:07             25
-#>                                                                                                              changes
-#> 1                                            tables_created, tables_altered, tables_inserted_into, main.adsl, 15, 15
-#> 2                                                                                                 tables_altered, 15
-#> 3                                              tables_altered, tables_inserted_into, tables_deleted_from, 15, 15, 15
-#> 4                                              tables_altered, tables_inserted_into, tables_deleted_from, 15, 15, 15
-#> 5                                                                  tables_inserted_into, tables_deleted_from, 15, 15
-#> 6                                              tables_altered, tables_inserted_into, tables_deleted_from, 15, 15, 15
-#> 7 tables_created, tables_dropped, tables_altered, tables_inserted_into, main.adsl, main.adae, 15, 16, 21, 22, 21, 22
-#>    author              commit_message
-#> 1 T Gerke         Create ADSL dataset
-#> 2    <NA>                        <NA>
-#> 3 T Gerke Add age categorization vars
-#> 4 T Gerke      Test age categories v1
-#> 5 T Gerke    Refine age categories v2
-#> 6 T Gerke     Finalize age categories
-#> 7 T Gerke           Add analysis flag
-#>                                                                     commit_extra_info
-#> 1 Derived from DM, SUPPDM, DS, EX; includes treatment dates, safety flags, age groups
-#> 2                                                                                <NA>
-#> 3                                                                                <NA>
-#> 4                                                                                <NA>
-#> 5                                                                                <NA>
-#> 6                                                                                <NA>
-#> 7                                                                                <NA>
-
-# Get table metadata from DuckLake system tables
-adsl_table_meta <- get_metadata_table("ducklake_table") |>
-  filter(table_name == "adsl") |>
-  collect()
-adsl_table_meta
-#> # A tibble: 2 × 8
-#>   table_id table_uuid     begin_snapshot end_snapshot schema_id table_name path 
-#>      <dbl> <chr>                   <dbl>        <dbl>     <dbl> <chr>      <chr>
-#> 1       15 01a086ec-38b6…             15           26         0 adsl       adsl/
-#> 2       22 01a086ec-4b80…             26           NA         0 adsl       adsl/
-#> # ℹ 1 more variable: path_is_relative <lgl>
-
-# Export audit information
-audit_export <- audit_report |>
-  mutate(
-    table_name = "adsl",
-    dataset_label = "Subject-Level Analysis Dataset"
   )
-audit_export
-#>   snapshot_id       snapshot_time schema_version
-#> 1          15 2026-09-09 16:07:03             15
-#> 2          16 2026-09-09 16:07:03             16
-#> 3          22 2026-09-09 16:07:06             22
-#> 4          23 2026-09-09 16:07:06             23
-#> 5          24 2026-09-09 16:07:07             23
-#> 6          25 2026-09-09 16:07:07             24
-#> 7          26 2026-09-09 16:07:07             25
-#>                                                                                                              changes
-#> 1                                            tables_created, tables_altered, tables_inserted_into, main.adsl, 15, 15
-#> 2                                                                                                 tables_altered, 15
-#> 3                                              tables_altered, tables_inserted_into, tables_deleted_from, 15, 15, 15
-#> 4                                              tables_altered, tables_inserted_into, tables_deleted_from, 15, 15, 15
-#> 5                                                                  tables_inserted_into, tables_deleted_from, 15, 15
-#> 6                                              tables_altered, tables_inserted_into, tables_deleted_from, 15, 15, 15
-#> 7 tables_created, tables_dropped, tables_altered, tables_inserted_into, main.adsl, main.adae, 15, 16, 21, 22, 21, 22
-#>    author              commit_message
-#> 1 T Gerke         Create ADSL dataset
-#> 2    <NA>                        <NA>
-#> 3 T Gerke Add age categorization vars
-#> 4 T Gerke      Test age categories v1
-#> 5 T Gerke    Refine age categories v2
-#> 6 T Gerke     Finalize age categories
-#> 7 T Gerke           Add analysis flag
-#>                                                                     commit_extra_info
-#> 1 Derived from DM, SUPPDM, DS, EX; includes treatment dates, safety flags, age groups
-#> 2                                                                                <NA>
-#> 3                                                                                <NA>
-#> 4                                                                                <NA>
-#> 5                                                                                <NA>
-#> 6                                                                                <NA>
-#> 7                                                                                <NA>
-#>   table_name                  dataset_label
-#> 1       adsl Subject-Level Analysis Dataset
-#> 2       adsl Subject-Level Analysis Dataset
-#> 3       adsl Subject-Level Analysis Dataset
-#> 4       adsl Subject-Level Analysis Dataset
-#> 5       adsl Subject-Level Analysis Dataset
-#> 6       adsl Subject-Level Analysis Dataset
-#> 7       adsl Subject-Level Analysis Dataset
+  ae <- get_ducklake_table("silver.ae") |> collect()
+  adsl <- get_ducklake_table("gold.adsl") |> collect()
+  replace_table(build_adae(ae, adsl), "gold.adae")
+  replace_table(teae_recipe, "results.teae_summary")
+}, author = "Data Manager", commit_message = "DQ-042: AESEV corrected; ADAE and results rebuilt")
+#> Committed snapshot 8 (Data Manager): DQ-042: AESEV corrected; ADAE and results
+#> rebuilt
 ```
 
-## Data Inlining and Regulatory Archival
-
-DuckLake v1.0 enables **data inlining** by default: small modifications
-(inserts, deletes, updates affecting fewer than 10 rows) are stored
-directly in the catalog database rather than writing individual Parquet
-files. This is a pure storage optimization. It does not affect ACID
-compliance, versioning, time travel, or the audit trail. Clinical trial
-batch loads (full SDTM/ADaM domains) exceed the threshold and go
-directly to Parquet as usual.
-
-Inlining benefits clinical workflows in a specific way: when a
-statistical programmer corrects a single subject’s flag or updates a
-derived variable for a handful of records, the change is captured
-atomically in the catalog without creating a proliferation of tiny
-Parquet files.
-
-Before archival or regulatory submission, flush all inlined data to
-Parquet so the data path contains a fully self-describing, portable set
-of files:
+The change feed shows what the correction did to `silver.ae`, as the
+value before and the value after:
 
 ``` r
 
-# Materialise any inlined data to Parquet before archival
+correction <- max(list_table_snapshots()$snapshot_id)
+
+get_table_changes("silver.ae", correction, correction) |>
+  select(change_type, USUBJID, AESEQ, AESEV) |>
+  collect()
+#> # A tibble: 2 × 4
+#>   change_type      USUBJID     AESEQ AESEV 
+#>   <chr>            <chr>       <dbl> <chr> 
+#> 1 update_postimage 01-701-1015     1 SEVERE
+#> 2 update_preimage  01-701-1015     1 MILD
+```
+
+That is the shape of an audit trail as FDA describes it in its 2024
+questions and answers on electronic systems in clinical investigations
+(Q12 to Q14): the date and time (`snapshot_time`), the individual
+(`author`), the old and the new value (the change feed), and the reason
+(`commit_message`). Prior entries are never obscured: a change never
+overwrites an earlier version in place, and the rows before it stay
+readable until a retention policy expires them. ICH E6(R3) (section
+4.2.2) puts audit trails and their review inside a risk-based data
+governance process. The lake does not validate itself, though:
+qualifying the computing environment that runs these programs stays with
+the sponsor.
+
+## The history
+
+[`list_table_snapshots()`](https://tgerke.github.io/ducklake-r/reference/list_table_snapshots.md)
+lists every commit in the lake, across all four layers, with the author
+and message each one was given:
+
+``` r
+
+list_table_snapshots() |>
+  select(snapshot_id, snapshot_time, author, commit_message)
+#>   snapshot_id       snapshot_time                 author
+#> 1           0 2026-09-09 17:12:22                   <NA>
+#> 2           1 2026-09-09 17:12:22           Data Manager
+#> 3           2 2026-09-09 17:12:22           Data Manager
+#> 4           3 2026-09-09 17:12:23           Data Manager
+#> 5           4 2026-09-09 17:12:25 Statistical Programmer
+#> 6           5 2026-09-09 17:12:26 Statistical Programmer
+#> 7           6 2026-09-09 17:12:27           Statistician
+#> 8           7 2026-09-09 17:12:27 Statistical Programmer
+#> 9           8 2026-09-09 17:12:28           Data Manager
+#>                                      commit_message
+#> 1                                              <NA>
+#> 2                          Create the lake's layers
+#> 3                Load the SDTM transfer as received
+#> 4                    Standardize SDTM: blanks to NA
+#> 5                                        Build ADSL
+#> 6                                        Build ADAE
+#> 7     Table 14.3.1: TEAEs by treatment and severity
+#> 8           Add the protocol's age grouping, AGEGR2
+#> 9 DQ-042: AESEV corrected; ADAE and results rebuilt
+```
+
+[`plot_snapshots()`](https://tgerke.github.io/ducklake-r/reference/plot_snapshots.md)
+draws one table’s history as a timeline, with the author and message of
+each commit. For ADAE, that is its build and the rebuild the correction
+caused:
+
+``` r
+
+plot_snapshots("gold.adae")
+```
+
+![](clinical-trial-datalake_files/figure-html/plot-history-1.png)
+
+Any earlier version of a table can be read as a lazy table. ADAE before
+the correction, next to ADAE now:
+
+``` r
+
+adae_versions <- list_table_snapshots("gold.adae")
+adae_versions |> select(snapshot_id, author, commit_message)
+#>   snapshot_id                 author
+#> 1           5 Statistical Programmer
+#> 2           8           Data Manager
+#>                                      commit_message
+#> 1                                        Build ADAE
+#> 2 DQ-042: AESEV corrected; ADAE and results rebuilt
+
+get_ducklake_table_version("gold.adae", min(adae_versions$snapshot_id)) |>
+  filter(USUBJID == "01-701-1015", AESEQ == 1) |>
+  select(USUBJID, AESEQ, ASEV) |>
+  collect()
+#> # A tibble: 1 × 3
+#>   USUBJID     AESEQ ASEV 
+#>   <chr>       <dbl> <chr>
+#> 1 01-701-1015     1 MILD
+
+get_ducklake_table("gold.adae") |>
+  filter(USUBJID == "01-701-1015", AESEQ == 1) |>
+  select(USUBJID, AESEQ, ASEV) |>
+  collect()
+#> # A tibble: 1 × 3
+#>   USUBJID     AESEQ ASEV  
+#>   <chr>       <dbl> <chr> 
+#> 1 01-701-1015     1 SEVERE
+```
+
+An analysis run against a data cut pins the whole session to a snapshot
+with `attach_ducklake(snapshot_version = )`, so every table it reads is
+the version of that cut. [Time
+Travel](https://tgerke.github.io/ducklake-r/articles/time-travel.md)
+covers that, along with reading as of a timestamp, comparing versions,
+and restoring one.
+
+## Before archival
+
+Small changes such as the correction above are stored inline in the
+catalog rather than as tiny Parquet files, which is what keeps a lake
+with many small commits tidy. Before an archive or a transfer, flush
+them, so the data path is a self-describing set of Parquet files that
+any tool can read without ducklake, next to the catalog that holds the
+history. [Data
+Inlining](https://tgerke.github.io/ducklake-r/articles/data-inlining.md)
+has the details.
+
+``` r
+
 flush_inlined_data()
+#> Flushed 10 rows from 2 tables to Parquet.
+#>   schema_name   table_name rows_flushed
+#> 1     results teae_summary            9
+#> 2      silver           ae            1
 ```
 
-This ensures that the archived lake can be read by any Parquet-capable
-tool, and aligns with ICH E6(R2) and 21 CFR Part 11 expectations for
-long-term data retention. For more details see
-[`vignette("data-inlining")`](https://tgerke.github.io/ducklake-r/articles/data-inlining.md).
-
-## Cleanup
-
-When you’re done, you can detach from the data lake:
+## Detach
 
 ``` r
 
-detach_ducklake()
+detach_ducklake("clinical_trial_lake")
 ```
 
-## Summary
+Detaching deletes nothing. Attaching the same path again picks up where
+this session left off, history included.
 
-This vignette demonstrated how **ducklake** provides a robust
-infrastructure for clinical trial data management:
+## Learn more
 
-1.  **Setup**: Created a versioned data lake for clinical trial data
-2.  **Medallion Architecture**: Implemented bronze (raw), silver
-    (cleaned), and gold (analysis) layers
-3.  **SDTM Loading**: Loaded multiple SDTM domains in both raw and
-    cleaned versions with full version control
-4.  **ADaM Derivation**: Built analysis datasets (ADSL, ADAE, ADPC) with
-    complete data lineage from silver to gold
-5.  **Regulatory Artifacts**: Stored define.xml, ARD, ARM, and
-    specifications alongside datasets
-6.  **Organization**: Maintained cohesive relationships between related
-    datasets and documentation
-7.  **Functionality**: Demonstrated versioning, time travel,
-    transactions, and record updates
-8.  **Analysis**: Showed efficient cross-domain queries
-9.  **Compliance**: Generated audit trails for regulatory requirements
-    with raw data preservation
-
-By using ducklake for clinical trial data, you ensure:
-
-- **Modern Architecture**: Relational database structure for inherently
-  relational CDISC data
-- **Layered Design**: Bronze/silver/gold layers separate raw, cleaned,
-  and analysis-ready data
-- **Reproducibility**: Analyses can be exactly recreated; raw data
-  enables reprocessing
-- **Traceability**: Complete lineage from raw source through cleaning to
-  final analysis
-- **Collaboration**: Multiple analysts working safely with shared data
-  layers
-- **Compliance**: Regulatory-ready audit trails with preserved source
-  data
-- **Efficiency**: Fast queries across related datasets without loading
-  multiple flat files
-- **Data Integrity**: Referential integrity checks across related tables
-- **Reprocessability**: Ability to rerun cleaning or analysis logic
-  without re-extracting from EDC
-
-For more information on specific features:
-
-- [`vignette("ducklake")`](https://tgerke.github.io/ducklake-r/articles/ducklake.md) -
-  Getting started guide
-- [`vignette("data-inlining")`](https://tgerke.github.io/ducklake-r/articles/data-inlining.md) -
-  Data inlining and storage optimisation
-- [`vignette("time-travel")`](https://tgerke.github.io/ducklake-r/articles/time-travel.md) -
-  Time travel and version control
-- [`vignette("transactions")`](https://tgerke.github.io/ducklake-r/articles/transactions.md) -
-  Transaction management
+- [Modifying
+  Tables](https://tgerke.github.io/ducklake-r/articles/modifying-tables.md):
+  choosing how to change a table
+- [Views, Comments, and
+  Labels](https://tgerke.github.io/ducklake-r/articles/views-comments-labels.md):
+  shared query logic and documentation that live in the lake
+- [Time
+  Travel](https://tgerke.github.io/ducklake-r/articles/time-travel.md):
+  every way to read the past
+- [Working with
+  Transactions](https://tgerke.github.io/ducklake-r/articles/transactions.md):
+  commit metadata and several writers
+- [Visualizing Your
+  Lake](https://tgerke.github.io/ducklake-r/articles/visualizing-your-lake.md):
+  snapshot history, change volume, storage layout
+- [Data
+  Inlining](https://tgerke.github.io/ducklake-r/articles/data-inlining.md):
+  small writes and when to flush them
+- [Choosing a
+  Deployment](https://tgerke.github.io/ducklake-r/articles/deployment.md):
+  catalog backends, storage, and access for a team
+- dplyneage’s [column lineage for ducklake
+  pipelines](https://tgerke.github.io/dplyneage/articles/ducklake-lineage.html),
+  [project-level lineage for targets
+  pipelines](https://tgerke.github.io/dplyneage/articles/targets-lineage.html),
+  and [lineage that travels with the
+  data](https://tgerke.github.io/dplyneage/articles/ducklake-versioned-lineage.html)
 
 ## References
 
-- [CDISC SDTM](https://www.cdisc.org/standards/foundational/sdtm)
-- [CDISC ADaM](https://www.cdisc.org/standards/foundational/adam)
-- [pharmaverse](https://pharmaverse.org/)
-- [admiral](https://pharmaverse.github.io/admiral/)
-- [pharmaversesdtm](https://pharmaverse.github.io/pharmaversesdtm/)
-- [DuckLake Documentation](https://ducklake.select/docs/stable/)
+- [CDISC SDTM](https://www.cdisc.org/standards/foundational/sdtm) and
+  [CDISC ADaM](https://www.cdisc.org/standards/foundational/adam)
+- [admiral](https://pharmaverse.github.io/admiral/) and
+  [pharmaversesdtm](https://pharmaverse.github.io/pharmaversesdtm/)
+- FDA, [Electronic Systems, Electronic Records, and Electronic
+  Signatures in Clinical Investigations: Questions and
+  Answers](https://www.fda.gov/regulatory-information/search-fda-guidance-documents/electronic-systems-electronic-records-and-electronic-signatures-clinical-investigations-questions)
+  (October 2024)
+- ICH, [E6(R3) Good Clinical
+  Practice](https://www.ich.org/page/efficacy-guidelines)
+- [DuckLake documentation](https://ducklake.select/docs/stable/)

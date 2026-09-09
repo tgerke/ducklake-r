@@ -292,11 +292,11 @@ inlined insert or delete creates a snapshot, just like a regular write:
 snapshots <- list_table_snapshots("readings")
 snapshots
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-09-09 16:07:15              1
-#> 2           2 2026-09-09 16:07:16              2
-#> 3           3 2026-09-09 16:07:16              2
-#> 4           5 2026-09-09 16:07:17              3
-#> 5           6 2026-09-09 16:07:17              3
+#> 1           1 2026-09-09 17:12:35              1
+#> 2           2 2026-09-09 17:12:36              2
+#> 3           3 2026-09-09 17:12:36              2
+#> 4           5 2026-09-09 17:12:37              3
+#> 5           6 2026-09-09 17:12:37              3
 #>                                                   changes      author
 #> 1        tables_created, inlined_insert, main.readings, 1 Sensor Team
 #> 2 tables_altered, inlined_insert, inlined_delete, 1, 1, 1 Sensor Team
@@ -364,9 +364,9 @@ Before archival or regulatory submission, run
 [`flush_inlined_data()`](https://tgerke.github.io/ducklake-r/reference/flush_inlined_data.md))
 to materialise all inlined data to Parquet. This ensures that the data
 path contains a fully self-describing set of Parquet files suitable for
-long-term storage and portability. See
-[`vignette("clinical-trial-datalake")`](https://tgerke.github.io/ducklake-r/articles/clinical-trial-datalake.md)
-for a full regulated-workflow example.
+long-term storage and portability. See the [Clinical Trial Data
+Lake](https://tgerke.github.io/ducklake-r/articles/clinical-trial-datalake.html)
+article for a full regulated-workflow example.
 
 ## Summary
 

@@ -246,5 +246,6 @@ attach_ducklake("trial", lake_path = "~/lakes/trial", automatic_migration = TRUE
   for commit metadata and working with several writers
 - [`vignette("quack-remote-access")`](https://tgerke.github.io/ducklake-r/articles/quack-remote-access.md)
   for serving a lake over the network
-- [`vignette("clinical-trial-datalake")`](https://tgerke.github.io/ducklake-r/articles/clinical-trial-datalake.md)
+- [Clinical Trial Data
+  Lake](https://tgerke.github.io/ducklake-r/articles/clinical-trial-datalake.html)
   for a complete regulated workflow

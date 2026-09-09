@@ -343,11 +343,11 @@ write:</p>
 <span><span class="va">snapshots</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"readings"</span><span class="op">)</span></span>
 <span><span class="va">snapshots</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 1           1 2026-09-09 16:07:15              1</span></span>
-<span><span class="co">#&gt; 2           2 2026-09-09 16:07:16              2</span></span>
-<span><span class="co">#&gt; 3           3 2026-09-09 16:07:16              2</span></span>
-<span><span class="co">#&gt; 4           5 2026-09-09 16:07:17              3</span></span>
-<span><span class="co">#&gt; 5           6 2026-09-09 16:07:17              3</span></span>
+<span><span class="co">#&gt; 1           1 2026-09-09 17:12:35              1</span></span>
+<span><span class="co">#&gt; 2           2 2026-09-09 17:12:36              2</span></span>
+<span><span class="co">#&gt; 3           3 2026-09-09 17:12:36              2</span></span>
+<span><span class="co">#&gt; 4           5 2026-09-09 17:12:37              3</span></span>
+<span><span class="co">#&gt; 5           6 2026-09-09 17:12:37              3</span></span>
 <span><span class="co">#&gt;                                                   changes      author</span></span>
 <span><span class="co">#&gt; 1        tables_created, inlined_insert, main.readings, 1 Sensor Team</span></span>
 <span><span class="co">#&gt; 2 tables_altered, inlined_insert, inlined_delete, 1, 1, 1 Sensor Team</span></span>
@@ -428,8 +428,8 @@ generating unnecessary files.</p>
 <code><a href="../reference/flush_inlined_data.html">flush_inlined_data()</a></code>) to materialise all inlined data to
 Parquet. This ensures that the data path contains a fully
 self-describing set of Parquet files suitable for long-term storage and
-portability. See <code><a href="../articles/clinical-trial-datalake.html">vignette("clinical-trial-datalake")</a></code> for a
-full regulated-workflow example.</p>
+portability. See the <a href="https://tgerke.github.io/ducklake-r/articles/clinical-trial-datalake.html">Clinical
+Trial Data Lake</a> article for a full regulated-workflow example.</p>
 </div>
 </div>
 <div class="section level2">

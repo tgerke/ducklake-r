@@ -298,8 +298,10 @@ touched, and why. The companion package
 query, from each output column back to the source columns it came from.
 Lake tables are ordinary dbplyr lazy tables, so the pipelines that built
 the silver and gold layers above are also their lineage recipes. Pass
-them to `extract_lineage()` under the names they were materialized as,
-and it stitches the layers into one graph:
+them to
+[`extract_lineage()`](https://tgerke.github.io/dplyneage/reference/extract_lineage.html)
+under the names they were materialized as, and it stitches the layers
+into one graph:
 
 ``` r
 
@@ -364,7 +366,8 @@ detailed vignettes:
   up on day one
 - [Clinical Trial Data
   Lake](https://tgerke.github.io/ducklake-r/articles/clinical-trial-datalake.html) -
-  Complete workflow from SDTM to ADaM with regulatory artifacts
+  SDTM to ADaM with admiral, analysis results in the lake, and column
+  lineage
 - [Modifying
   Tables](https://tgerke.github.io/ducklake-r/articles/modifying-tables.html) -
   Choosing how to change a table: joins vs. `rows_*`, upserts,

@@ -13,6 +13,30 @@
   tables outside `main`, so `bronze.dm` and `silver.dm` no longer share
   a lane; a lake with everything in `main` keeps bare names.
 
+- The Clinical Trial Data Lake article is rewritten, and it is now a
+  pkgdown-only article (`vignettes/articles/`), so it can use packages a
+  CRAN vignette cannot declare: dplyneage for column lineage, haven for
+  the XPT transfer it loads, admiral and pharmaversesdtm for the
+  derivations. The lake is laid out as bronze, silver, gold, and results
+  schemas. SDTM arrives as an XPT transfer, so the silver blank-to-`NA`
+  step has blanks to convert; pharmaversesdtm stores missing values as
+  `NA` already, which made the old version of that step a no-op. ADSL
+  and ADAE are derived the way the admiral 1.4 templates do it, with
+  imputation flags, Y/N population flags,
+  [`derive_var_trtemfl()`](https:/pharmaverse.github.io/admiral/v1.5.0/cran-release/reference/derive_var_trtemfl.html),
+  and occurrence flags from
+  [`derive_var_extreme_flag()`](https:/pharmaverse.github.io/admiral/v1.5.0/cran-release/reference/derive_var_extreme_flag.html)
+  under
+  [`restrict_derivation()`](https:/pharmaverse.github.io/admiral/v1.5.0/cran-release/reference/restrict_derivation.html).
+  A treatment-emergent adverse event summary is stored in the lake with
+  its lineage drawn, and a correction flows from SDTM through ADaM to
+  that summary in one transaction. The ADPC dataset and the section that
+  stored define.xml and JSON blobs in table cells are gone, and the
+  wording on audit trails names the elements the FDA 2024 Q&A lists
+  rather than claiming Part 11 compliance. The eight packages only that
+  vignette used leave Suggests (admiral, pharmaversesdtm, DiagrammeR,
+  jsonlite, lubridate, purrr, stringr, tidyr).
+
 - The ducklake DuckDB extension no longer needs an install step. The
   code never required one:
   [`attach_ducklake()`](https://tgerke.github.io/ducklake-r/reference/attach_ducklake.md)

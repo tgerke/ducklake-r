@@ -153,3 +153,15 @@
   lineage chunk renders without a warning only with dplyneage newer than
   0.3.1, which exempts a model’s own sources from its unstitched-model
   check.
+- **The clinical article is pkgdown-only** (2026-09-09).
+  `vignettes/articles/clinical-trial-datalake.Rmd` is built by pkgdown,
+  not R CMD check, so it can use dplyneage (GitHub-only), haven,
+  admiral, and pharmaversesdtm, declared in `Config/Needs/website`.
+  Bronze loads an XPT transfer written from pharmaversesdtm, because
+  pharmaversesdtm has no blank cells and the silver blank-to-`NA` step
+  was a no-op on it; XPT read with haven does carry blanks. dplyneage
+  draws the gold-to-results hop only: admiral runs on data frames and
+  leaves no query tree, so the admiral layers’ traceability is ADaM
+  metadata. The article claims no “Part 11 compliance”; it maps the
+  snapshot history onto the audit-trail elements in FDA’s 2024 Q&A
+  (Q12-Q14) and cites ICH E6(R3) section 4.2.2.
