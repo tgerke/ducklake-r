@@ -13,3 +13,4 @@
 ^Rplots\.pdf$
 ^CRAN-SUBMISSION$
 ^.*\.tar\.gz$
+^vignettes/articles$

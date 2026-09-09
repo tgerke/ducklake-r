@@ -18,6 +18,7 @@ DDL
 DM
 DS
 Deatcu
+DiagrammeR
 DuckDB
 DuckDB's
 DuckDB’s
@@ -101,10 +102,12 @@ https
 ing
 inlined
 inlining
+jsonlite
 labelled
 lakehouse
 libpq
 lifecycle
+lubridate
 materialise
 mistyped
 mtcars
@@ -115,6 +118,7 @@ pharmaversesdtm
 pkgdown
 postgres
 pre
+purrr
 pushdown
 queryable
 recognise
@@ -123,6 +127,7 @@ scalability
 schema's
 schemas
 sqlite
+stringr
 subqueries
 subquery
 summarising
@@ -130,6 +135,7 @@ swimlane
 tbl
 tibble
 tibbles
+tidyr
 tidyverse
 toolchain
 transactional

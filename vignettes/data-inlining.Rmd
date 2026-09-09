@@ -297,8 +297,9 @@ keeping those lightweight without generating unnecessary files.
 Before archival or regulatory submission, run `checkpoint_ducklake()` (or
 `flush_inlined_data()`) to materialise all inlined data to Parquet. This
 ensures that the data path contains a fully self-describing set of Parquet
-files suitable for long-term storage and portability. See
-`vignette("clinical-trial-datalake")` for a full regulated-workflow example.
+files suitable for long-term storage and portability. See the
+[Clinical Trial Data Lake](https://tgerke.github.io/ducklake-r/articles/clinical-trial-datalake.html) article for a
+full regulated-workflow example.
 
 ## Summary
 

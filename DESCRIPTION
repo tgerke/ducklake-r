@@ -27,23 +27,17 @@ Imports:
     dplyr,
     duckdb (>= 1.5.5)
 Suggests:
-    admiral,
     askpass,
-    DiagrammeR,
     fs,
     ggplot2,
-    jsonlite,
     knitr,
     labelled,
-    lubridate,
-    pharmaversesdtm,
-    purrr,
     rmarkdown,
     spelling,
-    stringr,
-    testthat (>= 3.0.0),
-    tidyr
+    testthat (>= 3.0.0)
 Config/testthat/edition: 3
 VignetteBuilder: knitr
 Config/roxygen2/version: 8.1.0
+Config/Needs/website: admiral, pharmaversesdtm, haven, labelled, ggplot2, stringr,
+    tgerke/dplyneage
 Language: en-US

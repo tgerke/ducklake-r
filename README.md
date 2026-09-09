@@ -341,7 +341,7 @@ detailed vignettes:
   up on day one
 - [Clinical Trial Data
   Lake](https://tgerke.github.io/ducklake-r/articles/clinical-trial-datalake.html) -
-  Complete workflow from SDTM to ADaM with regulatory artifacts
+  SDTM to ADaM with admiral, analysis results in the lake, and column lineage
 - [Modifying
   Tables](https://tgerke.github.io/ducklake-r/articles/modifying-tables.html) -
   Choosing how to change a table: joins vs. `rows_*`, upserts,

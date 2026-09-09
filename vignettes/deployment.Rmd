@@ -238,4 +238,4 @@ attach_ducklake("trial", lake_path = "~/lakes/trial", automatic_migration = TRUE
 - `vignette("storage-and-backups")` for the file layout, backups, and maintenance
 - `vignette("transactions")` for commit metadata and working with several writers
 - `vignette("quack-remote-access")` for serving a lake over the network
-- `vignette("clinical-trial-datalake")` for a complete regulated workflow
+- [Clinical Trial Data Lake](https://tgerke.github.io/ducklake-r/articles/clinical-trial-datalake.html) for a complete regulated workflow
