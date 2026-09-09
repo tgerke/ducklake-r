@@ -1,5 +1,14 @@
 # ducklake (development version)
 
+* `plot_snapshots()` classifies each snapshot by what it did to the table
+  being drawn. A transaction that updated one table in place and rebuilt
+  another used to color both as "created", because the whole snapshot was
+  classified by the highest-precedence change it carried; the single-table
+  timeline and the swimlane now read only the change-map entries that name
+  the table, so the updated table shows a data change and the rebuilt one a
+  creation. Swimlane lanes are schema-qualified whenever the lake keeps
+  tables outside `main`, so `bronze.dm` and `silver.dm` no longer share a
+  lane; a lake with everything in `main` keeps bare names.
 * The Clinical Trial Data Lake article is rewritten, and it is now a
   pkgdown-only article (`vignettes/articles/`), so it can use packages a
   CRAN vignette cannot declare: dplyneage for column lineage, haven for
