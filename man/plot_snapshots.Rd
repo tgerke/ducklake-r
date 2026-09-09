@@ -29,16 +29,20 @@ active and stale tables read at a glance.
 }
 \details{
 Requires the ggplot2 package (listed in Suggests). Snapshot data comes from
-\code{\link[=list_table_snapshots]{list_table_snapshots()}}; each snapshot is classified from its \code{changes}
-column into one of: created, schema change, data change, maintenance, or
-other. Authors and commit messages appear where they were recorded (see
-\code{\link[=set_snapshot_metadata]{set_snapshot_metadata()}} and \code{\link[=commit_transaction]{commit_transaction()}}).
+\code{\link[=list_table_snapshots]{list_table_snapshots()}}; each snapshot is classified from the entries of
+its \code{changes} column that name the table into one of: created, schema
+change, data change, maintenance, or other. A transaction that updates
+one table in place and rebuilds another therefore shows a data change on
+the first and a creation on the second. Authors and commit messages
+appear where they were recorded (see \code{\link[=set_snapshot_metadata]{set_snapshot_metadata()}} and
+\code{\link[=commit_transaction]{commit_transaction()}}).
 
 Both layouts position snapshots by order rather than by clock time, so a
 history with months of silence between bursts of activity stays readable.
 In the swimlane, snapshots that touch no table (like the initial schema
 creation) appear in a \code{(lake)} lane, and the x axis labels show each
-snapshot's date.
+snapshot's date. Lanes carry schema-qualified names when the lake keeps
+tables outside \code{main}, so \code{bronze.dm} and \code{silver.dm} stay apart.
 }
 \examples{
 \dontshow{if (ducklake_extension_available() && requireNamespace("ggplot2", quietly = TRUE)) withAutoprint(\{ # examplesIf}

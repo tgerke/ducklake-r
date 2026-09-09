@@ -315,12 +315,27 @@ table_ids_for_name <- function(table, schema, ducklake_name,
   )
 }
 
+#' The change-map values that identify a table
+#'
+#' Creates and renames name the table (`schema.table`); row changes,
+#' alters, drops, and flushes carry its numeric id, and a renamed or
+#' replaced table has had several ids, so every id the name has had in the
+#' schema counts.
+#'
+#' @returns A character vector: the qualified name and the ids as strings.
+#' @noRd
+table_change_targets <- function(table_name, ducklake_name,
+                                 conn = get_ducklake_connection()) {
+  parts <- split_table_name(table_name)
+  schema <- if (is.null(parts$schema)) "main" else parts$schema
+  ids <- table_ids_for_name(parts$table, schema, ducklake_name, conn)
+  c(paste0(schema, ".", parts$table), as.character(ids))
+}
+
 #' Which snapshots touched a table?
 #'
-#' The `changes` column of `snapshots()` maps change keys to values. Creates
-#' and drops name the table (`main.cars`); row-level changes carry its
-#' numeric id only, and a renamed or replaced table has had several ids, so
-#' every id the name has had in the schema counts. Handles both the
+#' Matches the `changes` column of `snapshots()` against the values that
+#' identify the table (see table_change_targets()). Handles both the
 #' key/value data frames the duckdb driver returns and a plain
 #' comma-separated string.
 #'
@@ -329,11 +344,7 @@ table_ids_for_name <- function(table, schema, ducklake_name,
 #' @noRd
 snapshots_touching_table <- function(changes, table_name, ducklake_name,
                                      conn = get_ducklake_connection()) {
-  parts <- split_table_name(table_name)
-  schema <- if (is.null(parts$schema)) "main" else parts$schema
-  ids <- table_ids_for_name(parts$table, schema, ducklake_name, conn)
-  targets <- c(paste0(schema, ".", parts$table), as.character(ids))
-
+  targets <- table_change_targets(table_name, ducklake_name, conn)
   vapply(
     changes,
     function(entry) any(change_values(entry) %in% targets),
