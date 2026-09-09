@@ -4,6 +4,7 @@
 
 library(ducklake)
 library(dplyr)
+library(purrr)
 library(admiral)
 library(stringr)
 ```
@@ -92,14 +93,14 @@ sdtm <- list(
 
 sdtm_transfer <- file.path(article_dir, "sdtm_transfer")
 dir.create(sdtm_transfer, showWarnings = FALSE)
-for (domain in names(sdtm)) {
+iwalk(sdtm, \(data, domain) {
   haven::write_xpt(
-    sdtm[[domain]],
+    data,
     file.path(sdtm_transfer, paste0(domain, ".xpt")),
     version = 5,
     name = domain
   )
-}
+})
 ```
 
 The bronze layer keeps the transfer exactly as it arrived, so the lake
@@ -109,12 +110,12 @@ cleaning logic changes. One commit loads the four domains:
 ``` r
 
 with_transaction({
-  for (domain in names(sdtm)) {
+  walk(names(sdtm), \(domain) {
     create_table(
       haven::read_xpt(file.path(sdtm_transfer, paste0(domain, ".xpt"))),
       paste0("bronze.", domain)
     )
-  }
+  })
 }, author = "Data Manager", commit_message = "Load the SDTM transfer as received")
 #> Stored 28 column labels as column comments.
 #> Stored 13 column labels as column comments.
@@ -180,7 +181,7 @@ the lake. A silver table is derived without its rows entering R.
 # character column names.
 blanks_to_na <- function(tbl) {
   types <- tbl |> head(0) |> collect()
-  chr_cols <- names(types)[vapply(types, is.character, logical(1))]
+  chr_cols <- names(select(types, where(is.character)))
   tbl |> mutate(across(all_of(chr_cols), ~ na_if(.x, "")))
 }
 ```
@@ -188,6 +189,9 @@ blanks_to_na <- function(tbl) {
 Each silver recipe is kept in a named list, under the name it is
 materialized as, because the recipe that builds a layer is also its
 lineage, which the results section comes back to.
+[`iwalk()`](https://purrr.tidyverse.org/reference/imap.html) then hands
+each recipe and its name to
+[`create_table()`](https://tgerke.github.io/ducklake-r/reference/create_table.md).
 
 ``` r
 
@@ -198,11 +202,11 @@ silver_recipes <- list(
   "silver.ae" = get_ducklake_table("bronze.ae") |> blanks_to_na()
 )
 
-with_transaction({
-  for (name in names(silver_recipes)) {
-    create_table(silver_recipes[[name]], name)
-  }
-}, author = "Data Manager", commit_message = "Standardize SDTM: blanks to NA")
+with_transaction(
+  iwalk(silver_recipes, create_table),
+  author = "Data Manager",
+  commit_message = "Standardize SDTM: blanks to NA"
+)
 #> Stored 28 column labels as column comments.
 #> Stored 13 column labels as column comments.
 #> Stored 17 column labels as column comments.
@@ -215,8 +219,8 @@ get_ducklake_table("silver.dm") |>
 #> # A tibble: 2 × 2
 #>   dthdtc_missing     n
 #>   <lgl>          <dbl>
-#> 1 FALSE              3
-#> 2 TRUE             303
+#> 1 TRUE             303
+#> 2 FALSE              3
 ```
 
 The labels followed the columns: a table derived from a lake table keeps
@@ -796,15 +800,15 @@ and message each one was given:
 list_table_snapshots() |>
   select(snapshot_id, snapshot_time, author, commit_message)
 #>   snapshot_id       snapshot_time                 author
-#> 1           0 2026-09-09 17:12:22                   <NA>
-#> 2           1 2026-09-09 17:12:22           Data Manager
-#> 3           2 2026-09-09 17:12:22           Data Manager
-#> 4           3 2026-09-09 17:12:23           Data Manager
-#> 5           4 2026-09-09 17:12:25 Statistical Programmer
-#> 6           5 2026-09-09 17:12:26 Statistical Programmer
-#> 7           6 2026-09-09 17:12:27           Statistician
-#> 8           7 2026-09-09 17:12:27 Statistical Programmer
-#> 9           8 2026-09-09 17:12:28           Data Manager
+#> 1           0 2026-09-09 18:17:06                   <NA>
+#> 2           1 2026-09-09 18:17:06           Data Manager
+#> 3           2 2026-09-09 18:17:07           Data Manager
+#> 4           3 2026-09-09 18:17:08           Data Manager
+#> 5           4 2026-09-09 18:17:10 Statistical Programmer
+#> 6           5 2026-09-09 18:17:11 Statistical Programmer
+#> 7           6 2026-09-09 18:17:11           Statistician
+#> 8           7 2026-09-09 18:17:12 Statistical Programmer
+#> 9           8 2026-09-09 18:17:12           Data Manager
 #>                                      commit_message
 #> 1                                              <NA>
 #> 2                          Create the lake's layers

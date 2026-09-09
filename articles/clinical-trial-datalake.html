@@ -89,6 +89,7 @@
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://tgerke.github.io/ducklake-r/">ducklake</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://purrr.tidyverse.org/" class="external-link">purrr</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://pharmaverse.github.io/admiral/" class="external-link">admiral</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://stringr.tidyverse.org" class="external-link">stringr</a></span><span class="op">)</span></span></code></pre></div>
 <p>An EDC system logs every change to the data it holds. Once SDTM
@@ -159,25 +160,25 @@ SDTM and ADaM names look the way they do.</p>
 <span></span>
 <span><span class="va">sdtm_transfer</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">article_dir</span>, <span class="st">"sdtm_transfer"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/files2.html" class="external-link">dir.create</a></span><span class="op">(</span><span class="va">sdtm_transfer</span>, showWarnings <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span><span class="kw">for</span> <span class="op">(</span><span class="va">domain</span> <span class="kw">in</span> <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">sdtm</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
+<span><span class="fu"><a href="https://purrr.tidyverse.org/reference/imap.html" class="external-link">iwalk</a></span><span class="op">(</span><span class="va">sdtm</span>, \<span class="op">(</span><span class="va">data</span>, <span class="va">domain</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="fu">haven</span><span class="fu">::</span><span class="fu"><a href="https://haven.tidyverse.org/reference/read_xpt.html" class="external-link">write_xpt</a></span><span class="op">(</span></span>
-<span>    <span class="va">sdtm</span><span class="op">[[</span><span class="va">domain</span><span class="op">]</span><span class="op">]</span>,</span>
+<span>    <span class="va">data</span>,</span>
 <span>    <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">sdtm_transfer</span>, <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="va">domain</span>, <span class="st">".xpt"</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>    version <span class="op">=</span> <span class="fl">5</span>,</span>
 <span>    name <span class="op">=</span> <span class="va">domain</span></span>
 <span>  <span class="op">)</span></span>
-<span><span class="op">}</span></span></code></pre></div>
+<span><span class="op">}</span><span class="op">)</span></span></code></pre></div>
 <p>The bronze layer keeps the transfer exactly as it arrived, so the
 lake can always show what data management sent and reprocess it when the
 cleaning logic changes. One commit loads the four domains:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/with_transaction.html">with_transaction</a></span><span class="op">(</span><span class="op">{</span></span>
-<span>  <span class="kw">for</span> <span class="op">(</span><span class="va">domain</span> <span class="kw">in</span> <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">sdtm</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html" class="external-link">walk</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">sdtm</span><span class="op">)</span>, \<span class="op">(</span><span class="va">domain</span><span class="op">)</span> <span class="op">{</span></span>
 <span>    <span class="fu"><a href="../reference/create_table.html">create_table</a></span><span class="op">(</span></span>
 <span>      <span class="fu">haven</span><span class="fu">::</span><span class="fu"><a href="https://haven.tidyverse.org/reference/read_xpt.html" class="external-link">read_xpt</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">sdtm_transfer</span>, <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="va">domain</span>, <span class="st">".xpt"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>      <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"bronze."</span>, <span class="va">domain</span><span class="op">)</span></span>
 <span>    <span class="op">)</span></span>
-<span>  <span class="op">}</span></span>
+<span>  <span class="op">}</span><span class="op">)</span></span>
 <span><span class="op">}</span>, author <span class="op">=</span> <span class="st">"Data Manager"</span>, commit_message <span class="op">=</span> <span class="st">"Load the SDTM transfer as received"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Stored 28 column labels as column comments.</span></span>
 <span><span class="co">#&gt; Stored 13 column labels as column comments.</span></span>
@@ -230,12 +231,13 @@ without its rows entering R.</p>
 <span><span class="co"># character column names.</span></span>
 <span><span class="va">blanks_to_na</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">tbl</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="va">types</span> <span class="op">&lt;-</span> <span class="va">tbl</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">0</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/compute.html" class="external-link">collect</a></span><span class="op">(</span><span class="op">)</span></span>
-<span>  <span class="va">chr_cols</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">types</span><span class="op">)</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">vapply</a></span><span class="op">(</span><span class="va">types</span>, <span class="va">is.character</span>, <span class="fu"><a href="https://rdrr.io/r/base/logical.html" class="external-link">logical</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span><span class="op">)</span><span class="op">]</span></span>
+<span>  <span class="va">chr_cols</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">types</span>, <span class="fu"><a href="https://tidyselect.r-lib.org/reference/where.html" class="external-link">where</a></span><span class="op">(</span><span class="va">is.character</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span>  <span class="va">tbl</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/across.html" class="external-link">across</a></span><span class="op">(</span><span class="fu"><a href="https://tidyselect.r-lib.org/reference/all_of.html" class="external-link">all_of</a></span><span class="op">(</span><span class="va">chr_cols</span><span class="op">)</span>, <span class="op">~</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/na_if.html" class="external-link">na_if</a></span><span class="op">(</span><span class="va">.x</span>, <span class="st">""</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="op">}</span></span></code></pre></div>
 <p>Each silver recipe is kept in a named list, under the name it is
 materialized as, because the recipe that builds a layer is also its
-lineage, which the results section comes back to.</p>
+lineage, which the results section comes back to. <code><a href="https://purrr.tidyverse.org/reference/imap.html" class="external-link">iwalk()</a></code>
+then hands each recipe and its name to <code><a href="../reference/create_table.html">create_table()</a></code>.</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">silver_recipes</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
 <span>  <span class="st">"silver.dm"</span> <span class="op">=</span> <span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"bronze.dm"</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu">blanks_to_na</span><span class="op">(</span><span class="op">)</span>,</span>
@@ -244,11 +246,11 @@ lineage, which the results section comes back to.</p>
 <span>  <span class="st">"silver.ae"</span> <span class="op">=</span> <span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"bronze.ae"</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu">blanks_to_na</span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="../reference/with_transaction.html">with_transaction</a></span><span class="op">(</span><span class="op">{</span></span>
-<span>  <span class="kw">for</span> <span class="op">(</span><span class="va">name</span> <span class="kw">in</span> <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">silver_recipes</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
-<span>    <span class="fu"><a href="../reference/create_table.html">create_table</a></span><span class="op">(</span><span class="va">silver_recipes</span><span class="op">[[</span><span class="va">name</span><span class="op">]</span><span class="op">]</span>, <span class="va">name</span><span class="op">)</span></span>
-<span>  <span class="op">}</span></span>
-<span><span class="op">}</span>, author <span class="op">=</span> <span class="st">"Data Manager"</span>, commit_message <span class="op">=</span> <span class="st">"Standardize SDTM: blanks to NA"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/with_transaction.html">with_transaction</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="https://purrr.tidyverse.org/reference/imap.html" class="external-link">iwalk</a></span><span class="op">(</span><span class="va">silver_recipes</span>, <span class="va">create_table</span><span class="op">)</span>,</span>
+<span>  author <span class="op">=</span> <span class="st">"Data Manager"</span>,</span>
+<span>  commit_message <span class="op">=</span> <span class="st">"Standardize SDTM: blanks to NA"</span></span>
+<span><span class="op">)</span></span>
 <span><span class="co">#&gt; Stored 28 column labels as column comments.</span></span>
 <span><span class="co">#&gt; Stored 13 column labels as column comments.</span></span>
 <span><span class="co">#&gt; Stored 17 column labels as column comments.</span></span>
@@ -261,8 +263,8 @@ lineage, which the results section comes back to.</p>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 2 × 2</span></span></span>
 <span><span class="co">#&gt;   dthdtc_missing     n</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> FALSE              3</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> TRUE             303</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> TRUE             303</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> FALSE              3</span></span></code></pre></div>
 <p>The labels followed the columns: a table derived from a lake table
 keeps the comments of the columns it selects, so the silver layer is
 documented without another step. <a href="views-comments-labels.html">Views, Comments, and Labels</a> covers
@@ -789,15 +791,15 @@ given:</p>
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">snapshot_id</span>, <span class="va">snapshot_time</span>, <span class="va">author</span>, <span class="va">commit_message</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time                 author</span></span>
-<span><span class="co">#&gt; 1           0 2026-09-09 17:12:22                   &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 2           1 2026-09-09 17:12:22           Data Manager</span></span>
-<span><span class="co">#&gt; 3           2 2026-09-09 17:12:22           Data Manager</span></span>
-<span><span class="co">#&gt; 4           3 2026-09-09 17:12:23           Data Manager</span></span>
-<span><span class="co">#&gt; 5           4 2026-09-09 17:12:25 Statistical Programmer</span></span>
-<span><span class="co">#&gt; 6           5 2026-09-09 17:12:26 Statistical Programmer</span></span>
-<span><span class="co">#&gt; 7           6 2026-09-09 17:12:27           Statistician</span></span>
-<span><span class="co">#&gt; 8           7 2026-09-09 17:12:27 Statistical Programmer</span></span>
-<span><span class="co">#&gt; 9           8 2026-09-09 17:12:28           Data Manager</span></span>
+<span><span class="co">#&gt; 1           0 2026-09-09 18:17:06                   &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 2           1 2026-09-09 18:17:06           Data Manager</span></span>
+<span><span class="co">#&gt; 3           2 2026-09-09 18:17:07           Data Manager</span></span>
+<span><span class="co">#&gt; 4           3 2026-09-09 18:17:08           Data Manager</span></span>
+<span><span class="co">#&gt; 5           4 2026-09-09 18:17:10 Statistical Programmer</span></span>
+<span><span class="co">#&gt; 6           5 2026-09-09 18:17:11 Statistical Programmer</span></span>
+<span><span class="co">#&gt; 7           6 2026-09-09 18:17:11           Statistician</span></span>
+<span><span class="co">#&gt; 8           7 2026-09-09 18:17:12 Statistical Programmer</span></span>
+<span><span class="co">#&gt; 9           8 2026-09-09 18:17:12           Data Manager</span></span>
 <span><span class="co">#&gt;                                      commit_message</span></span>
 <span><span class="co">#&gt; 1                                              &lt;NA&gt;</span></span>
 <span><span class="co">#&gt; 2                          Create the lake's layers</span></span>

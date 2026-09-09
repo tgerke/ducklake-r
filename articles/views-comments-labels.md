@@ -63,7 +63,7 @@ would onto a table:
 get_ducklake_table("v_efficient_cars") |>
   count(cyl)
 #> # A query:  ?? x 2
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmp3VHRgF/ducklake/ducklake2eb22d21fc7c.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpWwGv9y/ducklake/ducklake2f0e4841f17c.duckdb]
 #>     cyl     n
 #>   <dbl> <dbl>
 #> 1     4     6
@@ -76,7 +76,7 @@ in the lake’s history, like any change to a table:
 
 list_table_snapshots("v_efficient_cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 1           2 2026-09-09 17:13:16              2
+#> 1           2 2026-09-09 18:17:59              2
 #>                                changes        author
 #> 1 views_created, main.v_efficient_cars Data Engineer
 #>                                  commit_message commit_extra_info
