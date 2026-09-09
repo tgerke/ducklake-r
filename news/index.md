@@ -2,6 +2,17 @@
 
 ## ducklake (development version)
 
+- [`plot_snapshots()`](https://tgerke.github.io/ducklake-r/reference/plot_snapshots.md)
+  classifies each snapshot by what it did to the table being drawn. A
+  transaction that updated one table in place and rebuilt another used
+  to color both as “created”, because the whole snapshot was classified
+  by the highest-precedence change it carried; the single-table timeline
+  and the swimlane now read only the change-map entries that name the
+  table, so the updated table shows a data change and the rebuilt one a
+  creation. Swimlane lanes are schema-qualified whenever the lake keeps
+  tables outside `main`, so `bronze.dm` and `silver.dm` no longer share
+  a lane; a lake with everything in `main` keeps bare names.
+
 - The ducklake DuckDB extension no longer needs an install step. The
   code never required one:
   [`attach_ducklake()`](https://tgerke.github.io/ducklake-r/reference/attach_ducklake.md)

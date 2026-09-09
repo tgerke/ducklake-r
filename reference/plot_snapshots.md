@@ -40,9 +40,12 @@ A ggplot object, which can be further customized with ggplot2 functions
 Requires the ggplot2 package (listed in Suggests). Snapshot data comes
 from
 [`list_table_snapshots()`](https://tgerke.github.io/ducklake-r/reference/list_table_snapshots.md);
-each snapshot is classified from its `changes` column into one of:
-created, schema change, data change, maintenance, or other. Authors and
-commit messages appear where they were recorded (see
+each snapshot is classified from the entries of its `changes` column
+that name the table into one of: created, schema change, data change,
+maintenance, or other. A transaction that updates one table in place and
+rebuilds another therefore shows a data change on the first and a
+creation on the second. Authors and commit messages appear where they
+were recorded (see
 [`set_snapshot_metadata()`](https://tgerke.github.io/ducklake-r/reference/set_snapshot_metadata.md)
 and
 [`commit_transaction()`](https://tgerke.github.io/ducklake-r/reference/commit_transaction.md)).
@@ -51,7 +54,9 @@ Both layouts position snapshots by order rather than by clock time, so a
 history with months of silence between bursts of activity stays
 readable. In the swimlane, snapshots that touch no table (like the
 initial schema creation) appear in a `(lake)` lane, and the x axis
-labels show each snapshot's date.
+labels show each snapshot's date. Lanes carry schema-qualified names
+when the lake keeps tables outside `main`, so `bronze.dm` and
+`silver.dm` stay apart.
 
 ## See also
 
