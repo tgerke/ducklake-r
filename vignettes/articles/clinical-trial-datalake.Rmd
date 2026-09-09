@@ -32,6 +32,7 @@ knitr::opts_knit$set(root.dir = article_dir)
 ```{r setup, message = FALSE}
 library(ducklake)
 library(dplyr)
+library(purrr)
 library(admiral)
 library(stringr)
 ```
@@ -110,14 +111,14 @@ sdtm <- list(
 
 sdtm_transfer <- file.path(article_dir, "sdtm_transfer")
 dir.create(sdtm_transfer, showWarnings = FALSE)
-for (domain in names(sdtm)) {
+iwalk(sdtm, \(data, domain) {
   haven::write_xpt(
-    sdtm[[domain]],
+    data,
     file.path(sdtm_transfer, paste0(domain, ".xpt")),
     version = 5,
     name = domain
   )
-}
+})
 ```
 
 The bronze layer keeps the transfer exactly as it arrived, so the lake can
@@ -126,12 +127,12 @@ logic changes. One commit loads the four domains:
 
 ```{r bronze}
 with_transaction({
-  for (domain in names(sdtm)) {
+  walk(names(sdtm), \(domain) {
     create_table(
       haven::read_xpt(file.path(sdtm_transfer, paste0(domain, ".xpt"))),
       paste0("bronze.", domain)
     )
-  }
+  })
 }, author = "Data Manager", commit_message = "Load the SDTM transfer as received")
 ```
 
@@ -172,14 +173,15 @@ silver table is derived without its rows entering R.
 # character column names.
 blanks_to_na <- function(tbl) {
   types <- tbl |> head(0) |> collect()
-  chr_cols <- names(types)[vapply(types, is.character, logical(1))]
+  chr_cols <- names(select(types, where(is.character)))
   tbl |> mutate(across(all_of(chr_cols), ~ na_if(.x, "")))
 }
 ```
 
 Each silver recipe is kept in a named list, under the name it is
 materialized as, because the recipe that builds a layer is also its
-lineage, which the results section comes back to.
+lineage, which the results section comes back to. `iwalk()` then hands
+each recipe and its name to `create_table()`.
 
 ```{r silver}
 silver_recipes <- list(
@@ -189,11 +191,11 @@ silver_recipes <- list(
   "silver.ae" = get_ducklake_table("bronze.ae") |> blanks_to_na()
 )
 
-with_transaction({
-  for (name in names(silver_recipes)) {
-    create_table(silver_recipes[[name]], name)
-  }
-}, author = "Data Manager", commit_message = "Standardize SDTM: blanks to NA")
+with_transaction(
+  iwalk(silver_recipes, create_table),
+  author = "Data Manager",
+  commit_message = "Standardize SDTM: blanks to NA"
+)
 
 get_ducklake_table("silver.dm") |>
   count(dthdtc_missing = is.na(DTHDTC)) |>

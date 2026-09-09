@@ -39,5 +39,5 @@ Config/testthat/edition: 3
 VignetteBuilder: knitr
 Config/roxygen2/version: 8.1.0
 Config/Needs/website: admiral, pharmaversesdtm, haven, labelled, ggplot2, stringr,
-    tgerke/dplyneage
+    purrr, tgerke/dplyneage
 Language: en-US
