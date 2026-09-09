@@ -107,7 +107,7 @@ test_that("classify_snapshot_changes maps tokens in priority order", {
   )
 })
 
-test_that("snapshot_change_tables attributes names, ids, and lake-level changes", {
+test_that("snapshot_table_changes gives each table its own change type", {
   changes <- list(
     data.frame(key = "schemas_created", value = I(list("main"))),
     data.frame(
@@ -115,17 +115,61 @@ test_that("snapshot_change_tables attributes names, ids, and lake-level changes"
       value = I(list("main.fleet", "1"))
     ),
     data.frame(key = "inlined_insert", value = I(list("1"))),
-    data.frame(key = "tables_inserted_into", value = I(list("99")))
+    data.frame(key = "tables_inserted_into", value = I(list("99"))),
+    # One transaction: rows updated in fleet, crew rebuilt (drop + create)
+    data.frame(
+      key = c("tables_created", "tables_dropped", "inlined_insert", "inlined_delete"),
+      value = I(list("main.crew", "2", c("1", "3"), "1"))
+    )
   )
-  id_names <- c("1" = "fleet", "2" = "crew")
+  id_names <- c("1" = "main.fleet", "2" = "main.crew", "3" = "main.crew")
 
-  result <- snapshot_change_tables(changes, id_names)
+  result <- snapshot_table_changes(changes, id_names)
 
-  expect_equal(result[[1]], "(lake)")
-  expect_equal(result[[2]], "fleet")
-  expect_equal(result[[3]], "fleet")
+  expect_equal(result[[1]]$table, "(lake)")
+  expect_equal(result[[1]]$change_type, "created")
+  expect_equal(result[[2]]$table, "main.fleet")
+  expect_equal(result[[2]]$change_type, "created")
+  expect_equal(result[[3]]$change_type, "data change")
   # Unknown ids keep a placeholder lane rather than being dropped
-  expect_equal(result[[4]], "table 99")
+  expect_equal(result[[4]]$table, "table 99")
+  multi <- result[[5]]
+  expect_setequal(multi$table, c("main.crew", "main.fleet"))
+  expect_equal(multi$change_type[multi$table == "main.fleet"], "data change")
+  expect_equal(multi$change_type[multi$table == "main.crew"], "created")
+})
+
+test_that("classify_snapshot_changes can classify by what a snapshot did to one table", {
+  changes <- list(data.frame(
+    key = c("tables_created", "tables_dropped", "inlined_insert", "inlined_delete"),
+    value = I(list("silver.dm", "4", c("5", "6"), "5"))
+  ))
+
+  expect_equal(as.character(classify_snapshot_changes(changes)), "created")
+  expect_equal(
+    as.character(classify_snapshot_changes(changes, targets = c("silver.dm", "4", "6"))),
+    "created"
+  )
+  expect_equal(
+    as.character(classify_snapshot_changes(changes, targets = c("main.t", "5"))),
+    "data change"
+  )
+  expect_equal(
+    as.character(classify_snapshot_changes(changes, targets = "99")),
+    "other"
+  )
+})
+
+test_that("display_table_names qualifies lanes only when tables leave main", {
+  expect_equal(
+    display_table_names(c("main.fleet", "main.crew", "(lake)", "table 99")),
+    c("fleet", "crew", "(lake)", "table 99")
+  )
+  expect_equal(
+    display_table_names(c("bronze.dm", "silver.dm", "main.notes", "(lake)")),
+    c("bronze.dm", "silver.dm", "main.notes", "(lake)")
+  )
+  expect_equal(display_table_names("(lake)"), "(lake)")
 })
 
 test_that("format_gap_duration picks sensible units", {
@@ -171,4 +215,70 @@ test_that("commit log handles a single snapshot without metadata columns", {
 
   expect_s3_class(p, "ggplot")
   expect_true(all(is.na(p$data$annotation)))
+})
+
+test_that("a multi-table transaction is classified per table", {
+  skip_if_not_installed("duckdb")
+  skip_if_not_installed("dplyr")
+  skip_if_not_installed("ggplot2")
+
+  lake <- create_temp_ducklake()
+
+  create_table(data.frame(id = 1:3, v = c("a", "b", "c")), "snap_updated")
+  create_table(data.frame(id = 1:3), "snap_replaced")
+  with_transaction({
+    rows_update(
+      get_ducklake_table("snap_updated"),
+      data.frame(id = 1, v = "z"),
+      by = "id"
+    )
+    replace_table(data.frame(id = 1:5), "snap_replaced", .quiet = TRUE)
+  })
+  latest <- max(list_table_snapshots()$snapshot_id)
+
+  updated <- plot_snapshots("snap_updated")$data
+  expect_equal(
+    as.character(updated$change_type[updated$snapshot_id == latest]),
+    "data change"
+  )
+  replaced <- plot_snapshots("snap_replaced")$data
+  expect_equal(
+    as.character(replaced$change_type[replaced$snapshot_id == latest]),
+    "created"
+  )
+
+  lanes <- plot_snapshots(ducklake_name = lake$ducklake_name)$data
+  lanes <- lanes[lanes$snapshot_id == latest, ]
+  expect_equal(
+    as.character(lanes$change_type[lanes$table == "snap_updated"]),
+    "data change"
+  )
+  expect_equal(
+    as.character(lanes$change_type[lanes$table == "snap_replaced"]),
+    "created"
+  )
+
+  cleanup_temp_ducklake(lake)
+})
+
+test_that("swimlane lanes carry schema names when tables live in several schemas", {
+  skip_if_not_installed("duckdb")
+  skip_if_not_installed("dplyr")
+  skip_if_not_installed("ggplot2")
+
+  lake <- create_temp_ducklake()
+
+  create_schema("bronze")
+  create_schema("silver")
+  create_table(mtcars[1:3, ], "bronze.dm")
+  create_table(mtcars[1:3, ], "silver.dm")
+
+  d <- plot_snapshots(ducklake_name = lake$ducklake_name)$data
+  expect_true(all(c("bronze.dm", "silver.dm") %in% levels(d$table)))
+  expect_false("dm" %in% levels(d$table))
+  # Each table was created once, so each lane holds one point
+  expect_equal(sum(d$table == "bronze.dm"), 1L)
+  expect_equal(sum(d$table == "silver.dm"), 1L)
+
+  cleanup_temp_ducklake(lake)
 })
