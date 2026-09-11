@@ -2,6 +2,18 @@
 
 ## ducklake (development version)
 
+- [`commit_transaction()`](https://tgerke.github.io/ducklake-r/reference/commit_transaction.md)
+  and
+  [`with_transaction()`](https://tgerke.github.io/ducklake-r/reference/with_transaction.md)
+  name the snapshot this connection committed, read from DuckLake’s
+  `last_committed_snapshot()`, instead of the lake’s newest snapshot
+  right after the commit. The two agree on a lake with one writer, but
+  with several sessions writing at once the newest snapshot could be a
+  neighbor’s, and a transaction that changed nothing could be reported
+  as the commit of a snapshot that was not its own. The “no changes”
+  confirmation still names the snapshot the lake stands at. An extension
+  without the function falls back to the previous reading.
+
 - [`attach_ducklake()`](https://tgerke.github.io/ducklake-r/reference/attach_ducklake.md)
   labels the creation snapshot of a lake it creates. DuckLake writes
   snapshot 0 itself when it makes a lake, with no author and no commit

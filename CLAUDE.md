@@ -121,19 +121,29 @@
   shows them. This closes the “one-command Iceberg catalog export” watch
   item above.
 - **A commit is confirmed with one line naming its snapshot**
-  (2026-09-06).
+  (2026-09-06, revised 2026-09-11).
   [`begin_transaction()`](https://tgerke.github.io/ducklake-r/reference/begin_transaction.md)
-  is silent and stashes the lake’s current snapshot id;
+  is silent and stashes what this connection last committed;
   [`commit_transaction()`](https://tgerke.github.io/ducklake-r/reference/commit_transaction.md)
   reads it again after `COMMIT` and prints
   `Committed snapshot N (author): message`, or says nothing changed when
-  the id did not move. DuckLake assigns the id only at commit, and an
-  empty or read-only transaction creates no snapshot (confirmed on the
-  DuckDB and SQLite catalogs). Limitation: DuckLake has no query for
-  “the snapshot this transaction created”, so the id is whatever
-  `current_snapshot()` returns right after the commit; with concurrent
-  writers it can belong to a neighbor’s commit that landed in between.
-  Functions that commit for themselves
+  the id did not move, naming the snapshot the lake stands at. The id
+  comes from DuckLake’s `last_committed_snapshot()`, which is connection
+  state: NA until the connection commits a change to the lake, then the
+  id of its latest writing commit, unmoved by empty commits, rollbacks,
+  and other connections’ commits (confirmed on DuckDB 1.5.5, extension
+  d8a1881e, with the DuckDB and SQLite catalogs). An extension without
+  the function falls back to `current_snapshot()`, the lake’s newest
+  snapshot, which under concurrent writers can be a neighbor’s; the
+  2026-09-06 note that no better query existed was wrong.
+  [`begin_transaction()`](https://tgerke.github.io/ducklake-r/reference/begin_transaction.md)
+  reads the stash before `BEGIN`: DuckDB starts the transaction on a
+  catalog at the first statement that touches it, and on a SQLite
+  catalog that transaction holds the file’s shared lock until it ends,
+  so a neighbor’s commit fails with “database is locked” from that point
+  on. The test in `test-transactions.R` stages the neighbor’s commits in
+  the window before the first lake statement. Functions that commit for
+  themselves
   ([`restore_table_version()`](https://tgerke.github.io/ducklake-r/reference/restore_table_version.md))
   print no second confirmation.
 - **Article layout** (2026-09-06):
