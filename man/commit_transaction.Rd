@@ -41,11 +41,12 @@ v1.0 specification. An author set once for the session with
 not name one; the \code{author} argument wins when both are given.
 
 The commit is confirmed with one message naming the snapshot it created,
-with the author and commit message when they were given. The id is the
-newest snapshot in the lake right after the commit, so when several
-sessions write to the same lake it can belong to a commit that landed
-just after this one. A transaction that changed nothing creates no
-snapshot, and the message says so. \code{options(ducklake.verbose = FALSE)}
+with the author and commit message when they were given. The id comes
+from DuckLake's \code{last_committed_snapshot()}, which tracks this
+connection's own commits, so it is right even when other sessions
+commit to the same lake at the same time. A transaction that changed
+nothing creates no snapshot, and the message says so, naming the
+snapshot the lake stands at. \code{options(ducklake.verbose = FALSE)}
 silences these confirmations.
 }
 \examples{

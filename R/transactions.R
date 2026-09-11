@@ -44,10 +44,15 @@ begin_transaction <- function(conn = NULL) {
     conn <- get_ducklake_connection()
   }
 
+  # Remember what this connection had committed so far, so the commit can
+  # tell a transaction that created a snapshot from one that changed
+  # nothing. Read before BEGIN: DuckDB starts the transaction on the lake's
+  # catalog at the first statement that touches it, and on a SQLite
+  # catalog that holds the file's shared lock until the transaction ends,
+  # so the transaction should not touch the lake before the caller does.
+  before <- committed_snapshot_id(conn)
   DBI::dbExecute(conn, "BEGIN TRANSACTION;")
-  # Remember where the lake stood, so the commit can report whether it
-  # moved and to which snapshot
-  .ducklake_env$txn_snapshot_before <- current_snapshot_id(conn)
+  .ducklake_env$txn_committed_before <- before
   invisible(TRUE)
 }
 
@@ -79,11 +84,12 @@ begin_transaction <- function(conn = NULL) {
 #' not name one; the `author` argument wins when both are given.
 #'
 #' The commit is confirmed with one message naming the snapshot it created,
-#' with the author and commit message when they were given. The id is the
-#' newest snapshot in the lake right after the commit, so when several
-#' sessions write to the same lake it can belong to a commit that landed
-#' just after this one. A transaction that changed nothing creates no
-#' snapshot, and the message says so. `options(ducklake.verbose = FALSE)`
+#' with the author and commit message when they were given. The id comes
+#' from DuckLake's `last_committed_snapshot()`, which tracks this
+#' connection's own commits, so it is right even when other sessions
+#' commit to the same lake at the same time. A transaction that changed
+#' nothing creates no snapshot, and the message says so, naming the
+#' snapshot the lake stands at. `options(ducklake.verbose = FALSE)`
 #' silences these confirmations.
 #'
 #' @examplesIf ducklake_extension_available()
@@ -174,10 +180,18 @@ commit_transaction <- function(
   # Report the snapshot this commit made. The template names locals of
   # this frame, so user text is substituted as a value, never parsed as
   # cli markup.
-  before <- .ducklake_env$txn_snapshot_before
-  .ducklake_env$txn_snapshot_before <- NULL
-  snapshot <- current_snapshot_id(conn)
-  dl_inform(commit_confirmation(snapshot, before, author, commit_message))
+  before <- .ducklake_env$txn_committed_before
+  .ducklake_env$txn_committed_before <- NULL
+  snapshot <- committed_snapshot_id(conn)
+  if (is.na(snapshot) || isTRUE(snapshot == before)) {
+    # This transaction committed nothing: say where the lake stands, which
+    # can be a neighbor's newer snapshot
+    snapshot <- NA_integer_
+    current <- current_snapshot_id(conn)
+  } else {
+    current <- snapshot
+  }
+  dl_inform(commit_confirmation(snapshot, current, author, commit_message))
 
   invisible(TRUE)
 }
@@ -571,7 +585,7 @@ rollback_transaction <- function(conn = NULL) {
   }
 
   DBI::dbExecute(conn, "ROLLBACK;")
-  .ducklake_env$txn_snapshot_before <- NULL
+  .ducklake_env$txn_committed_before <- NULL
   dl_inform("Transaction rolled back.")
   invisible(TRUE)
 }
@@ -595,18 +609,48 @@ current_snapshot_id <- function(conn) {
   )
 }
 
+#' The snapshot this connection last committed, or NA
+#'
+#' DuckLake's `last_committed_snapshot()` is connection state: NA until the
+#' connection commits a change to the lake, then the id of the snapshot its
+#' latest writing commit created, unmoved by empty commits, rollbacks, and
+#' other connections' commits. That makes it the id a commit confirmation
+#' should name. An extension without the function falls back to the lake's
+#' current snapshot, the newest commit from any connection.
+#' @noRd
+committed_snapshot_id <- function(conn) {
+  name <- tryCatch(infer_ducklake_name(NULL, conn), error = function(e) NULL)
+  if (is.null(name)) {
+    return(NA_integer_)
+  }
+  id <- tryCatch(
+    DBI::dbGetQuery(
+      conn,
+      sprintf("FROM %s.last_committed_snapshot()", quote_ident(name, conn))
+    )[[1]],
+    error = function(e) {
+      missing_function <- grepl(
+        "last_committed_snapshot does not exist", conditionMessage(e), fixed = TRUE
+      )
+      if (missing_function) current_snapshot_id(conn) else NA_integer_
+    }
+  )
+  if (length(id) != 1) NA_integer_ else as.integer(id)
+}
+
 #' The cli template for a commit confirmation
 #'
-#' Returns a template that refers to `snapshot`, `author`, and
+#' Returns a template that refers to `snapshot`, `current`, `author`, and
 #' `commit_message` in the caller's frame, where `dl_inform()` interpolates
-#' them.
+#' them. `snapshot` is the id the transaction committed, or NA when it
+#' committed nothing; `current` is then where the lake stands.
 #' @noRd
-commit_confirmation <- function(snapshot, before, author, commit_message) {
+commit_confirmation <- function(snapshot, current, author, commit_message) {
   if (is.na(snapshot)) {
-    return("Transaction committed.")
-  }
-  if (isTRUE(snapshot == before)) {
-    return("Committed with no changes: the lake stays at snapshot {snapshot}.")
+    if (is.na(current)) {
+      return("Transaction committed.")
+    }
+    return("Committed with no changes: the lake stays at snapshot {current}.")
   }
   paste0(
     "Committed snapshot {snapshot}",
