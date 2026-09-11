@@ -1,6 +1,6 @@
 # Changelog
 
-## ducklake (development version)
+## ducklake 0.8.0
 
 - [`commit_transaction()`](https://tgerke.github.io/ducklake-r/reference/commit_transaction.md)
   and

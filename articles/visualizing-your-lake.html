@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ducklake</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -176,10 +176,10 @@ recording authors and commit messages along the way.</p>
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"fleet"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">snapshot_id</span>, <span class="va">snapshot_time</span>, <span class="va">author</span>, <span class="va">commit_message</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time        author                  commit_message</span></span>
-<span><span class="co">#&gt; 1           1 2026-09-11 15:13:28 Data Engineer              Initial fleet load</span></span>
-<span><span class="co">#&gt; 2           2 2026-09-11 15:13:29 Fleet Manager              Add March arrivals</span></span>
-<span><span class="co">#&gt; 3           3 2026-09-11 15:13:29 Fleet Manager Record spring odometer readings</span></span>
-<span><span class="co">#&gt; 4           4 2026-09-11 15:13:29 Fleet Manager               Remove sold F-150</span></span></code></pre></div>
+<span><span class="co">#&gt; 1           1 2026-09-11 15:20:36 Data Engineer              Initial fleet load</span></span>
+<span><span class="co">#&gt; 2           2 2026-09-11 15:20:36 Fleet Manager              Add March arrivals</span></span>
+<span><span class="co">#&gt; 3           3 2026-09-11 15:20:36 Fleet Manager Record spring odometer readings</span></span>
+<span><span class="co">#&gt; 4           4 2026-09-11 15:20:36 Fleet Manager               Remove sold F-150</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="plotting-the-timeline">Plotting the Timeline<a class="anchor" aria-label="anchor" href="#plotting-the-timeline"></a>
@@ -252,8 +252,8 @@ size:</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/get_table_info.html">get_table_info</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   table_name schema_id table_id                           table_uuid file_count</span></span>
-<span><span class="co">#&gt; 1      fleet         0        1 01a09107-e55c-795f-bbac-fa434d5cf4a9          1</span></span>
-<span><span class="co">#&gt; 2  telemetry         0        2 01a09107-ebd3-71cd-baae-7ab5c9d385dd          2</span></span>
+<span><span class="co">#&gt; 1      fleet         0        1 01a0910e-6b6f-70f2-b46a-a9ece88e4258          1</span></span>
+<span><span class="co">#&gt; 2  telemetry         0        2 01a0910e-70c1-7718-b8b2-682a6c299b44          2</span></span>
 <span><span class="co">#&gt;   file_size_bytes delete_file_count delete_file_size_bytes schema_name</span></span>
 <span><span class="co">#&gt; 1            1027                 1                   1120        main</span></span>
 <span><span class="co">#&gt; 2           65518                 0                      0        main</span></span></code></pre></div>

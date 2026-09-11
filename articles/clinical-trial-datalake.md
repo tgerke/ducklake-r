@@ -156,8 +156,8 @@ get_ducklake_table("bronze.dm") |>
 #> # A tibble: 2 × 2
 #>   dthdtc_blank     n
 #>   <lgl>        <dbl>
-#> 1 FALSE            3
-#> 2 TRUE           303
+#> 1 TRUE           303
+#> 2 FALSE            3
 ```
 
 ## Silver: blanks to NA, inside DuckDB
@@ -219,8 +219,8 @@ get_ducklake_table("silver.dm") |>
 #> # A tibble: 2 × 2
 #>   dthdtc_missing     n
 #>   <lgl>          <dbl>
-#> 1 FALSE              3
-#> 2 TRUE             303
+#> 1 TRUE             303
+#> 2 FALSE              3
 ```
 
 The labels followed the columns: a table derived from a lake table keeps
@@ -800,15 +800,15 @@ and message each one was given, from the lake’s creation on:
 list_table_snapshots() |>
   select(snapshot_id, snapshot_time, author, commit_message)
 #>   snapshot_id       snapshot_time                 author
-#> 1           0 2026-09-11 15:12:28           Data Manager
-#> 2           1 2026-09-11 15:12:29           Data Manager
-#> 3           2 2026-09-11 15:12:29           Data Manager
-#> 4           3 2026-09-11 15:12:30           Data Manager
-#> 5           4 2026-09-11 15:12:32 Statistical Programmer
-#> 6           5 2026-09-11 15:12:33 Statistical Programmer
-#> 7           6 2026-09-11 15:12:34           Statistician
-#> 8           7 2026-09-11 15:12:35 Statistical Programmer
-#> 9           8 2026-09-11 15:12:35           Data Manager
+#> 1           0 2026-09-11 15:19:42           Data Manager
+#> 2           1 2026-09-11 15:19:42           Data Manager
+#> 3           2 2026-09-11 15:19:42           Data Manager
+#> 4           3 2026-09-11 15:19:43           Data Manager
+#> 5           4 2026-09-11 15:19:45 Statistical Programmer
+#> 6           5 2026-09-11 15:19:46 Statistical Programmer
+#> 7           6 2026-09-11 15:19:47           Statistician
+#> 8           7 2026-09-11 15:19:47 Statistical Programmer
+#> 9           8 2026-09-11 15:19:48           Data Manager
 #>                                      commit_message
 #> 1                                       Create lake
 #> 2                          Create the lake's layers
