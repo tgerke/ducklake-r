@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ducklake</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -50,9 +50,12 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Changelog</h1>
-      <small>Source: <a href="https://github.com/tgerke/ducklake-r/blob/v0.8.0/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
+      <small>Source: <a href="https://github.com/tgerke/ducklake-r/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="development version" id="ducklake-development-version">ducklake (development version)<a class="anchor" aria-label="anchor" href="#ducklake-development-version"></a></h2>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.8.0" id="ducklake-080">ducklake 0.8.0<a class="anchor" aria-label="anchor" href="#ducklake-080"></a></h2>
 <ul><li><p><code><a href="../reference/commit_transaction.html">commit_transaction()</a></code> and <code><a href="../reference/with_transaction.html">with_transaction()</a></code> name the snapshot this connection committed, read from DuckLake’s <code>last_committed_snapshot()</code>, instead of the lake’s newest snapshot right after the commit. The two agree on a lake with one writer, but with several sessions writing at once the newest snapshot could be a neighbor’s, and a transaction that changed nothing could be reported as the commit of a snapshot that was not its own. The “no changes” confirmation still names the snapshot the lake stands at. An extension without the function falls back to the previous reading.</p></li>
