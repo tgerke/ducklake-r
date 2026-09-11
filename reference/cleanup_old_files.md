@@ -81,9 +81,9 @@ expire_snapshots(older_than = Sys.time())
 #> ℹ Unreferenced files are scheduled for deletion; run `cleanup_old_files()` to
 #>   reclaim storage.
 #>   snapshot_id       snapshot_time schema_version               changes author
-#> 1           0 2026-09-09 18:16:31              0 schemas_created, main   <NA>
+#> 1           0 2026-09-11 15:05:04              0 schemas_created, main   <NA>
 #>   commit_message commit_extra_info
-#> 1           <NA>              <NA>
+#> 1    Create lake              <NA>
 
 # Preview, then delete everything that is scheduled
 cleanup_old_files(dry_run = TRUE, cleanup_all = TRUE)

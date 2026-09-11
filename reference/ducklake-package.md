@@ -10,6 +10,22 @@ over the 'Quack' protocol from 'DuckDB'.
 
 ## Package options
 
+- `ducklake.author`:
+
+  The author recorded on the snapshots this session commits when a call
+  does not name one:
+  [`commit_transaction()`](https://tgerke.github.io/ducklake-r/reference/commit_transaction.md),
+  [`with_transaction()`](https://tgerke.github.io/ducklake-r/reference/with_transaction.md),
+  [`restore_table_version()`](https://tgerke.github.io/ducklake-r/reference/restore_table_version.md),
+  and the creation snapshot
+  [`attach_ducklake()`](https://tgerke.github.io/ducklake-r/reference/attach_ducklake.md)
+  labels. An `author` argument wins over the option.
+  [`set_snapshot_metadata()`](https://tgerke.github.io/ducklake-r/reference/set_snapshot_metadata.md)
+  does not read it, because labeling a snapshot after the fact is a
+  deliberate edit, and a write made outside a transaction
+  ([`create_table()`](https://tgerke.github.io/ducklake-r/reference/create_table.md)
+  on its own) records no author either way. Unset by default.
+
 - `ducklake.verbose`:
 
   When `FALSE`, the confirmations the package emits after each operation

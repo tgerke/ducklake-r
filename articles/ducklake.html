@@ -124,7 +124,7 @@ in <code>~/.Renviron</code> or the job’s environment.</p>
 <p>One call opens a lake, and creates it first when nothing is at the
 path yet:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/attach_ducklake.html">attach_ducklake</a></span><span class="op">(</span><span class="st">"my_lake"</span>, lake_path <span class="op">=</span> <span class="va">vignette_temp_dir</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/attach_ducklake.html">attach_ducklake</a></span><span class="op">(</span><span class="st">"my_lake"</span>, lake_path <span class="op">=</span> <span class="va">vignette_temp_dir</span>, author <span class="op">=</span> <span class="st">"Data Engineer"</span><span class="op">)</span></span></code></pre></div>
 <p>The same call with the same path opens the lake again in a later
 session. When you know a lake already exists, add
 <code>create = FALSE</code>: a mistyped path then stops with an error
@@ -197,7 +197,7 @@ SQL that DuckDB runs against the lake:</p>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">mpg</span>, <span class="va">cyl</span>, <span class="va">hp</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">3</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A query:  ?? x 3</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpdqaDos/ducklake/ducklake2bb23049fae1.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmprFd65L/ducklake/ducklake2b024c526014.duckdb]</span></span></span>
 <span><span class="co">#&gt;     mpg   cyl    hp</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>  21       6   110</span></span>
@@ -293,7 +293,7 @@ both steps as a unit:</p>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">mpg</span>, <span class="va">kpl</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">3</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A query:  ?? x 2</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpdqaDos/ducklake/ducklake2bb23049fae1.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmprFd65L/ducklake/ducklake2b024c526014.duckdb]</span></span></span>
 <span><span class="co">#&gt;     mpg   kpl</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>  21    8.93</span></span>
@@ -314,8 +314,8 @@ a table:</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 1           1 2026-09-09 18:17:26              1</span></span>
-<span><span class="co">#&gt; 2           2 2026-09-09 18:17:27              2</span></span>
+<span><span class="co">#&gt; 1           1 2026-09-11 15:06:01              1</span></span>
+<span><span class="co">#&gt; 2           2 2026-09-11 15:06:01              2</span></span>
 <span><span class="co">#&gt;                                                              changes</span></span>
 <span><span class="co">#&gt; 1                 tables_created, tables_inserted_into, main.cars, 1</span></span>
 <span><span class="co">#&gt; 2 tables_altered, tables_inserted_into, tables_deleted_from, 1, 1, 1</span></span>
@@ -325,7 +325,8 @@ a table:</p>
 <p>Each row is one commit. <code>changes</code> summarizes what the
 commit did, <code>author</code>, <code>commit_message</code>, and
 <code>commit_extra_info</code> are the fields passed to
-<code><a href="../reference/with_transaction.html">with_transaction()</a></code>, and <code>snapshot_id</code> is the
+<code><a href="../reference/with_transaction.html">with_transaction()</a></code>, or to <code><a href="../reference/attach_ducklake.html">attach_ducklake()</a></code>
+for snapshot 0, the lake’s creation, and <code>snapshot_id</code> is the
 number from the confirmation. Any earlier version can be read as a lazy
 table:</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
@@ -333,7 +334,7 @@ table:</p>
 <span><span class="fu"><a href="../reference/get_ducklake_table_version.html">get_ducklake_table_version</a></span><span class="op">(</span><span class="st">"cars"</span>, version <span class="op">=</span> <span class="fl">1</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">3</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A query:  ?? x 11</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpdqaDos/ducklake/ducklake2bb23049fae1.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmprFd65L/ducklake/ducklake2b024c526014.duckdb]</span></span></span>
 <span><span class="co">#&gt;     mpg   cyl  disp    hp  drat    wt  qsec    vs    am  gear  carb</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>  21       6   160   110  3.9   2.62  16.5     0     1     4     4</span></span>
@@ -347,9 +348,9 @@ snapshot, so the versions after it stay readable:</p>
 <span></span>
 <span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 1           1 2026-09-09 18:17:26              1</span></span>
-<span><span class="co">#&gt; 2           2 2026-09-09 18:17:27              2</span></span>
-<span><span class="co">#&gt; 3           3 2026-09-09 18:17:28              3</span></span>
+<span><span class="co">#&gt; 1           1 2026-09-11 15:06:01              1</span></span>
+<span><span class="co">#&gt; 2           2 2026-09-11 15:06:01              2</span></span>
+<span><span class="co">#&gt; 3           3 2026-09-11 15:06:02              3</span></span>
 <span><span class="co">#&gt;                                                                 changes</span></span>
 <span><span class="co">#&gt; 1                    tables_created, tables_inserted_into, main.cars, 1</span></span>
 <span><span class="co">#&gt; 2    tables_altered, tables_inserted_into, tables_deleted_from, 1, 1, 1</span></span>

@@ -178,8 +178,8 @@ lake, and they persist in the catalog for every client.
 #    set DUCKDB_R_HOME=~/.duckdb in ~/.Renviron or the job's environment.
 #    A container image runs install_ducklake() at build time instead.
 
-# 2. Create the lake, and its schemas, in one snapshot
-attach_ducklake("trial", lake_path = "~/lakes/trial")
+# 2. Create the lake, then its schemas
+attach_ducklake("trial", lake_path = "~/lakes/trial", author = "Data Engineer")
 with_transaction({
   create_schema("bronze")
   create_schema("silver")

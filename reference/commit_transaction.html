@@ -80,7 +80,9 @@ metadata (author, commit message, and extra info) to the snapshot.</p>
 
 
 <dt id="arg-author">author<a class="anchor" aria-label="anchor" href="#arg-author"></a></dt>
-<dd><p>Optional author name to associate with the snapshot</p></dd>
+<dd><p>Author to record on the snapshot. Defaults to the
+<code>ducklake.author</code> option when it is set (see <code><a href="ducklake-package.html">?ducklake</a></code>), otherwise
+none.</p></dd>
 
 
 <dt id="arg-commit-message">commit_message<a class="anchor" aria-label="anchor" href="#arg-commit-message"></a></dt>
@@ -102,7 +104,9 @@ making them permanent in the database.</p>
 <p>If <code>author</code>, <code>commit_message</code>, or <code>commit_extra_info</code> are provided,
 they will be set using <code>CALL ducklake.set_commit_message()</code> within the
 transaction before the <code>COMMIT</code> statement, as required by the DuckLake
-v1.0 specification.</p>
+v1.0 specification. An author set once for the session with
+<code>options(ducklake.author = "...")</code> is recorded on every commit that does
+not name one; the <code>author</code> argument wins when both are given.</p>
 <p>The commit is confirmed with one message naming the snapshot it created,
 with the author and commit message when they were given. The id is the
 newest snapshot in the lake right after the commit, so when several

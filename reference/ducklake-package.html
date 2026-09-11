@@ -66,7 +66,17 @@ A 'tidyverse'-friendly interface to 'DuckLake' https://ducklake.select/, the 'Du
     <h2 id="package-options">Package options<a class="anchor" aria-label="anchor" href="#package-options"></a></h2>
 
 
-<dl><dt><code>ducklake.verbose</code></dt>
+<dl><dt><code>ducklake.author</code></dt>
+<dd><p>The author recorded on the snapshots this
+session commits when a call does not name one: <code><a href="commit_transaction.html">commit_transaction()</a></code>,
+<code><a href="with_transaction.html">with_transaction()</a></code>, <code><a href="restore_table_version.html">restore_table_version()</a></code>, and the creation
+snapshot <code><a href="attach_ducklake.html">attach_ducklake()</a></code> labels. An <code>author</code> argument wins over
+the option. <code><a href="set_snapshot_metadata.html">set_snapshot_metadata()</a></code> does not read it, because
+labeling a snapshot after the fact is a deliberate edit, and a write
+made outside a transaction (<code><a href="create_table.html">create_table()</a></code> on its own) records no
+author either way. Unset by default.</p></dd>
+
+<dt><code>ducklake.verbose</code></dt>
 <dd><p>When <code>FALSE</code>, the confirmations the package
 emits after each operation ("Committed snapshot 3: ...", "Added column
 ...") are suppressed, which keeps pipeline logs quiet. Warnings,

@@ -38,7 +38,8 @@ restore_table_version(
 
 - author:
 
-  Optional author to record on the restore snapshot, for the audit trail
+  Optional author to record on the restore snapshot, for the audit
+  trail. Defaults to the `ducklake.author` option when it is set.
 
 - commit_message:
 

@@ -139,7 +139,7 @@ Access metadata and snapshots
 - [`get_metadata_table()`](https://tgerke.github.io/ducklake-r/reference/get_metadata_table.md)
   : Get a DuckLake metadata table
 - [`set_snapshot_metadata()`](https://tgerke.github.io/ducklake-r/reference/set_snapshot_metadata.md)
-  : Set metadata for the most recent snapshot
+  : Set metadata for a snapshot
 
 ## Data Inlining
 

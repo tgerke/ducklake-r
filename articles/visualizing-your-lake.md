@@ -33,7 +33,8 @@ recording authors and commit messages along the way.
 
 attach_ducklake(
   ducklake_name = "lake_viz_demo",
-  lake_path = vignette_temp_dir
+  lake_path = vignette_temp_dir,
+  author = "Data Engineer"
 )
 
 fleet <- tibble(
@@ -96,10 +97,10 @@ The audit trail so far:
 list_table_snapshots("fleet") |>
   select(snapshot_id, snapshot_time, author, commit_message)
 #>   snapshot_id       snapshot_time        author                  commit_message
-#> 1           1 2026-09-09 18:18:03 Data Engineer              Initial fleet load
-#> 2           2 2026-09-09 18:18:03 Fleet Manager              Add March arrivals
-#> 3           3 2026-09-09 18:18:04 Fleet Manager Record spring odometer readings
-#> 4           4 2026-09-09 18:18:04 Fleet Manager               Remove sold F-150
+#> 1           1 2026-09-11 15:06:37 Data Engineer              Initial fleet load
+#> 2           2 2026-09-11 15:06:37 Fleet Manager              Add March arrivals
+#> 3           3 2026-09-11 15:06:37 Fleet Manager Record spring odometer readings
+#> 4           4 2026-09-11 15:06:37 Fleet Manager               Remove sold F-150
 ```
 
 ## Plotting the Timeline
@@ -189,11 +190,11 @@ reports each table’s file count and size:
 
 get_table_info()
 #>   table_name schema_id table_id                           table_uuid file_count
-#> 1      fleet         0        1 01a08764-2ab9-7eec-bfc1-ab430a4d880e          1
-#> 2  telemetry         0        2 01a08764-306e-7c29-a8a5-adf361dceae1          2
+#> 1      fleet         0        1 01a09101-9d57-7890-8785-cf1099331d28          1
+#> 2  telemetry         0        2 01a09101-a313-706e-9e16-c448e537e3d4          2
 #>   file_size_bytes delete_file_count delete_file_size_bytes schema_name
 #> 1            1027                 1                   1120        main
-#> 2           65518                 0                      0        main
+#> 2           65525                 0                      0        main
 ```
 
 And

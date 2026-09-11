@@ -51,7 +51,7 @@ get_ducklake_table("cars") |>
   select(mpg, cyl, hp, wt) |>
   head()
 #> # A query:  ?? x 4
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmp8WTUvK/ducklake/ducklake2e8872f33122.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpJIGDzn/ducklake/ducklake2dd92046fbad.duckdb]
 #>     mpg   cyl    hp    wt
 #>   <dbl> <dbl> <dbl> <dbl>
 #> 1  21       6   110  2.62
@@ -104,7 +104,7 @@ get_ducklake_table("cars") |>
   select(mpg, cyl) |>
   head()
 #> # A query:  ?? x 2
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmp8WTUvK/ducklake/ducklake2e8872f33122.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpJIGDzn/ducklake/ducklake2dd92046fbad.duckdb]
 #>     mpg   cyl
 #>   <dbl> <dbl>
 #> 1  21       6
@@ -153,7 +153,7 @@ get_ducklake_table("cars") |>
   select(mpg, cyl, efficiency) |>
   head()
 #> # A query:  ?? x 3
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmp8WTUvK/ducklake/ducklake2e8872f33122.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpJIGDzn/ducklake/ducklake2dd92046fbad.duckdb]
 #>     mpg   cyl efficiency
 #>   <dbl> <dbl> <chr>     
 #> 1  21       6 medium    
@@ -168,9 +168,9 @@ get_ducklake_table("cars_summary") |>
 #> # A tibble: 3 × 4
 #>     cyl avg_mpg avg_hp count
 #>   <dbl>   <dbl>  <dbl> <dbl>
-#> 1     4    28.0   82.6    11
-#> 2     6    19.7  122.      7
-#> 3     8    15.1  209.     14
+#> 1     6    19.7  122.      7
+#> 2     8    15.1  209.     14
+#> 3     4    28.0   82.6    11
 ```
 
 ### Automatic Rollback on Error
@@ -209,9 +209,9 @@ get_ducklake_table("cars") |>
 # View all versioned changes
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-09-09 18:17:55              1
-#> 2           2 2026-09-09 18:17:55              1
-#> 3           3 2026-09-09 18:17:55              2
+#> 1           1 2026-09-11 15:06:28              1
+#> 2           2 2026-09-11 15:06:29              1
+#> 3           3 2026-09-11 15:06:29              2
 #>                                                                                                       changes
 #> 1                                                          tables_created, tables_inserted_into, main.cars, 1
 #> 2                                                             tables_inserted_into, tables_deleted_from, 1, 1
@@ -266,7 +266,7 @@ get_ducklake_table("cars") |>
   select(wt, weight_kg) |>
   head()
 #> # A query:  ?? x 2
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmp8WTUvK/ducklake/ducklake2e8872f33122.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpJIGDzn/ducklake/ducklake2dd92046fbad.duckdb]
 #>      wt weight_kg
 #>   <dbl>     <dbl>
 #> 1  2.32     1052.
@@ -320,10 +320,10 @@ rollback_transaction()
 # View all versioned changes
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-09-09 18:17:55              1
-#> 2           2 2026-09-09 18:17:55              1
-#> 3           3 2026-09-09 18:17:55              2
-#> 4           4 2026-09-09 18:17:56              3
+#> 1           1 2026-09-11 15:06:28              1
+#> 2           2 2026-09-11 15:06:29              1
+#> 3           3 2026-09-11 15:06:29              2
+#> 4           4 2026-09-11 15:06:29              3
 #>                                                                                                       changes
 #> 1                                                          tables_created, tables_inserted_into, main.cars, 1
 #> 2                                                             tables_inserted_into, tables_deleted_from, 1, 1
@@ -374,7 +374,7 @@ get_ducklake_table("cars") |>
   select(hp, cyl, hp_per_liter) |>
   head()
 #> # A query:  ?? x 3
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmp8WTUvK/ducklake/ducklake2e8872f33122.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpJIGDzn/ducklake/ducklake2dd92046fbad.duckdb]
 #>      hp   cyl hp_per_liter
 #>   <dbl> <dbl>        <dbl>
 #> 1   110     6         36.7
@@ -385,10 +385,26 @@ get_ducklake_table("cars") |>
 #> 6   245     8         61.2
 ```
 
+**Once per session**: a session that commits as one person can name the
+author once, with `options(ducklake.author = "Performance Team")`. Every
+[`commit_transaction()`](https://tgerke.github.io/ducklake-r/reference/commit_transaction.md),
+[`with_transaction()`](https://tgerke.github.io/ducklake-r/reference/with_transaction.md),
+and
+[`restore_table_version()`](https://tgerke.github.io/ducklake-r/reference/restore_table_version.md)
+call in the session then records that author unless the call names
+another. The creation snapshot gets it too, when
+[`attach_ducklake()`](https://tgerke.github.io/ducklake-r/reference/attach_ducklake.md)
+creates a lake.
+[`set_snapshot_metadata()`](https://tgerke.github.io/ducklake-r/reference/set_snapshot_metadata.md)
+does not read the option: the person labeling a snapshot after the fact
+is not always the one who committed it.
+
 **After the fact**:
 [`set_snapshot_metadata()`](https://tgerke.github.io/ducklake-r/reference/set_snapshot_metadata.md)
 fills in the metadata of a snapshot that was committed without any, such
-as a quick interactive change. It updates the
+as a quick interactive change. The latest snapshot is the target unless
+`snapshot_id` names another, such as snapshot 0 of a lake created before
+ducklake labeled it at attach time. It updates the
 `ducklake_snapshot_changes` metadata table directly, outside DuckLake’s
 transaction model, so by default it only fills empty fields and refuses
 to replace a value that is already there:
@@ -411,7 +427,7 @@ set_snapshot_metadata(
   author = "Performance Team",
   commit_message = "Correct hp_per_liter for the 21 mpg cars"
 )
-#> Snapshot metadata updated.
+#> Updated the metadata of snapshot 6.
 
 # Replacing an existing value takes overwrite = TRUE, and leaves no trace
 # of the previous value
@@ -419,7 +435,7 @@ try(
   set_snapshot_metadata("transactions_lake", commit_message = "Reworded")
 )
 #> Error in set_snapshot_metadata("transactions_lake", commit_message = "Reworded") : 
-#>   The latest snapshot already has commit_message set.
+#>   Snapshot 6 already has commit_message set.
 #> ℹ Metadata belongs on the commit: record it with `with_transaction()` or
 #>   `commit_transaction()`.
 #> ℹ Pass `overwrite = TRUE` to replace it; the previous value is not kept.
@@ -445,11 +461,11 @@ list_table_snapshots("cars") |>
   select(snapshot_id, snapshot_time, author, commit_message) |>
   tail(5)
 #>   snapshot_id       snapshot_time           author
-#> 2           2 2026-09-09 18:17:55        Data Team
-#> 3           3 2026-09-09 18:17:55        Data Team
-#> 4           4 2026-09-09 18:17:56        Data Team
-#> 5           5 2026-09-09 18:17:56 Performance Team
-#> 6           6 2026-09-09 18:17:57 Performance Team
+#> 2           2 2026-09-11 15:06:29        Data Team
+#> 3           3 2026-09-11 15:06:29        Data Team
+#> 4           4 2026-09-11 15:06:29        Data Team
+#> 5           5 2026-09-11 15:06:30 Performance Team
+#> 6           6 2026-09-11 15:06:30 Performance Team
 #>                                   commit_message
 #> 2 Apply the revised 4-cylinder efficiency factor
 #> 3       Add efficiency ratings and summary table
@@ -499,7 +515,8 @@ set_ducklake_retry(max_retries = 20, wait_ms = 250, backoff = 2)
     [`with_transaction()`](https://tgerke.github.io/ducklake-r/reference/with_transaction.md)**:
     Use it for all standard workflows
 2.  **Always add metadata**: Include `author` and `commit_message` for
-    audit trails
+    audit trails; `options(ducklake.author = ...)` names the author once
+    for a whole session
 3.  **Keep transactions focused**: Group related changes, but avoid
     overly long transactions; when other sessions write to the same
     lake, a long-open transaction is the one most likely to conflict
@@ -521,8 +538,9 @@ set_ducklake_retry(max_retries = 20, wait_ms = 250, backoff = 2)
 - **[`rollback_transaction()`](https://tgerke.github.io/ducklake-r/reference/rollback_transaction.md)**:
   Discard changes from a manual transaction
 - **[`set_snapshot_metadata()`](https://tgerke.github.io/ducklake-r/reference/set_snapshot_metadata.md)**:
-  Fill in metadata the most recent snapshot was committed without
-  (`overwrite = TRUE` to replace a value)
+  Fill in metadata a snapshot was committed without, the most recent one
+  unless `snapshot_id` says otherwise (`overwrite = TRUE` to replace a
+  value)
 
 Transactions ensure data integrity and provide complete audit trails for
 all changes in your DuckLake.

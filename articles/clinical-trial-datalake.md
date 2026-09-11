@@ -39,7 +39,7 @@ covers the catalog options for a team.
 
 ``` r
 
-attach_ducklake("clinical_trial_lake", lake_path = article_dir)
+attach_ducklake("clinical_trial_lake", lake_path = article_dir, author = "Data Manager")
 ```
 
 The lake follows the medallion pattern, one schema per layer, so a
@@ -793,24 +793,24 @@ the sponsor.
 
 [`list_table_snapshots()`](https://tgerke.github.io/ducklake-r/reference/list_table_snapshots.md)
 lists every commit in the lake, across all four layers, with the author
-and message each one was given:
+and message each one was given, from the lake’s creation on:
 
 ``` r
 
 list_table_snapshots() |>
   select(snapshot_id, snapshot_time, author, commit_message)
 #>   snapshot_id       snapshot_time                 author
-#> 1           0 2026-09-09 18:17:06                   <NA>
-#> 2           1 2026-09-09 18:17:06           Data Manager
-#> 3           2 2026-09-09 18:17:07           Data Manager
-#> 4           3 2026-09-09 18:17:08           Data Manager
-#> 5           4 2026-09-09 18:17:10 Statistical Programmer
-#> 6           5 2026-09-09 18:17:11 Statistical Programmer
-#> 7           6 2026-09-09 18:17:11           Statistician
-#> 8           7 2026-09-09 18:17:12 Statistical Programmer
-#> 9           8 2026-09-09 18:17:12           Data Manager
+#> 1           0 2026-09-11 15:05:40           Data Manager
+#> 2           1 2026-09-11 15:05:40           Data Manager
+#> 3           2 2026-09-11 15:05:41           Data Manager
+#> 4           3 2026-09-11 15:05:42           Data Manager
+#> 5           4 2026-09-11 15:05:44 Statistical Programmer
+#> 6           5 2026-09-11 15:05:45 Statistical Programmer
+#> 7           6 2026-09-11 15:05:45           Statistician
+#> 8           7 2026-09-11 15:05:46 Statistical Programmer
+#> 9           8 2026-09-11 15:05:46           Data Manager
 #>                                      commit_message
-#> 1                                              <NA>
+#> 1                                       Create lake
 #> 2                          Create the lake's layers
 #> 3                Load the SDTM transfer as received
 #> 4                    Standardize SDTM: blanks to NA

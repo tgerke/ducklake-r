@@ -2,6 +2,49 @@
 
 ## ducklake (development version)
 
+- [`attach_ducklake()`](https://tgerke.github.io/ducklake-r/reference/attach_ducklake.md)
+  labels the creation snapshot of a lake it creates. DuckLake writes
+  snapshot 0 itself when it makes a lake, with no author and no commit
+  message, so every history began with an `<NA>` row. The new
+  `commit_message` (default `"Create lake"`) and `author` arguments are
+  written onto snapshot 0 right after the lake is created, with the same
+  metadata update
+  [`set_snapshot_metadata()`](https://tgerke.github.io/ducklake-r/reference/set_snapshot_metadata.md)
+  uses, because DuckLake does not take `set_commit_message()` for that
+  snapshot. A lake that already exists is left alone, and so is a
+  read-only, snapshot-pinned, or in-transaction attach;
+  `commit_message = NULL` keeps the old behavior.
+  [`set_snapshot_metadata()`](https://tgerke.github.io/ducklake-r/reference/set_snapshot_metadata.md)
+  gains `snapshot_id`, so the creation snapshot of an existing lake, or
+  any other snapshot, can be labeled after the fact; it still fills
+  blanks only unless `overwrite = TRUE`, and its confirmation now names
+  the snapshot.
+
+- New `ducklake.author` option: the author recorded on every snapshot
+  the session commits without naming one, through
+  [`commit_transaction()`](https://tgerke.github.io/ducklake-r/reference/commit_transaction.md),
+  [`with_transaction()`](https://tgerke.github.io/ducklake-r/reference/with_transaction.md),
+  [`restore_table_version()`](https://tgerke.github.io/ducklake-r/reference/restore_table_version.md),
+  and the creation snapshot
+  [`attach_ducklake()`](https://tgerke.github.io/ducklake-r/reference/attach_ducklake.md)
+  labels. An `author` argument still wins.
+  [`set_snapshot_metadata()`](https://tgerke.github.io/ducklake-r/reference/set_snapshot_metadata.md)
+  does not read it, and a write made outside a transaction records no
+  author, as before.
+
+- The metadata readers honor the `metadata_schema` a lake was attached
+  with. They looked in the catalog’s default schema whatever the attach
+  said, so
+  [`set_snapshot_metadata()`](https://tgerke.github.io/ducklake-r/reference/set_snapshot_metadata.md),
+  [`get_table_comments()`](https://tgerke.github.io/ducklake-r/reference/get_table_comments.md),
+  [`get_table_partitions()`](https://tgerke.github.io/ducklake-r/reference/get_table_partitions.md),
+  [`get_table_sorting()`](https://tgerke.github.io/ducklake-r/reference/get_table_sorting.md),
+  [`get_table_info()`](https://tgerke.github.io/ducklake-r/reference/get_table_info.md),
+  and
+  [`get_metadata_table()`](https://tgerke.github.io/ducklake-r/reference/get_metadata_table.md)
+  failed on such a lake; the schema is now kept with the lake’s registry
+  entry and used by all of them.
+
 - [`plot_snapshots()`](https://tgerke.github.io/ducklake-r/reference/plot_snapshots.md)
   classifies each snapshot by what it did to the table being drawn. A
   transaction that updated one table in place and rebuilt another used
@@ -380,6 +423,8 @@
   ([\#43](https://github.com/tgerke/ducklake-r/issues/43)).
 
 ## ducklake 0.6.0
+
+CRAN release: 2026-09-09
 
 First CRAN release.
 

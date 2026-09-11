@@ -1,8 +1,9 @@
-# Set metadata for the most recent snapshot
+# Set metadata for a snapshot
 
-Fills in the author, commit message, and/or extra info of the most
-recent snapshot in a DuckLake catalog after it was committed, by
-updating the `ducklake_snapshot_changes` metadata table directly.
+Fills in the author, commit message, and/or extra info of a snapshot in
+a DuckLake catalog after it was committed, by updating the
+`ducklake_snapshot_changes` metadata table directly. The most recent
+snapshot by default; `snapshot_id` names another.
 
 ## Usage
 
@@ -12,6 +13,7 @@ set_snapshot_metadata(
   author = NULL,
   commit_message = NULL,
   commit_extra_info = NULL,
+  snapshot_id = NULL,
   conn = NULL,
   overwrite = FALSE
 )
@@ -25,7 +27,9 @@ set_snapshot_metadata(
 
 - author:
 
-  Optional author name to associate with the snapshot
+  Optional author name to associate with the snapshot. The
+  `ducklake.author` option is not read here: labeling a snapshot after
+  the fact is a deliberate edit, so the author is always spelled out.
 
 - commit_message:
 
@@ -34,6 +38,13 @@ set_snapshot_metadata(
 - commit_extra_info:
 
   Optional extra information about the commit
+
+- snapshot_id:
+
+  Optional snapshot id (see
+  [`list_table_snapshots()`](https://tgerke.github.io/ducklake-r/reference/list_table_snapshots.md)).
+  `NULL`, the default, means the most recent snapshot. An id the lake
+  does not have is an error.
 
 - conn:
 
@@ -62,11 +73,21 @@ the transaction itself. This function is the escape hatch for a snapshot
 that was committed without them, such as one made interactively or by a
 client that could not set them.
 
+Snapshot 0 is the lake's creation, which DuckLake writes without an
+author or a message.
+[`attach_ducklake()`](https://tgerke.github.io/ducklake-r/reference/attach_ducklake.md)
+labels it for a lake it creates; for a lake created before that, or
+attached read-only, pinned to a snapshot, or inside a transaction at the
+time, pass `snapshot_id = 0` here.
+
 It writes to the catalog's metadata table outside DuckLake's transaction
 and conflict model, and an overwrite leaves no trace of the previous
 value. That is why it fills blanks only unless `overwrite = TRUE`. Where
 the snapshot history is the audit trail (GxP, 21 CFR Part 11), set
-metadata at commit time and leave `overwrite` alone.
+metadata at commit time and leave `overwrite` alone. Call it outside a
+transaction: a DuckDB transaction can write to one attached database,
+and this one writes to the metadata catalog, so a lake write after it in
+the same transaction would fail.
 
 ## See also
 
@@ -95,17 +116,22 @@ set_snapshot_metadata(
   author = "Data Team",
   commit_message = "Added the cars dataset"
 )
-#> Snapshot metadata updated.
+#> Updated the metadata of snapshot 1.
 
 # A second call refuses to replace them unless told to
 try(set_snapshot_metadata("meta_lake", commit_message = "Reworded"))
 #> Error in set_snapshot_metadata("meta_lake", commit_message = "Reworded") : 
-#>   The latest snapshot already has commit_message set.
+#>   Snapshot 1 already has commit_message set.
 #> ℹ Metadata belongs on the commit: record it with `with_transaction()` or
 #>   `commit_transaction()`.
 #> ℹ Pass `overwrite = TRUE` to replace it; the previous value is not kept.
 set_snapshot_metadata("meta_lake", commit_message = "Reworded", overwrite = TRUE)
-#> Snapshot metadata updated.
+#> Updated the metadata of snapshot 1.
+
+# The creation snapshot has the message attach_ducklake() gave it and no
+# author yet: name one
+set_snapshot_metadata("meta_lake", author = "Data Team", snapshot_id = 0)
+#> Updated the metadata of snapshot 0.
 
 detach_ducklake("meta_lake", shutdown = TRUE)
 unlink(lake_dir, recursive = TRUE)

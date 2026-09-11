@@ -315,8 +315,8 @@ lake, and they persist in the catalog for every client.</p>
 <span><span class="co">#    set DUCKDB_R_HOME=~/.duckdb in ~/.Renviron or the job's environment.</span></span>
 <span><span class="co">#    A container image runs install_ducklake() at build time instead.</span></span>
 <span></span>
-<span><span class="co"># 2. Create the lake, and its schemas, in one snapshot</span></span>
-<span><span class="fu"><a href="../reference/attach_ducklake.html">attach_ducklake</a></span><span class="op">(</span><span class="st">"trial"</span>, lake_path <span class="op">=</span> <span class="st">"~/lakes/trial"</span><span class="op">)</span></span>
+<span><span class="co"># 2. Create the lake, then its schemas</span></span>
+<span><span class="fu"><a href="../reference/attach_ducklake.html">attach_ducklake</a></span><span class="op">(</span><span class="st">"trial"</span>, lake_path <span class="op">=</span> <span class="st">"~/lakes/trial"</span>, author <span class="op">=</span> <span class="st">"Data Engineer"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/with_transaction.html">with_transaction</a></span><span class="op">(</span><span class="op">{</span></span>
 <span>  <span class="fu"><a href="../reference/create_schema.html">create_schema</a></span><span class="op">(</span><span class="st">"bronze"</span><span class="op">)</span></span>
 <span>  <span class="fu"><a href="../reference/create_schema.html">create_schema</a></span><span class="op">(</span><span class="st">"silver"</span><span class="op">)</span></span>

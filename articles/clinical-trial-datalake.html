@@ -115,7 +115,7 @@ nothing is at the path yet. The article uses a temporary directory; a
 study would use a project directory or a shared location, and <a href="deployment.html">Choosing a Deployment</a> covers the catalog
 options for a team.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/attach_ducklake.html">attach_ducklake</a></span><span class="op">(</span><span class="st">"clinical_trial_lake"</span>, lake_path <span class="op">=</span> <span class="va">article_dir</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/attach_ducklake.html">attach_ducklake</a></span><span class="op">(</span><span class="st">"clinical_trial_lake"</span>, lake_path <span class="op">=</span> <span class="va">article_dir</span>, author <span class="op">=</span> <span class="st">"Data Manager"</span><span class="op">)</span></span></code></pre></div>
 <p>The lake follows the medallion pattern, one schema per layer, so a
 table’s name says how far from the source it is and access can be
 granted layer by layer:</p>
@@ -785,23 +785,23 @@ programs stays with the sponsor.</p>
 <h2 id="the-history">The history<a class="anchor" aria-label="anchor" href="#the-history"></a>
 </h2>
 <p><code><a href="../reference/list_table_snapshots.html">list_table_snapshots()</a></code> lists every commit in the lake,
-across all four layers, with the author and message each one was
-given:</p>
+across all four layers, with the author and message each one was given,
+from the lake’s creation on:</p>
 <div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">snapshot_id</span>, <span class="va">snapshot_time</span>, <span class="va">author</span>, <span class="va">commit_message</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time                 author</span></span>
-<span><span class="co">#&gt; 1           0 2026-09-09 18:17:06                   &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 2           1 2026-09-09 18:17:06           Data Manager</span></span>
-<span><span class="co">#&gt; 3           2 2026-09-09 18:17:07           Data Manager</span></span>
-<span><span class="co">#&gt; 4           3 2026-09-09 18:17:08           Data Manager</span></span>
-<span><span class="co">#&gt; 5           4 2026-09-09 18:17:10 Statistical Programmer</span></span>
-<span><span class="co">#&gt; 6           5 2026-09-09 18:17:11 Statistical Programmer</span></span>
-<span><span class="co">#&gt; 7           6 2026-09-09 18:17:11           Statistician</span></span>
-<span><span class="co">#&gt; 8           7 2026-09-09 18:17:12 Statistical Programmer</span></span>
-<span><span class="co">#&gt; 9           8 2026-09-09 18:17:12           Data Manager</span></span>
+<span><span class="co">#&gt; 1           0 2026-09-11 15:05:40           Data Manager</span></span>
+<span><span class="co">#&gt; 2           1 2026-09-11 15:05:40           Data Manager</span></span>
+<span><span class="co">#&gt; 3           2 2026-09-11 15:05:41           Data Manager</span></span>
+<span><span class="co">#&gt; 4           3 2026-09-11 15:05:42           Data Manager</span></span>
+<span><span class="co">#&gt; 5           4 2026-09-11 15:05:44 Statistical Programmer</span></span>
+<span><span class="co">#&gt; 6           5 2026-09-11 15:05:45 Statistical Programmer</span></span>
+<span><span class="co">#&gt; 7           6 2026-09-11 15:05:45           Statistician</span></span>
+<span><span class="co">#&gt; 8           7 2026-09-11 15:05:46 Statistical Programmer</span></span>
+<span><span class="co">#&gt; 9           8 2026-09-11 15:05:46           Data Manager</span></span>
 <span><span class="co">#&gt;                                      commit_message</span></span>
-<span><span class="co">#&gt; 1                                              &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 1                                       Create lake</span></span>
 <span><span class="co">#&gt; 2                          Create the lake's layers</span></span>
 <span><span class="co">#&gt; 3                Load the SDTM transfer as received</span></span>
 <span><span class="co">#&gt; 4                    Standardize SDTM: blanks to NA</span></span>

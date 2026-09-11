@@ -96,7 +96,7 @@ history, detach.
 library(ducklake)
 library(dplyr)
 
-attach_ducklake("my_data_lake", lake_path = tempdir())
+attach_ducklake("my_data_lake", lake_path = tempdir(), author = "Data Engineer")
 ```
 
 One call opens a lake, and creates it first when nothing is at the path
@@ -241,14 +241,17 @@ for changing rows in place. All of them are versioned in the same way.
 
 [`list_table_snapshots()`](https://tgerke.github.io/ducklake-r/reference/list_table_snapshots.md)
 lists every commit in the lake, across all layers. The ids are the ones
-the confirmations printed, and snapshot 0 is the lake’s creation.
+the confirmations printed, and snapshot 0 is the lake’s creation,
+recorded under the author
+[`attach_ducklake()`](https://tgerke.github.io/ducklake-r/reference/attach_ducklake.md)
+was given.
 
 ``` r
 
 list_table_snapshots() |>
   select(snapshot_id, author, commit_message)
 #>   snapshot_id        author                           commit_message
-#> 1           0          <NA>                                     <NA>
+#> 1           0 Data Engineer                              Create lake
 #> 2           1 Data Engineer                  Create medallion layers
 #> 3           2 Data Engineer         Initial load of raw vehicle data
 #> 4           3 Data Engineer       Clean and standardize vehicle data

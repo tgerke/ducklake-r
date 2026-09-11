@@ -24,7 +24,10 @@ commit_transaction(
 
 - author:
 
-  Optional author name to associate with the snapshot
+  Author to record on the snapshot. Defaults to the `ducklake.author`
+  option when it is set (see
+  [`?ducklake`](https://tgerke.github.io/ducklake-r/reference/ducklake-package.md)),
+  otherwise none.
 
 - commit_message:
 
@@ -47,7 +50,9 @@ was called, making them permanent in the database.
 If `author`, `commit_message`, or `commit_extra_info` are provided, they
 will be set using `CALL ducklake.set_commit_message()` within the
 transaction before the `COMMIT` statement, as required by the DuckLake
-v1.0 specification.
+v1.0 specification. An author set once for the session with
+`options(ducklake.author = "...")` is recorded on every commit that does
+not name one; the `author` argument wins when both are given.
 
 The commit is confirmed with one message naming the snapshot it created,
 with the author and commit message when they were given. The id is the

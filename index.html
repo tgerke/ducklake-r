@@ -142,7 +142,7 @@
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://tgerke.github.io/ducklake-r/">ducklake</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="reference/attach_ducklake.html">attach_ducklake</a></span><span class="op">(</span><span class="st">"my_data_lake"</span>, lake_path <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="reference/attach_ducklake.html">attach_ducklake</a></span><span class="op">(</span><span class="st">"my_data_lake"</span>, lake_path <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, author <span class="op">=</span> <span class="st">"Data Engineer"</span><span class="op">)</span></span></code></pre></div>
 <p>One call opens a lake, and creates it first when nothing is at the path yet. By default the catalog is a DuckDB file stored next to the data. A lake that several people write to keeps its catalog in SQLite or PostgreSQL instead, and <a href="https://tgerke.github.io/ducklake-r/articles/deployment.html">Choosing a Deployment</a> walks through that choice.</p>
 </div>
 <div class="section level3">
@@ -235,12 +235,12 @@
 <div class="section level3">
 <h3 id="see-the-history">See the history<a class="anchor" aria-label="anchor" href="#see-the-history"></a>
 </h3>
-<p><code><a href="reference/list_table_snapshots.html">list_table_snapshots()</a></code> lists every commit in the lake, across all layers. The ids are the ones the confirmations printed, and snapshot 0 is the lake’s creation.</p>
+<p><code><a href="reference/list_table_snapshots.html">list_table_snapshots()</a></code> lists every commit in the lake, across all layers. The ids are the ones the confirmations printed, and snapshot 0 is the lake’s creation, recorded under the author <code><a href="reference/attach_ducklake.html">attach_ducklake()</a></code> was given.</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">snapshot_id</span>, <span class="va">author</span>, <span class="va">commit_message</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   snapshot_id        author                           commit_message</span></span>
-<span><span class="co">#&gt; 1           0          &lt;NA&gt;                                     &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 1           0 Data Engineer                              Create lake</span></span>
 <span><span class="co">#&gt; 2           1 Data Engineer                  Create medallion layers</span></span>
 <span><span class="co">#&gt; 3           2 Data Engineer         Initial load of raw vehicle data</span></span>
 <span><span class="co">#&gt; 4           3 Data Engineer       Clean and standardize vehicle data</span></span>

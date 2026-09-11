@@ -29,7 +29,10 @@ with_transaction(
 
 - author:
 
-  Optional author name to associate with the snapshot
+  Author to record on the snapshot. Defaults to the `ducklake.author`
+  option when it is set (see
+  [`?ducklake`](https://tgerke.github.io/ducklake-r/reference/ducklake-package.md)),
+  otherwise none.
 
 - commit_message:
 
