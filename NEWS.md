@@ -1,4 +1,4 @@
-# ducklake (development version)
+# ducklake 0.8.0
 
 * `commit_transaction()` and `with_transaction()` name the snapshot this
   connection committed, read from DuckLake's `last_committed_snapshot()`,

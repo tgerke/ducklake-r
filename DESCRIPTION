@@ -1,6 +1,6 @@
 Package: ducklake
 Title: Interact with 'DuckLake' from R
-Version: 0.7.0.9000
+Version: 0.8.0
 Authors@R: c(
     person("Travis", "Gerke", , "travisgerke@gmail.com", role = c("aut", "cre")),
     person("Stefan", "Linner", role = "ctb"),
