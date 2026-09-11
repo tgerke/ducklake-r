@@ -54,7 +54,7 @@ delete files."><meta property="og:image" content="https://tgerke.github.io/duckl
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Get file statistics for the tables in a lake</h1>
-      <small class="dont-index">Source: <a href="https://github.com/tgerke/ducklake-r/blob/main/R/table_info.R" class="external-link"><code>R/table_info.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/tgerke/ducklake-r/blob/v0.8.0/R/table_info.R" class="external-link"><code>R/table_info.R</code></a></small>
       <div class="d-none name"><code>get_table_info.Rd</code></div>
     </div>
 
@@ -132,14 +132,14 @@ counts until <code><a href="flush_inlined_data.html">flush_inlined_data()</a></c
 <span class="r-in"><span><span class="co"># File statistics for every table in the lake</span></span></span>
 <span class="r-in"><span><span class="fu">get_table_info</span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   table_name schema_id table_id                           table_uuid file_count</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1       cars         0        1 01a0910d-338f-75d3-a0fb-e1a3c653c054          1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1       cars         0        1 01a09110-686a-70ad-ad5d-0a031f7e6b3b          1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   file_size_bytes delete_file_count delete_file_size_bytes schema_name</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1            2911                 0                      0        main</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Just one table</span></span></span>
 <span class="r-in"><span><span class="fu">get_table_info</span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   table_name schema_id table_id                           table_uuid file_count</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1       cars         0        1 01a0910d-338f-75d3-a0fb-e1a3c653c054          1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1       cars         0        1 01a09110-686a-70ad-ad5d-0a031f7e6b3b          1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   file_size_bytes delete_file_count delete_file_size_bytes schema_name</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1            2911                 0                      0        main</span>
 <span class="r-in"><span></span></span>
