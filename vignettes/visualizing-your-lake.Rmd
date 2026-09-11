@@ -53,7 +53,8 @@ authors and commit messages along the way.
 ```{r create-datalake}
 attach_ducklake(
   ducklake_name = "lake_viz_demo",
-  lake_path = vignette_temp_dir
+  lake_path = vignette_temp_dir,
+  author = "Data Engineer"
 )
 
 fleet <- tibble(

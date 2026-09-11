@@ -14,7 +14,9 @@ commit_transaction(
 \arguments{
 \item{conn}{Optional DuckDB connection object. If not provided, uses the default ducklake connection.}
 
-\item{author}{Optional author name to associate with the snapshot}
+\item{author}{Author to record on the snapshot. Defaults to the
+\code{ducklake.author} option when it is set (see \code{?ducklake}), otherwise
+none.}
 
 \item{commit_message}{Optional commit message describing the changes}
 
@@ -34,7 +36,9 @@ making them permanent in the database.
 If \code{author}, \code{commit_message}, or \code{commit_extra_info} are provided,
 they will be set using \code{CALL ducklake.set_commit_message()} within the
 transaction before the \code{COMMIT} statement, as required by the DuckLake
-v1.0 specification.
+v1.0 specification. An author set once for the session with
+\code{options(ducklake.author = "...")} is recorded on every commit that does
+not name one; the \code{author} argument wins when both are given.
 
 The commit is confirmed with one message naming the snapshot it created,
 with the author and commit message when they were given. The id is the

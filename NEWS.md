@@ -1,5 +1,33 @@
 # ducklake (development version)
 
+* `attach_ducklake()` labels the creation snapshot of a lake it creates.
+  DuckLake writes snapshot 0 itself when it makes a lake, with no author
+  and no commit message, so every history began with an `<NA>` row. The
+  new `commit_message` (default `"Create lake"`) and `author` arguments
+  are written onto snapshot 0 right after the lake is created, with the
+  same metadata update `set_snapshot_metadata()` uses, because DuckLake
+  does not take `set_commit_message()` for that snapshot. A lake that
+  already exists is left alone, and so is a read-only, snapshot-pinned, or
+  in-transaction attach; `commit_message = NULL` keeps the old behavior.
+  `set_snapshot_metadata()` gains `snapshot_id`, so the creation snapshot
+  of an existing lake, or any other snapshot, can be labeled after the
+  fact; it still fills blanks only unless `overwrite = TRUE`, and its
+  confirmation now names the snapshot.
+
+* New `ducklake.author` option: the author recorded on every snapshot the
+  session commits without naming one, through `commit_transaction()`,
+  `with_transaction()`, `restore_table_version()`, and the creation
+  snapshot `attach_ducklake()` labels. An `author` argument still wins.
+  `set_snapshot_metadata()` does not read it, and a write made outside a
+  transaction records no author, as before.
+
+* The metadata readers honor the `metadata_schema` a lake was attached
+  with. They looked in the catalog's default schema whatever the attach
+  said, so `set_snapshot_metadata()`, `get_table_comments()`,
+  `get_table_partitions()`, `get_table_sorting()`, `get_table_info()`, and
+  `get_metadata_table()` failed on such a lake; the schema is now kept
+  with the lake's registry entry and used by all of them.
+
 * `plot_snapshots()` classifies each snapshot by what it did to the table
   being drawn. A transaction that updated one table in place and rebuilt
   another used to color both as "created", because the whole snapshot was

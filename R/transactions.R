@@ -57,7 +57,9 @@ begin_transaction <- function(conn = NULL) {
 #' metadata (author, commit message, and extra info) to the snapshot.
 #'
 #' @param conn Optional DuckDB connection object. If not provided, uses the default ducklake connection.
-#' @param author Optional author name to associate with the snapshot
+#' @param author Author to record on the snapshot. Defaults to the
+#'   `ducklake.author` option when it is set (see `?ducklake`), otherwise
+#'   none.
 #' @param commit_message Optional commit message describing the changes
 #' @param commit_extra_info Optional extra information about the commit
 #'
@@ -72,7 +74,9 @@ begin_transaction <- function(conn = NULL) {
 #' If \code{author}, \code{commit_message}, or \code{commit_extra_info} are provided,
 #' they will be set using \code{CALL ducklake.set_commit_message()} within the
 #' transaction before the \code{COMMIT} statement, as required by the DuckLake
-#' v1.0 specification.
+#' v1.0 specification. An author set once for the session with
+#' `options(ducklake.author = "...")` is recorded on every commit that does
+#' not name one; the `author` argument wins when both are given.
 #'
 #' The commit is confirmed with one message naming the snapshot it created,
 #' with the author and commit message when they were given. The id is the
@@ -111,6 +115,7 @@ commit_transaction <- function(
   if (is.null(conn)) {
     conn <- get_ducklake_connection()
   }
+  author <- resolve_author(author)
 
   # In DuckLake v1.0, commit metadata must be set within the transaction
   # using CALL set_commit_message() before COMMIT
@@ -177,16 +182,22 @@ commit_transaction <- function(
   invisible(TRUE)
 }
 
-#' Set metadata for the most recent snapshot
+#' Set metadata for a snapshot
 #'
-#' Fills in the author, commit message, and/or extra info of the most
-#' recent snapshot in a DuckLake catalog after it was committed, by
-#' updating the `ducklake_snapshot_changes` metadata table directly.
+#' Fills in the author, commit message, and/or extra info of a snapshot in
+#' a DuckLake catalog after it was committed, by updating the
+#' `ducklake_snapshot_changes` metadata table directly. The most recent
+#' snapshot by default; `snapshot_id` names another.
 #'
 #' @param ducklake_name The name of the DuckLake catalog
-#' @param author Optional author name to associate with the snapshot
+#' @param author Optional author name to associate with the snapshot. The
+#'   `ducklake.author` option is not read here: labeling a snapshot after
+#'   the fact is a deliberate edit, so the author is always spelled out.
 #' @param commit_message Optional commit message describing the changes
 #' @param commit_extra_info Optional extra information about the commit
+#' @param snapshot_id Optional snapshot id (see [list_table_snapshots()]).
+#'   `NULL`, the default, means the most recent snapshot. An id the lake
+#'   does not have is an error.
 #' @param conn Optional DuckDB connection object. If not provided, uses the default ducklake connection.
 #' @param overwrite Replace values the snapshot already carries (default
 #'   `FALSE`). By default only empty fields are filled in, and the call
@@ -204,11 +215,20 @@ commit_transaction <- function(
 #' that was committed without them, such as one made interactively or by a
 #' client that could not set them.
 #'
+#' Snapshot 0 is the lake's creation, which DuckLake writes without an
+#' author or a message. [attach_ducklake()] labels it for a lake it
+#' creates; for a lake created before that, or attached read-only, pinned
+#' to a snapshot, or inside a transaction at the time, pass
+#' `snapshot_id = 0` here.
+#'
 #' It writes to the catalog's metadata table outside DuckLake's transaction
 #' and conflict model, and an overwrite leaves no trace of the previous
 #' value. That is why it fills blanks only unless `overwrite = TRUE`. Where
 #' the snapshot history is the audit trail (GxP, 21 CFR Part 11), set
-#' metadata at commit time and leave `overwrite` alone.
+#' metadata at commit time and leave `overwrite` alone. Call it outside a
+#' transaction: a DuckDB transaction can write to one attached database,
+#' and this one writes to the metadata catalog, so a lake write after it
+#' in the same transaction would fail.
 #'
 #' @examplesIf ducklake_extension_available()
 #' lake_dir <- tempfile("meta_lake_")
@@ -230,6 +250,10 @@ commit_transaction <- function(
 #' try(set_snapshot_metadata("meta_lake", commit_message = "Reworded"))
 #' set_snapshot_metadata("meta_lake", commit_message = "Reworded", overwrite = TRUE)
 #'
+#' # The creation snapshot has the message attach_ducklake() gave it and no
+#' # author yet: name one
+#' set_snapshot_metadata("meta_lake", author = "Data Team", snapshot_id = 0)
+#'
 #' detach_ducklake("meta_lake", shutdown = TRUE)
 #' unlink(lake_dir, recursive = TRUE)
 set_snapshot_metadata <- function(
@@ -237,6 +261,7 @@ set_snapshot_metadata <- function(
   author = NULL,
   commit_message = NULL,
   commit_extra_info = NULL,
+  snapshot_id = NULL,
   conn = NULL,
   overwrite = FALSE
 ) {
@@ -256,47 +281,61 @@ set_snapshot_metadata <- function(
     return(invisible(FALSE))
   }
 
-  prefix <- metadata_prefix(ducklake_name, conn)
-  changes_ref <- paste0(prefix, ".ducklake_snapshot_changes")
-  latest <- sprintf(
-    "(SELECT MAX(snapshot_id) FROM %s.ducklake_snapshot)", prefix
-  )
-
-  if (!isTRUE(overwrite)) {
-    current <- tryCatch(
+  if (is.null(snapshot_id)) {
+    snapshot_id <- tryCatch(
       DBI::dbGetQuery(
         conn,
         sprintf(
-          "SELECT author, commit_message, commit_extra_info FROM %s WHERE snapshot_id = %s",
-          changes_ref, latest
+          "SELECT MAX(snapshot_id) AS id FROM %s.ducklake_snapshot",
+          metadata_prefix(ducklake_name, conn)
         )
-      ),
-      error = function(e) NULL
-    )
-    if (!is.null(current) && nrow(current) == 1) {
-      taken <- names(provided)[!is.na(unlist(current[1, names(provided)]))]
-      if (length(taken) > 0) {
-        cli::cli_abort(c(
-          "The latest snapshot already has {.field {taken}} set.",
-          "i" = "Metadata belongs on the commit: record it with {.fn with_transaction} or {.fn commit_transaction}.",
-          "i" = "Pass {.code overwrite = TRUE} to replace {cli::qty(length(taken))}{?it/them}; the previous value{?s} {?is/are} not kept."
-        ))
+      )$id,
+      error = function(e) {
+        cli::cli_warn("Could not read the lake's snapshots: {e$message}")
+        NULL
       }
+    )
+    if (is.null(snapshot_id)) {
+      return(invisible(FALSE))
+    }
+  } else if (
+    !is.numeric(snapshot_id) || length(snapshot_id) != 1 ||
+      is.na(snapshot_id) || snapshot_id < 0 || snapshot_id != trunc(snapshot_id)
+  ) {
+    cli::cli_abort(
+      "{.arg snapshot_id} must be a single non-negative whole number."
+    )
+  }
+  snapshot_id <- as.integer(snapshot_id)
+
+  # One read serves two checks: the snapshot must exist (a bound UPDATE on
+  # a missing id affects no rows and raises nothing), and unless
+  # overwriting, the supplied fields must still be empty
+  current <- tryCatch(
+    read_snapshot_metadata(ducklake_name, snapshot_id, conn),
+    error = function(e) NULL
+  )
+  if (!is.null(current) && nrow(current) == 0) {
+    cli::cli_abort(c(
+      "Snapshot {snapshot_id} does not exist in {.val {ducklake_name}}.",
+      "i" = "{.fn list_table_snapshots} lists the snapshots the lake has."
+    ))
+  }
+  if (!isTRUE(overwrite) && !is.null(current)) {
+    taken <- names(provided)[!is.na(unlist(current[1, names(provided)]))]
+    if (length(taken) > 0) {
+      cli::cli_abort(c(
+        "Snapshot {snapshot_id} already has {.field {taken}} set.",
+        "i" = "Metadata belongs on the commit: record it with {.fn with_transaction} or {.fn commit_transaction}.",
+        "i" = "Pass {.code overwrite = TRUE} to replace {cli::qty(length(taken))}{?it/them}; the previous value{?s} {?is/are} not kept."
+      ))
     }
   }
 
-  # Parameterized SET clause: values never touch the SQL text
-  update_sql <- sprintf(
-    "UPDATE %s SET %s WHERE snapshot_id = %s",
-    changes_ref,
-    paste0(names(provided), " = ?", collapse = ", "),
-    latest
-  )
-
   tryCatch(
     {
-      DBI::dbExecute(conn, update_sql, params = unname(provided))
-      dl_inform("Snapshot metadata updated.")
+      update_snapshot_metadata(ducklake_name, snapshot_id, provided, conn)
+      dl_inform("Updated the metadata of snapshot {snapshot_id}.")
       invisible(TRUE)
     },
     error = function(e) {
@@ -304,6 +343,86 @@ set_snapshot_metadata <- function(
       invisible(FALSE)
     }
   )
+}
+
+#' One snapshot's metadata row: author, commit_message, commit_extra_info
+#'
+#' Zero rows when the snapshot does not exist. Catalog errors propagate, so
+#' the caller decides whether they are a warning or an error.
+#' @noRd
+read_snapshot_metadata <- function(ducklake_name, snapshot_id, conn) {
+  DBI::dbGetQuery(
+    conn,
+    sprintf(
+      "SELECT author, commit_message, commit_extra_info FROM %s.ducklake_snapshot_changes WHERE snapshot_id = ?",
+      metadata_prefix(ducklake_name, conn)
+    ),
+    params = list(as.integer(snapshot_id))
+  )
+}
+
+#' Parameterized UPDATE of one snapshot's metadata fields
+#'
+#' `values` is a named list of any of author, commit_message, and
+#' commit_extra_info; only its names reach the SQL text, the values and the
+#' id are bound parameters. `condition` is extra SQL ANDed into the WHERE
+#' clause.
+#'
+#' @returns The number of rows updated: 1, or 0 when no row matched.
+#' @noRd
+update_snapshot_metadata <- function(ducklake_name, snapshot_id, values, conn,
+                                     condition = NULL) {
+  where <- "snapshot_id = ?"
+  if (!is.null(condition)) {
+    where <- paste(where, "AND", condition)
+  }
+  DBI::dbExecute(
+    conn,
+    sprintf(
+      "UPDATE %s.ducklake_snapshot_changes SET %s WHERE %s",
+      metadata_prefix(ducklake_name, conn),
+      paste0(names(values), " = ?", collapse = ", "),
+      where
+    ),
+    params = c(unname(values), list(as.integer(snapshot_id)))
+  )
+}
+
+#' Label the creation snapshot of a lake this call just created
+#'
+#' DuckLake writes snapshot 0 during ATTACH and ignores set_commit_message()
+#' around it, so the label is one conditional UPDATE: snapshot 0 takes
+#' `author` and `commit_message` only while it is the lake's sole snapshot
+#' and carries no metadata, which is how DuckLake leaves a lake it has just
+#' created. The rows-affected count says whether that was the case, so
+#' there is no probe and no window between probe and write. Silent; a
+#' failure warns.
+#'
+#' @returns Invisibly, `TRUE` when snapshot 0 was labeled.
+#' @noRd
+label_creation_snapshot <- function(ducklake_name, author, commit_message, conn) {
+  values <- list(author = author, commit_message = commit_message)
+  values <- values[!vapply(values, is.null, logical(1))]
+  if (length(values) == 0) {
+    return(invisible(FALSE))
+  }
+  sole_and_blank <- sprintf(
+    "author IS NULL AND commit_message IS NULL AND commit_extra_info IS NULL AND (SELECT COUNT(*) FROM %s.ducklake_snapshot) = 1",
+    metadata_prefix(ducklake_name, conn)
+  )
+  n <- tryCatch(
+    update_snapshot_metadata(
+      ducklake_name, 0L, values, conn, condition = sole_and_blank
+    ),
+    error = function(e) {
+      cli::cli_warn(c(
+        "Could not label the lake's creation snapshot: {e$message}",
+        "i" = "Label it later with {.code set_snapshot_metadata('{ducklake_name}', ..., snapshot_id = 0)}."
+      ))
+      0L
+    }
+  )
+  invisible(n == 1)
 }
 
 #' Execute code within a transaction
@@ -315,7 +434,9 @@ set_snapshot_metadata <- function(
 #'
 #' @param expr An R expression or code block to execute within the transaction.
 #'   Can be a single statement or a \code{\{...\}} block containing multiple statements.
-#' @param author Optional author name to associate with the snapshot
+#' @param author Author to record on the snapshot. Defaults to the
+#'   `ducklake.author` option when it is set (see `?ducklake`), otherwise
+#'   none.
 #' @param commit_message Optional commit message describing the changes
 #' @param commit_extra_info Optional extra information about the commit
 #' @param conn Optional DuckDB connection object. If not provided, uses the default ducklake connection.

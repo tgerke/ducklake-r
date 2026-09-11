@@ -205,20 +205,23 @@ close_ducklake_connection <- function(warn_not_owned = TRUE) {
   invisible(TRUE)
 }
 
-#' Record an attached lake's backend and connection string
+#' Record an attached lake's backend, connection string, and metadata schema
 #'
 #' Attached lakes are tracked per name so that sessions with several lakes
 #' attached at once (possibly on different backends) resolve backend-specific
-#' behaviour correctly.
+#' behaviour correctly. The metadata schema is kept because the metadata
+#' database cannot be inspected for it after the attach.
 #'
 #' @noRd
-register_lake <- function(ducklake_name, backend, catalog_connection_string = NULL) {
+register_lake <- function(ducklake_name, backend, catalog_connection_string = NULL,
+                          metadata_schema = NULL) {
   if (is.null(.ducklake_env$lakes)) {
     .ducklake_env$lakes <- list()
   }
   .ducklake_env$lakes[[ducklake_name]] <- list(
     backend = backend,
-    catalog_connection_string = catalog_connection_string
+    catalog_connection_string = catalog_connection_string,
+    metadata_schema = metadata_schema
   )
   invisible(NULL)
 }

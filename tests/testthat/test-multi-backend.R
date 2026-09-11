@@ -238,6 +238,32 @@ test_that("build_attach_sql renders CREATE_IF_NOT_EXISTS and METADATA_SCHEMA", {
   expect_false(grepl("CREATE_IF_NOT_EXISTS|METADATA_SCHEMA", sql3))
 })
 
+test_that("metadata_prefix() follows the registry's backend and metadata schema", {
+  skip_if_not_installed("duckdb")
+
+  conn <- get_ducklake_connection()
+  on.exit(ducklake:::unregister_lake("pfx_pg"), add = TRUE)
+  on.exit(ducklake:::unregister_lake("pfx_duck"), add = TRUE)
+
+  # Built with the same quoting helper: duckdb leaves simple names bare
+  q <- function(x) ducklake:::quote_ident(x, conn)
+
+  ducklake:::register_lake("pfx_pg", "postgres", "dbname=x", "study_a")
+  expect_equal(
+    ducklake:::metadata_prefix("pfx_pg", conn),
+    paste0(q("__ducklake_metadata_pfx_pg"), ".", q("study_a"))
+  )
+
+  ducklake:::register_lake("pfx_pg", "postgres", "dbname=x")
+  expect_equal(ducklake:::metadata_prefix("pfx_pg", conn), q("__ducklake_metadata_pfx_pg"))
+
+  ducklake:::register_lake("pfx_duck", "duckdb")
+  expect_equal(
+    ducklake:::metadata_prefix("pfx_duck", conn),
+    paste0(q("__ducklake_metadata_pfx_duck"), ".main")
+  )
+})
+
 test_that("attach_ducklake() creates a missing local lake directory", {
   skip_if_no_ducklake()
 

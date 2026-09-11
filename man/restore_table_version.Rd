@@ -22,7 +22,7 @@ restore_table_version(
 UTC, or character already in UTC)}
 
 \item{author}{Optional author to record on the restore snapshot, for the
-audit trail}
+audit trail. Defaults to the \code{ducklake.author} option when it is set.}
 
 \item{commit_message}{Optional commit message for the restore snapshot.
 Defaults to a message noting the restore point (e.g.
