@@ -64,7 +64,7 @@ project directory or a shared location, and
 team.
 
 ```{r attach, message = FALSE}
-attach_ducklake("clinical_trial_lake", lake_path = article_dir)
+attach_ducklake("clinical_trial_lake", lake_path = article_dir, author = "Data Manager")
 ```
 
 The lake follows the medallion pattern, one schema per layer, so a table's
@@ -671,7 +671,8 @@ runs these programs stays with the sponsor.
 ## The history
 
 `list_table_snapshots()` lists every commit in the lake, across all four
-layers, with the author and message each one was given:
+layers, with the author and message each one was given, from the lake's
+creation on:
 
 ```{r history}
 list_table_snapshots() |>

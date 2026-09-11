@@ -87,6 +87,7 @@ test_that("expire_snapshots expires specific versions", {
 
   expired <- expire_snapshots(versions = oldest)
   expect_equal(expired$snapshot_id, oldest)
+  expect_equal(expired$commit_message, "Create lake")
   expect_false(oldest %in% list_table_snapshots()$snapshot_id)
 })
 

@@ -22,9 +22,10 @@ skip_if_no_ducklake <- function() {
 #' Create a temporary ducklake for testing
 #'
 #' Creates a test ducklake in a temporary directory with proper DuckLake catalog
-#' 
+#'
+#' @param ... Passed to attach_ducklake()
 #' @return List with ducklake_name, temp_dir, lake_path, and conn
-create_temp_ducklake <- function() {
+create_temp_ducklake <- function(...) {
   skip_if_no_ducklake()
 
   temp_dir <- tempfile()
@@ -38,7 +39,7 @@ create_temp_ducklake <- function() {
   )
   
   # Attach the ducklake - this creates the DuckLake catalog
-  attach_ducklake(ducklake_name, lake_path = temp_dir)
+  attach_ducklake(ducklake_name, lake_path = temp_dir, ...)
   
   # Get the connection
   conn <- get_ducklake_connection()

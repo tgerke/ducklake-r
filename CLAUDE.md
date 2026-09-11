@@ -132,3 +132,31 @@
   admiral layers' traceability is ADaM metadata. The article claims no
   "Part 11 compliance"; it maps the snapshot history onto the audit-trail
   elements in FDA's 2024 Q&A (Q12-Q14) and cites ICH E6(R3) section 4.2.2.
+- **Snapshot 0 is labeled at attach time, by one conditional UPDATE**
+  (2026-09-11). DuckLake writes snapshot 0 itself during ATTACH and
+  ignores `set_commit_message()` around it (confirmed on DuckDB 1.5.5:
+  `BEGIN; ATTACH ...; CALL lake.set_commit_message(...); COMMIT` leaves it
+  NULL), and no ATTACH option or setting supplies a default author. So
+  `attach_ducklake()` runs one UPDATE on `ducklake_snapshot_changes`
+  (`snapshot_id = 0`, all three fields NULL, exactly one row in
+  `ducklake_snapshot`) after creating a lake; the rows-affected count says
+  whether the lake was new, with no probe-then-write window. It skips
+  read-only and pinned attaches (a pinned attach leaves the metadata
+  catalog writable), `create = FALSE`, a local catalog file that existed
+  before the ATTACH, and an open transaction (a DuckDB transaction writes
+  to one attached database, so a label there blocks the lake writes after
+  it). Silent; warns on failure. A read-only ATTACH cannot create a lake,
+  so that guard matters only for existing lakes on server catalogs.
+- **`ducklake.author` applies at the package's commit points**
+  (2026-09-11): `commit_transaction()` (so `with_transaction()` and
+  `restore_table_version()`) and the creation snapshot. Not
+  `set_snapshot_metadata()`, where the person labeling is not always the
+  one who committed, and not autocommit writes, which record no metadata.
+  An empty string is refused, so an unset environment variable fails
+  loudly instead of recording `""`.
+- **`metadata_schema` lives in the lake registry** (2026-09-11). The
+  metadata database is hidden from `duckdb_databases()` and
+  `duckdb_tables()`, so the schema cannot be discovered after ATTACH;
+  `register_lake()` keeps it, and `metadata_prefix()` and
+  `get_metadata_table()` read it there. SQLite catalogs refuse
+  `METADATA_SCHEMA`.

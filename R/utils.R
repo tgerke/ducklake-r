@@ -293,20 +293,29 @@ split_table_name <- function(table_name) {
 
 #' Quoted prefix of a lake's metadata catalog for SQL text
 #'
-#' DuckDB and SQLite catalogs keep the DuckLake tables in a `main` schema;
-#' PostgreSQL and MySQL catalogs expose them at the top level. Resolves the
-#' backend from the lake's own registry entry, not the current database.
+#' A lake attached with `metadata_schema` keeps its DuckLake tables in that
+#' schema, which the lake's registry entry remembers: the metadata database
+#' is hidden from DuckDB's catalog functions, so the schema cannot be read
+#' back later. Otherwise DuckDB and SQLite catalogs keep the tables in a
+#' `main` schema, and PostgreSQL and MySQL catalogs expose them at the top
+#' level. Resolves the backend from the registry entry, not the current
+#' database.
 #'
 #' @param ducklake_name The lake name.
 #' @param conn A DBI connection used for quoting rules.
-#' @returns A string such as `"__ducklake_metadata_lake".main`.
+#' @returns A string such as `__ducklake_metadata_lake.main`, each part
+#'   quoted when its spelling calls for it.
 #' @noRd
 metadata_prefix <- function(ducklake_name, conn = get_ducklake_connection()) {
-  meta_db <- paste0("__ducklake_metadata_", ducklake_name)
+  meta_db <- quote_ident(paste0("__ducklake_metadata_", ducklake_name), conn)
+  schema <- .ducklake_env$lakes[[ducklake_name]]$metadata_schema
+  if (!is.null(schema)) {
+    return(paste0(meta_db, ".", quote_ident(schema, conn)))
+  }
   if (get_ducklake_backend(ducklake_name) %in% c("postgres", "mysql")) {
-    quote_ident(meta_db, conn)
+    meta_db
   } else {
-    paste0(quote_ident(meta_db, conn), ".main")
+    paste0(meta_db, ".main")
   }
 }
 
@@ -439,4 +448,52 @@ ensure_local_dir <- function(path) {
     dir.create(path, recursive = TRUE, showWarnings = FALSE)
   }
   invisible(path)
+}
+
+#' Validate an optional free-text argument
+#'
+#' `NULL` passes; otherwise the value must be one non-empty string. An
+#' empty string is refused so that an unset environment variable, read
+#' with `Sys.getenv()` into an author or a message, fails here instead of
+#' being recorded as `""`.
+#'
+#' @param x The value to validate.
+#' @param arg Argument name for the error message.
+#' @returns `x`, invisibly.
+#' @noRd
+check_optional_string <- function(x, arg) {
+  if (!is.null(x) &&
+      (!is.character(x) || length(x) != 1 || is.na(x) || !nzchar(x))) {
+    cli::cli_abort("{.arg {arg}} must be `NULL` or a single non-empty string.")
+  }
+  invisible(x)
+}
+
+#' The author for a snapshot this session commits
+#'
+#' An explicit `author` wins; otherwise the `ducklake.author` option, when
+#' set; otherwise `NULL`, which records no author. Used at the package's
+#' commit points (`commit_transaction()`, and through it
+#' `with_transaction()` and `restore_table_version()`) and for the creation
+#' snapshot `attach_ducklake()` labels. Not used by
+#' `set_snapshot_metadata()`: the person labeling a snapshot after the fact
+#' is not always the one who committed it.
+#'
+#' @param author An author name, or `NULL` to fall back to the option.
+#' @returns A single string, or `NULL`.
+#' @noRd
+resolve_author <- function(author = NULL) {
+  check_optional_string(author, "author")
+  if (!is.null(author)) {
+    return(author)
+  }
+  option <- getOption("ducklake.author")
+  if (!is.null(option) &&
+      (!is.character(option) || length(option) != 1 || is.na(option) ||
+         !nzchar(option))) {
+    cli::cli_abort(
+      "The {.code ducklake.author} option must be a single non-empty string, or `NULL`."
+    )
+  }
+  option
 }

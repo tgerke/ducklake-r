@@ -2,7 +2,8 @@
 #'
 #' Wrapper for the ducklake [ATTACH](https://ducklake.select/docs/stable/duckdb/usage/connecting) command.
 #' Creates a new DuckLake if the specified name does not exist, or connects to
-#' an existing one. The lake can be detached with [detach_ducklake()].
+#' an existing one, and labels the creation snapshot of a lake it creates.
+#' The lake can be detached with [detach_ducklake()].
 #'
 #' By default DuckDB is used as the catalog database. Alternative backends
 #' (PostgreSQL, SQLite, MySQL) can be selected with the `backend` parameter,
@@ -85,8 +86,29 @@
 #'   holds this lake's metadata tables (DuckLake's `METADATA_SCHEMA`,
 #'   default `main`). Lets several lakes share one PostgreSQL database,
 #'   each in its own schema.
+#' @param author Author to record on snapshot 0, the creation snapshot, when
+#'   this call creates the lake. Defaults to the `ducklake.author` option
+#'   when it is set (see `?ducklake`), otherwise none. Not written for a
+#'   lake that already exists.
+#' @param commit_message Commit message to record on snapshot 0 when this
+#'   call creates the lake (default `"Create lake"`). `NULL`, with no
+#'   author, leaves snapshot 0 as DuckLake writes it, without metadata.
 #'
 #' @details
+#' DuckLake writes snapshot 0 itself when it creates a lake, with no author
+#' and no commit message. When this call creates the lake, it fills those
+#' two fields on snapshot 0 from `author` and `commit_message`, the way
+#' [set_snapshot_metadata()] labels a snapshot after the fact, so the
+#' history from [list_table_snapshots()] starts with a labeled entry.
+#' Nothing is written when the lake already exists, when `read_only` is
+#' set, when the attach is pinned with `snapshot_version` or
+#' `snapshot_time`, or when the call runs inside an open transaction;
+#' `set_snapshot_metadata(snapshot_id = 0)` labels such a lake later. The
+#' write is silent, and a failure to write is a warning, not an error. For
+#' a PostgreSQL or MySQL catalog, whether the lake already existed is read
+#' from the catalog after the attach (one snapshot, id 0, no metadata), so
+#' a lake another client created and never wrote to is labeled too.
+#'
 #' For credential management with PostgreSQL or MySQL, consider DuckDB's
 #' built-in secrets manager instead of embedding credentials in the connection
 #' string:
@@ -114,7 +136,8 @@
 #' `type = "azure"` does not work there; explicit S3 keys do.
 #'
 #' @returns Invisibly, `NULL`. Called for its side effect of attaching the
-#'   DuckLake catalog to the package's DuckDB connection.
+#'   DuckLake catalog to the package's DuckDB connection and, for a lake it
+#'   creates, of labeling snapshot 0.
 #' @family connection management
 #' @export
 #'
@@ -124,7 +147,7 @@
 #' # DuckDB catalog (default)
 #' lake_dir <- tempfile("my_lake_")
 #' dir.create(lake_dir)
-#' attach_ducklake("my_lake", lake_path = lake_dir)
+#' attach_ducklake("my_lake", lake_path = lake_dir, author = "Data Engineer")
 #' detach_ducklake("my_lake")
 #'
 #' # Custom inlining threshold for a streaming workload
@@ -225,9 +248,13 @@ attach_ducklake <- function(ducklake_name, lake_path,
                              snapshot_time = NULL,
                              automatic_migration = FALSE,
                              create = TRUE,
-                             metadata_schema = NULL) {
+                             metadata_schema = NULL,
+                             author = NULL,
+                             commit_message = "Create lake") {
   backend <- match.arg(backend)
   check_identifier(ducklake_name)
+  author <- resolve_author(author)
+  check_optional_string(commit_message, "commit_message")
 
   if (!is.null(snapshot_version) && !is.null(snapshot_time)) {
     cli::cli_abort(
@@ -281,24 +308,32 @@ attach_ducklake <- function(ducklake_name, lake_path,
     }
   }
   
-  # DuckDB cannot create or write a database file on object storage, so a
-  # writable duckdb-backend lake needs its catalog on local disk
-  if (backend == "duckdb" && !read_only) {
-    catalog_path <- if (!is.null(catalog_connection_string)) {
+  # The catalog file of a file-based backend, NULL for a server catalog.
+  # Whether it exists is noted before ATTACH, which creates it, so a lake
+  # that was already there can be told from one this call makes.
+  catalog_path <- switch(backend,
+    duckdb = if (!is.null(catalog_connection_string)) {
       catalog_connection_string
     } else {
       file.path(lake_path, paste0(ducklake_name, ".ducklake"))
-    }
-    if (is_remote_path(catalog_path)) {
-      cli::cli_abort(c(
-        "DuckDB cannot write its catalog file to object storage.",
-        "x" = "The catalog would live at {.val {catalog_path}}.",
-        "i" = "Pass {.arg catalog_connection_string} with a local path for the catalog file; {.arg lake_path} then only sets where the Parquet data goes.",
-        "i" = "Or attach an existing remote catalog with {.code read_only = TRUE}.",
-        "i" = "Or pick a {.arg backend} whose catalog lives elsewhere, such as {.val sqlite} or {.val postgres}."
-      ))
-    }
+    },
+    sqlite = catalog_connection_string,
+    NULL
+  )
+
+  # DuckDB cannot create or write a database file on object storage, so a
+  # writable duckdb-backend lake needs its catalog on local disk
+  if (backend == "duckdb" && !read_only && is_remote_path(catalog_path)) {
+    cli::cli_abort(c(
+      "DuckDB cannot write its catalog file to object storage.",
+      "x" = "The catalog would live at {.val {catalog_path}}.",
+      "i" = "Pass {.arg catalog_connection_string} with a local path for the catalog file; {.arg lake_path} then only sets where the Parquet data goes.",
+      "i" = "Or attach an existing remote catalog with {.code read_only = TRUE}.",
+      "i" = "Or pick a {.arg backend} whose catalog lives elsewhere, such as {.val sqlite} or {.val postgres}."
+    ))
   }
+  catalog_existed <- !is.null(catalog_path) &&
+    !is_remote_path(catalog_path) && file.exists(catalog_path)
 
   if (backend == "mysql") {
     cli::cli_warn(c(
@@ -316,9 +351,13 @@ attach_ducklake <- function(ducklake_name, lake_path,
   }, error = function(e) character(0))
 
   if (ducklake_name %in% attached) {
-    # Already attached - just switch to it
+    # Already attached - just switch to it. The registry keeps the metadata
+    # schema of the first attach unless this call names one.
     db_execute(sprintf("USE %s;", quote_ident(ducklake_name, conn)))
-    register_lake(ducklake_name, backend, catalog_connection_string)
+    if (is.null(metadata_schema)) {
+      metadata_schema <- .ducklake_env$lakes[[ducklake_name]]$metadata_schema
+    }
+    register_lake(ducklake_name, backend, catalog_connection_string, metadata_schema)
     return(invisible(NULL))
   }
 
@@ -345,7 +384,19 @@ attach_ducklake <- function(ducklake_name, lake_path,
                                   metadata_schema)
   db_execute(attach_sql)
   db_execute(sprintf("USE %s;", quote_ident(ducklake_name, conn)))
-  register_lake(ducklake_name, backend, catalog_connection_string)
+  register_lake(ducklake_name, backend, catalog_connection_string, metadata_schema)
+
+  # Label snapshot 0 when this call created the lake. Not on a read-only or
+  # pinned attach (pinning leaves the metadata catalog writable, so this
+  # test is what stops the write), not on a lake that was already there,
+  # and not inside an open transaction: a transaction can write to one
+  # attached database, so a label there would block the lake writes that
+  # follow it.
+  if (isTRUE(create) && !read_only &&
+      is.null(snapshot_version) && is.null(snapshot_time) &&
+      !catalog_existed && !in_transaction(conn)) {
+    label_creation_snapshot(ducklake_name, author, commit_message, conn)
+  }
 
   invisible(NULL)
 }

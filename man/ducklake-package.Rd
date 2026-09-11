@@ -13,6 +13,14 @@ A 'tidyverse'-friendly interface to 'DuckLake' \url{https://ducklake.select/}, t
 \section{Package options}{
 
 \describe{
+\item{\code{ducklake.author}}{The author recorded on the snapshots this
+session commits when a call does not name one: \code{commit_transaction()},
+\code{with_transaction()}, \code{restore_table_version()}, and the creation
+snapshot \code{attach_ducklake()} labels. An \code{author} argument wins over
+the option. \code{set_snapshot_metadata()} does not read it, because
+labeling a snapshot after the fact is a deliberate edit, and a write
+made outside a transaction (\code{create_table()} on its own) records no
+author either way. Unset by default.}
 \item{\code{ducklake.verbose}}{When \code{FALSE}, the confirmations the package
 emits after each operation ("Committed snapshot 3: ...", "Added column
 ...") are suppressed, which keeps pipeline logs quiet. Warnings,

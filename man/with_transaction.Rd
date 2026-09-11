@@ -16,7 +16,9 @@ with_transaction(
 \item{expr}{An R expression or code block to execute within the transaction.
 Can be a single statement or a \code{\{...\}} block containing multiple statements.}
 
-\item{author}{Optional author name to associate with the snapshot}
+\item{author}{Author to record on the snapshot. Defaults to the
+\code{ducklake.author} option when it is set (see \code{?ducklake}), otherwise
+none.}
 
 \item{commit_message}{Optional commit message describing the changes}
 

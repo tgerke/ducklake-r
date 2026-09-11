@@ -2,13 +2,14 @@
 % Please edit documentation in R/transactions.R
 \name{set_snapshot_metadata}
 \alias{set_snapshot_metadata}
-\title{Set metadata for the most recent snapshot}
+\title{Set metadata for a snapshot}
 \usage{
 set_snapshot_metadata(
   ducklake_name,
   author = NULL,
   commit_message = NULL,
   commit_extra_info = NULL,
+  snapshot_id = NULL,
   conn = NULL,
   overwrite = FALSE
 )
@@ -16,11 +17,17 @@ set_snapshot_metadata(
 \arguments{
 \item{ducklake_name}{The name of the DuckLake catalog}
 
-\item{author}{Optional author name to associate with the snapshot}
+\item{author}{Optional author name to associate with the snapshot. The
+\code{ducklake.author} option is not read here: labeling a snapshot after
+the fact is a deliberate edit, so the author is always spelled out.}
 
 \item{commit_message}{Optional commit message describing the changes}
 
 \item{commit_extra_info}{Optional extra information about the commit}
+
+\item{snapshot_id}{Optional snapshot id (see \code{\link[=list_table_snapshots]{list_table_snapshots()}}).
+\code{NULL}, the default, means the most recent snapshot. An id the lake
+does not have is an error.}
 
 \item{conn}{Optional DuckDB connection object. If not provided, uses the default ducklake connection.}
 
@@ -32,9 +39,10 @@ stops when a supplied field already has a value.}
 Invisibly returns TRUE on success
 }
 \description{
-Fills in the author, commit message, and/or extra info of the most
-recent snapshot in a DuckLake catalog after it was committed, by
-updating the \code{ducklake_snapshot_changes} metadata table directly.
+Fills in the author, commit message, and/or extra info of a snapshot in
+a DuckLake catalog after it was committed, by updating the
+\code{ducklake_snapshot_changes} metadata table directly. The most recent
+snapshot by default; \code{snapshot_id} names another.
 }
 \details{
 Metadata belongs on the commit: pass \code{author}, \code{commit_message}, and
@@ -44,11 +52,20 @@ the transaction itself. This function is the escape hatch for a snapshot
 that was committed without them, such as one made interactively or by a
 client that could not set them.
 
+Snapshot 0 is the lake's creation, which DuckLake writes without an
+author or a message. \code{\link[=attach_ducklake]{attach_ducklake()}} labels it for a lake it
+creates; for a lake created before that, or attached read-only, pinned
+to a snapshot, or inside a transaction at the time, pass
+\code{snapshot_id = 0} here.
+
 It writes to the catalog's metadata table outside DuckLake's transaction
 and conflict model, and an overwrite leaves no trace of the previous
 value. That is why it fills blanks only unless \code{overwrite = TRUE}. Where
 the snapshot history is the audit trail (GxP, 21 CFR Part 11), set
-metadata at commit time and leave \code{overwrite} alone.
+metadata at commit time and leave \code{overwrite} alone. Call it outside a
+transaction: a DuckDB transaction can write to one attached database,
+and this one writes to the metadata catalog, so a lake write after it
+in the same transaction would fail.
 }
 \examples{
 \dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}
@@ -70,6 +87,10 @@ set_snapshot_metadata(
 # A second call refuses to replace them unless told to
 try(set_snapshot_metadata("meta_lake", commit_message = "Reworded"))
 set_snapshot_metadata("meta_lake", commit_message = "Reworded", overwrite = TRUE)
+
+# The creation snapshot has the message attach_ducklake() gave it and no
+# author yet: name one
+set_snapshot_metadata("meta_lake", author = "Data Team", snapshot_id = 0)
 
 detach_ducklake("meta_lake", shutdown = TRUE)
 unlink(lake_dir, recursive = TRUE)

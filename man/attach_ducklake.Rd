@@ -18,7 +18,9 @@ attach_ducklake(
   snapshot_time = NULL,
   automatic_migration = FALSE,
   create = TRUE,
-  metadata_schema = NULL
+  metadata_schema = NULL,
+  author = NULL,
+  commit_message = "Create lake"
 )
 }
 \arguments{
@@ -102,15 +104,26 @@ error rather than a new, empty lake.}
 holds this lake's metadata tables (DuckLake's \code{METADATA_SCHEMA},
 default \code{main}). Lets several lakes share one PostgreSQL database,
 each in its own schema.}
+
+\item{author}{Author to record on snapshot 0, the creation snapshot, when
+this call creates the lake. Defaults to the \code{ducklake.author} option
+when it is set (see \code{?ducklake}), otherwise none. Not written for a
+lake that already exists.}
+
+\item{commit_message}{Commit message to record on snapshot 0 when this
+call creates the lake (default \code{"Create lake"}). \code{NULL}, with no
+author, leaves snapshot 0 as DuckLake writes it, without metadata.}
 }
 \value{
 Invisibly, \code{NULL}. Called for its side effect of attaching the
-DuckLake catalog to the package's DuckDB connection.
+DuckLake catalog to the package's DuckDB connection and, for a lake it
+creates, of labeling snapshot 0.
 }
 \description{
 Wrapper for the ducklake \href{https://ducklake.select/docs/stable/duckdb/usage/connecting}{ATTACH} command.
 Creates a new DuckLake if the specified name does not exist, or connects to
-an existing one. The lake can be detached with \code{\link[=detach_ducklake]{detach_ducklake()}}.
+an existing one, and labels the creation snapshot of a lake it creates.
+The lake can be detached with \code{\link[=detach_ducklake]{detach_ducklake()}}.
 }
 \details{
 By default DuckDB is used as the catalog database. Alternative backends
@@ -126,6 +139,20 @@ interactive session duckdb offers to create \verb{~/.duckdb} the first time it
 connects, and with that the download happens once per machine. To fetch
 the extensions ahead of time, for a container image or a machine that is
 offline when the lake is attached, use \code{\link[=install_ducklake]{install_ducklake()}}.
+
+DuckLake writes snapshot 0 itself when it creates a lake, with no author
+and no commit message. When this call creates the lake, it fills those
+two fields on snapshot 0 from \code{author} and \code{commit_message}, the way
+\code{\link[=set_snapshot_metadata]{set_snapshot_metadata()}} labels a snapshot after the fact, so the
+history from \code{\link[=list_table_snapshots]{list_table_snapshots()}} starts with a labeled entry.
+Nothing is written when the lake already exists, when \code{read_only} is
+set, when the attach is pinned with \code{snapshot_version} or
+\code{snapshot_time}, or when the call runs inside an open transaction;
+\code{set_snapshot_metadata(snapshot_id = 0)} labels such a lake later. The
+write is silent, and a failure to write is a warning, not an error. For
+a PostgreSQL or MySQL catalog, whether the lake already existed is read
+from the catalog after the attach (one snapshot, id 0, no metadata), so
+a lake another client created and never wrote to is labeled too.
 
 For credential management with PostgreSQL or MySQL, consider DuckDB's
 built-in secrets manager instead of embedding credentials in the connection
@@ -158,7 +185,7 @@ See \url{https://github.com/duckdb/duckdb/issues/7892}. The \code{aws} and
 # DuckDB catalog (default)
 lake_dir <- tempfile("my_lake_")
 dir.create(lake_dir)
-attach_ducklake("my_lake", lake_path = lake_dir)
+attach_ducklake("my_lake", lake_path = lake_dir, author = "Data Engineer")
 detach_ducklake("my_lake")
 
 # Custom inlining threshold for a streaming workload

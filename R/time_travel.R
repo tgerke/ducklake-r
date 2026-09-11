@@ -238,7 +238,7 @@ list_table_snapshots <- function(table_name = NULL, ducklake_name = NULL, conn =
 #' @param timestamp Optional timestamp to restore to (POSIXct, converted to
 #'   UTC, or character already in UTC)
 #' @param author Optional author to record on the restore snapshot, for the
-#'   audit trail
+#'   audit trail. Defaults to the `ducklake.author` option when it is set.
 #' @param commit_message Optional commit message for the restore snapshot.
 #'   Defaults to a message noting the restore point (e.g.
 #'   `"Restored my_table to snapshot 5"`).

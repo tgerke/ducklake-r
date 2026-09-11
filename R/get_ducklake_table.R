@@ -116,13 +116,18 @@ get_metadata_table <- function(tbl_name, ducklake_name = NULL) {
     })
   }
   
-  # Metadata tables are in the __ducklake_metadata_[ducklake_name] database.
-  # DuckDB and SQLite use a .main. schema qualifier; PostgreSQL and MySQL do not.
+  # Metadata tables live in the __ducklake_metadata_[ducklake_name]
+  # database: in the schema the lake was attached with, else main for
+  # DuckDB and SQLite catalogs and the top level for PostgreSQL and MySQL
+  metadata_db <- paste0("__ducklake_metadata_", ducklake_name)
+  schema <- .ducklake_env$lakes[[ducklake_name]]$metadata_schema
   backend <- get_ducklake_backend(ducklake_name)
-  if (backend %in% c("postgres", "mysql")) {
-    metadata_tbl_name <- paste0("__ducklake_metadata_", ducklake_name, ".", tbl_name)
+  metadata_tbl_name <- if (!is.null(schema)) {
+    paste(metadata_db, schema, tbl_name, sep = ".")
+  } else if (backend %in% c("postgres", "mysql")) {
+    paste(metadata_db, tbl_name, sep = ".")
   } else {
-    metadata_tbl_name <- paste0("__ducklake_metadata_", ducklake_name, ".main.", tbl_name)
+    paste(metadata_db, "main", tbl_name, sep = ".")
   }
   return(get_ducklake_table(metadata_tbl_name))
 }

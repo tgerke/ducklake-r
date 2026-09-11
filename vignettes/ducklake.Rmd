@@ -61,7 +61,7 @@ One call opens a lake, and creates it first when nothing is at the path
 yet:
 
 ```{r attach, message=FALSE}
-attach_ducklake("my_lake", lake_path = vignette_temp_dir)
+attach_ducklake("my_lake", lake_path = vignette_temp_dir, author = "Data Engineer")
 ```
 
 The same call with the same path opens the lake again in a later session.
@@ -207,8 +207,9 @@ list_table_snapshots("cars")
 
 Each row is one commit. `changes` summarizes what the commit did,
 `author`, `commit_message`, and `commit_extra_info` are the fields passed
-to `with_transaction()`, and `snapshot_id` is the number from the
-confirmation. Any earlier version can be read as a lazy table:
+to `with_transaction()`, or to `attach_ducklake()` for snapshot 0, the
+lake's creation, and `snapshot_id` is the number from the confirmation.
+Any earlier version can be read as a lazy table:
 
 ```{r version}
 # The cars table before the kpl column existed
