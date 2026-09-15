@@ -76,3 +76,55 @@ test_that("get_table_changes rejects mixed bound types", {
     "both"
   )
 })
+
+test_that("get_table_changes defaults to the table's full history and tags the feed", {
+  skip_if_not_installed("duckdb")
+  skip_if_not_installed("dplyr")
+
+  lake <- create_temp_ducklake()
+  on.exit(cleanup_temp_ducklake(lake), add = TRUE)
+
+  create_table(data.frame(id = 1:3, v = c(10, 20, 30)), "cdc_all")
+  rows_update(get_ducklake_table("cdc_all"), data.frame(id = 2L, v = 99), by = "id")
+  rows_delete(get_ducklake_table("cdc_all"), data.frame(id = 3L), by = "id")
+  snaps <- list_table_snapshots("cdc_all")
+
+  explicit <- get_table_changes(
+    "cdc_all", min(snaps$snapshot_id), max(snaps$snapshot_id)
+  ) |>
+    dplyr::collect()
+  whole <- get_table_changes("cdc_all") |> dplyr::collect()
+  expect_equal(nrow(whole), nrow(explicit))
+  expect_equal(nrow(whole), 6)
+
+  expect_error(get_table_changes("cdc_all", start = 1), "both")
+  expect_error(get_table_changes("cdc_all", end = 1), "both")
+  expect_error(
+    suppressWarnings(get_table_changes("no_such_table")),
+    "No snapshots found"
+  )
+
+  feed <- get_table_changes("cdc_all")
+  info <- attr(feed, "ducklake_changes")
+  expect_equal(
+    names(info),
+    c("table_name", "schema", "table", "ducklake_name", "bound_type", "start", "end")
+  )
+  expect_equal(info$table_name, "main.cdc_all")
+  expect_equal(info$table, "cdc_all")
+  expect_equal(info$ducklake_name, lake$ducklake_name)
+  expect_equal(info$bound_type, "snapshot")
+  expect_equal(c(info$start, info$end), range(snaps$snapshot_id))
+
+  by_time <- get_table_changes(
+    "cdc_all", min(snaps$snapshot_time), max(snaps$snapshot_time)
+  )
+  expect_equal(attr(by_time, "ducklake_changes")$bound_type, "timestamp")
+
+  # The attribute survives dplyr verbs on the lazy table, not collect()
+  narrowed <- feed |>
+    dplyr::filter(change_type == "delete") |>
+    dplyr::select(id, snapshot_id, rowid, change_type)
+  expect_equal(attr(narrowed, "ducklake_changes")$table, "cdc_all")
+  expect_null(attr(dplyr::collect(narrowed), "ducklake_changes"))
+})

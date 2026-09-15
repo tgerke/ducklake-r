@@ -235,6 +235,11 @@ bind_rows(original, adjusted) |>
   )
 ```
 
+That compares two whole versions. For the rows themselves,
+`get_table_changes()` lists every row inserted, updated, or deleted
+between two snapshots, and `view_table_changes()` opens that feed in an
+interactive viewer; `vignette("visualizing-your-lake")` shows both.
+
 ## Restoring Previous Versions
 
 If we need to undo changes, `restore_table_version()` rolls a table back to

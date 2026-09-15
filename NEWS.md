@@ -1,5 +1,24 @@
 # ducklake (development version)
 
+* New `view_table_changes()` opens a table's change feed in an interactive
+  viewer, an htmlwidget. A sidebar lists the schema changes, the columns
+  and cells that changed, the rows inserted, updated, and deleted, and the
+  snapshots in range (each with its author and message), with a count on
+  every entry. The main panel shows the selected part as a table. An
+  update is one row, shown from its old or its new side, with the changed
+  cells highlighted and both values on hover, and a cells view lists every
+  change as snapshot, rowid, column, old, new. It takes the lazy feed from
+  `get_table_changes()`, so dplyr filters run in DuckDB before anything is
+  collected, or that feed collected into a data frame. The layout follows
+  Hadley Wickham's data-diff (<https://github.com/hadley/data-diff>), with
+  thanks. htmlwidgets joins Suggests, with jsonlite for the viewer's
+  tests.
+
+* `get_table_changes()` defaults `start` and `end` to the table's full
+  history, and its result carries a `ducklake_changes` attribute (table,
+  lake, range) that `view_table_changes()` reads. The attribute survives
+  dplyr verbs on the lazy table and is dropped by `collect()`.
+
 # ducklake 0.8.0
 
 * `commit_transaction()` and `with_transaction()` name the snapshot this

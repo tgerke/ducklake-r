@@ -122,6 +122,7 @@ reference:
     - plot_snapshots
     - plot_table_changes
     - restore_table_version
+    - view_table_changes
     
   - title: "Table Documentation"
     desc: "Comments and variable labels stored in the lake"

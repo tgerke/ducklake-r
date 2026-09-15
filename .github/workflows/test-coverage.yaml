@@ -21,7 +21,7 @@ jobs:
       DUCKDB_R_HOME: ~/.duckdb-ci
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Drop the Chrome apt source the runner image ships
         # Its index fails hash checks now and then, and setup-r's apt-get

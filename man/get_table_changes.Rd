@@ -4,14 +4,22 @@
 \alias{get_table_changes}
 \title{Get the changes made to a table between two snapshots}
 \usage{
-get_table_changes(table_name, start, end, ducklake_name = NULL, conn = NULL)
+get_table_changes(
+  table_name,
+  start = NULL,
+  end = NULL,
+  ducklake_name = NULL,
+  conn = NULL
+)
 }
 \arguments{
 \item{table_name}{The name of the table to inspect, optionally
 qualified as \code{"schema.table"} (default schema \code{main}).}
 
 \item{start}{The first snapshot to include: either a snapshot id (see
-\code{\link[=list_table_snapshots]{list_table_snapshots()}}) or a timestamp (POSIXct or character).}
+\code{\link[=list_table_snapshots]{list_table_snapshots()}}) or a timestamp (POSIXct or character). With
+\code{end} also \code{NULL} (the default), the feed covers the table's full
+history, from its first snapshot to its latest.}
 
 \item{end}{The last snapshot to include, in the same form as \code{start}.}
 
@@ -26,7 +34,10 @@ A dplyr lazy query object (tbl_lazy). In addition to the table's
 own columns it carries \code{snapshot_id} (the snapshot that made the
 change), \code{rowid} (the changed row's identifier), and \code{change_type}
 (\code{"insert"}, \code{"delete"}, \code{"update_preimage"}, or
-\code{"update_postimage"}).
+\code{"update_postimage"}). It also carries a \code{ducklake_changes} attribute
+naming the table, the lake, and the requested range, which
+\code{\link[=view_table_changes]{view_table_changes()}} reads; the attribute survives dplyr verbs on the
+lazy table and is dropped by \code{collect()}.
 }
 \description{
 Returns the exact rows that were inserted, deleted, or updated in a table
@@ -34,14 +45,21 @@ between two snapshots (inclusive), using DuckLake's data change feed.
 Useful for auditing and for change-data-capture style pipelines.
 }
 \details{
-Both bounds must be of the same kind: two snapshot ids or two
-timestamps. POSIXct bounds are converted to UTC, matching the snapshot
-times DuckLake records; character bounds are passed through as-is and
-must already be in UTC. Bounds before the lake's first snapshot are
-rejected by DuckLake, so prefer snapshot times from
-\code{\link[=list_table_snapshots]{list_table_snapshots()}}. Updates appear as two rows -- the row as it
-looked before the change (\code{update_preimage}) and after it
+Both bounds must be given or both left \code{NULL}. When given, they must be
+of the same kind: two snapshot ids or two timestamps. POSIXct bounds are
+converted to UTC, matching the snapshot times DuckLake records; character
+bounds are passed through as-is and must already be in UTC. Bounds before
+the lake's first snapshot are rejected by DuckLake, so prefer snapshot
+times from \code{\link[=list_table_snapshots]{list_table_snapshots()}}. Updates appear as two rows -- the
+row as it looked before the change (\code{update_preimage}) and after it
 (\code{update_postimage}).
+
+The feed is read with the table's schema as of the end snapshot: a column
+added inside the range is \code{NA} in rows from before it existed, and a
+renamed column appears under its newer name. A table rebuilt by
+\code{\link[=replace_table]{replace_table()}} or \code{\link[=restore_table_version]{restore_table_version()}} gets a new table id, and
+the feed covers the current id only, so changes from before the rebuild
+are not in it.
 
 This wraps DuckLake's
 \href{https://ducklake.select/docs/stable/duckdb/advanced_features/data_change_feed}{\code{table_changes()}}
@@ -61,6 +79,9 @@ rows_delete(
 )
 snaps <- list_table_snapshots("orders")
 
+# Everything that ever happened to the table
+get_table_changes("orders") |> dplyr::collect()
+
 # What changed in the most recent snapshot?
 latest <- max(snaps$snapshot_id)
 get_table_changes("orders", latest, latest) |> dplyr::collect()
@@ -78,8 +99,9 @@ unlink(lake_dir, recursive = TRUE)
 \dontshow{\}) # examplesIf}
 }
 \seealso{
-\code{\link[=list_table_snapshots]{list_table_snapshots()}}, \code{\link[=get_ducklake_table_version]{get_ducklake_table_version()}},
-\code{\link[=get_ducklake_table_asof]{get_ducklake_table_asof()}}
+\code{\link[=view_table_changes]{view_table_changes()}} to browse the feed interactively,
+\code{\link[=plot_table_changes]{plot_table_changes()}}, \code{\link[=list_table_snapshots]{list_table_snapshots()}},
+\code{\link[=get_ducklake_table_version]{get_ducklake_table_version()}}, \code{\link[=get_ducklake_table_asof]{get_ducklake_table_asof()}}
 
 Other time travel:
 \code{\link[=get_ducklake_table_asof]{get_ducklake_table_asof()}},
@@ -87,6 +109,7 @@ Other time travel:
 \code{\link[=list_table_snapshots]{list_table_snapshots()}},
 \code{\link[=plot_snapshots]{plot_snapshots()}},
 \code{\link[=plot_table_changes]{plot_table_changes()}},
-\code{\link[=restore_table_version]{restore_table_version()}}
+\code{\link[=restore_table_version]{restore_table_version()}},
+\code{\link[=view_table_changes]{view_table_changes()}}
 }
 \concept{time travel}
