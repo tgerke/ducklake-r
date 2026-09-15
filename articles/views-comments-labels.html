@@ -39,24 +39,14 @@
 <li class="active nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="../articles/ducklake.html">Getting Started</a></li>
-    <li><a class="dropdown-item" href="../articles/deployment.html">Choosing a Deployment</a></li>
-    <li><hr class="dropdown-divider"></li>
-    <li><h6 class="dropdown-header" data-toc-skip>Use Cases</h6></li>
-    <li><a class="dropdown-item" href="../articles/clinical-trial-datalake.html">Clinical Trial Data Lake</a></li>
-    <li><hr class="dropdown-divider"></li>
-    <li><h6 class="dropdown-header" data-toc-skip>Core Operations</h6></li>
+<li><a class="dropdown-item" href="../articles/deployment.html">Choosing a Deployment</a></li>
+    <li><a class="dropdown-item" href="../articles/clinical-trial-datalake.html">Clinical Trial Data Lake with ducklake</a></li>
     <li><a class="dropdown-item" href="../articles/loading-data.html">Loading Data</a></li>
-    <li><a class="dropdown-item" href="../articles/modifying-tables.html">Modifying Tables</a></li>
-    <li><a class="dropdown-item" href="../articles/views-comments-labels.html">Views, Comments, and Labels</a></li>
-    <li><hr class="dropdown-divider"></li>
-    <li><h6 class="dropdown-header" data-toc-skip>Advanced Features</h6></li>
-    <li><a class="dropdown-item" href="../articles/data-inlining.html">Data Inlining</a></li>
-    <li><a class="dropdown-item" href="../articles/transactions.html">Working with Transactions</a></li>
+    <li><a class="dropdown-item" href="../articles/modifying-tables.html">Modifying Tables with Version Control</a></li>
     <li><a class="dropdown-item" href="../articles/time-travel.html">Time Travel Queries</a></li>
     <li><a class="dropdown-item" href="../articles/visualizing-your-lake.html">Visualizing Your Lake</a></li>
-    <li><a class="dropdown-item" href="../articles/storage-and-backups.html">Storage and Backup Management</a></li>
-    <li><a class="dropdown-item" href="../articles/quack-remote-access.html">Quack Remote Access</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><a class="dropdown-item" href="../articles/index.html">More articles...</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -140,7 +130,7 @@ further verbs pipe onto a view as they would onto a table:</p>
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"v_efficient_cars"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">cyl</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A query:  ?? x 2</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpazJ3HE/ducklake/ducklake2dd16724a8bc.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpBbCwd5/ducklake/ducklake2e5a33bad677.duckdb]</span></span></span>
 <span><span class="co">#&gt;     cyl     n</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>     4     6</span></span></code></pre></div>
@@ -149,7 +139,7 @@ snapshot in the lake’s history, like any change to a table:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"v_efficient_cars"</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 1           2 2026-09-15 23:31:38              2</span></span>
+<span><span class="co">#&gt; 1           2 2026-09-15 23:52:52              2</span></span>
 <span><span class="co">#&gt;                                changes        author</span></span>
 <span><span class="co">#&gt; 1 views_created, main.v_efficient_cars Data Engineer</span></span>
 <span><span class="co">#&gt;                                  commit_message commit_extra_info</span></span>
@@ -218,7 +208,7 @@ the labelled package sets them:</p>
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://larmarange.github.io/labelled/" class="external-link">labelled</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">df_visits</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>subject <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"S1"</span>, <span class="st">"S2"</span><span class="op">)</span>, sbp <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">128</span>, <span class="fl">141</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/pkg/labelled/man/var_label.html" class="external-link">set_variable_labels</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="https://larmarange.github.io/labelled/reference/var_label.html" class="external-link">set_variable_labels</a></span><span class="op">(</span></span>
 <span>    subject <span class="op">=</span> <span class="st">"Subject identifier"</span>,</span>
 <span>    sbp <span class="op">=</span> <span class="st">"Systolic blood pressure (mmHg)"</span></span>
 <span>  <span class="op">)</span></span>
@@ -232,7 +222,7 @@ the labelled package sets them:</p>
 <span><span class="co">#&gt; Committed snapshot 6 (Data Engineer): Add the visit measurements</span></span>
 <span></span>
 <span><span class="va">df_collected</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"visits"</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/compute.html" class="external-link">collect</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/pkg/labelled/man/var_label.html" class="external-link">var_label</a></span><span class="op">(</span><span class="va">df_collected</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://larmarange.github.io/labelled/reference/var_label.html" class="external-link">var_label</a></span><span class="op">(</span><span class="va">df_collected</span><span class="op">)</span></span>
 <span><span class="co">#&gt; $subject</span></span>
 <span><span class="co">#&gt; [1] "Subject identifier"</span></span>
 <span><span class="co">#&gt; </span></span>

@@ -174,7 +174,7 @@
   ([`vignette("views-comments-labels")`](https://tgerke.github.io/ducklake-r/articles/views-comments-labels.md))
   covers the query logic and documentation that live in the catalog, and
   its labels example uses
-  [`labelled::set_variable_labels()`](https://rdrr.io/pkg/labelled/man/var_label.html),
+  [`labelled::set_variable_labels()`](https://larmarange.github.io/labelled/reference/var_label.html),
   so labelled is now a suggested package.
 
 ## ducklake 0.7.0

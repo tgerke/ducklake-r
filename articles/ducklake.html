@@ -39,24 +39,14 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="../articles/ducklake.html">Getting Started</a></li>
-    <li><a class="dropdown-item" href="../articles/deployment.html">Choosing a Deployment</a></li>
-    <li><hr class="dropdown-divider"></li>
-    <li><h6 class="dropdown-header" data-toc-skip>Use Cases</h6></li>
-    <li><a class="dropdown-item" href="../articles/clinical-trial-datalake.html">Clinical Trial Data Lake</a></li>
-    <li><hr class="dropdown-divider"></li>
-    <li><h6 class="dropdown-header" data-toc-skip>Core Operations</h6></li>
+<li><a class="dropdown-item" href="../articles/deployment.html">Choosing a Deployment</a></li>
+    <li><a class="dropdown-item" href="../articles/clinical-trial-datalake.html">Clinical Trial Data Lake with ducklake</a></li>
     <li><a class="dropdown-item" href="../articles/loading-data.html">Loading Data</a></li>
-    <li><a class="dropdown-item" href="../articles/modifying-tables.html">Modifying Tables</a></li>
-    <li><a class="dropdown-item" href="../articles/views-comments-labels.html">Views, Comments, and Labels</a></li>
-    <li><hr class="dropdown-divider"></li>
-    <li><h6 class="dropdown-header" data-toc-skip>Advanced Features</h6></li>
-    <li><a class="dropdown-item" href="../articles/data-inlining.html">Data Inlining</a></li>
-    <li><a class="dropdown-item" href="../articles/transactions.html">Working with Transactions</a></li>
+    <li><a class="dropdown-item" href="../articles/modifying-tables.html">Modifying Tables with Version Control</a></li>
     <li><a class="dropdown-item" href="../articles/time-travel.html">Time Travel Queries</a></li>
     <li><a class="dropdown-item" href="../articles/visualizing-your-lake.html">Visualizing Your Lake</a></li>
-    <li><a class="dropdown-item" href="../articles/storage-and-backups.html">Storage and Backup Management</a></li>
-    <li><a class="dropdown-item" href="../articles/quack-remote-access.html">Quack Remote Access</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><a class="dropdown-item" href="../articles/index.html">More articles...</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -197,7 +187,7 @@ SQL that DuckDB runs against the lake:</p>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">mpg</span>, <span class="va">cyl</span>, <span class="va">hp</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">3</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A query:  ?? x 3</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmpm0Znsu/ducklake/ducklake2a7612d4816f.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpTFrmAy/ducklake/ducklake2afd24c0c84c.duckdb]</span></span></span>
 <span><span class="co">#&gt;     mpg   cyl    hp</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>  21       6   110</span></span>
@@ -293,7 +283,7 @@ both steps as a unit:</p>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">mpg</span>, <span class="va">kpl</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">3</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A query:  ?? x 2</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmpm0Znsu/ducklake/ducklake2a7612d4816f.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpTFrmAy/ducklake/ducklake2afd24c0c84c.duckdb]</span></span></span>
 <span><span class="co">#&gt;     mpg   kpl</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>  21    8.93</span></span>
@@ -314,8 +304,8 @@ a table:</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 1           1 2026-09-15 23:31:12              1</span></span>
-<span><span class="co">#&gt; 2           2 2026-09-15 23:31:12              2</span></span>
+<span><span class="co">#&gt; 1           1 2026-09-15 23:52:16              1</span></span>
+<span><span class="co">#&gt; 2           2 2026-09-15 23:52:17              2</span></span>
 <span><span class="co">#&gt;                                                              changes</span></span>
 <span><span class="co">#&gt; 1                 tables_created, tables_inserted_into, main.cars, 1</span></span>
 <span><span class="co">#&gt; 2 tables_altered, tables_inserted_into, tables_deleted_from, 1, 1, 1</span></span>
@@ -334,7 +324,7 @@ table:</p>
 <span><span class="fu"><a href="../reference/get_ducklake_table_version.html">get_ducklake_table_version</a></span><span class="op">(</span><span class="st">"cars"</span>, version <span class="op">=</span> <span class="fl">1</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fl">3</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A query:  ?? x 11</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmpm0Znsu/ducklake/ducklake2a7612d4816f.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpTFrmAy/ducklake/ducklake2afd24c0c84c.duckdb]</span></span></span>
 <span><span class="co">#&gt;     mpg   cyl  disp    hp  drat    wt  qsec    vs    am  gear  carb</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>  21       6   160   110  3.9   2.62  16.5     0     1     4     4</span></span>
@@ -348,9 +338,9 @@ snapshot, so the versions after it stay readable:</p>
 <span></span>
 <span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 1           1 2026-09-15 23:31:12              1</span></span>
-<span><span class="co">#&gt; 2           2 2026-09-15 23:31:12              2</span></span>
-<span><span class="co">#&gt; 3           3 2026-09-15 23:31:13              3</span></span>
+<span><span class="co">#&gt; 1           1 2026-09-15 23:52:16              1</span></span>
+<span><span class="co">#&gt; 2           2 2026-09-15 23:52:17              2</span></span>
+<span><span class="co">#&gt; 3           3 2026-09-15 23:52:17              3</span></span>
 <span><span class="co">#&gt;                                                                 changes</span></span>
 <span><span class="co">#&gt; 1                    tables_created, tables_inserted_into, main.cars, 1</span></span>
 <span><span class="co">#&gt; 2    tables_altered, tables_inserted_into, tables_deleted_from, 1, 1, 1</span></span>

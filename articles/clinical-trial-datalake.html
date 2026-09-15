@@ -39,24 +39,14 @@
 <li class="active nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="../articles/ducklake.html">Getting Started</a></li>
-    <li><a class="dropdown-item" href="../articles/deployment.html">Choosing a Deployment</a></li>
-    <li><hr class="dropdown-divider"></li>
-    <li><h6 class="dropdown-header" data-toc-skip>Use Cases</h6></li>
-    <li><a class="dropdown-item" href="../articles/clinical-trial-datalake.html">Clinical Trial Data Lake</a></li>
-    <li><hr class="dropdown-divider"></li>
-    <li><h6 class="dropdown-header" data-toc-skip>Core Operations</h6></li>
+<li><a class="dropdown-item" href="../articles/deployment.html">Choosing a Deployment</a></li>
+    <li><a class="dropdown-item" href="../articles/clinical-trial-datalake.html">Clinical Trial Data Lake with ducklake</a></li>
     <li><a class="dropdown-item" href="../articles/loading-data.html">Loading Data</a></li>
-    <li><a class="dropdown-item" href="../articles/modifying-tables.html">Modifying Tables</a></li>
-    <li><a class="dropdown-item" href="../articles/views-comments-labels.html">Views, Comments, and Labels</a></li>
-    <li><hr class="dropdown-divider"></li>
-    <li><h6 class="dropdown-header" data-toc-skip>Advanced Features</h6></li>
-    <li><a class="dropdown-item" href="../articles/data-inlining.html">Data Inlining</a></li>
-    <li><a class="dropdown-item" href="../articles/transactions.html">Working with Transactions</a></li>
+    <li><a class="dropdown-item" href="../articles/modifying-tables.html">Modifying Tables with Version Control</a></li>
     <li><a class="dropdown-item" href="../articles/time-travel.html">Time Travel Queries</a></li>
     <li><a class="dropdown-item" href="../articles/visualizing-your-lake.html">Visualizing Your Lake</a></li>
-    <li><a class="dropdown-item" href="../articles/storage-and-backups.html">Storage and Backup Management</a></li>
-    <li><a class="dropdown-item" href="../articles/quack-remote-access.html">Quack Remote Access</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><a class="dropdown-item" href="../articles/index.html">More articles...</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -162,7 +152,7 @@ SDTM and ADaM names look the way they do.</p>
 <span></span>
 <span><span class="va">sdtm_transfer</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">article_dir</span>, <span class="st">"sdtm_transfer"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/files2.html" class="external-link">dir.create</a></span><span class="op">(</span><span class="va">sdtm_transfer</span>, showWarnings <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/pkg/purrr/man/imap.html" class="external-link">iwalk</a></span><span class="op">(</span><span class="va">sdtm</span>, \<span class="op">(</span><span class="va">data</span>, <span class="va">domain</span><span class="op">)</span> <span class="op">{</span></span>
+<span><span class="fu"><a href="https://purrr.tidyverse.org/reference/imap.html" class="external-link">iwalk</a></span><span class="op">(</span><span class="va">sdtm</span>, \<span class="op">(</span><span class="va">data</span>, <span class="va">domain</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="fu">haven</span><span class="fu">::</span><span class="fu"><a href="https://haven.tidyverse.org/reference/read_xpt.html" class="external-link">write_xpt</a></span><span class="op">(</span></span>
 <span>    <span class="va">data</span>,</span>
 <span>    <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">sdtm_transfer</span>, <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="va">domain</span>, <span class="st">".xpt"</span><span class="op">)</span><span class="op">)</span>,</span>
@@ -175,7 +165,7 @@ lake can always show what data management sent and reprocess it when the
 cleaning logic changes. One commit loads the four domains:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/with_transaction.html">with_transaction</a></span><span class="op">(</span><span class="op">{</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/pkg/purrr/man/map.html" class="external-link">walk</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">sdtm</span><span class="op">)</span>, \<span class="op">(</span><span class="va">domain</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html" class="external-link">walk</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">sdtm</span><span class="op">)</span>, \<span class="op">(</span><span class="va">domain</span><span class="op">)</span> <span class="op">{</span></span>
 <span>    <span class="fu"><a href="../reference/create_table.html">create_table</a></span><span class="op">(</span></span>
 <span>      <span class="fu">haven</span><span class="fu">::</span><span class="fu"><a href="https://haven.tidyverse.org/reference/read_xpt.html" class="external-link">read_xpt</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">sdtm_transfer</span>, <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="va">domain</span>, <span class="st">".xpt"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>      <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"bronze."</span>, <span class="va">domain</span><span class="op">)</span></span>
@@ -212,8 +202,8 @@ blank for most subjects:</p>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 2 × 2</span></span></span>
 <span><span class="co">#&gt;   dthdtc_blank     n</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> FALSE            3</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> TRUE           303</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> TRUE           303</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> FALSE            3</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="silver-blanks-to-na-inside-duckdb">Silver: blanks to NA, inside DuckDB<a class="anchor" aria-label="anchor" href="#silver-blanks-to-na-inside-duckdb"></a>
@@ -238,7 +228,7 @@ without its rows entering R.</p>
 <span><span class="op">}</span></span></code></pre></div>
 <p>Each silver recipe is kept in a named list, under the name it is
 materialized as, because the recipe that builds a layer is also its
-lineage, which the results section comes back to. <code><a href="https://rdrr.io/pkg/purrr/man/imap.html" class="external-link">iwalk()</a></code>
+lineage, which the results section comes back to. <code><a href="https://purrr.tidyverse.org/reference/imap.html" class="external-link">iwalk()</a></code>
 then hands each recipe and its name to <code><a href="../reference/create_table.html">create_table()</a></code>.</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">silver_recipes</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
@@ -249,7 +239,7 @@ then hands each recipe and its name to <code><a href="../reference/create_table.
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/with_transaction.html">with_transaction</a></span><span class="op">(</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/pkg/purrr/man/imap.html" class="external-link">iwalk</a></span><span class="op">(</span><span class="va">silver_recipes</span>, <span class="va">create_table</span><span class="op">)</span>,</span>
+<span>  <span class="fu"><a href="https://purrr.tidyverse.org/reference/imap.html" class="external-link">iwalk</a></span><span class="op">(</span><span class="va">silver_recipes</span>, <span class="va">create_table</span><span class="op">)</span>,</span>
 <span>  author <span class="op">=</span> <span class="st">"Data Manager"</span>,</span>
 <span>  commit_message <span class="op">=</span> <span class="st">"Standardize SDTM: blanks to NA"</span></span>
 <span><span class="op">)</span></span>
@@ -418,7 +408,7 @@ attribute it finds, and the dataset label goes on the table itself.</p>
 <span>  AGEGR1 <span class="op">=</span> <span class="st">"Pooled Age Group 1"</span>,</span>
 <span>  AGEGR1N <span class="op">=</span> <span class="st">"Pooled Age Group 1 (N)"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="va">adsl</span> <span class="op">&lt;-</span> <span class="fu">labelled</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/labelled/man/var_label.html" class="external-link">set_variable_labels</a></span><span class="op">(</span><span class="va">adsl</span>, .labels <span class="op">=</span> <span class="va">adsl_labels</span><span class="op">)</span></span>
+<span><span class="va">adsl</span> <span class="op">&lt;-</span> <span class="fu">labelled</span><span class="fu">::</span><span class="fu"><a href="https://larmarange.github.io/labelled/reference/var_label.html" class="external-link">set_variable_labels</a></span><span class="op">(</span><span class="va">adsl</span>, .labels <span class="op">=</span> <span class="va">adsl_labels</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/with_transaction.html">with_transaction</a></span><span class="op">(</span><span class="op">{</span></span>
 <span>  <span class="fu"><a href="../reference/create_table.html">create_table</a></span><span class="op">(</span><span class="va">adsl</span>, <span class="st">"gold.adsl"</span><span class="op">)</span></span>
@@ -544,9 +534,9 @@ admiral’s ADAE template.</p>
 <span>    <span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>    <span class="co"># restrict_derivation() rebinds the rows and drops label attributes on</span></span>
 <span>    <span class="co"># the way, so the SDTM and ADSL labels are copied back</span></span>
-<span>    <span class="fu">labelled</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/labelled/man/copy_labels.html" class="external-link">copy_labels_from</a></span><span class="op">(</span><span class="va">ae</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>    <span class="fu">labelled</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/labelled/man/copy_labels.html" class="external-link">copy_labels_from</a></span><span class="op">(</span><span class="va">adsl</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>    <span class="fu">labelled</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/labelled/man/var_label.html" class="external-link">set_variable_labels</a></span><span class="op">(</span>.labels <span class="op">=</span> <span class="va">adae_labels</span><span class="op">)</span></span>
+<span>    <span class="fu">labelled</span><span class="fu">::</span><span class="fu"><a href="https://larmarange.github.io/labelled/reference/copy_labels.html" class="external-link">copy_labels_from</a></span><span class="op">(</span><span class="va">ae</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>    <span class="fu">labelled</span><span class="fu">::</span><span class="fu"><a href="https://larmarange.github.io/labelled/reference/copy_labels.html" class="external-link">copy_labels_from</a></span><span class="op">(</span><span class="va">adsl</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>    <span class="fu">labelled</span><span class="fu">::</span><span class="fu"><a href="https://larmarange.github.io/labelled/reference/var_label.html" class="external-link">set_variable_labels</a></span><span class="op">(</span>.labels <span class="op">=</span> <span class="va">adae_labels</span><span class="op">)</span></span>
 <span><span class="op">}</span></span>
 <span></span>
 <span><span class="va">adae</span> <span class="op">&lt;-</span> <span class="fu">build_adae</span><span class="op">(</span><span class="va">ae</span>, <span class="va">adsl</span><span class="op">)</span></span>
@@ -777,7 +767,7 @@ cell highlighted and both values on hover:</p>
 <div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/view_table_changes.html">view_table_changes</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_table_changes.html">get_table_changes</a></span><span class="op">(</span><span class="st">"silver.ae"</span>, <span class="va">correction</span>, <span class="va">correction</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <div class="ducklake_changes html-widget html-fill-item" id="htmlwidget-e5c8c404fe174e4c81bd" style="width:100%;height:520px;"></div>
-<script type="application/json" data-for="htmlwidget-e5c8c404fe174e4c81bd">{"x":{"title":"silver.ae","table_name":"silver.ae","ducklake_name":"clinical_trial_lake","range":{"bound_type":"snapshot","start":"8","end":"8","start_id":8,"end_id":8},"data":{"STUDYID":["CDISCPILOT01","CDISCPILOT01"],"DOMAIN":["AE","AE"],"USUBJID":["01-701-1015","01-701-1015"],"AESEQ":["1","1"],"AESPID":["E07","E07"],"AETERM":["APPLICATION SITE ERYTHEMA","APPLICATION SITE ERYTHEMA"],"AELLT":["APPLICATION SITE REDNESS","APPLICATION SITE REDNESS"],"AELLTCD":[null,null],"AEDECOD":["APPLICATION SITE ERYTHEMA","APPLICATION SITE ERYTHEMA"],"AEPTCD":[null,null],"AEHLT":["HLT_0617","HLT_0617"],"AEHLTCD":[null,null],"AEHLGT":["HLGT_0152","HLGT_0152"],"AEHLGTCD":[null,null],"AEBODSYS":["GENERAL DISORDERS AND ADMINISTRATION SITE CONDITIONS","GENERAL DISORDERS AND ADMINISTRATION SITE CONDITIONS"],"AEBDSYCD":[null,null],"AESOC":["GENERAL DISORDERS AND ADMINISTRATION SITE CONDITIONS","GENERAL DISORDERS AND ADMINISTRATION SITE CONDITIONS"],"AESOCCD":[null,null],"AESEV":["SEVERE","MILD"],"AESER":["N","N"],"AEACN":[null,null],"AEREL":["PROBABLE","PROBABLE"],"AEOUT":["NOT RECOVERED/NOT RESOLVED","NOT RECOVERED/NOT RESOLVED"],"AESCAN":["N","N"],"AESCONG":["N","N"],"AESDISAB":["N","N"],"AESDTH":["N","N"],"AESHOSP":["N","N"],"AESLIFE":["N","N"],"AESOD":["N","N"],"AEDTC":["2014-01-16","2014-01-16"],"AESTDTC":["2014-01-03","2014-01-03"],"AEENDTC":[null,null],"AESTDY":["2","2"],"AEENDY":[null,null]},"columns":{"name":["STUDYID","DOMAIN","USUBJID","AESEQ","AESPID","AETERM","AELLT","AELLTCD","AEDECOD","AEPTCD","AEHLT","AEHLTCD","AEHLGT","AEHLGTCD","AEBODSYS","AEBDSYCD","AESOC","AESOCCD","AESEV","AESER","AEACN","AEREL","AEOUT","AESCAN","AESCONG","AESDISAB","AESDTH","AESHOSP","AESLIFE","AESOD","AEDTC","AESTDTC","AEENDTC","AESTDY","AEENDY"],"type":["text","text","text","number","text","text","text","number","text","number","text","number","text","number","text","number","text","number","text","text","text","text","text","text","text","text","text","text","text","text","text","text","text","number","number"],"changed_cells":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},"items":{"kind":["update"],"snapshot_id":[8],"rowid":[0],"old":[2],"new":[1],"partial":[false],"n_changed":[1]},"cells":{"item":[1],"column":["AESEV"],"old":["MILD"],"new":["SEVERE"]},"snapshots":{"snapshot_id":[8],"time":["2026-09-15 23:31:00"],"author":["Data Manager"],"commit_message":["DQ-042: AESEV corrected; ADAE and results rebuilt"],"inserted":[0],"updated":[1],"deleted":[0],"schema_events":[0]},"schema":{"available":true,"reason":null,"events":{"snapshot_id":[],"kind":[],"column_id":[],"column_name":[],"detail":[],"old_name":[],"new_name":[],"old_type":[],"new_type":[]},"columns":{"name":["STUDYID","DOMAIN","USUBJID","AESEQ","AESPID","AETERM","AELLT","AELLTCD","AEDECOD","AEPTCD","AEHLT","AEHLTCD","AEHLGT","AEHLGTCD","AEBODSYS","AEBDSYCD","AESOC","AESOCCD","AESEV","AESER","AEACN","AEREL","AEOUT","AESCAN","AESCONG","AESDISAB","AESDTH","AESHOSP","AESLIFE","AESOD","AEDTC","AESTDTC","AEENDTC","AESTDY","AEENDY"],"type":["varchar","varchar","varchar","float64","varchar","varchar","varchar","float64","varchar","float64","varchar","float64","varchar","float64","varchar","float64","varchar","float64","varchar","varchar","varchar","varchar","varchar","varchar","varchar","varchar","varchar","varchar","varchar","varchar","varchar","varchar","varchar","float64","float64"],"status":["unchanged","unchanged","unchanged","unchanged","unchanged","unchanged","unchanged","unchanged","unchanged","unchanged","unchanged","unchanged","unchanged","unchanged","unchanged","unchanged","unchanged","unchanged","unchanged","unchanged","unchanged","unchanged","unchanged","unchanged","unchanged","unchanged","unchanged","unchanged","unchanged","unchanged","unchanged","unchanged","unchanged","unchanged","unchanged"]}},"counts":{"inserted":0,"updated":1,"deleted":0,"partial":0,"cells":1,"columns_changed":1,"schema_events":0,"rows_shown":2,"rows_total":2},"truncated":false,"max_rows":10000},"evals":[],"jsHooks":[]}</script><p>That is the shape of an audit trail as FDA describes it in its 2024
+<script type="application/json" data-for="htmlwidget-e5c8c404fe174e4c81bd">{"x":{"title":"silver.ae","table_name":"silver.ae","ducklake_name":"clinical_trial_lake","range":{"bound_type":"snapshot","start":"8","end":"8","start_id":8,"end_id":8},"data":{"STUDYID":["CDISCPILOT01","CDISCPILOT01"],"DOMAIN":["AE","AE"],"USUBJID":["01-701-1015","01-701-1015"],"AESEQ":["1","1"],"AESPID":["E07","E07"],"AETERM":["APPLICATION SITE ERYTHEMA","APPLICATION SITE ERYTHEMA"],"AELLT":["APPLICATION SITE REDNESS","APPLICATION SITE REDNESS"],"AELLTCD":[null,null],"AEDECOD":["APPLICATION SITE ERYTHEMA","APPLICATION SITE ERYTHEMA"],"AEPTCD":[null,null],"AEHLT":["HLT_0617","HLT_0617"],"AEHLTCD":[null,null],"AEHLGT":["HLGT_0152","HLGT_0152"],"AEHLGTCD":[null,null],"AEBODSYS":["GENERAL DISORDERS AND ADMINISTRATION SITE CONDITIONS","GENERAL DISORDERS AND ADMINISTRATION SITE CONDITIONS"],"AEBDSYCD":[null,null],"AESOC":["GENERAL DISORDERS AND ADMINISTRATION SITE CONDITIONS","GENERAL DISORDERS AND ADMINISTRATION SITE CONDITIONS"],"AESOCCD":[null,null],"AESEV":["SEVERE","MILD"],"AESER":["N","N"],"AEACN":[null,null],"AEREL":["PROBABLE","PROBABLE"],"AEOUT":["NOT RECOVERED/NOT RESOLVED","NOT RECOVERED/NOT RESOLVED"],"AESCAN":["N","N"],"AESCONG":["N","N"],"AESDISAB":["N","N"],"AESDTH":["N","N"],"AESHOSP":["N","N"],"AESLIFE":["N","N"],"AESOD":["N","N"],"AEDTC":["2014-01-16","2014-01-16"],"AESTDTC":["2014-01-03","2014-01-03"],"AEENDTC":[null,null],"AESTDY":["2","2"],"AEENDY":[null,null]},"columns":{"name":["STUDYID","DOMAIN","USUBJID","AESEQ","AESPID","AETERM","AELLT","AELLTCD","AEDECOD","AEPTCD","AEHLT","AEHLTCD","AEHLGT","AEHLGTCD","AEBODSYS","AEBDSYCD","AESOC","AESOCCD","AESEV","AESER","AEACN","AEREL","AEOUT","AESCAN","AESCONG","AESDISAB","AESDTH","AESHOSP","AESLIFE","AESOD","AEDTC","AESTDTC","AEENDTC","AESTDY","AEENDY"],"type":["text","text","text","number","text","text","text","number","text","number","text","number","text","number","text","number","text","number","text","text","text","text","text","text","text","text","text","text","text","text","text","text","text","number","number"],"changed_cells":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},"items":{"kind":["update"],"snapshot_id":[8],"rowid":[0],"old":[2],"new":[1],"partial":[false],"n_changed":[1]},"cells":{"item":[1],"column":["AESEV"],"old":["MILD"],"new":["SEVERE"]},"snapshots":{"snapshot_id":[8],"time":["2026-09-15 23:52:01"],"author":["Data Manager"],"commit_message":["DQ-042: AESEV corrected; ADAE and results rebuilt"],"inserted":[0],"updated":[1],"deleted":[0],"schema_events":[0]},"schema":{"available":true,"reason":null,"events":{"snapshot_id":[],"kind":[],"column_id":[],"column_name":[],"detail":[],"old_name":[],"new_name":[],"old_type":[],"new_type":[]},"columns":{"name":["STUDYID","DOMAIN","USUBJID","AESEQ","AESPID","AETERM","AELLT","AELLTCD","AEDECOD","AEPTCD","AEHLT","AEHLTCD","AEHLGT","AEHLGTCD","AEBODSYS","AEBDSYCD","AESOC","AESOCCD","AESEV","AESER","AEACN","AEREL","AEOUT","AESCAN","AESCONG","AESDISAB","AESDTH","AESHOSP","AESLIFE","AESOD","AEDTC","AESTDTC","AEENDTC","AESTDY","AEENDY"],"type":["varchar","varchar","varchar","float64","varchar","varchar","varchar","float64","varchar","float64","varchar","float64","varchar","float64","varchar","float64","varchar","float64","varchar","varchar","varchar","varchar","varchar","varchar","varchar","varchar","varchar","varchar","varchar","varchar","varchar","varchar","varchar","float64","float64"],"status":["unchanged","unchanged","unchanged","unchanged","unchanged","unchanged","unchanged","unchanged","unchanged","unchanged","unchanged","unchanged","unchanged","unchanged","unchanged","unchanged","unchanged","unchanged","unchanged","unchanged","unchanged","unchanged","unchanged","unchanged","unchanged","unchanged","unchanged","unchanged","unchanged","unchanged","unchanged","unchanged","unchanged","unchanged","unchanged"]}},"counts":{"inserted":0,"updated":1,"deleted":0,"partial":0,"cells":1,"columns_changed":1,"schema_events":0,"rows_shown":2,"rows_total":2},"truncated":false,"max_rows":10000},"evals":[],"jsHooks":[]}</script><p>That is the shape of an audit trail as FDA describes it in its 2024
 questions and answers on electronic systems in clinical investigations
 (Q12 to Q14): the date and time (<code>snapshot_time</code>), the
 individual (<code>author</code>), the old and the new value (the change
@@ -800,15 +790,15 @@ from the lake’s creation on:</p>
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">snapshot_id</span>, <span class="va">snapshot_time</span>, <span class="va">author</span>, <span class="va">commit_message</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time                 author</span></span>
-<span><span class="co">#&gt; 1           0 2026-09-15 23:30:55           Data Manager</span></span>
-<span><span class="co">#&gt; 2           1 2026-09-15 23:30:55           Data Manager</span></span>
-<span><span class="co">#&gt; 3           2 2026-09-15 23:30:55           Data Manager</span></span>
-<span><span class="co">#&gt; 4           3 2026-09-15 23:30:56           Data Manager</span></span>
-<span><span class="co">#&gt; 5           4 2026-09-15 23:30:58 Statistical Programmer</span></span>
-<span><span class="co">#&gt; 6           5 2026-09-15 23:30:59 Statistical Programmer</span></span>
-<span><span class="co">#&gt; 7           6 2026-09-15 23:30:59           Statistician</span></span>
-<span><span class="co">#&gt; 8           7 2026-09-15 23:31:00 Statistical Programmer</span></span>
-<span><span class="co">#&gt; 9           8 2026-09-15 23:31:00           Data Manager</span></span>
+<span><span class="co">#&gt; 1           0 2026-09-15 23:51:54           Data Manager</span></span>
+<span><span class="co">#&gt; 2           1 2026-09-15 23:51:55           Data Manager</span></span>
+<span><span class="co">#&gt; 3           2 2026-09-15 23:51:55           Data Manager</span></span>
+<span><span class="co">#&gt; 4           3 2026-09-15 23:51:56           Data Manager</span></span>
+<span><span class="co">#&gt; 5           4 2026-09-15 23:51:58 Statistical Programmer</span></span>
+<span><span class="co">#&gt; 6           5 2026-09-15 23:51:59 Statistical Programmer</span></span>
+<span><span class="co">#&gt; 7           6 2026-09-15 23:52:00           Statistician</span></span>
+<span><span class="co">#&gt; 8           7 2026-09-15 23:52:00 Statistical Programmer</span></span>
+<span><span class="co">#&gt; 9           8 2026-09-15 23:52:01           Data Manager</span></span>
 <span><span class="co">#&gt;                                      commit_message</span></span>
 <span><span class="co">#&gt; 1                                       Create lake</span></span>
 <span><span class="co">#&gt; 2                          Create the lake's layers</span></span>
