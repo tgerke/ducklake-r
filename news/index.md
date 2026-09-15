@@ -2,6 +2,30 @@
 
 ## ducklake (development version)
 
+- New
+  [`view_table_changes()`](https://tgerke.github.io/ducklake-r/reference/view_table_changes.md)
+  opens a table’s change feed in an interactive viewer, an htmlwidget. A
+  sidebar lists the schema changes, the columns and cells that changed,
+  the rows inserted, updated, and deleted, and the snapshots in range
+  (each with its author and message), with a count on every entry. The
+  main panel shows the selected part as a table. An update is one row,
+  shown from its old or its new side, with the changed cells highlighted
+  and both values on hover, and a cells view lists every change as
+  snapshot, rowid, column, old, new. It takes the lazy feed from
+  [`get_table_changes()`](https://tgerke.github.io/ducklake-r/reference/get_table_changes.md),
+  so dplyr filters run in DuckDB before anything is collected, or that
+  feed collected into a data frame. The layout follows Hadley Wickham’s
+  data-diff (<https://github.com/hadley/data-diff>), with thanks.
+  htmlwidgets joins Suggests, with jsonlite for the viewer’s tests.
+
+- [`get_table_changes()`](https://tgerke.github.io/ducklake-r/reference/get_table_changes.md)
+  defaults `start` and `end` to the table’s full history, and its result
+  carries a `ducklake_changes` attribute (table, lake, range) that
+  [`view_table_changes()`](https://tgerke.github.io/ducklake-r/reference/view_table_changes.md)
+  reads. The attribute survives dplyr verbs on the lazy table and is
+  dropped by
+  [`collect()`](https://dplyr.tidyverse.org/reference/compute.html).
+
 ## ducklake 0.8.0
 
 - [`commit_transaction()`](https://tgerke.github.io/ducklake-r/reference/commit_transaction.md)
@@ -150,7 +174,7 @@
   ([`vignette("views-comments-labels")`](https://tgerke.github.io/ducklake-r/articles/views-comments-labels.md))
   covers the query logic and documentation that live in the catalog, and
   its labels example uses
-  [`labelled::set_variable_labels()`](https://larmarange.github.io/labelled/reference/var_label.html),
+  [`labelled::set_variable_labels()`](https://rdrr.io/pkg/labelled/man/var_label.html),
   so labelled is now a suggested package.
 
 ## ducklake 0.7.0

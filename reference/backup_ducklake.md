@@ -100,7 +100,7 @@ backup_dir <- backup_ducklake(
 #> Catalog backed up successfully.
 #> Data files backed up successfully (1 directory).
 #> Backup completed:
-#> /tmp/RtmpXqIhqb/my_lake1a16b4c34d7/backups/backup_20260911_152628
+#> /tmp/RtmpXuD4QL/my_lake193723771b33/backups/backup_20260915_233012
 
 # Restore (override_data_path needed when location differs):
 # detach_ducklake("my_lake")

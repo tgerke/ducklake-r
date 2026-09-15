@@ -211,3 +211,41 @@
   `register_lake()` keeps it, and `metadata_prefix()` and
   [`get_metadata_table()`](https://tgerke.github.io/ducklake-r/reference/get_metadata_table.md)
   read it there. SQLite catalogs refuse `METADATA_SCHEMA`.
+- **The change viewer is an htmlwidget with hand-written JavaScript**
+  (2026-09-15).
+  [`view_table_changes()`](https://tgerke.github.io/ducklake-r/reference/view_table_changes.md)
+  draws the feed from
+  [`get_table_changes()`](https://tgerke.github.io/ducklake-r/reference/get_table_changes.md).
+  Every diff fact is computed in R by `build_changes_payload()` (update
+  images paired by snapshot and rowid, changed cells, counts, column
+  history), so the tests need no browser and
+  `inst/htmlwidgets/ducklake_changes.js` only draws. There is no
+  framework and no build step: the files in `inst/htmlwidgets` are the
+  sources. `htmlwidgets` is in Suggests, gated like ggplot2. The layout
+  is adapted from Hadley Wickham’s data-diff
+  (<https://github.com/hadley/data-diff>); no code is shared. The feed
+  is capped at `max_rows` after
+  `arrange(snapshot_id, rowid, change_type)`, and the cut moves up one
+  row rather than separate an update’s two images.
+- **`ducklake_column` semantics, confirmed empirically on DuckDB 1.5.5**
+  (2026-09-15, `test-view-table-changes.R`): every ALTER writes a new
+  version of the changed column with the same `column_id` and closes the
+  old one; `end_snapshot` is exclusive, so a version ending at N and one
+  beginning at N describe one change made by N; `ADD COLUMN` does not
+  re-version the other columns; column types are DuckLake names
+  (`int32`, `int64`, `float64`, `varchar`). The schema panel reads the
+  table’s current id only, so a
+  [`replace_table()`](https://tgerke.github.io/ducklake-r/reference/replace_table.md)
+  or
+  [`restore_table_version()`](https://tgerke.github.io/ducklake-r/reference/restore_table_version.md)
+  inside the range appears as the table’s creation.
+- **Change-feed facts, confirmed on DuckDB 1.5.5** (2026-09-15):
+  `ducklake_table_changes()` accepts a start before the current table
+  id’s `begin_snapshot` and returns the current id’s changes only; an
+  insert followed by an update in one transaction is one `insert`, and
+  two updates of one row in one transaction are one pair, so
+  `(snapshot_id, rowid)` is unique per image; a no-op update writes a
+  pair of equal images; the feed is read with the schema as of the end
+  snapshot; exact timestamp bounds are inclusive at both ends. An
+  attribute on the lazy feed survives dbplyr verbs because they assign
+  into `x$lazy_query` on the same object.

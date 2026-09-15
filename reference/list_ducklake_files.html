@@ -144,7 +144,7 @@ see <code><a href="plot_table_files.html">plot_table_files()</a></code>.</p>
 <span class="r-in"><span><span class="co"># Files behind a table right now</span></span></span>
 <span class="r-in"><span><span class="fu">list_ducklake_files</span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                                                                                                     data_file</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1 /tmp/RtmpXqIhqb/listfiles_lake_1a161f32eb48/main/cars/ducklake-01a09114-0a7a-7b43-9724-6a3c6456ea4b.parquet</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 /tmp/RtmpXuD4QL/listfiles_lake_19371a493c08/main/cars/ducklake-01a0a768-61c7-72bc-95da-c093e1209b4b.parquet</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   data_file_size_bytes data_file_footer_size data_file_encryption_key</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1                 2911                  1128                     NULL</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   delete_file delete_file_size_bytes delete_file_footer_size</span>
@@ -156,7 +156,7 @@ see <code><a href="plot_table_files.html">plot_table_files()</a></code>.</p>
 <span class="r-in"><span><span class="va">first</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="fu"><a href="list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span><span class="op">$</span><span class="va">snapshot_id</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">list_ducklake_files</span><span class="op">(</span><span class="st">"cars"</span>, snapshot_version <span class="op">=</span> <span class="va">first</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                                                                                                     data_file</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1 /tmp/RtmpXqIhqb/listfiles_lake_1a161f32eb48/main/cars/ducklake-01a09114-0a7a-7b43-9724-6a3c6456ea4b.parquet</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 /tmp/RtmpXuD4QL/listfiles_lake_19371a493c08/main/cars/ducklake-01a0a768-61c7-72bc-95da-c093e1209b4b.parquet</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   data_file_size_bytes data_file_footer_size data_file_encryption_key</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1                 2911                  1128                     NULL</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   delete_file delete_file_size_bytes delete_file_footer_size</span>

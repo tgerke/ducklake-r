@@ -12,17 +12,20 @@ A DuckLake keeps detailed records about itself: every change to a table
 is a snapshot, every changed row is in the change feed, and every
 Parquet file is tracked in the catalog. All of that comes back to R as
 data frames, but past a handful of rows a picture is easier to scan.
-This vignette walks through the package’s three plotting functions:
+This vignette walks through the package’s three plotting functions and
+its interactive viewer:
 
 - [`plot_snapshots()`](https://tgerke.github.io/ducklake-r/reference/plot_snapshots.md)
   draws a table’s history as a commit-log style timeline
 - [`plot_table_changes()`](https://tgerke.github.io/ducklake-r/reference/plot_table_changes.md)
   shows how many rows each snapshot changed
+- [`view_table_changes()`](https://tgerke.github.io/ducklake-r/reference/view_table_changes.md)
+  opens the changed rows themselves in an interactive viewer
 - [`plot_table_files()`](https://tgerke.github.io/ducklake-r/reference/plot_table_files.md)
   shows how each table’s data is laid out on disk
 
-These require the ggplot2 package, which is suggested (not required) by
-ducklake.
+The plots need the ggplot2 package and the viewer needs htmlwidgets;
+ducklake suggests both but requires neither.
 
 ## Building Some History
 
@@ -97,10 +100,10 @@ The audit trail so far:
 list_table_snapshots("fleet") |>
   select(snapshot_id, snapshot_time, author, commit_message)
 #>   snapshot_id       snapshot_time        author                  commit_message
-#> 1           1 2026-09-11 15:28:10 Data Engineer              Initial fleet load
-#> 2           2 2026-09-11 15:28:11 Fleet Manager              Add March arrivals
-#> 3           3 2026-09-11 15:28:11 Fleet Manager Record spring odometer readings
-#> 4           4 2026-09-11 15:28:11 Fleet Manager               Remove sold F-150
+#> 1           1 2026-09-15 23:31:42 Data Engineer              Initial fleet load
+#> 2           2 2026-09-15 23:31:42 Fleet Manager              Add March arrivals
+#> 3           3 2026-09-15 23:31:42 Fleet Manager Record spring odometer readings
+#> 4           4 2026-09-15 23:31:42 Fleet Manager               Remove sold F-150
 ```
 
 ## Plotting the Timeline
@@ -140,6 +143,40 @@ plot_table_changes("fleet")
 ```
 
 ![](visualizing-your-lake_files/figure-html/plot-changes-1.png)
+
+## Browsing the Changes
+
+[`plot_table_changes()`](https://tgerke.github.io/ducklake-r/reference/plot_table_changes.md)
+counts the rows;
+[`view_table_changes()`](https://tgerke.github.io/ducklake-r/reference/view_table_changes.md)
+shows them. It takes the change feed from
+[`get_table_changes()`](https://tgerke.github.io/ducklake-r/reference/get_table_changes.md)
+and opens it in an interactive viewer. The sidebar lists the snapshots
+in range, each with its author and message, the columns that changed,
+and the rows inserted, updated, and deleted; the main panel shows
+whichever part you pick. An update is one row, shown from its old or its
+new side, with the changed cells highlighted and both values on hover.
+
+``` r
+
+view_table_changes(get_table_changes("fleet"))
+```
+
+The feed is a lazy table, so dplyr verbs narrow it before anything is
+collected. One car’s history:
+
+``` r
+
+get_table_changes("fleet") |>
+  filter(car_id == 3) |>
+  view_table_changes()
+```
+
+A filter on a column whose value changed, like `mileage`, matches one
+image of an update and not the other; the viewer marks such rows as
+one-sided. Filters on `car_id`, `snapshot_id`, `rowid`, or `change_type`
+keep pairs whole. The layout follows Hadley Wickham’s
+[data-diff](https://github.com/hadley/data-diff).
 
 ## How the Data Is Stored
 
@@ -190,8 +227,8 @@ reports each table’s file count and size:
 
 get_table_info()
 #>   table_name schema_id table_id                           table_uuid file_count
-#> 1      fleet         0        1 01a09115-5a7a-7ea7-80ed-493ee2deeec3          1
-#> 2  telemetry         0        2 01a09115-60f9-74c6-9f98-1ad18bec9613          2
+#> 1      fleet         0        1 01a0a769-78c8-76f8-b239-d429c64a8b1c          1
+#> 2  telemetry         0        2 01a0a769-7e38-7e0c-a7a1-5ce4af0b95e8          2
 #>   file_size_bytes delete_file_count delete_file_size_bytes schema_name
 #> 1            1027                 1                   1120        main
 #> 2           65525                 0                      0        main

@@ -75,8 +75,9 @@
 
 
 
-
-<div class="row">
+<link href="visualizing-your-lake_files/htmltools-fill-0.5.9/fill.css" rel="stylesheet">
+<script src="visualizing-your-lake_files/htmlwidgets-1.6.4/htmlwidgets.js"></script><link href="visualizing-your-lake_files/ducklake-changes-1.0.0/ducklake-changes.css" rel="stylesheet">
+<script src="visualizing-your-lake_files/ducklake_changes-binding-0.8.0.9000/ducklake_changes.js"></script><div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Visualizing Your Lake</h1>
             
@@ -97,7 +98,8 @@
 table is a snapshot, every changed row is in the change feed, and every
 Parquet file is tracked in the catalog. All of that comes back to R as
 data frames, but past a handful of rows a picture is easier to scan.
-This vignette walks through the package’s three plotting functions:</p>
+This vignette walks through the package’s three plotting functions and
+its interactive viewer:</p>
 <ul>
 <li>
 <code><a href="../reference/plot_snapshots.html">plot_snapshots()</a></code> draws a table’s history as a
@@ -106,11 +108,14 @@ commit-log style timeline</li>
 <code><a href="../reference/plot_table_changes.html">plot_table_changes()</a></code> shows how many rows each snapshot
 changed</li>
 <li>
+<code><a href="../reference/view_table_changes.html">view_table_changes()</a></code> opens the changed rows themselves
+in an interactive viewer</li>
+<li>
 <code><a href="../reference/plot_table_files.html">plot_table_files()</a></code> shows how each table’s data is laid
 out on disk</li>
 </ul>
-<p>These require the ggplot2 package, which is suggested (not required)
-by ducklake.</p>
+<p>The plots need the ggplot2 package and the viewer needs htmlwidgets;
+ducklake suggests both but requires neither.</p>
 </div>
 <div class="section level2">
 <h2 id="building-some-history">Building Some History<a class="anchor" aria-label="anchor" href="#building-some-history"></a>
@@ -176,10 +181,10 @@ recording authors and commit messages along the way.</p>
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"fleet"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">snapshot_id</span>, <span class="va">snapshot_time</span>, <span class="va">author</span>, <span class="va">commit_message</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time        author                  commit_message</span></span>
-<span><span class="co">#&gt; 1           1 2026-09-11 15:28:10 Data Engineer              Initial fleet load</span></span>
-<span><span class="co">#&gt; 2           2 2026-09-11 15:28:11 Fleet Manager              Add March arrivals</span></span>
-<span><span class="co">#&gt; 3           3 2026-09-11 15:28:11 Fleet Manager Record spring odometer readings</span></span>
-<span><span class="co">#&gt; 4           4 2026-09-11 15:28:11 Fleet Manager               Remove sold F-150</span></span></code></pre></div>
+<span><span class="co">#&gt; 1           1 2026-09-15 23:31:42 Data Engineer              Initial fleet load</span></span>
+<span><span class="co">#&gt; 2           2 2026-09-15 23:31:42 Fleet Manager              Add March arrivals</span></span>
+<span><span class="co">#&gt; 3           3 2026-09-15 23:31:42 Fleet Manager Record spring odometer readings</span></span>
+<span><span class="co">#&gt; 4           4 2026-09-15 23:31:42 Fleet Manager               Remove sold F-150</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="plotting-the-timeline">Plotting the Timeline<a class="anchor" aria-label="anchor" href="#plotting-the-timeline"></a>
@@ -212,6 +217,34 @@ below it.</p>
 <p><img src="visualizing-your-lake_files/figure-html/plot-changes-1.png" class="r-plt" alt="" width="672"></p>
 </div>
 <div class="section level2">
+<h2 id="browsing-the-changes">Browsing the Changes<a class="anchor" aria-label="anchor" href="#browsing-the-changes"></a>
+</h2>
+<p><code><a href="../reference/plot_table_changes.html">plot_table_changes()</a></code> counts the rows;
+<code><a href="../reference/view_table_changes.html">view_table_changes()</a></code> shows them. It takes the change feed
+from <code><a href="../reference/get_table_changes.html">get_table_changes()</a></code> and opens it in an interactive
+viewer. The sidebar lists the snapshots in range, each with its author
+and message, the columns that changed, and the rows inserted, updated,
+and deleted; the main panel shows whichever part you pick. An update is
+one row, shown from its old or its new side, with the changed cells
+highlighted and both values on hover.</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/view_table_changes.html">view_table_changes</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_table_changes.html">get_table_changes</a></span><span class="op">(</span><span class="st">"fleet"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<div class="ducklake_changes html-widget html-fill-item" id="htmlwidget-ac96cb3ee4656e2e9ec3" style="width:100%;height:520px;"></div>
+<script type="application/json" data-for="htmlwidget-ac96cb3ee4656e2e9ec3">{"x":{"title":"fleet","table_name":"main.fleet","ducklake_name":"lake_viz_demo","range":{"bound_type":"snapshot","start":"1","end":"4","start_id":1,"end_id":4},"data":{"car_id":["1","2","3","4","5","6","7","1","1","3","3","5","5","4"],"model":["Corolla","Civic","Model 3","F-150","Outback","CX-5","Ioniq 5","Corolla","Corolla","Model 3","Model 3","Outback","Outback","F-150"],"mileage":["42000","38000","12000","67000","55000","21000","8000","42750","42000","13400","12000","55900","55000","67000"]},"columns":{"name":["car_id","model","mileage"],"type":["integer","text","number"],"changed_cells":[0,0,3]},"items":{"kind":["insert","insert","insert","insert","insert","insert","insert","update","update","update","delete"],"snapshot_id":[1,1,1,1,1,2,2,3,3,3,4],"rowid":[0,1,2,3,4,5,6,0,2,4,3],"old":[null,null,null,null,null,null,null,9,11,13,14],"new":[1,2,3,4,5,6,7,8,10,12,null],"partial":[false,false,false,false,false,false,false,false,false,false,false],"n_changed":[null,null,null,null,null,null,null,1,1,1,null]},"cells":{"item":[8,9,10],"column":["mileage","mileage","mileage"],"old":["42000","12000","55000"],"new":["42750","13400","55900"]},"snapshots":{"snapshot_id":[1,2,3,4],"time":["2026-09-15 23:31:42","2026-09-15 23:31:42","2026-09-15 23:31:42","2026-09-15 23:31:42"],"author":["Data Engineer","Fleet Manager","Fleet Manager","Fleet Manager"],"commit_message":["Initial fleet load","Add March arrivals","Record spring odometer readings","Remove sold F-150"],"inserted":[5,2,0,0],"updated":[0,0,3,0],"deleted":[0,0,0,1],"schema_events":[0,0,0,0]},"schema":{"available":true,"reason":null,"events":{"snapshot_id":[1,1,1],"kind":["created","created","created"],"column_id":[1,2,3],"column_name":["car_id","model","mileage"],"detail":["int32","varchar","float64"],"old_name":[null,null,null],"new_name":["car_id","model","mileage"],"old_type":[null,null,null],"new_type":["int32","varchar","float64"]},"columns":{"name":["car_id","model","mileage"],"type":["int32","varchar","float64"],"status":["created","created","created"]}},"counts":{"inserted":7,"updated":3,"deleted":1,"partial":0,"cells":3,"columns_changed":1,"schema_events":0,"rows_shown":14,"rows_total":14},"truncated":false,"max_rows":10000},"evals":[],"jsHooks":[]}</script><p>The feed is a lazy table, so dplyr verbs narrow it before anything is
+collected. One car’s history:</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/get_table_changes.html">get_table_changes</a></span><span class="op">(</span><span class="st">"fleet"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">car_id</span> <span class="op">==</span> <span class="fl">3</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/view_table_changes.html">view_table_changes</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<div class="ducklake_changes html-widget html-fill-item" id="htmlwidget-e5c8c404fe174e4c81bd" style="width:100%;height:520px;"></div>
+<script type="application/json" data-for="htmlwidget-e5c8c404fe174e4c81bd">{"x":{"title":"fleet","table_name":"main.fleet","ducklake_name":"lake_viz_demo","range":{"bound_type":"snapshot","start":"1","end":"4","start_id":1,"end_id":4},"data":{"car_id":["3","3","3"],"model":["Model 3","Model 3","Model 3"],"mileage":["12000","13400","12000"]},"columns":{"name":["car_id","model","mileage"],"type":["integer","text","number"],"changed_cells":[0,0,1]},"items":{"kind":["insert","update"],"snapshot_id":[1,3],"rowid":[2,2],"old":[null,3],"new":[1,2],"partial":[false,false],"n_changed":[null,1]},"cells":{"item":[2],"column":["mileage"],"old":["12000"],"new":["13400"]},"snapshots":{"snapshot_id":[1,2,3,4],"time":["2026-09-15 23:31:42","2026-09-15 23:31:42","2026-09-15 23:31:42","2026-09-15 23:31:42"],"author":["Data Engineer","Fleet Manager","Fleet Manager","Fleet Manager"],"commit_message":["Initial fleet load","Add March arrivals","Record spring odometer readings","Remove sold F-150"],"inserted":[1,0,0,0],"updated":[0,0,1,0],"deleted":[0,0,0,0],"schema_events":[0,0,0,0]},"schema":{"available":true,"reason":null,"events":{"snapshot_id":[1,1,1],"kind":["created","created","created"],"column_id":[1,2,3],"column_name":["car_id","model","mileage"],"detail":["int32","varchar","float64"],"old_name":[null,null,null],"new_name":["car_id","model","mileage"],"old_type":[null,null,null],"new_type":["int32","varchar","float64"]},"columns":{"name":["car_id","model","mileage"],"type":["int32","varchar","float64"],"status":["created","created","created"]}},"counts":{"inserted":1,"updated":1,"deleted":0,"partial":0,"cells":1,"columns_changed":1,"schema_events":0,"rows_shown":3,"rows_total":3},"truncated":false,"max_rows":10000},"evals":[],"jsHooks":[]}</script><p>A filter on a column whose value changed, like <code>mileage</code>,
+matches one image of an update and not the other; the viewer marks such
+rows as one-sided. Filters on <code>car_id</code>,
+<code>snapshot_id</code>, <code>rowid</code>, or
+<code>change_type</code> keep pairs whole. The layout follows Hadley
+Wickham’s <a href="https://github.com/hadley/data-diff" class="external-link">data-diff</a>.</p>
+</div>
+<div class="section level2">
 <h2 id="how-the-data-is-stored">How the Data Is Stored<a class="anchor" aria-label="anchor" href="#how-the-data-is-stored"></a>
 </h2>
 <p>Behind the scenes, table data lives in Parquet files (very small
@@ -219,7 +252,7 @@ writes may be inlined into the catalog until they are flushed out). To
 make the storage view interesting, let’s add a larger table alongside
 <code>fleet</code> and grow it in two batches, so it ends up with two
 data files:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">42</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">telemetry</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link">tibble</a></span><span class="op">(</span></span>
@@ -242,24 +275,24 @@ data files:</p>
 <p>The fleet table’s handful of rows were small enough to be inlined, so
 we flush them into a Parquet file to make them visible to the storage
 statistics:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/flush_inlined_data.html">flush_inlined_data</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Flushed <span style="color: #0000BB;">10</span> rows from <span style="color: #0000BB;">1</span> table to Parquet.</span></span>
 <span><span class="co">#&gt;   schema_name table_name rows_flushed</span></span>
 <span><span class="co">#&gt; 1        main      fleet           10</span></span></code></pre></div>
 <p><code><a href="../reference/get_table_info.html">get_table_info()</a></code> reports each table’s file count and
 size:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/get_table_info.html">get_table_info</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   table_name schema_id table_id                           table_uuid file_count</span></span>
-<span><span class="co">#&gt; 1      fleet         0        1 01a09115-5a7a-7ea7-80ed-493ee2deeec3          1</span></span>
-<span><span class="co">#&gt; 2  telemetry         0        2 01a09115-60f9-74c6-9f98-1ad18bec9613          2</span></span>
+<span><span class="co">#&gt; 1      fleet         0        1 01a0a769-78c8-76f8-b239-d429c64a8b1c          1</span></span>
+<span><span class="co">#&gt; 2  telemetry         0        2 01a0a769-7e38-7e0c-a7a1-5ce4af0b95e8          2</span></span>
 <span><span class="co">#&gt;   file_size_bytes delete_file_count delete_file_size_bytes schema_name</span></span>
 <span><span class="co">#&gt; 1            1027                 1                   1120        main</span></span>
 <span><span class="co">#&gt; 2           65525                 0                      0        main</span></span></code></pre></div>
 <p>And <code><a href="../reference/plot_table_files.html">plot_table_files()</a></code> draws it, with delete files (rows
 removed but not yet compacted away) stacked in a second color:</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_table_files.html">plot_table_files</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p><img src="visualizing-your-lake_files/figure-html/plot-files-1.png" class="r-plt" alt="" width="672"></p>
 <p>This is the picture to watch as a lake ages: many small files or a
@@ -277,7 +310,7 @@ switches to a swimlane view: one row per table, one point per snapshot,
 with recently active tables at the top. Where the single-table timeline
 shows what happened to one table, the swimlane shows which tables are
 active and what kind of churn each one sees:</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_snapshots.html">plot_snapshots</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p><img src="visualizing-your-lake_files/figure-html/plot-lake-1.png" class="r-plt" alt="" width="672"></p>
 <p>Snapshots that don’t belong to any table, like the initial schema
@@ -294,9 +327,9 @@ so it is best customized with <code>labs()</code> and
 <code>theme()</code> tweaks rather than a full theme swap like
 <code>theme_classic()</code>, which would bring back axes that have no
 meaning there.)</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_snapshots.html">plot_snapshots</a></span><span class="op">(</span><span class="st">"fleet"</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>title <span class="op">=</span> <span class="st">"Fleet table audit trail"</span><span class="op">)</span></span></code></pre></div>
+<span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/ggplot2/man/labs.html" class="external-link">labs</a></span><span class="op">(</span>title <span class="op">=</span> <span class="st">"Fleet table audit trail"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="visualizing-your-lake_files/figure-html/plot-custom-1.png" class="r-plt" alt="" width="672"></p>
 </div>
 <div class="section level2">

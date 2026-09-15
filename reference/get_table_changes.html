@@ -66,7 +66,13 @@ Useful for auditing and for change-data-capture style pipelines.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">get_table_changes</span><span class="op">(</span><span class="va">table_name</span>, <span class="va">start</span>, <span class="va">end</span>, ducklake_name <span class="op">=</span> <span class="cn">NULL</span>, conn <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">get_table_changes</span><span class="op">(</span></span>
+<span>  <span class="va">table_name</span>,</span>
+<span>  start <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  end <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  ducklake_name <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  conn <span class="op">=</span> <span class="cn">NULL</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -80,7 +86,9 @@ qualified as <code>"schema.table"</code> (default schema <code>main</code>).</p>
 
 <dt id="arg-start">start<a class="anchor" aria-label="anchor" href="#arg-start"></a></dt>
 <dd><p>The first snapshot to include: either a snapshot id (see
-<code><a href="list_table_snapshots.html">list_table_snapshots()</a></code>) or a timestamp (POSIXct or character).</p></dd>
+<code><a href="list_table_snapshots.html">list_table_snapshots()</a></code>) or a timestamp (POSIXct or character). With
+<code>end</code> also <code>NULL</code> (the default), the feed covers the table's full
+history, from its first snapshot to its latest.</p></dd>
 
 
 <dt id="arg-end">end<a class="anchor" aria-label="anchor" href="#arg-end"></a></dt>
@@ -103,33 +111,44 @@ default ducklake connection.</p></dd>
 own columns it carries <code>snapshot_id</code> (the snapshot that made the
 change), <code>rowid</code> (the changed row's identifier), and <code>change_type</code>
 (<code>"insert"</code>, <code>"delete"</code>, <code>"update_preimage"</code>, or
-<code>"update_postimage"</code>).</p>
+<code>"update_postimage"</code>). It also carries a <code>ducklake_changes</code> attribute
+naming the table, the lake, and the requested range, which
+<code><a href="view_table_changes.html">view_table_changes()</a></code> reads; the attribute survives dplyr verbs on the
+lazy table and is dropped by <code><a href="https://dplyr.tidyverse.org/reference/compute.html" class="external-link">collect()</a></code>.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>Both bounds must be of the same kind: two snapshot ids or two
-timestamps. POSIXct bounds are converted to UTC, matching the snapshot
-times DuckLake records; character bounds are passed through as-is and
-must already be in UTC. Bounds before the lake's first snapshot are
-rejected by DuckLake, so prefer snapshot times from
-<code><a href="list_table_snapshots.html">list_table_snapshots()</a></code>. Updates appear as two rows – the row as it
-looked before the change (<code>update_preimage</code>) and after it
+    <p>Both bounds must be given or both left <code>NULL</code>. When given, they must be
+of the same kind: two snapshot ids or two timestamps. POSIXct bounds are
+converted to UTC, matching the snapshot times DuckLake records; character
+bounds are passed through as-is and must already be in UTC. Bounds before
+the lake's first snapshot are rejected by DuckLake, so prefer snapshot
+times from <code><a href="list_table_snapshots.html">list_table_snapshots()</a></code>. Updates appear as two rows – the
+row as it looked before the change (<code>update_preimage</code>) and after it
 (<code>update_postimage</code>).</p>
+<p>The feed is read with the table's schema as of the end snapshot: a column
+added inside the range is <code>NA</code> in rows from before it existed, and a
+renamed column appears under its newer name. A table rebuilt by
+<code><a href="replace_table.html">replace_table()</a></code> or <code><a href="restore_table_version.html">restore_table_version()</a></code> gets a new table id, and
+the feed covers the current id only, so changes from before the rebuild
+are not in it.</p>
 <p>This wraps DuckLake's
 <a href="https://ducklake.select/docs/stable/duckdb/advanced_features/data_change_feed" class="external-link"><code>table_changes()</code></a>
 function.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="list_table_snapshots.html">list_table_snapshots()</a></code>, <code><a href="get_ducklake_table_version.html">get_ducklake_table_version()</a></code>,
-<code><a href="get_ducklake_table_asof.html">get_ducklake_table_asof()</a></code></p>
+    <div class="dont-index"><p><code><a href="view_table_changes.html">view_table_changes()</a></code> to browse the feed interactively,
+<code><a href="plot_table_changes.html">plot_table_changes()</a></code>, <code><a href="list_table_snapshots.html">list_table_snapshots()</a></code>,
+<code><a href="get_ducklake_table_version.html">get_ducklake_table_version()</a></code>, <code><a href="get_ducklake_table_asof.html">get_ducklake_table_asof()</a></code></p>
 <p>Other time travel:
 <code><a href="get_ducklake_table_asof.html">get_ducklake_table_asof()</a></code>,
 <code><a href="get_ducklake_table_version.html">get_ducklake_table_version()</a></code>,
 <code><a href="list_table_snapshots.html">list_table_snapshots()</a></code>,
 <code><a href="plot_snapshots.html">plot_snapshots()</a></code>,
 <code><a href="plot_table_changes.html">plot_table_changes()</a></code>,
-<code><a href="restore_table_version.html">restore_table_version()</a></code></p></div>
+<code><a href="restore_table_version.html">restore_table_version()</a></code>,
+<code><a href="view_table_changes.html">view_table_changes()</a></code></p></div>
     </div>
 
     <div class="section level2">
@@ -145,6 +164,16 @@ function.</p>
 <span class="r-in"><span>  by <span class="op">=</span> <span class="st">"id"</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">snaps</span> <span class="op">&lt;-</span> <span class="fu"><a href="list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"orders"</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Everything that ever happened to the table</span></span></span>
+<span class="r-in"><span><span class="fu">get_table_changes</span><span class="op">(</span><span class="st">"orders"</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/compute.html" class="external-link">collect</a></span><span class="op">(</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 4 × 5</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   snapshot_id rowid change_type    id amount</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span>           1     0 insert          1     10</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span>           1     1 insert          2     20</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span>           1     2 insert          3     30</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span>           2     0 delete          1     10</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># What changed in the most recent snapshot?</span></span></span>
 <span class="r-in"><span><span class="va">latest</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">snaps</span><span class="op">$</span><span class="va">snapshot_id</span><span class="op">)</span></span></span>

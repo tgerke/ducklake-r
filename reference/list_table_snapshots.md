@@ -49,7 +49,8 @@ Other time travel:
 [`get_table_changes()`](https://tgerke.github.io/ducklake-r/reference/get_table_changes.md),
 [`plot_snapshots()`](https://tgerke.github.io/ducklake-r/reference/plot_snapshots.md),
 [`plot_table_changes()`](https://tgerke.github.io/ducklake-r/reference/plot_table_changes.md),
-[`restore_table_version()`](https://tgerke.github.io/ducklake-r/reference/restore_table_version.md)
+[`restore_table_version()`](https://tgerke.github.io/ducklake-r/reference/restore_table_version.md),
+[`view_table_changes()`](https://tgerke.github.io/ducklake-r/reference/view_table_changes.md)
 
 ## Examples
 
@@ -62,7 +63,7 @@ create_table(data.frame(id = 1:3, amount = c(10, 20, 30)), "orders")
 # List all snapshots for a table
 list_table_snapshots("orders")
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-09-11 15:26:45              1
+#> 1           1 2026-09-15 23:30:31              1
 #>                                          changes author commit_message
 #> 1 tables_created, inlined_insert, main.orders, 1   <NA>           <NA>
 #>   commit_extra_info

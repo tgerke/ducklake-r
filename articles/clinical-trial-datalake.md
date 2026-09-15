@@ -189,8 +189,8 @@ blanks_to_na <- function(tbl) {
 Each silver recipe is kept in a named list, under the name it is
 materialized as, because the recipe that builds a layer is also its
 lineage, which the results section comes back to.
-[`iwalk()`](https://purrr.tidyverse.org/reference/imap.html) then hands
-each recipe and its name to
+[`iwalk()`](https://rdrr.io/pkg/purrr/man/imap.html) then hands each
+recipe and its name to
 [`create_table()`](https://tgerke.github.io/ducklake-r/reference/create_table.md).
 
 ``` r
@@ -219,8 +219,8 @@ get_ducklake_table("silver.dm") |>
 #> # A tibble: 2 × 2
 #>   dthdtc_missing     n
 #>   <lgl>          <dbl>
-#> 1 FALSE              3
-#> 2 TRUE             303
+#> 1 TRUE             303
+#> 2 FALSE              3
 ```
 
 The labels followed the columns: a table derived from a lake table keeps
@@ -777,6 +777,16 @@ get_table_changes("silver.ae", correction, correction) |>
 #> 2 update_preimage  01-701-1015     1 MILD
 ```
 
+The same feed opens in an interactive viewer. The sidebar lists the
+snapshot with its author and message, the column that changed, and the
+row; the main panel shows the row from either side, with the changed
+cell highlighted and both values on hover:
+
+``` r
+
+view_table_changes(get_table_changes("silver.ae", correction, correction))
+```
+
 That is the shape of an audit trail as FDA describes it in its 2024
 questions and answers on electronic systems in clinical investigations
 (Q12 to Q14): the date and time (`snapshot_time`), the individual
@@ -800,15 +810,15 @@ and message each one was given, from the lake’s creation on:
 list_table_snapshots() |>
   select(snapshot_id, snapshot_time, author, commit_message)
 #>   snapshot_id       snapshot_time                 author
-#> 1           0 2026-09-11 15:27:08           Data Manager
-#> 2           1 2026-09-11 15:27:08           Data Manager
-#> 3           2 2026-09-11 15:27:09           Data Manager
-#> 4           3 2026-09-11 15:27:10           Data Manager
-#> 5           4 2026-09-11 15:27:12 Statistical Programmer
-#> 6           5 2026-09-11 15:27:13 Statistical Programmer
-#> 7           6 2026-09-11 15:27:14           Statistician
-#> 8           7 2026-09-11 15:27:14 Statistical Programmer
-#> 9           8 2026-09-11 15:27:15           Data Manager
+#> 1           0 2026-09-15 23:30:55           Data Manager
+#> 2           1 2026-09-15 23:30:55           Data Manager
+#> 3           2 2026-09-15 23:30:55           Data Manager
+#> 4           3 2026-09-15 23:30:56           Data Manager
+#> 5           4 2026-09-15 23:30:58 Statistical Programmer
+#> 6           5 2026-09-15 23:30:59 Statistical Programmer
+#> 7           6 2026-09-15 23:30:59           Statistician
+#> 8           7 2026-09-15 23:31:00 Statistical Programmer
+#> 9           8 2026-09-15 23:31:00           Data Manager
 #>                                      commit_message
 #> 1                                       Create lake
 #> 2                          Create the lake's layers

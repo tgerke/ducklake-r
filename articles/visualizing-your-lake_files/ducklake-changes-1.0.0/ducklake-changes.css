@@ -1,0 +1,381 @@
+/* Styles for the view_table_changes() widget. Everything is scoped under
+   .ducklake-changes so the widget cannot leak into a host page. The three
+   change colors match plot_table_changes() (Okabe-Ito). */
+
+.ducklake-changes {
+  --dlc-ink: #1f2328;
+  --dlc-ink-soft: #656d76;
+  --dlc-paper: #ffffff;
+  --dlc-card: #f6f8fa;
+  --dlc-rule: #d0d7de;
+  --dlc-hover: #eaeef2;
+  --dlc-accent: #0072B2;
+  --dlc-inserted: #009E73;
+  --dlc-updated: #0072B2;
+  --dlc-deleted: #D55E00;
+  --dlc-inserted-soft: rgba(0, 158, 115, 0.14);
+  --dlc-updated-soft: rgba(0, 114, 178, 0.14);
+  --dlc-deleted-soft: rgba(213, 94, 0, 0.14);
+  --dlc-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --dlc-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--dlc-sans);
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--dlc-ink);
+  background: var(--dlc-paper);
+  overflow: hidden;
+}
+
+/* Bootstrap 5.3 light switch, as pkgdown sites use it */
+[data-bs-theme="dark"] .ducklake-changes {
+  --dlc-ink: #e6edf3;
+  --dlc-ink-soft: #9aa4ae;
+  --dlc-paper: #0f1418;
+  --dlc-card: #161c22;
+  --dlc-rule: #2d3640;
+  --dlc-hover: #1f2731;
+  --dlc-inserted-soft: rgba(0, 158, 115, 0.28);
+  --dlc-updated-soft: rgba(0, 114, 178, 0.28);
+  --dlc-deleted-soft: rgba(213, 94, 0, 0.28);
+}
+
+.ducklake-changes * {
+  box-sizing: border-box;
+}
+
+.dlc-app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 320px;
+  border: 1px solid var(--dlc-rule);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+/* Header */
+
+.dlc-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--dlc-rule);
+}
+
+.dlc-title {
+  font-weight: 600;
+  font-size: 15px;
+  font-family: var(--dlc-mono);
+}
+
+.dlc-subtitle {
+  color: var(--dlc-ink-soft);
+  font-size: 12px;
+}
+
+.dlc-legend {
+  display: flex;
+  gap: 12px;
+  margin-left: auto;
+  color: var(--dlc-ink-soft);
+  font-size: 12px;
+}
+
+.dlc-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.dlc-filter {
+  font: inherit;
+  font-size: 12px;
+  padding: 4px 8px;
+  min-width: 160px;
+  border: 1px solid var(--dlc-rule);
+  border-radius: 6px;
+  background: var(--dlc-paper);
+  color: var(--dlc-ink);
+}
+
+.dlc-banner {
+  padding: 6px 14px;
+  font-size: 12px;
+  background: var(--dlc-updated-soft);
+  border-bottom: 1px solid var(--dlc-rule);
+}
+
+/* Body: sidebar and panel */
+
+.dlc-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.dlc-sidebar {
+  width: 250px;
+  flex: none;
+  overflow: auto;
+  padding: 6px 0;
+  border-right: 1px solid var(--dlc-rule);
+  background: var(--dlc-card);
+}
+
+.dlc-group {
+  display: flex;
+  align-items: center;
+  padding: 10px 14px 4px;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--dlc-ink-soft);
+}
+
+.dlc-entry {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 14px;
+  cursor: pointer;
+  border-left: 3px solid transparent;
+  white-space: nowrap;
+}
+
+.dlc-entry:hover {
+  background: var(--dlc-hover);
+}
+
+.dlc-entry.active {
+  border-left-color: var(--dlc-accent);
+  background: var(--dlc-hover);
+  font-weight: 600;
+}
+
+.dlc-entry.sub {
+  padding-left: 28px;
+  font-size: 12px;
+}
+
+.dlc-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dlc-mono {
+  font-family: var(--dlc-mono);
+}
+
+.dlc-count {
+  margin-left: auto;
+  padding-left: 8px;
+  color: var(--dlc-ink-soft);
+  font-variant-numeric: tabular-nums;
+  font-weight: 400;
+}
+
+.dlc-panel {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.dlc-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--dlc-rule);
+}
+
+.dlc-view-title {
+  font-weight: 600;
+}
+
+.dlc-controls {
+  display: flex;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.dlc-segmented {
+  display: inline-flex;
+  overflow: hidden;
+  border: 1px solid var(--dlc-rule);
+  border-radius: 6px;
+}
+
+.dlc-segmented button {
+  font: inherit;
+  font-size: 12px;
+  padding: 3px 9px;
+  border: 0;
+  background: transparent;
+  color: var(--dlc-ink);
+  cursor: pointer;
+}
+
+.dlc-segmented button.active {
+  background: var(--dlc-accent);
+  color: #ffffff;
+}
+
+.dlc-main {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+}
+
+/* Tables */
+
+.dlc-table-wrap {
+  flex: 1;
+  overflow: auto;
+}
+
+.dlc-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: max-content;
+  min-width: 100%;
+}
+
+.dlc-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 6px 10px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--dlc-ink-soft);
+  background: var(--dlc-card);
+  border-bottom: 1px solid var(--dlc-rule);
+  white-space: nowrap;
+}
+
+.dlc-table td {
+  padding: 4px 10px;
+  max-width: 420px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--dlc-mono);
+  font-size: 12px;
+  border-bottom: 1px solid var(--dlc-rule);
+}
+
+.dlc-table tbody tr:hover td {
+  background: var(--dlc-hover);
+}
+
+.dlc-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.dlc-marker-col {
+  width: 30px;
+  text-align: center;
+}
+
+.dlc-changed {
+  background: var(--dlc-updated-soft);
+  box-shadow: inset 3px 0 var(--dlc-updated);
+}
+
+.dlc-table tbody tr:hover td.dlc-changed {
+  background: var(--dlc-updated-soft);
+}
+
+.dlc-na {
+  color: var(--dlc-ink-soft);
+  font-style: italic;
+}
+
+.dlc-swatch {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  vertical-align: middle;
+}
+
+.dlc-swatch-insert {
+  background: var(--dlc-inserted);
+}
+
+.dlc-swatch-update {
+  background: var(--dlc-updated);
+}
+
+.dlc-swatch-delete {
+  background: var(--dlc-deleted);
+}
+
+.dlc-swatch-partial {
+  background: transparent;
+  border: 2px solid var(--dlc-updated);
+}
+
+.dlc-swatch-none {
+  background: transparent;
+}
+
+.dlc-pager {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 14px;
+  font-size: 12px;
+  color: var(--dlc-ink-soft);
+  border-top: 1px solid var(--dlc-rule);
+}
+
+.dlc-pager button {
+  font: inherit;
+  font-size: 12px;
+  padding: 2px 8px;
+  border: 1px solid var(--dlc-rule);
+  border-radius: 4px;
+  background: var(--dlc-paper);
+  color: var(--dlc-ink);
+  cursor: pointer;
+}
+
+.dlc-pager button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.dlc-empty {
+  padding: 24px 14px;
+  color: var(--dlc-ink-soft);
+}
+
+/* Snapshot card above a snapshot's rows */
+
+.dlc-snapshot-card {
+  padding: 10px 14px;
+  font-size: 12px;
+  background: var(--dlc-card);
+  border-bottom: 1px solid var(--dlc-rule);
+}
+
+.dlc-snapshot-card .dlc-meta {
+  color: var(--dlc-ink-soft);
+}
+
+.dlc-snapshot-card .dlc-message {
+  margin: 2px 0;
+}
+
+.dlc-snapshot-card ul {
+  margin: 4px 0 0;
+  padding-left: 18px;
+}
