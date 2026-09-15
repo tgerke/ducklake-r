@@ -9,7 +9,6 @@
 ^data-raw$
 ^\.claude$
 ^cran-comments\.md$
-^CLAUDE\.md$
 ^Rplots\.pdf$
 ^CRAN-SUBMISSION$
 ^.*\.tar\.gz$
