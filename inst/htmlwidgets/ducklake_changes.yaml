@@ -1,0 +1,5 @@
+dependencies:
+  - name: ducklake-changes
+    version: 1.0.0
+    src: htmlwidgets/lib/ducklake-changes
+    stylesheet: ducklake-changes.css

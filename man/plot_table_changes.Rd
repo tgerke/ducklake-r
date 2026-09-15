@@ -61,6 +61,7 @@ Other time travel:
 \code{\link[=get_table_changes]{get_table_changes()}},
 \code{\link[=list_table_snapshots]{list_table_snapshots()}},
 \code{\link[=plot_snapshots]{plot_snapshots()}},
-\code{\link[=restore_table_version]{restore_table_version()}}
+\code{\link[=restore_table_version]{restore_table_version()}},
+\code{\link[=view_table_changes]{view_table_changes()}}
 }
 \concept{time travel}

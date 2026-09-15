@@ -30,6 +30,8 @@ Suggests:
     askpass,
     fs,
     ggplot2,
+    htmlwidgets,
+    jsonlite,
     knitr,
     labelled,
     rmarkdown,
