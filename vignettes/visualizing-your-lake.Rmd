@@ -12,12 +12,13 @@ vignette: >
 # installed. The probe never downloads anything, so building this vignette
 # needs no network access.
 ducklake_available <- ducklake::ducklake_extension_available()
+viz_deps <- ducklake_available && requireNamespace("ggplot2", quietly = TRUE)
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
   fig.width = 7,
   fig.height = 4,
-  eval = ducklake_available && requireNamespace("ggplot2", quietly = TRUE)
+  eval = viz_deps
 )
 # Use a unique temp directory for this vignette to avoid conflicts during R CMD check
 vignette_temp_dir <- file.path(tempdir(), "visualizing_your_lake_vignette")
@@ -36,14 +37,16 @@ A DuckLake keeps detailed records about itself: every change to a table is a
 snapshot, every changed row is in the change feed, and every Parquet file is
 tracked in the catalog. All of that comes back to R as data frames, but past
 a handful of rows a picture is easier to scan. This vignette walks through
-the package's three plotting functions:
+the package's three plotting functions and its interactive viewer:
 
 - `plot_snapshots()` draws a table's history as a commit-log style timeline
 - `plot_table_changes()` shows how many rows each snapshot changed
+- `view_table_changes()` opens the changed rows themselves in an
+  interactive viewer
 - `plot_table_files()` shows how each table's data is laid out on disk
 
-These require the ggplot2 package, which is suggested (not required) by
-ducklake.
+The plots need the ggplot2 package and the viewer needs htmlwidgets;
+ducklake suggests both but requires neither.
 
 ## Building Some History
 
@@ -140,6 +143,35 @@ inserted or updated above the axis, rows deleted below it.
 ```{r plot-changes}
 plot_table_changes("fleet")
 ```
+
+## Browsing the Changes
+
+`plot_table_changes()` counts the rows; `view_table_changes()` shows them.
+It takes the change feed from `get_table_changes()` and opens it in an
+interactive viewer. The sidebar lists the snapshots in range, each with
+its author and message, the columns that changed, and the rows inserted,
+updated, and deleted; the main panel shows whichever part you pick. An
+update is one row, shown from its old or its new side, with the changed
+cells highlighted and both values on hover.
+
+```{r view-changes, eval = viz_deps && requireNamespace("htmlwidgets", quietly = TRUE)}
+view_table_changes(get_table_changes("fleet"))
+```
+
+The feed is a lazy table, so dplyr verbs narrow it before anything is
+collected. One car's history:
+
+```{r view-changes-filter, eval = viz_deps && requireNamespace("htmlwidgets", quietly = TRUE)}
+get_table_changes("fleet") |>
+  filter(car_id == 3) |>
+  view_table_changes()
+```
+
+A filter on a column whose value changed, like `mileage`, matches one
+image of an update and not the other; the viewer marks such rows as
+one-sided. Filters on `car_id`, `snapshot_id`, `rowid`, or `change_type`
+keep pairs whole. The layout follows Hadley Wickham's
+[data-diff](https://github.com/hadley/data-diff).
 
 ## How the Data Is Stored
 

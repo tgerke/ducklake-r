@@ -656,6 +656,15 @@ get_table_changes("silver.ae", correction, correction) |>
   collect()
 ```
 
+The same feed opens in an interactive viewer. The sidebar lists the
+snapshot with its author and message, the column that changed, and the
+row; the main panel shows the row from either side, with the changed
+cell highlighted and both values on hover:
+
+```{r view-change-feed, eval = has_deps && ducklake_available && requireNamespace("htmlwidgets", quietly = TRUE)}
+view_table_changes(get_table_changes("silver.ae", correction, correction))
+```
+
 That is the shape of an audit trail as FDA describes it in its 2024
 questions and answers on electronic systems in clinical investigations
 (Q12 to Q14):
