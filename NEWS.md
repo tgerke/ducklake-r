@@ -19,6 +19,10 @@
   lake, range) that `view_table_changes()` reads. The attribute survives
   dplyr verbs on the lazy table and is dropped by `collect()`.
 
+* The lifecycle stage is now stable, with ducklake on CRAN since 0.6.0
+  (published 2026-09-09): the interface is settled, and any breaking
+  change will come with a deprecation cycle.
+
 # ducklake 0.8.0
 
 * `commit_transaction()` and `with_transaction()` name the snapshot this
