@@ -26,6 +26,10 @@
   dropped by
   [`collect()`](https://dplyr.tidyverse.org/reference/compute.html).
 
+- The lifecycle stage is now stable, with ducklake on CRAN since 0.6.0
+  (published 2026-09-09): the interface is settled, and any breaking
+  change will come with a deprecation cycle.
+
 ## ducklake 0.8.0
 
 - [`commit_transaction()`](https://tgerke.github.io/ducklake-r/reference/commit_transaction.md)
