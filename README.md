@@ -6,7 +6,9 @@
 <!-- badges: start -->
 
 [![Lifecycle:
-experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
+stable](https://img.shields.io/badge/lifecycle-stable-brightgreen.svg)](https://lifecycle.r-lib.org/articles/stages.html#stable)
+[![CRAN
+status](https://www.r-pkg.org/badges/version/ducklake)](https://CRAN.R-project.org/package=ducklake)
 [![R-CMD-check](https://github.com/tgerke/ducklake-r/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/tgerke/ducklake-r/actions/workflows/R-CMD-check.yaml)
 [![pkgdown](https://github.com/tgerke/ducklake-r/workflows/pkgdown/badge.svg)](https://github.com/tgerke/ducklake-r/actions)
 [![codecov](https://codecov.io/gh/tgerke/ducklake-r/branch/main/graph/badge.svg)](https://app.codecov.io/gh/tgerke/ducklake-r)
