@@ -11,7 +11,10 @@
 #'
 #' @returns A lazy table (class `tbl_ducklake`) that works with dplyr verbs.
 #'   Like [get_ducklake_table()], collecting it restores stored column
-#'   labels.
+#'   labels: the ones in force at that snapshot, which a later
+#'   [set_column_comments()] may have changed. A table written from the read
+#'   ([create_table()], [replace_table()]) takes the present-day comments,
+#'   as [restore_table_version()] does.
 #' @family time travel
 #' @export
 #'
@@ -78,7 +81,10 @@ get_ducklake_table_asof <- function(table_name, timestamp, conn = NULL) {
   query <- sprintf("SELECT * FROM %s AT (TIMESTAMP => %s)",
                    quote_ident(qualified, conn), quote_sql(timestamp_str))
 
-  as_ducklake_tbl(dplyr::tbl(conn, dplyr::sql(query)), table_name)
+  as_ducklake_tbl(
+    dplyr::tbl(conn, dplyr::sql(query)), table_name,
+    asof = list(timestamp = timestamp_str)
+  )
 }
 
 #' Query a table at a specific version/snapshot
@@ -92,7 +98,10 @@ get_ducklake_table_asof <- function(table_name, timestamp, conn = NULL) {
 #'
 #' @returns A lazy table (class `tbl_ducklake`) that works with dplyr verbs.
 #'   Like [get_ducklake_table()], collecting it restores stored column
-#'   labels.
+#'   labels: the ones in force at that snapshot, which a later
+#'   [set_column_comments()] may have changed. A table written from the read
+#'   ([create_table()], [replace_table()]) takes the present-day comments,
+#'   as [restore_table_version()] does.
 #' @family time travel
 #' @export
 #'
@@ -147,7 +156,10 @@ get_ducklake_table_version <- function(table_name, version, conn = NULL) {
   query <- sprintf("SELECT * FROM %s AT (VERSION => %d)",
                    quote_ident(qualified, conn), as.integer(version))
 
-  as_ducklake_tbl(dplyr::tbl(conn, dplyr::sql(query)), table_name)
+  as_ducklake_tbl(
+    dplyr::tbl(conn, dplyr::sql(query)), table_name,
+    asof = list(version = as.integer(version))
+  )
 }
 
 #' List available snapshots for a table

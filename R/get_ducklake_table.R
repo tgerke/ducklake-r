@@ -52,13 +52,18 @@ get_ducklake_table <- function(tbl_name) {
 #' Records the table name (for [ducklake_exec()] and for restoring labels
 #' on [dplyr::collect()]) and adds the `tbl_ducklake` class so the
 #' package's `rows_*()` methods dispatch regardless of package load order.
+#' A time-travel read also records the snapshot it asked for, so the labels
+#' it restores are the ones in force then.
 #'
 #' @param tbl A lazy table.
 #' @param table_name The DuckLake table it reads.
-#' @returns `tbl` with the class and attribute set.
+#' @param asof For a time-travel read, `list(version = )` or
+#'   `list(timestamp = )` holding the literal sent to DuckLake.
+#' @returns `tbl` with the class and attributes set.
 #' @noRd
-as_ducklake_tbl <- function(tbl, table_name) {
+as_ducklake_tbl <- function(tbl, table_name, asof = NULL) {
   attr(tbl, "ducklake_table_name") <- table_name
+  attr(tbl, "ducklake_asof") <- asof
   class(tbl) <- c("tbl_ducklake", setdiff(class(tbl), "tbl_ducklake"))
   tbl
 }

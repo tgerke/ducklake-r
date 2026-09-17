@@ -16,7 +16,10 @@ get_ducklake_table_version(table_name, version, conn = NULL)
 \value{
 A lazy table (class \code{tbl_ducklake}) that works with dplyr verbs.
 Like \code{\link[=get_ducklake_table]{get_ducklake_table()}}, collecting it restores stored column
-labels.
+labels: the ones in force at that snapshot, which a later
+\code{\link[=set_column_comments]{set_column_comments()}} may have changed. A table written from the read
+(\code{\link[=create_table]{create_table()}}, \code{\link[=replace_table]{replace_table()}}) takes the present-day comments,
+as \code{\link[=restore_table_version]{restore_table_version()}} does.
 }
 \description{
 Retrieves data from a DuckLake table at a specific snapshot ID using DuckLake's

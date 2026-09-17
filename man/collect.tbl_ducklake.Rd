@@ -19,6 +19,8 @@ comments.
 Completes the label round trip: \code{\link[=create_table]{create_table()}} stores haven/labelled
 \code{label} attributes as column comments, and collecting the table brings
 them back, so gtsummary, gt, and friends display them as usual. Columns
-renamed or derived in the pipeline simply come back unlabelled.
+renamed or derived in the pipeline simply come back unlabelled. A
+time-travel read (\code{\link[=get_ducklake_table_version]{get_ducklake_table_version()}},
+\code{\link[=get_ducklake_table_asof]{get_ducklake_table_asof()}}) gets the labels in force at its snapshot.
 }
 \keyword{internal}

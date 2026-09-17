@@ -258,7 +258,9 @@ get_table_comments <- function(table_name = NULL, ducklake_name = NULL) {
 #' Completes the label round trip: [create_table()] stores haven/labelled
 #' `label` attributes as column comments, and collecting the table brings
 #' them back, so gtsummary, gt, and friends display them as usual. Columns
-#' renamed or derived in the pipeline simply come back unlabelled.
+#' renamed or derived in the pipeline simply come back unlabelled. A
+#' time-travel read ([get_ducklake_table_version()],
+#' [get_ducklake_table_asof()]) gets the labels in force at its snapshot.
 #'
 #' @param x A `tbl_ducklake` lazy table.
 #' @param ... Passed on to [dplyr::collect()].
@@ -273,8 +275,15 @@ collect.tbl_ducklake <- function(x, ...) {
   if (is.null(tbl_name)) {
     return(out)
   }
+  asof <- attr(x, "ducklake_asof")
+  # A failed lookup leaves the data unlabelled; it never falls back from a
+  # snapshot's labels to today's
   comments <- tryCatch(
-    get_table_comments(tbl_name),
+    if (is.null(asof)) {
+      get_table_comments(tbl_name)
+    } else {
+      column_comments_asof(tbl_name, asof, dbplyr::remote_con(x))
+    },
     error = function(e) NULL
   )
   if (is.null(comments) || nrow(comments) == 0) {
@@ -288,6 +297,69 @@ collect.tbl_ducklake <- function(x, ...) {
     }
   }
   out
+}
+
+#' Column comments as of a snapshot, from the DuckLake metadata tables
+#'
+#' DuckDB's catalog functions describe one snapshot, the session's, so a
+#' time-travel read on a live attach needs the versioned rows. The table is
+#' looked up by the name and id it had at the snapshot, the way
+#' `AT (VERSION => n)` resolves it, so a table renamed or rebuilt since is
+#' found. `end_snapshot` is exclusive. A timestamp becomes a snapshot id
+#' through the cast DuckLake applies to the same literal, so the labels and
+#' the rows cannot land on different snapshots.
+#'
+#' @param table_name The table, optionally schema-qualified.
+#' @param asof `list(version = )` or `list(timestamp = )`, as recorded by
+#'   `as_ducklake_tbl()`.
+#' @param conn A DBI connection.
+#' @returns A data frame shaped like the column rows of
+#'   [get_table_comments()].
+#' @noRd
+column_comments_asof <- function(table_name, asof, conn) {
+  prefix <- metadata_prefix(infer_ducklake_name(NULL, conn), conn)
+  ref <- split_table_name(table_name)
+
+  if (!is.null(asof$version)) {
+    pin <- "SELECT CAST(? AS BIGINT) AS n"
+    pin_param <- as.integer(asof$version)
+  } else {
+    pin <- sprintf(
+      "SELECT max(snapshot_id) AS n FROM %s.ducklake_snapshot
+       WHERE snapshot_time <= CAST(? AS TIMESTAMPTZ)",
+      prefix
+    )
+    pin_param <- asof$timestamp
+  }
+
+  valid <- function(alias) {
+    sprintf(
+      "%1$s.begin_snapshot <= pin.n AND (%1$s.end_snapshot IS NULL OR %1$s.end_snapshot > pin.n)",
+      alias
+    )
+  }
+  sql <- sprintf(
+    "WITH pin AS (%2$s)
+     SELECT 'column' AS object_type, s.schema_name, t.table_name,
+            c.column_name, ct.value AS comment
+     FROM pin
+     JOIN %1$s.ducklake_table t ON %3$s
+     JOIN %1$s.ducklake_schema s ON t.schema_id = s.schema_id AND %4$s
+     JOIN %1$s.ducklake_column c ON c.table_id = t.table_id AND %5$s
+     JOIN %1$s.ducklake_column_tag ct
+       ON ct.table_id = c.table_id AND ct.column_id = c.column_id AND %6$s
+     WHERE t.table_name = ? AND s.schema_name = ?
+       AND ct.key = 'comment' AND ct.value IS NOT NULL
+     ORDER BY c.column_name",
+    prefix, pin, valid("t"), valid("s"), valid("c"), valid("ct")
+  )
+
+  DBI::dbGetQuery(
+    conn, sql,
+    params = list(
+      pin_param, ref$table, if (is.null(ref$schema)) "main" else ref$schema
+    )
+  )
 }
 
 #' Render a comment value for COMMENT ON
