@@ -2,12 +2,12 @@
 % Please edit documentation in R/comments.R
 \name{set_table_comment}
 \alias{set_table_comment}
-\title{Set the comment on a DuckLake table}
+\title{Set the comment on a DuckLake table or view}
 \usage{
 set_table_comment(table_name, comment)
 }
 \arguments{
-\item{table_name}{The table to describe.}
+\item{table_name}{The table or view to describe.}
 
 \item{comment}{The comment text, or \code{NULL}/\code{NA} to clear an existing
 comment.}
@@ -16,10 +16,14 @@ comment.}
 Invisibly returns \code{NULL}.
 }
 \description{
-Stores a description of the table in the DuckLake catalog with
-\verb{COMMENT ON TABLE}. Comments live in the lake itself, so every client --
-R, Python, or plain SQL -- sees the same documentation, and AI tools
-reading the catalog get the context too.
+Stores a description of the table or view in the DuckLake catalog with
+\verb{COMMENT ON TABLE} or \verb{COMMENT ON VIEW}. Comments live in the lake itself,
+so every client -- R, Python, or plain SQL -- sees the same documentation,
+and AI tools reading the catalog get the context too.
+}
+\details{
+A view's comment belongs to that version of the view: replacing the view
+with \code{\link[=create_view]{create_view()}} drops it, so set it again in the same transaction.
 }
 \examples{
 \dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}
@@ -30,6 +34,12 @@ create_table(mtcars, "cars")
 
 set_table_comment("cars", "Motor Trend road tests, one row per model")
 set_table_comment("cars", NULL) # clear
+
+# Views take a comment the same way
+get_ducklake_table("cars") |>
+  dplyr::filter(cyl == 4) |>
+  create_view("v_four_cyl")
+set_table_comment("v_four_cyl", "Four-cylinder models")
 
 detach_ducklake("comment_lake", shutdown = TRUE)
 unlink(lake_dir, recursive = TRUE)

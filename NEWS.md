@@ -19,6 +19,12 @@
   lake, range) that `view_table_changes()` reads. The attribute survives
   dplyr verbs on the lazy table and is dropped by `collect()`.
 
+* `set_table_comment()` comments a view as well as a table. It used to send
+  `COMMENT ON TABLE` for every name, which DuckLake refuses for a view, so
+  `get_table_comments()` could read a view's comment but nothing in the
+  package could write one. A replaced view is a new catalog entry and loses
+  its comment, which `?create_view` now says.
+
 * The lifecycle stage is now stable, with ducklake on CRAN since 0.6.0
   (published 2026-09-09): the interface is settled, and any breaking
   change will come with a deprecation cycle.

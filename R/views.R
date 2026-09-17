@@ -17,6 +17,15 @@
 #' tables alike, and keep piping dplyr verbs onto it. Like tables, views
 #' are versioned: dropping or replacing one is a snapshot like any other.
 #'
+#' A replaced view is a new catalog entry, so a comment set with
+#' [set_table_comment()] does not carry over. Set it again in the same
+#' transaction as the replacement.
+#'
+#' A view looks up an unqualified table name in its own schema first. A view
+#' in another schema that shares its name with the table it reads
+#' (`checks.cars` over `cars`) therefore reads itself and fails with a
+#' recursion error, so give such views names of their own.
+#'
 #' @returns Invisibly returns `NULL`.
 #' @family table operations
 #' @export

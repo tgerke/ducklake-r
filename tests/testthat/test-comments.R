@@ -205,6 +205,100 @@ test_that("collect leaves comment-free tables untouched", {
   cleanup_temp_ducklake(lake)
 })
 
+test_that("set_table_comment comments a view", {
+  skip_if_not_installed("duckdb")
+  skip_if_not_installed("dplyr")
+
+  lake <- create_temp_ducklake()
+
+  create_table(data.frame(id = 1:3), "test_comment_view_base")
+  get_ducklake_table("test_comment_view_base") |>
+    dplyr::filter(id > 1) |>
+    create_view("v_commented")
+
+  set_table_comment("v_commented", "Rows past the first")
+  set_table_comment("test_comment_view_base", "The base table")
+
+  comments <- get_table_comments()
+  expect_equal(
+    comments$comment[comments$object_type == "view"], "Rows past the first"
+  )
+  expect_equal(
+    comments$comment[comments$object_type == "table"], "The base table"
+  )
+
+  cleanup_temp_ducklake(lake)
+})
+
+test_that("set_table_comment reaches a schema-qualified view and clears it", {
+  skip_if_not_installed("duckdb")
+  skip_if_not_installed("dplyr")
+
+  lake <- create_temp_ducklake()
+
+  create_schema("checks")
+  create_table(data.frame(id = 1:3), "test_comment_view_schema")
+  get_ducklake_table("test_comment_view_schema") |>
+    dplyr::filter(id > 5) |>
+    create_view("checks.id_in_range")
+
+  set_table_comment("checks.id_in_range", "id is 5 or less")
+  comments <- get_table_comments("checks.id_in_range")
+  expect_equal(comments$object_type, "view")
+  expect_equal(comments$schema_name, "checks")
+  expect_equal(comments$comment, "id is 5 or less")
+
+  set_table_comment("checks.id_in_range", NULL)
+  expect_equal(nrow(get_table_comments("checks.id_in_range")), 0)
+
+  cleanup_temp_ducklake(lake)
+})
+
+test_that("a view created and commented in one transaction is one snapshot", {
+  skip_if_not_installed("duckdb")
+  skip_if_not_installed("dplyr")
+
+  lake <- create_temp_ducklake()
+
+  create_table(data.frame(id = 1:3), "test_comment_view_txn")
+  before <- max(list_table_snapshots()$snapshot_id)
+
+  # the view exists only inside the open transaction when it is commented
+  suppressMessages(with_transaction({
+    get_ducklake_table("test_comment_view_txn") |>
+      dplyr::filter(id > 1) |>
+      create_view("v_txn")
+    set_table_comment("v_txn", "Commented before the commit")
+  }))
+
+  after <- max(list_table_snapshots()$snapshot_id)
+  expect_equal(after - before, 1)
+  expect_equal(
+    get_table_comments("v_txn")$comment, "Commented before the commit"
+  )
+
+  cleanup_temp_ducklake(lake)
+})
+
+test_that("replacing a view drops its comment", {
+  skip_if_not_installed("duckdb")
+  skip_if_not_installed("dplyr")
+
+  lake <- create_temp_ducklake()
+
+  create_table(data.frame(id = 1:3), "test_comment_view_repl")
+  get_ducklake_table("test_comment_view_repl") |> create_view("v_repl_comment")
+  set_table_comment("v_repl_comment", "First version")
+
+  get_ducklake_table("test_comment_view_repl") |>
+    dplyr::filter(id > 1) |>
+    create_view("v_repl_comment")
+
+  expect_equal(nrow(get_table_comments("v_repl_comment")), 0)
+
+  cleanup_temp_ducklake(lake)
+})
+
 test_that("set_column_comments validates its input", {
   skip_if_not_installed("duckdb")
   skip_if_not_installed("dplyr")

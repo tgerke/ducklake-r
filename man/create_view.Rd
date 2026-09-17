@@ -29,6 +29,15 @@ sees exactly the same definition.
 Read a view back with \code{\link[=get_ducklake_table]{get_ducklake_table()}}, which works for views and
 tables alike, and keep piping dplyr verbs onto it. Like tables, views
 are versioned: dropping or replacing one is a snapshot like any other.
+
+A replaced view is a new catalog entry, so a comment set with
+\code{\link[=set_table_comment]{set_table_comment()}} does not carry over. Set it again in the same
+transaction as the replacement.
+
+A view looks up an unqualified table name in its own schema first. A view
+in another schema that shares its name with the table it reads
+(\code{checks.cars} over \code{cars}) therefore reads itself and fails with a
+recursion error, so give such views names of their own.
 }
 \examples{
 \dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}

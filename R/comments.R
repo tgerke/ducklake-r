@@ -1,13 +1,17 @@
-#' Set the comment on a DuckLake table
+#' Set the comment on a DuckLake table or view
 #'
-#' Stores a description of the table in the DuckLake catalog with
-#' `COMMENT ON TABLE`. Comments live in the lake itself, so every client --
-#' R, Python, or plain SQL -- sees the same documentation, and AI tools
-#' reading the catalog get the context too.
+#' Stores a description of the table or view in the DuckLake catalog with
+#' `COMMENT ON TABLE` or `COMMENT ON VIEW`. Comments live in the lake itself,
+#' so every client -- R, Python, or plain SQL -- sees the same documentation,
+#' and AI tools reading the catalog get the context too.
 #'
-#' @param table_name The table to describe.
+#' @param table_name The table or view to describe.
 #' @param comment The comment text, or `NULL`/`NA` to clear an existing
 #'   comment.
+#'
+#' @details
+#' A view's comment belongs to that version of the view: replacing the view
+#' with [create_view()] drops it, so set it again in the same transaction.
 #'
 #' @returns Invisibly returns `NULL`.
 #' @family table documentation
@@ -24,15 +28,24 @@
 #' set_table_comment("cars", "Motor Trend road tests, one row per model")
 #' set_table_comment("cars", NULL) # clear
 #'
+#' # Views take a comment the same way
+#' get_ducklake_table("cars") |>
+#'   dplyr::filter(cyl == 4) |>
+#'   create_view("v_four_cyl")
+#' set_table_comment("v_four_cyl", "Four-cylinder models")
+#'
 #' detach_ducklake("comment_lake", shutdown = TRUE)
 #' unlink(lake_dir, recursive = TRUE)
 set_table_comment <- function(table_name, comment) {
   conn <- get_ducklake_connection()
+  quoted <- quote_ident(table_name, conn)
+  object <- if (is_lake_view(table_name, conn)) "view" else "table"
 
   db_execute(
     sprintf(
-      "COMMENT ON TABLE %s IS %s;",
-      quote_ident(table_name, conn),
+      "COMMENT ON %s %s IS %s;",
+      toupper(object),
+      quoted,
       render_comment_value(comment)
     ),
     conn = conn
@@ -40,10 +53,35 @@ set_table_comment <- function(table_name, comment) {
   if (is_empty_comment(comment)) {
     dl_inform("Cleared the comment on {.val {table_name}}.")
   } else {
-    dl_inform("Commented table {.val {table_name}}.")
+    dl_inform("Commented {object} {.val {table_name}}.")
   }
 
   invisible(NULL)
+}
+
+#' Is a name a view in the current lake?
+#'
+#' `COMMENT ON TABLE` is refused for a view. Looked up beforehand instead of
+#' retried after a failure, because a failed statement aborts a caller's
+#' open transaction.
+#'
+#' @param table_name A name, optionally qualified as `"schema.view"`.
+#' @param conn A DBI connection.
+#' @returns `TRUE` when the name is a view.
+#' @noRd
+is_lake_view <- function(table_name, conn) {
+  parts <- split_table_name(table_name)
+  found <- DBI::dbGetQuery(
+    conn,
+    "SELECT 1 FROM duckdb_views()
+     WHERE database_name = ? AND schema_name = ? AND view_name = ?",
+    params = list(
+      infer_ducklake_name(NULL, conn),
+      if (is.null(parts$schema)) "main" else parts$schema,
+      parts$table
+    )
+  )
+  nrow(found) > 0
 }
 
 #' Set column comments on a DuckLake table
@@ -64,6 +102,9 @@ set_table_comment <- function(table_name, comment) {
 #' All comments from one call are written in a single transaction, so they
 #' land as one snapshot. Inside [with_transaction()] they join the open
 #' transaction instead.
+#'
+#' DuckLake accepts column comments on tables only. A view takes a comment
+#' of its own through [set_table_comment()], but not on its columns.
 #'
 #' @returns Invisibly returns `NULL`.
 #' @family table documentation
