@@ -44,6 +44,7 @@ MinGW
 MinIO
 NFS
 Orraca
+PCCTC
 POSIXct
 Pharmacokinetic
 README
@@ -88,6 +89,7 @@ duckdb
 ducklake's
 duckplyr
 duckplyr's
+enum
 erroring
 expirable
 filesystem
