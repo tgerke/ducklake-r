@@ -280,23 +280,117 @@ test_that("a view created and commented in one transaction is one snapshot", {
   cleanup_temp_ducklake(lake)
 })
 
-test_that("replacing a view drops its comment", {
+test_that("create_view keeps a view's comment across a replace, as one snapshot", {
   skip_if_not_installed("duckdb")
   skip_if_not_installed("dplyr")
 
   lake <- create_temp_ducklake()
+  on.exit(cleanup_temp_ducklake(lake), add = TRUE)
 
   create_table(data.frame(id = 1:3), "test_comment_view_repl")
-  get_ducklake_table("test_comment_view_repl") |> create_view("v_repl_comment")
-  set_table_comment("v_repl_comment", "First version")
+  tricky <- "It's the subject's 'first' version; -- µg"
+  suppressMessages({
+    get_ducklake_table("test_comment_view_repl") |> create_view("v_repl_comment")
+    set_table_comment("v_repl_comment", tricky)
+  })
+  before <- max(list_table_snapshots()$snapshot_id)
 
-  get_ducklake_table("test_comment_view_repl") |>
-    dplyr::filter(id > 1) |>
-    create_view("v_repl_comment")
+  suppressMessages(
+    get_ducklake_table("test_comment_view_repl") |>
+      dplyr::filter(id > 1) |>
+      create_view("v_repl_comment")
+  )
 
+  # the new definition, the old comment, one snapshot for both
+  expect_equal(nrow(dplyr::collect(get_ducklake_table("v_repl_comment"))), 2)
+  expect_equal(get_table_comments("v_repl_comment")$comment, tricky)
+  expect_equal(max(list_table_snapshots()$snapshot_id) - before, 1)
+
+  # DuckLake on its own drops it: this is what create_view() works around
+  DBI::dbExecute(
+    lake$conn,
+    "CREATE OR REPLACE VIEW v_repl_comment AS SELECT * FROM test_comment_view_repl"
+  )
   expect_equal(nrow(get_table_comments("v_repl_comment")), 0)
+})
 
-  cleanup_temp_ducklake(lake)
+test_that("create_view replaces an uncommented view without adding a comment", {
+  skip_if_not_installed("duckdb")
+  skip_if_not_installed("dplyr")
+
+  lake <- create_temp_ducklake()
+  on.exit(cleanup_temp_ducklake(lake), add = TRUE)
+
+  create_table(data.frame(id = 1:3), "test_comment_view_plain")
+  before <- max(list_table_snapshots()$snapshot_id)
+  suppressMessages({
+    get_ducklake_table("test_comment_view_plain") |> create_view("v_plain")
+    get_ducklake_table("test_comment_view_plain") |>
+      dplyr::filter(id > 1) |>
+      create_view("v_plain")
+  })
+
+  expect_equal(nrow(get_table_comments("v_plain")), 0)
+  expect_equal(max(list_table_snapshots()$snapshot_id) - before, 2)
+  expect_false(ducklake:::in_transaction(lake$conn))
+})
+
+test_that("a replace inside a caller's transaction joins it", {
+  skip_if_not_installed("duckdb")
+  skip_if_not_installed("dplyr")
+
+  lake <- create_temp_ducklake()
+  on.exit(cleanup_temp_ducklake(lake), add = TRUE)
+
+  create_table(data.frame(id = 1:3), "test_comment_view_join")
+  suppressMessages({
+    get_ducklake_table("test_comment_view_join") |> create_view("v_join")
+    set_table_comment("v_join", "Kept")
+  })
+  before <- max(list_table_snapshots()$snapshot_id)
+
+  # rolled back: no commit of create_view()'s own slipped out
+  suppressMessages({
+    begin_transaction()
+    get_ducklake_table("test_comment_view_join") |>
+      dplyr::filter(id > 2) |>
+      create_view("v_join")
+    rollback_transaction()
+  })
+  expect_equal(max(list_table_snapshots()$snapshot_id), before)
+  expect_equal(nrow(dplyr::collect(get_ducklake_table("v_join"))), 3)
+  expect_equal(get_table_comments("v_join")$comment, "Kept")
+
+  # committed: a label set after the replace wins, in the same snapshot
+  suppressMessages(with_transaction({
+    get_ducklake_table("test_comment_view_join") |>
+      dplyr::filter(id > 2) |>
+      create_view("v_join")
+    set_table_comment("v_join", "Reworded")
+  }))
+  expect_equal(max(list_table_snapshots()$snapshot_id) - before, 1)
+  expect_equal(nrow(dplyr::collect(get_ducklake_table("v_join"))), 1)
+  expect_equal(get_table_comments("v_join")$comment, "Reworded")
+})
+
+test_that("a view created, commented, and replaced in one transaction keeps its comment", {
+  skip_if_not_installed("duckdb")
+  skip_if_not_installed("dplyr")
+
+  lake <- create_temp_ducklake()
+  on.exit(cleanup_temp_ducklake(lake), add = TRUE)
+
+  create_table(data.frame(id = 1:3), "test_comment_view_local")
+  suppressMessages(with_transaction({
+    get_ducklake_table("test_comment_view_local") |> create_view("v_local")
+    set_table_comment("v_local", "Set before the commit")
+    get_ducklake_table("test_comment_view_local") |>
+      dplyr::filter(id > 1) |>
+      create_view("v_local")
+  }))
+
+  expect_equal(get_table_comments("v_local")$comment, "Set before the commit")
+  expect_equal(nrow(dplyr::collect(get_ducklake_table("v_local"))), 2)
 })
 
 test_that("set_column_comments validates its input", {

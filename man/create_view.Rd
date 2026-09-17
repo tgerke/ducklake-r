@@ -13,7 +13,8 @@ data -- use \code{\link[=create_table]{create_table()}} to store data.}
 
 \item{view_name}{Name for the view.}
 
-\item{replace}{Replace an existing view of the same name (default TRUE).}
+\item{replace}{Replace an existing view of the same name (default TRUE).
+The replaced view's comment carries over.}
 }
 \value{
 Invisibly returns \code{NULL}.
@@ -30,9 +31,12 @@ Read a view back with \code{\link[=get_ducklake_table]{get_ducklake_table()}}, w
 tables alike, and keep piping dplyr verbs onto it. Like tables, views
 are versioned: dropping or replacing one is a snapshot like any other.
 
-A replaced view is a new catalog entry, so a comment set with
-\code{\link[=set_table_comment]{set_table_comment()}} does not carry over. Set it again in the same
-transaction as the replacement.
+DuckLake stores a replaced view as a new catalog entry and keys the
+comment to the entry, so \verb{CREATE OR REPLACE VIEW} by itself drops the
+comment. \code{create_view()} reads the comment first and sets it again, in
+the same snapshot as the replacement, the way \code{\link[=replace_table]{replace_table()}} carries a
+table's comments over. Reword it with \code{\link[=set_table_comment]{set_table_comment()}}, or clear it
+with \code{NULL}.
 
 A view kept in a schema of its own should read its tables by
 schema-qualified name: \code{get_ducklake_table("main.cars")}, not \code{"cars"}.

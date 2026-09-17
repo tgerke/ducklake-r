@@ -238,7 +238,8 @@
   name up in `duckdb_views()` first because a failed statement aborts a
   caller's open transaction. `CREATE VIEW` plus `COMMENT ON VIEW` in one
   transaction is one snapshot. `CREATE OR REPLACE VIEW` assigns a new view
-  id and drops the comment. `duckdb_views().comment` shows a label inside
+  id and drops the comment (`create_view()` puts it back, see below).
+  `duckdb_views().comment` shows a label inside
   the creating transaction and as of a snapshot-pinned attach, while
   `get_table_comments()` reads the metadata tables and shows neither (on a
   pinned attach it returns present-day comments). A view read inside an
@@ -268,3 +269,17 @@
   scratch space, `checks`). The second meaning of "schema", a table's
   column layout as in the Schema Evolution reference section, is handled
   in prose where it could confuse.
+- **`create_view()` carries a view's comment across a replace**
+  (2026-09-17). DuckLake keys the comment to the view id and a replace
+  assigns a new one, the situation `replace_table()` handles for tables,
+  and since the data checks work a view's comment is a check's label. With
+  `replace = TRUE` the comment is read from `duckdb_views()` and set again
+  inside the transaction that replaces the view (its own when none is
+  open, the caller's otherwise), so the replacement and the comment are one
+  snapshot and a view created earlier in the same transaction is covered.
+  Silent, like `replace_table()`, and with no argument to opt out:
+  `set_table_comment(view, NULL)` clears a comment. Confirmed on DuckDB
+  1.5.5: replace plus `COMMENT ON VIEW` in one transaction is one snapshot
+  (`views_created`, `views_dropped`, `views_altered`), and a second comment
+  in the same transaction leaves one current tag row holding the last
+  value, so re-labelling after a replace stays clean.

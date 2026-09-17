@@ -10,8 +10,9 @@
 #'   comment.
 #'
 #' @details
-#' A view's comment belongs to that version of the view: replacing the view
-#' with [create_view()] drops it, so set it again in the same transaction.
+#' [create_view()] keeps a view's comment when it replaces the view. A
+#' `CREATE OR REPLACE VIEW` issued any other way drops it, because DuckLake
+#' keys the comment to the catalog entry that the replacement retires.
 #'
 #' @returns Invisibly returns `NULL`.
 #' @family table documentation
@@ -70,18 +71,7 @@ set_table_comment <- function(table_name, comment) {
 #' @returns `TRUE` when the name is a view.
 #' @noRd
 is_lake_view <- function(table_name, conn) {
-  parts <- split_table_name(table_name)
-  found <- DBI::dbGetQuery(
-    conn,
-    "SELECT 1 FROM duckdb_views()
-     WHERE database_name = ? AND schema_name = ? AND view_name = ?",
-    params = list(
-      infer_ducklake_name(NULL, conn),
-      if (is.null(parts$schema)) "main" else parts$schema,
-      parts$table
-    )
-  )
-  nrow(found) > 0
+  nrow(find_lake_view(table_name, conn)) > 0
 }
 
 #' Set column comments on a DuckLake table

@@ -34,8 +34,14 @@
 * `set_table_comment()` comments a view as well as a table. It used to send
   `COMMENT ON TABLE` for every name, which DuckLake refuses for a view, so
   `get_table_comments()` could read a view's comment but nothing in the
-  package could write one. A replaced view is a new catalog entry and loses
-  its comment, which `?create_view` now says.
+  package could write one.
+
+* `create_view()` keeps a view's comment when it replaces the view. DuckLake
+  stores the replacement as a new catalog entry and keys the comment to the
+  entry, so `CREATE OR REPLACE VIEW` by itself drops it. `create_view()`
+  reads the comment first and sets it again in the same snapshot, as
+  `replace_table()` does for a table's comments. A check's label is its
+  view's comment, so revising a rule keeps the label.
 
 * The lifecycle stage is now stable, with ducklake on CRAN since 0.6.0
   (published 2026-09-09): the interface is settled, and any breaking

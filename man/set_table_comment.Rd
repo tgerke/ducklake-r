@@ -22,8 +22,9 @@ so every client -- R, Python, or plain SQL -- sees the same documentation,
 and AI tools reading the catalog get the context too.
 }
 \details{
-A view's comment belongs to that version of the view: replacing the view
-with \code{\link[=create_view]{create_view()}} drops it, so set it again in the same transaction.
+\code{\link[=create_view]{create_view()}} keeps a view's comment when it replaces the view. A
+\verb{CREATE OR REPLACE VIEW} issued any other way drops it, because DuckLake
+keys the comment to the catalog entry that the replacement retires.
 }
 \examples{
 \dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}

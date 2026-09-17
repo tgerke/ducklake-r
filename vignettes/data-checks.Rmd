@@ -241,9 +241,9 @@ run_checks()
 ## Rules have history
 
 A check is a catalog object, so changing a rule is a snapshot with an author
-and a message, like a change to the data. Replacing a view makes a new
-catalog entry, which starts without a comment. Set the label again in the
-same transaction:
+and a message, like a change to the data. `create_view()` replaces a view
+of the same name and keeps its label. This revision changes what the rule
+says, so it sets a new label in the same transaction:
 
 ```{r revise_check}
 with_transaction({
