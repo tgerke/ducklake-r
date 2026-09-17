@@ -240,9 +240,9 @@
   transaction is one snapshot. `CREATE OR REPLACE VIEW` assigns a new view
   id and drops the comment (`create_view()` puts it back, see below).
   `duckdb_views().comment` shows a label inside
-  the creating transaction and as of a snapshot-pinned attach, while
-  `get_table_comments()` reads the metadata tables and shows neither (on a
-  pinned attach it returns present-day comments). A view read inside an
+  the creating transaction and as of a snapshot-pinned attach; the
+  `ducklake_tag` tables show neither, which moved `get_table_comments()`
+  onto the catalog functions (see below). A view read inside an
   open transaction sees pending inserts, updates, and an in-transaction
   `replace_table()`, and views survive a committed `replace_table()` that
   changes a column type. A view in another schema that reads an
@@ -283,3 +283,30 @@
   (`views_created`, `views_dropped`, `views_altered`), and a second comment
   in the same transaction leaves one current tag row holding the last
   value, so re-labelling after a replace stays clean.
+- **`get_table_comments()` reads DuckDB's catalog functions, not the tag
+  tables** (2026-09-17). The metadata query filtered on `end_snapshot IS
+  NULL`, the lake's latest committed state, which is not what a session
+  sees in two cases. On a snapshot-pinned attach it returned present-day
+  comments, so `collect()` restored labels that were not in force at the
+  pin. Inside an open transaction it missed pending comments, so
+  `capture_table_metadata()` made `replace_table()` and
+  `restore_table_version()` put older committed comments back over ones
+  set earlier in the same transaction, and `source_column_comments()` did
+  not inherit them. `duckdb_tables()`, `duckdb_views()`, and
+  `duckdb_columns()` follow the pin and show pending comments (confirmed on
+  DuckDB 1.5.5), need no `metadata_prefix()` or registry entry, and do not
+  depend on the catalog's table layout. The alternative was a snapshot
+  filter on the metadata tables: `current_snapshot()` returns the pinned id
+  for version and time pins alike (while `snapshots()` still lists every
+  snapshot), so it needed no registry change, but it cannot see an open
+  transaction. Rough timing on 60 tables of 25 commented columns: 1.5 ms
+  against 2.9 ms for one table, the path `collect()` takes, and 6.4 ms
+  against 2.8 ms for the whole lake. Two known gaps remain, both confirmed
+  the same day and neither fixed: a time-travel read
+  (`get_ducklake_table_version()`, `get_ducklake_table_asof()`) gets
+  present-day labels from `collect()`, which the catalog functions cannot
+  serve because they read one snapshot; and `get_table_partitions()` /
+  `get_table_sorting()` keep the `end_snapshot IS NULL` filter with no
+  catalog function to replace it, so partition and sort keys set in the
+  same transaction as a `replace_table()` are lost by it (keys committed
+  beforehand carry over).

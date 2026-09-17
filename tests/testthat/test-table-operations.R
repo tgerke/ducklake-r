@@ -276,6 +276,35 @@ test_that("replace_table carries comments, partition keys, sort order, and optio
   )
 })
 
+test_that("replace_table keeps comments set earlier in the same transaction", {
+  skip_if_not_installed("duckdb")
+  skip_if_not_installed("dplyr")
+
+  lake <- create_temp_ducklake()
+  on.exit(cleanup_temp_ducklake(lake), add = TRUE)
+
+  create_table(data.frame(id = 1:3, amount = c(1, 2, 3)), "test_replace_txn_meta")
+  suppressMessages(set_table_comment("test_replace_txn_meta", "Committed comment"))
+
+  suppressMessages(with_transaction({
+    set_table_comment("test_replace_txn_meta", "Set in this transaction")
+    set_column_comments("test_replace_txn_meta", amount = "Amount, doubled below")
+    get_ducklake_table("test_replace_txn_meta") |>
+      dplyr::mutate(amount = amount * 2) |>
+      replace_table("test_replace_txn_meta")
+  }))
+
+  comments <- get_table_comments("test_replace_txn_meta")
+  expect_equal(
+    comments$comment[comments$object_type == "table"],
+    "Set in this transaction"
+  )
+  expect_equal(
+    comments$comment[comments$object_type == "column"],
+    "Amount, doubled below"
+  )
+})
+
 test_that("restore_table_version keeps comments and partition keys", {
   skip_if_not_installed("duckdb")
   skip_if_not_installed("dplyr")
