@@ -44,6 +44,7 @@ articles:
   - title: More Features
     contents:
     - views-comments-labels
+    - data-checks
     - transactions
     - data-inlining
     - storage-and-backups

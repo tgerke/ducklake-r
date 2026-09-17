@@ -23,7 +23,7 @@
 #' the lake.
 #'
 #' Every view in the schema counts as a check, so keep other views
-#' elsewhere. A view that summarises, returning a row of totals, reports a
+#' elsewhere. A view that summarizes, returning a row of totals, reports a
 #' failure every time. A check whose view no longer binds, after a column
 #' rename for instance, is an error and not a pass; DuckDB's message quotes
 #' the line naming the view.

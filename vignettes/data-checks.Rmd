@@ -1,0 +1,296 @@
+---
+title: "Data Checks"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Data Checks}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+# Evaluate chunks only where the ducklake DuckDB extension is already
+# installed. The probe never downloads anything, so building this vignette
+# needs no network access. jsonlite writes the check results onto a commit.
+ducklake_available <- ducklake::ducklake_extension_available() &&
+  requireNamespace("jsonlite", quietly = TRUE)
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  eval = ducklake_available
+)
+# Use a unique temp directory for this vignette to avoid conflicts during R CMD check
+vignette_temp_dir <- file.path(tempdir(), "checks_vignette")
+dir.create(vignette_temp_dir, showWarnings = FALSE, recursive = TRUE)
+knitr::opts_knit$set(root.dir = vignette_temp_dir)
+```
+
+```{r setup, message=FALSE}
+library(ducklake)
+library(dplyr)
+
+attach_ducklake("checks_lake", lake_path = vignette_temp_dir)
+
+df_cars <- data.frame(model = rownames(mtcars), mtcars, row.names = NULL)
+
+with_transaction(
+  create_table(df_cars, "cars"),
+  author = "Data Engineer",
+  commit_message = "Add the Motor Trend car data"
+)
+```
+
+DuckLake enforces one rule about the values in a table: a column can be
+`NOT NULL`. It has no check constraints, no primary or unique keys, and no
+foreign keys, and its catalog accepts no custom tags from SQL, so a rule
+like "`cyl` is 4, 6, or 8" has no slot of its own. The catalog does hold
+views. A view that returns the rows breaking a rule is a check: the rule's
+logic sits in the catalog, it is versioned with the data it describes, and
+any client of the lake runs it by reading the view.
+
+This article writes checks that way and runs them with `run_checks()`. Then
+it uses what a lake adds: a load that rolls back when a check fails, the
+outcome of the checks recorded on a commit, and the rules and the data read
+together as of an earlier snapshot. `run_checks()` is experimental while
+the convention settles.
+
+## The rule the lake enforces
+
+`set_column_not_null()` sets the one constraint DuckLake has. From then on
+the lake itself refuses a row without the value, whichever client writes
+it. Plain SQL stands in for another client here:
+
+```{r not_null}
+with_transaction(
+  set_column_not_null("cars", "mpg"),
+  author = "Data Manager",
+  commit_message = "Require mpg"
+)
+
+try(
+  DBI::dbExecute(
+    get_ducklake_connection(),
+    "INSERT INTO cars (model, cyl) VALUES ('Unknown', 4)"
+  )
+)
+```
+
+## Rules as views
+
+Every other rule is a view. The checks get a schema of their own (a schema
+is the lake's namespace for tables and views), which keeps them apart from
+the data and tells `run_checks()` where to look. Each one is a dplyr
+pipeline that keeps the rows breaking the rule, stored with `create_view()`
+and labelled with `set_table_comment()`:
+
+```{r write_checks}
+with_transaction({
+  create_schema("checks")
+
+  get_ducklake_table("main.cars") |>
+    filter(!(cyl %in% c(4, 6, 8))) |>
+    select(model, cyl) |>
+    create_view("checks.cyl_known")
+  set_table_comment("checks.cyl_known", "cyl is 4, 6, or 8")
+
+  get_ducklake_table("main.cars") |>
+    filter(!(hp > 0 & hp < 500)) |>
+    select(model, hp) |>
+    create_view("checks.hp_plausible")
+  set_table_comment("checks.hp_plausible", "hp is between 0 and 500")
+}, author = "Data Manager", commit_message = "Add the first checks on cars")
+```
+
+Four habits keep a check dependable:
+
+- State the rule and negate it: `filter(!(rule))`. In SQL, `NOT` is not
+  true for a row where the rule evaluates to `NA`, so a missing `cyl` passes
+  `cyl_known`. When a missing value matters, give it a check of its own, or
+  make the column `NOT NULL`.
+- Select the columns a reviewer needs. The view is the listing of what
+  failed, so its columns are the ones someone will act on.
+- Read the table by its schema-qualified name, `"main.cars"`. DuckDB
+  resolves an unqualified name from the view's schema and the session's
+  current database, so `"cars"` can fail to bind for a client where
+  another database is current.
+- Keep only checks in the schema. `run_checks()` counts the rows of every
+  view it finds there, and a view that summarizes (a row of totals) would
+  report a failure every time.
+
+A rule that spans tables is a join. An `anti_join()` of visits against
+subjects, for example, returns the visits with no subject.
+
+## Running the checks
+
+`run_checks()` counts the rows each check returns:
+
+```{r run_checks}
+run_checks()
+```
+
+The label comes from the view's comment and `n_fail` is the number of rows
+breaking the rule. The car data passes both.
+
+## Gating a load
+
+A new batch arrives, and one of its rows has a typing error:
+
+```{r batch}
+df_batch <- data.frame(
+  model = c("Saab 99", "Audi 100 LS"),
+  mpg = c(24.5, 23.0),
+  cyl = c(4, 40),
+  hp = c(87, 91)
+)
+```
+
+Inside a transaction the checks see the rows that are waiting to be
+committed. So a load can run the checks on itself and stop, and
+`with_transaction()` rolls everything back when it does:
+
+```{r gate}
+try(
+  with_transaction({
+    rows_insert(get_ducklake_table("cars"), df_batch, by = "model")
+
+    df_checks <- run_checks()
+    if (any(df_checks$n_fail > 0)) {
+      stop("failed ", toString(df_checks$check[df_checks$n_fail > 0]))
+    }
+  }, author = "Data Manager", commit_message = "Load the September batch")
+)
+```
+
+Nothing of the batch reached the lake. The table has its 32 rows and the
+history has no new snapshot:
+
+```{r gate_result}
+get_ducklake_table("cars") |> count() |> collect()
+
+list_table_snapshots("cars") |>
+  select(snapshot_id, author, commit_message)
+```
+
+This is how a rule becomes a constraint in a lake. DuckLake would accept
+the row; a transaction that checks itself never commits it. The gate covers
+the writers that use it, and a client that writes without running the
+checks is not stopped.
+
+## Recording the outcome on the commit
+
+Rejecting the batch is not always right. Raw data often has to land as it
+arrived, with the problems flagged for follow-up. A manual transaction can
+run the checks after the write and put the outcome on the commit, in
+`commit_extra_info`:
+
+```{r soft_load}
+begin_transaction()
+rows_insert(get_ducklake_table("cars"), df_batch, by = "model")
+
+df_failed <- run_checks() |>
+  filter(n_fail > 0) |>
+  select(check, n_fail)
+
+commit_transaction(
+  author = "Data Manager",
+  commit_message = "Load the September batch",
+  commit_extra_info = as.character(
+    jsonlite::toJSON(list(checks_failed = df_failed))
+  )
+)
+
+v_loaded <- max(list_table_snapshots("cars")$snapshot_id)
+```
+
+The snapshot now says what state the data was in when it was committed:
+
+```{r soft_result}
+list_table_snapshots("cars") |>
+  select(snapshot_id, commit_message, commit_extra_info) |>
+  tail(1)
+```
+
+## Which rows failed
+
+The check is a view, so the failing rows are one read away, with the
+columns the check selected:
+
+```{r listing}
+run_checks()
+
+get_ducklake_table("checks.cyl_known") |> collect()
+```
+
+The correction is an ordinary update, and its commit message can name the
+check it answers. Afterwards the lake's history holds the load, the
+finding, and the fix:
+
+```{r fix}
+with_transaction(
+  rows_update(
+    get_ducklake_table("cars"),
+    data.frame(model = "Audi 100 LS", cyl = 4),
+    by = "model"
+  ),
+  author = "Data Manager",
+  commit_message = "cyl_known: Audi 100 LS cyl corrected from 40 to 4"
+)
+
+run_checks()
+```
+
+## Rules have history
+
+A check is a catalog object, so changing a rule is a snapshot with an author
+and a message, like a change to the data. Replacing a view makes a new
+catalog entry, which starts without a comment. Set the label again in the
+same transaction:
+
+```{r revise_check}
+with_transaction({
+  get_ducklake_table("main.cars") |>
+    filter(!(hp >= 40 & hp <= 400)) |>
+    select(model, hp) |>
+    create_view("checks.hp_plausible")
+  set_table_comment("checks.hp_plausible", "hp is between 40 and 400")
+}, author = "Data Manager", commit_message = "Narrow the plausible hp range")
+
+list_table_snapshots("checks.hp_plausible") |>
+  select(snapshot_id, author, commit_message)
+```
+
+## Rules and data as of a snapshot
+
+A lake attached at a snapshot shows its views as they were then, along with
+its tables. Re-attaching at the snapshot of the September load runs the
+rules of that day against the data of that day. The uncorrected row fails
+again, and the `hp` rule reads as it did then:
+
+```{r pinned, message=FALSE}
+detach_ducklake("checks_lake")
+attach_ducklake(
+  "checks_lake",
+  lake_path = vignette_temp_dir,
+  snapshot_version = v_loaded
+)
+
+run_checks()
+```
+
+That answers a question an audit asks: which rules were in force when this
+data was committed, and did the data pass them?
+
+## Where other tools fit
+
+`run_checks()` counts and nothing more. A report is a job for the tools
+built for one: the rows collected from a check view are a data frame, ready
+for gt, or for a validation report from affirm or pointblank. pointblank
+also interrogates lazy tables, so one of its agents can run on
+`get_ducklake_table("cars")` inside DuckDB. For a dictionary of a lake's
+tables and columns that travels as a file,
+[data-dict](https://data-dict.tidyverse.org) defines a YAML format.
+Comments and labels, the descriptive half of a dictionary, are covered in
+`vignette("views-comments-labels")`.
+
+```{r cleanup}
+detach_ducklake("checks_lake")
+```

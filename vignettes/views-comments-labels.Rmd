@@ -84,7 +84,9 @@ team's shared definition of an analysis population, a filter every report
 must apply, or a derived layer that is cheap enough to compute on read and
 so need not be stored. Every client sees the same definition, whether it
 connects from R, Python, or plain SQL, and a change to the definition is
-recorded in the snapshot history.
+recorded in the snapshot history. A validation rule is logic of this kind:
+`vignette("data-checks")` stores each rule as a view of the rows that break
+it.
 
 Two cases call for something else. An exploratory pipeline that only you
 use is better kept in your R script under version control, where it can
