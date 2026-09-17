@@ -1,6 +1,6 @@
 # Changelog
 
-## ducklake (development version)
+## ducklake 0.9.0
 
 - New
   [`view_table_changes()`](https://tgerke.github.io/ducklake-r/reference/view_table_changes.md)

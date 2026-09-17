@@ -810,15 +810,15 @@ and message each one was given, from the lake’s creation on:
 list_table_snapshots() |>
   select(snapshot_id, snapshot_time, author, commit_message)
 #>   snapshot_id       snapshot_time                 author
-#> 1           0 2026-09-17 20:23:35           Data Manager
-#> 2           1 2026-09-17 20:23:35           Data Manager
-#> 3           2 2026-09-17 20:23:35           Data Manager
-#> 4           3 2026-09-17 20:23:36           Data Manager
-#> 5           4 2026-09-17 20:23:39 Statistical Programmer
-#> 6           5 2026-09-17 20:23:40 Statistical Programmer
-#> 7           6 2026-09-17 20:23:40           Statistician
-#> 8           7 2026-09-17 20:23:41 Statistical Programmer
-#> 9           8 2026-09-17 20:23:42           Data Manager
+#> 1           0 2026-09-17 20:32:17           Data Manager
+#> 2           1 2026-09-17 20:32:17           Data Manager
+#> 3           2 2026-09-17 20:32:18           Data Manager
+#> 4           3 2026-09-17 20:32:19           Data Manager
+#> 5           4 2026-09-17 20:32:21 Statistical Programmer
+#> 6           5 2026-09-17 20:32:22 Statistical Programmer
+#> 7           6 2026-09-17 20:32:23           Statistician
+#> 8           7 2026-09-17 20:32:23 Statistical Programmer
+#> 9           8 2026-09-17 20:32:24           Data Manager
 #>                                      commit_message
 #> 1                                       Create lake
 #> 2                          Create the lake's layers
