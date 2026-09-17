@@ -397,16 +397,18 @@ resolve_table_ref <- function(table_name, schema_name = NULL) {
 
 #' WHERE fragment and parameters that select one table in a metadata query
 #'
-#' The query must alias `ducklake_table` as `t` (or pass another
-#' `table_col`) and `ducklake_schema` as `s`. With no schema in the name
-#' the filter matches the table name in every schema.
+#' The query must alias `ducklake_table` as `t` and `ducklake_schema` as
+#' `s`, or pass the columns it uses instead. With no schema in the name the
+#' filter matches the table name in every schema.
 #'
 #' @param table_name A table name, optionally qualified, or `NULL` for no
 #'   filter.
 #' @param table_col The SQL column holding the object name.
+#' @param schema_col The SQL column holding the schema name.
 #' @returns A list with `sql` (starting with `AND`, or empty) and `params`.
 #' @noRd
-table_filter <- function(table_name, table_col = "t.table_name") {
+table_filter <- function(table_name, table_col = "t.table_name",
+                         schema_col = "s.schema_name") {
   if (is.null(table_name)) {
     return(list(sql = "", params = list()))
   }
@@ -415,7 +417,7 @@ table_filter <- function(table_name, table_col = "t.table_name") {
     list(sql = sprintf("AND %s = ?", table_col), params = list(ref$table))
   } else {
     list(
-      sql = sprintf("AND %s = ? AND s.schema_name = ?", table_col),
+      sql = sprintf("AND %s = ? AND %s = ?", table_col, schema_col),
       params = list(ref$table, ref$schema)
     )
   }

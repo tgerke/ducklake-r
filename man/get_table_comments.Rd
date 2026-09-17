@@ -25,6 +25,12 @@ Returns the current comments stored in the lake -- via
 \code{\link[=set_table_comment]{set_table_comment()}}, \code{\link[=set_column_comments]{set_column_comments()}}, \code{\link[=create_table]{create_table()}}'s label
 sync, or any other client -- as a tidy data frame.
 }
+\details{
+The comments are read through DuckDB's catalog functions, so they match
+what the session sees. On a lake attached with \code{snapshot_version} or
+\code{snapshot_time} they are the comments as of that snapshot, and inside an
+open transaction they include the ones it has set and not yet committed.
+}
 \examples{
 \dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}
 lake_dir <- tempfile("readcomment_lake_")
@@ -46,7 +52,8 @@ unlink(lake_dir, recursive = TRUE)
 }
 \seealso{
 \code{\link[=get_metadata_table]{get_metadata_table()}} for the raw \code{ducklake_tag} and
-\code{ducklake_column_tag} catalog tables.
+\code{ducklake_column_tag} catalog tables, which keep every version of a
+comment.
 
 Other table documentation:
 \code{\link[=set_column_comments]{set_column_comments()}},

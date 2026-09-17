@@ -93,9 +93,8 @@ reapply_table_keys <- function(meta, columns, conn = get_ducklake_connection()) 
 #'
 #' Column comments go on columns that still exist, except those this
 #' rewrite has already commented (labels stored from a data frame take
-#' precedence); the table comment is set again as captured. The catalog is
-#' not consulted here: inside the rewrite's transaction it still shows the
-#' dropped table's rows, so what was already set has to be passed in.
+#' precedence); the table comment is set again as captured. What the
+#' rewrite has already commented is passed in rather than read back.
 #'
 #' @inheritParams reapply_table_keys
 #' @param already_set Column names commented earlier in this rewrite.

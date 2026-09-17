@@ -393,6 +393,90 @@ test_that("a view created, commented, and replaced in one transaction keeps its 
   expect_equal(nrow(dplyr::collect(get_ducklake_table("v_local"))), 2)
 })
 
+test_that("get_table_comments follows a snapshot-pinned attach", {
+  skip_if_not_installed("duckdb")
+  skip_if_not_installed("dplyr")
+
+  lake <- create_temp_ducklake()
+  on.exit(cleanup_temp_ducklake(lake), add = TRUE)
+
+  create_table(data.frame(id = 1:2, amount = c(5, 6)), "test_comment_pin")
+  suppressMessages({
+    set_table_comment("test_comment_pin", "table v1")
+    set_column_comments("test_comment_pin", id = "id v1", amount = "amount v1")
+  })
+  pin <- max(list_table_snapshots()$snapshot_id)
+
+  # afterwards: one comment reworded, one cleared, and a table that is new
+  suppressMessages({
+    set_table_comment("test_comment_pin", "table v2")
+    set_column_comments("test_comment_pin", id = "id v2", amount = NA)
+    create_table(data.frame(x = 1), "test_comment_pin_later")
+    set_column_comments("test_comment_pin_later", x = "not there yet")
+  })
+
+  detach_ducklake(lake$ducklake_name)
+  suppressMessages(attach_ducklake(
+    lake$ducklake_name,
+    lake_path = lake$lake_path,
+    snapshot_version = pin
+  ))
+
+  comments <- get_table_comments()
+  expect_setequal(comments$table_name, "test_comment_pin")
+  expect_equal(
+    comments$comment[comments$object_type == "table"], "table v1"
+  )
+  cols <- comments[comments$object_type == "column", ]
+  expect_equal(cols$column_name, c("amount", "id"))
+  expect_equal(cols$comment, c("amount v1", "id v1"))
+
+  # collect() restores the labels of that snapshot, not today's
+  pinned <- dplyr::collect(get_ducklake_table("test_comment_pin"))
+  expect_equal(attr(pinned$id, "label"), "id v1")
+  expect_equal(attr(pinned$amount, "label"), "amount v1")
+})
+
+test_that("get_table_comments sees comments pending in an open transaction", {
+  skip_if_not_installed("duckdb")
+  skip_if_not_installed("dplyr")
+
+  lake <- create_temp_ducklake()
+  on.exit(cleanup_temp_ducklake(lake), add = TRUE)
+
+  create_table(data.frame(id = 1:2), "test_comment_pending")
+
+  seen <- NULL
+  suppressMessages(with_transaction({
+    set_table_comment("test_comment_pending", "Set before the commit")
+    set_column_comments("test_comment_pending", id = "Identifier")
+    seen <- get_table_comments("test_comment_pending")
+  }))
+
+  expect_equal(nrow(seen), 2)
+  expect_setequal(seen$comment, c("Set before the commit", "Identifier"))
+})
+
+test_that("create_table from a query inherits a comment set in the same transaction", {
+  skip_if_not_installed("duckdb")
+  skip_if_not_installed("dplyr")
+
+  lake <- create_temp_ducklake()
+  on.exit(cleanup_temp_ducklake(lake), add = TRUE)
+
+  suppressMessages(with_transaction({
+    create_table(data.frame(k = 1:2, v = c(5, 6)), "test_comment_txn_base")
+    set_column_comments("test_comment_txn_base", v = "Value")
+    get_ducklake_table("test_comment_txn_base") |>
+      dplyr::filter(k > 0) |>
+      create_table("test_comment_txn_derived")
+  }))
+
+  derived <- get_table_comments("test_comment_txn_derived")
+  expect_equal(derived$column_name, "v")
+  expect_equal(derived$comment, "Value")
+})
+
 test_that("set_column_comments validates its input", {
   skip_if_not_installed("duckdb")
   skip_if_not_installed("dplyr")

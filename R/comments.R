@@ -183,6 +183,12 @@ set_column_comments <- function(table_name, ...) {
 #' @param ducklake_name Optional name of the attached DuckLake catalog. If
 #'   `NULL`, the current database is used.
 #'
+#' @details
+#' The comments are read through DuckDB's catalog functions, so they match
+#' what the session sees. On a lake attached with `snapshot_version` or
+#' `snapshot_time` they are the comments as of that snapshot, and inside an
+#' open transaction they include the ones it has set and not yet committed.
+#'
 #' @returns A data frame with one row per comment: `object_type`
 #'   (`"table"`, `"view"`, or `"column"`), `schema_name`, `table_name`,
 #'   `column_name` (`NA` for tables and views), and `comment`. Zero rows
@@ -191,7 +197,8 @@ set_column_comments <- function(table_name, ...) {
 #' @export
 #'
 #' @seealso [get_metadata_table()] for the raw `ducklake_tag` and
-#'   `ducklake_column_tag` catalog tables.
+#'   `ducklake_column_tag` catalog tables, which keep every version of a
+#'   comment.
 #'
 #' @examplesIf ducklake_extension_available()
 #' lake_dir <- tempfile("readcomment_lake_")
@@ -212,54 +219,38 @@ set_column_comments <- function(table_name, ...) {
 get_table_comments <- function(table_name = NULL, ducklake_name = NULL) {
   conn <- get_ducklake_connection()
   ducklake_name <- infer_ducklake_name(ducklake_name, conn)
-  prefix <- metadata_prefix(ducklake_name, conn)
 
-  tables <- table_filter(table_name, "t.table_name")
-  views <- table_filter(table_name, "v.view_name")
+  tables <- table_filter(table_name, "table_name", "schema_name")
+  views <- table_filter(table_name, "view_name", "schema_name")
 
-  # Cleared comments are NULL-valued rows; current rows have
-  # end_snapshot IS NULL
+  # DuckDB's catalog functions, not the ducklake_tag tables: they follow a
+  # snapshot-pinned attach and show an open transaction's pending comments,
+  # which a rewrite in that transaction has to capture
   sql <- sprintf(
-    "SELECT 'table' AS object_type, s.schema_name, t.table_name,
-            NULL AS column_name, tag.value AS comment
-     FROM %1$s.ducklake_tag tag
-     JOIN %1$s.ducklake_table t
-       ON tag.object_id = t.table_id AND t.end_snapshot IS NULL
-     JOIN %1$s.ducklake_schema s
-       ON t.schema_id = s.schema_id AND s.end_snapshot IS NULL
-     WHERE tag.end_snapshot IS NULL AND tag.key = 'comment'
-       AND tag.value IS NOT NULL %2$s
+    "SELECT 'table' AS object_type, schema_name, table_name,
+            NULL AS column_name, comment
+     FROM duckdb_tables()
+     WHERE database_name = ? AND NOT internal AND comment IS NOT NULL %1$s
      UNION ALL
-     SELECT 'view', s.schema_name, v.view_name, NULL, tag.value
-     FROM %1$s.ducklake_tag tag
-     JOIN %1$s.ducklake_view v
-       ON tag.object_id = v.view_id AND v.end_snapshot IS NULL
-     JOIN %1$s.ducklake_schema s
-       ON v.schema_id = s.schema_id AND s.end_snapshot IS NULL
-     WHERE tag.end_snapshot IS NULL AND tag.key = 'comment'
-       AND tag.value IS NOT NULL %3$s
+     SELECT 'view', schema_name, view_name, NULL, comment
+     FROM duckdb_views()
+     WHERE database_name = ? AND NOT internal AND comment IS NOT NULL %2$s
      UNION ALL
-     SELECT 'column', s.schema_name, t.table_name, c.column_name, ct.value
-     FROM %1$s.ducklake_column_tag ct
-     JOIN %1$s.ducklake_table t
-       ON ct.table_id = t.table_id AND t.end_snapshot IS NULL
-     JOIN %1$s.ducklake_schema s
-       ON t.schema_id = s.schema_id AND s.end_snapshot IS NULL
-     JOIN %1$s.ducklake_column c
-       ON ct.table_id = c.table_id AND ct.column_id = c.column_id
-       AND c.end_snapshot IS NULL
-     WHERE ct.end_snapshot IS NULL AND ct.key = 'comment'
-       AND ct.value IS NOT NULL %2$s
+     SELECT 'column', schema_name, table_name, column_name, comment
+     FROM duckdb_columns()
+     WHERE database_name = ? AND NOT internal AND comment IS NOT NULL %1$s
      ORDER BY object_type, schema_name, table_name, column_name",
-    prefix, tables$sql, views$sql
+    tables$sql, views$sql
   )
 
-  params <- c(tables$params, views$params, tables$params)
-  if (length(params) == 0) {
-    DBI::dbGetQuery(conn, sql)
-  } else {
-    DBI::dbGetQuery(conn, sql, params = params)
-  }
+  DBI::dbGetQuery(
+    conn, sql,
+    params = c(
+      list(ducklake_name), tables$params,
+      list(ducklake_name), views$params,
+      list(ducklake_name), tables$params
+    )
+  )
 }
 
 #' Reattach stored column comments as label attributes on collect
