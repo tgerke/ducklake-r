@@ -301,12 +301,41 @@
   snapshot), so it needed no registry change, but it cannot see an open
   transaction. Rough timing on 60 tables of 25 commented columns: 1.5 ms
   against 2.9 ms for one table, the path `collect()` takes, and 6.4 ms
-  against 2.8 ms for the whole lake. Two known gaps remain, both confirmed
-  the same day and neither fixed: a time-travel read
-  (`get_ducklake_table_version()`, `get_ducklake_table_asof()`) gets
-  present-day labels from `collect()`, which the catalog functions cannot
-  serve because they read one snapshot; and `get_table_partitions()` /
+  against 2.8 ms for the whole lake. Two gaps were confirmed the same day:
+  a time-travel read (`get_ducklake_table_version()`,
+  `get_ducklake_table_asof()`) got present-day labels from `collect()`,
+  which the catalog functions cannot serve because they read one snapshot
+  (fixed, see the as-of labels entry below); and `get_table_partitions()` /
   `get_table_sorting()` keep the `end_snapshot IS NULL` filter with no
   catalog function to replace it, so partition and sort keys set in the
   same transaction as a `replace_table()` are lost by it (keys committed
   beforehand carry over).
+- **Time-travel reads restore as-of labels from the versioned metadata
+  rows** (2026-09-17). `as_ducklake_tbl()` records what a time-travel read
+  asked for in a `ducklake_asof` attribute (the version, or the timestamp
+  literal sent to DuckLake), which survives dplyr verbs like
+  `ducklake_table_name`, and `collect.tbl_ducklake()` then reads column
+  comments through the internal `column_comments_asof()` instead of
+  `get_table_comments()`. That reader filters `ducklake_table`,
+  `ducklake_schema`, `ducklake_column`, and `ducklake_column_tag` on
+  `begin_snapshot <= N AND (end_snapshot IS NULL OR end_snapshot > N)` and
+  looks the table up by the name it had at N. Confirmed on DuckDB 1.5.5:
+  `AT (VERSION => n)` resolves the name as of n (after a rename the current
+  name fails with "does not exist at version n" and the old name reads the
+  old table with its old column names); a timestamp resolves to the latest
+  snapshot at or before it, a snapshot's own time included; and the
+  filtered query matched `get_table_comments()` on a snapshot-pinned attach
+  at every snapshot of a history with a relabel, a cleared label, a column
+  rename, a `replace_table()`, and a table rename. A timestamp becomes a
+  snapshot id inside the same query with `CAST(? AS TIMESTAMPTZ)`, the cast
+  DuckLake applies to the literal, so rows and labels stay on one snapshot;
+  this was checked without the icu extension (naive literals read as UTC)
+  and not under icu with a non-UTC session time zone. A failed lookup
+  leaves the rows unlabelled and never falls back to today's labels.
+  Deliberately unchanged: `get_table_comments()` has no `version` argument
+  (it documents the session's view, and a pinned attach gives a whole
+  dictionary as of a snapshot), and `source_column_comments()` still reads
+  present-day comments, because `get_ducklake_table_version("t", n) |>
+  replace_table("t")` is a manual restore and `restore_table_version()`
+  keeps the current table's metadata on purpose. In a join, only the left
+  table's labels are restored, as before.
