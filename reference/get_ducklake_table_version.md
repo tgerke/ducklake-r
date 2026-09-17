@@ -29,7 +29,15 @@ get_ducklake_table_version(table_name, version, conn = NULL)
 
 A lazy table (class `tbl_ducklake`) that works with dplyr verbs. Like
 [`get_ducklake_table()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_table.md),
-collecting it restores stored column labels.
+collecting it restores stored column labels: the ones in force at that
+snapshot, which a later
+[`set_column_comments()`](https://tgerke.github.io/ducklake-r/reference/set_column_comments.md)
+may have changed. A table written from the read
+([`create_table()`](https://tgerke.github.io/ducklake-r/reference/create_table.md),
+[`replace_table()`](https://tgerke.github.io/ducklake-r/reference/replace_table.md))
+takes the present-day comments, as
+[`restore_table_version()`](https://tgerke.github.io/ducklake-r/reference/restore_table_version.md)
+does.
 
 ## Details
 
