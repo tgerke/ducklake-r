@@ -33,6 +33,7 @@ capture_table_metadata <- function(table_name, ducklake_name = NULL,
       options$scope_entry == scope_entry, ,
     drop = FALSE
   ]
+  options$value <- option_value_for_set(options$option_name, options$value)
 
   list(
     table_name = table_name,
@@ -40,8 +41,94 @@ capture_table_metadata <- function(table_name, ducklake_name = NULL,
     comments = get_table_comments(table_name, ducklake_name),
     partitions = get_table_partitions(table_name, ducklake_name),
     sorting = get_table_sorting(table_name, ducklake_name),
+    pending_keys = pending_table_keys(table_name, ducklake_name, conn),
     options = options
   )
+}
+
+#' Remember partition or sort keys changed inside an open transaction
+#'
+#' DuckLake shows keys that are pending in an open transaction nowhere: not
+#' in its metadata tables, which hold committed rows, and not in DuckDB's
+#' catalog functions. `capture_table_metadata()` would read the committed
+#' keys, and a rewrite in the same transaction would then drop keys set
+#' there and bring back keys reset there. So the package's own setters note
+#' what they did. An entry carries the transaction id, which is not reused,
+#' so one left by a transaction that has ended can never match and needs no
+#' cleanup on commit or rollback. A raw `ALTER TABLE ... SET PARTITIONED BY`
+#' bypasses this.
+#'
+#' @param table_name The table, optionally schema-qualified.
+#' @param kind `"partitions"` or `"sorting"`.
+#' @param expressions The key expressions as the setter validated them;
+#'   empty after a reset.
+#' @param conn A DBI connection.
+#' @returns Invisibly, `NULL`.
+#' @noRd
+stash_pending_keys <- function(table_name, kind, expressions,
+                               conn = get_ducklake_connection()) {
+  txid <- open_transaction_id(conn)
+  if (is.na(txid)) {
+    return(invisible(NULL))
+  }
+  key <- pending_keys_key(table_name, infer_ducklake_name(NULL, conn))
+  entry <- .ducklake_env$pending_keys[[key]]
+  if (is.null(entry) || !identical(entry$txid, txid)) {
+    entry <- list(txid = txid)
+  }
+  entry[[kind]] <- expressions
+  .ducklake_env$pending_keys[[key]] <- entry
+  invisible(NULL)
+}
+
+#' Keys the open transaction has set or reset on a table
+#'
+#' @returns A list that has `partitions` and/or `sorting` (character
+#'   vectors, empty for a reset) for the kinds changed in the open
+#'   transaction, or `NULL`.
+#' @noRd
+pending_table_keys <- function(table_name, ducklake_name,
+                               conn = get_ducklake_connection()) {
+  key <- pending_keys_key(table_name, ducklake_name)
+  entry <- .ducklake_env$pending_keys[[key]]
+  if (is.null(entry)) {
+    return(NULL)
+  }
+  if (!identical(entry$txid, open_transaction_id(conn))) {
+    .ducklake_env$pending_keys[[key]] <- NULL
+    return(NULL)
+  }
+  entry[intersect(names(entry), c("partitions", "sorting"))]
+}
+
+#' @noRd
+pending_keys_key <- function(table_name, ducklake_name) {
+  parts <- split_table_name(table_name)
+  paste(
+    ducklake_name,
+    if (is.null(parts$schema)) "main" else parts$schema,
+    parts$table,
+    sep = "."
+  )
+}
+
+#' An option value in the form `set_option()` takes back
+#'
+#' DuckLake reports three table options in a form it refuses as input: the
+#' two byte sizes as a bare number of bytes, which needs a unit, and the
+#' Parquet version as `V1` or `V2`.
+#'
+#' @param option_name,value Parallel character vectors from
+#'   `get_ducklake_options()`.
+#' @returns `value`, adjusted where needed.
+#' @noRd
+option_value_for_set <- function(option_name, value) {
+  sizes <- option_name %in% c("target_file_size", "parquet_row_group_size_bytes") &
+    grepl("^[0-9]+$", value)
+  value[sizes] <- paste(value[sizes], "bytes")
+  versions <- option_name == "parquet_version"
+  value[versions] <- sub("^[Vv]", "", value[versions])
+  value
 }
 
 #' Put captured partition and sort keys on a freshly created, still empty table
@@ -58,29 +145,45 @@ capture_table_metadata <- function(table_name, ducklake_name = NULL,
 #' @noRd
 reapply_table_keys <- function(meta, columns, conn = get_ducklake_connection()) {
   quoted <- quote_ident(meta$table_name, conn)
+  pending <- meta$pending_keys
 
-  partitions <- meta$partitions
-  partitions <- partitions[partitions$column_name %in% columns, , drop = FALSE]
-  if (nrow(partitions) > 0) {
+  # Keys changed in the open transaction win over the committed ones
+  if (!is.null(pending$partitions)) {
+    partition_by <- pending$partitions
+    partition_by <- partition_by[
+      sub("^.*?([A-Za-z_][A-Za-z0-9_]*)\\s*\\)?$", "\\1", partition_by, perl = TRUE) %in% columns
+    ]
+  } else {
+    partitions <- meta$partitions
+    partitions <- partitions[partitions$column_name %in% columns, , drop = FALSE]
+    partition_by <- partition_expressions(partitions)
+  }
+  if (length(partition_by) > 0) {
     db_execute(
       sprintf(
         "ALTER TABLE %s SET PARTITIONED BY (%s);",
-        quoted, paste(partition_expressions(partitions), collapse = ", ")
+        quoted, paste(partition_by, collapse = ", ")
       ),
       conn = conn
     )
   }
 
-  sorting <- meta$sorting
-  if (nrow(sorting) > 0) {
-    is_bare <- grepl("^[A-Za-z_][A-Za-z0-9_]*$", sorting$expression)
-    sorting <- sorting[!is_bare | sorting$expression %in% columns, , drop = FALSE]
+  if (!is.null(pending$sorting)) {
+    sort_by <- pending$sorting
+    sort_by <- sort_by[sub("\\s.*$", "", sort_by) %in% columns]
+  } else {
+    sorting <- meta$sorting
+    if (nrow(sorting) > 0) {
+      is_bare <- grepl("^[A-Za-z_][A-Za-z0-9_]*$", sorting$expression)
+      sorting <- sorting[!is_bare | sorting$expression %in% columns, , drop = FALSE]
+    }
+    sort_by <- sort_expressions(sorting)
   }
-  if (nrow(sorting) > 0) {
+  if (length(sort_by) > 0) {
     db_execute(
       sprintf(
         "ALTER TABLE %s SET SORTED BY (%s);",
-        quoted, paste(sort_expressions(sorting), collapse = ", ")
+        quoted, paste(sort_by, collapse = ", ")
       ),
       conn = conn
     )
@@ -155,8 +258,10 @@ reapply_table_options <- function(meta, conn = get_ducklake_connection()) {
       'set_ducklake_option("%s", "%s", table_name = "%s")',
       opts$option_name, opts$value, meta$table_name
     )
+    # qty() first: with two values after the {?s}, cli cannot pick the
+    # quantity and errors, which would roll the caller's transaction back
     cli::cli_warn(c(
-      "Table-scoped option{?s} {.val {opts$option_name}} could not be carried over to the rewritten table {.val {meta$table_name}} inside the open transaction.",
+      "{cli::qty(nrow(opts))}Table-scoped option{?s} {.val {opts$option_name}} could not be carried over to the rewritten table {.val {meta$table_name}} inside the open transaction.",
       "i" = "DuckLake cannot set options on a table created in the same transaction. After committing, run:",
       stats::setNames(calls, rep(" ", length(calls)))
     ))

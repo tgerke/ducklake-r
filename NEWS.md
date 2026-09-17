@@ -66,6 +66,36 @@
   a time-travel read still takes the present-day comments, as
   `restore_table_version()` does.
 
+* `replace_table()` inside a transaction no longer fails on a table that has
+  table-scoped options. DuckLake cannot set options on a table created in
+  the open transaction, so the rewrite is meant to go ahead and warn with
+  the `set_ducklake_option()` calls to run after the commit, but the
+  warning itself raised a cli pluralization error, which rolled the whole
+  transaction back. Outside a transaction, `replace_table()` and
+  `restore_table_version()` now carry `target_file_size`,
+  `parquet_row_group_size_bytes`, and `parquet_version` over. DuckLake
+  reports the sizes as a bare number of bytes and the version as `V2`,
+  forms `set_option()` refuses, so the reapply failed after the data had
+  already been replaced and the option stayed behind on the dropped table.
+
+* `replace_table()` respects partition and sort keys changed earlier in the
+  same transaction. It reads the keys to carry over from DuckLake's
+  metadata tables, which hold committed rows only, and no other surface
+  shows pending keys. A table given keys with `set_table_partitioning()` or
+  `set_table_sorting()` and rewritten in one transaction therefore lost
+  them, and keys removed with `reset_table_partitioning()` or
+  `reset_table_sorting()` came back. Those four functions now note what
+  they did while a transaction is open, tagged with its transaction id so
+  that nothing outlives it, and the rewrite uses the note. Keys changed
+  with a raw `ALTER TABLE` statement in the same transaction are still not
+  seen.
+
+* `restore_table_version()` refuses to run inside an open transaction, and
+  says why, before it touches anything. It commits for itself, so its own
+  `BEGIN` failed there with "cannot start a transaction within a
+  transaction", under a hint about snapshots that did not apply, and the
+  error handler's rollback discarded the caller's uncommitted work.
+
 * The lifecycle stage is now stable, with ducklake on CRAN since 0.6.0
   (published 2026-09-09): the interface is settled, and any breaking
   change will come with a deprecation cycle.

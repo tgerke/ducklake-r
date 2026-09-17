@@ -83,6 +83,7 @@ set_table_partitioning <- function(table_name, partition_by) {
     ),
     conn = conn
   )
+  stash_pending_keys(table_name, "partitions", partition_by, conn)
   dl_inform(c(
     "Table {.val {table_name}} is now partitioned by {.val {partition_by}}.",
     "i" = "Only newly written data is partitioned; existing files keep their layout."
@@ -125,6 +126,7 @@ reset_table_partitioning <- function(table_name) {
     ),
     conn = conn
   )
+  stash_pending_keys(table_name, "partitions", character(), conn)
   dl_inform("Partitioning removed from table {.val {table_name}}.")
 
   invisible(NULL)

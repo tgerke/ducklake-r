@@ -308,8 +308,8 @@
   (fixed, see the as-of labels entry below); and `get_table_partitions()` /
   `get_table_sorting()` keep the `end_snapshot IS NULL` filter with no
   catalog function to replace it, so partition and sort keys set in the
-  same transaction as a `replace_table()` are lost by it (keys committed
-  beforehand carry over).
+  same transaction as a `replace_table()` were lost by it (fixed with a
+  stash, see the pending keys entry below).
 - **Time-travel reads restore as-of labels from the versioned metadata
   rows** (2026-09-17). `as_ducklake_tbl()` records what a time-travel read
   asked for in a `ducklake_asof` attribute (the version, or the timestamp
@@ -339,3 +339,46 @@
   replace_table("t")` is a manual restore and `restore_table_version()`
   keeps the current table's metadata on purpose. In a join, only the left
   table's labels are restored, as before.
+- **Pending partition and sort keys are stashed by transaction id**
+  (2026-09-17). `capture_table_metadata()` reads keys from
+  `ducklake_partition_info` and `ducklake_sort_info`, which hold committed
+  rows, so a `replace_table()` in the transaction that set keys lost them,
+  and one in the transaction that reset keys brought them back. Confirmed
+  on DuckDB 1.5.5: nothing shows keys pending in an open transaction, not
+  `duckdb_tables()` (its `sql` has no `PARTITIONED BY`, `tags` is empty,
+  only `table_oid` changes), `ducklake_table_info()`,
+  `information_schema.tables`, `duckdb_constraints()`, `duckdb_indexes()`,
+  `DESCRIBE`, or `SHOW ALL TABLES`; table options are different, since
+  `ducklake_options()` does show a pending one. So
+  `set_table_partitioning()`, `reset_table_partitioning()`,
+  `set_table_sorting()`, and `reset_table_sorting()` note what they did in
+  `.ducklake_env$pending_keys` while a transaction is open, and
+  `reapply_table_keys()` prefers the note (an empty one is a reset).
+  Entries carry `current_transaction_id()`, which is constant inside a
+  transaction and not reused, so an entry from a finished transaction can
+  never match and no commit or rollback hook is needed. Known limits: a raw
+  `ALTER TABLE ... SET PARTITIONED BY` in the same transaction bypasses the
+  note, and the note is keyed by table name, so a `rename_ducklake_table()`
+  or a column rename between the setter and the rewrite, in one
+  transaction, loses the key as before. Rejected: aborting the rewrite when
+  a note exists (same machinery, less useful), and rebuilding with `DELETE`
+  plus `INSERT` to keep the table id (changes the snapshot and change-feed
+  semantics of a replace). The two readers still return present-day keys on
+  a snapshot-pinned attach; writes are refused there, so it was left alone.
+- **Table options a rewrite carries over are put in `set_option()` form**
+  (2026-09-17). Confirmed on DuckDB 1.5.5: `ducklake_options()` reports
+  `target_file_size` and `parquet_row_group_size_bytes` as a bare number of
+  bytes and `parquet_version` as `V2`, and `set_option()` refuses both
+  forms (it accepts `'8388608 bytes'`, and `2`); the other table options
+  round-trip as reported. `option_value_for_set()` adjusts the three in
+  `capture_table_metadata()`, so the post-commit reapply and the warning's
+  suggested calls both use values that work. That warning, raised when a
+  rewrite runs inside a caller's transaction, used to error with "Multiple
+  quantities for pluralization" (`{?s}` ahead of two interpolated values)
+  and roll the transaction back; `cli::qty()` now comes first.
+- **`restore_table_version()` refuses an open transaction** (2026-09-17).
+  It commits for itself through `with_transaction()`. Inside a caller's
+  transaction the nested `BEGIN` failed and the handler's rollback took
+  the caller's pending work with it, so it aborts up front instead. The
+  one-snapshot alternative, confirmed: `get_ducklake_table_version()` piped
+  into `replace_table()` inside `with_transaction()`.
