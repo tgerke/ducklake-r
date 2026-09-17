@@ -55,6 +55,18 @@
   query did not inherit them. All of these now follow what the session
   sees.
 
+* `replace_table()` inside a transaction no longer fails on a table that has
+  table-scoped options. DuckLake cannot set options on a table created in
+  the open transaction, so the rewrite is meant to go ahead and warn with
+  the `set_ducklake_option()` calls to run after the commit, but the
+  warning itself raised a cli pluralization error, which rolled the whole
+  transaction back. Outside a transaction, `replace_table()` and
+  `restore_table_version()` now carry `target_file_size`,
+  `parquet_row_group_size_bytes`, and `parquet_version` over. DuckLake
+  reports the sizes as a bare number of bytes and the version as `V2`,
+  forms `set_option()` refuses, so the reapply failed after the data had
+  already been replaced and the option stayed behind on the dropped table.
+
 * The lifecycle stage is now stable, with ducklake on CRAN since 0.6.0
   (published 2026-09-09): the interface is settled, and any breaking
   change will come with a deprecation cycle.

@@ -33,6 +33,7 @@ capture_table_metadata <- function(table_name, ducklake_name = NULL,
       options$scope_entry == scope_entry, ,
     drop = FALSE
   ]
+  options$value <- option_value_for_set(options$option_name, options$value)
 
   list(
     table_name = table_name,
@@ -42,6 +43,25 @@ capture_table_metadata <- function(table_name, ducklake_name = NULL,
     sorting = get_table_sorting(table_name, ducklake_name),
     options = options
   )
+}
+
+#' An option value in the form `set_option()` takes back
+#'
+#' DuckLake reports three table options in a form it refuses as input: the
+#' two byte sizes as a bare number of bytes, which needs a unit, and the
+#' Parquet version as `V1` or `V2`.
+#'
+#' @param option_name,value Parallel character vectors from
+#'   `get_ducklake_options()`.
+#' @returns `value`, adjusted where needed.
+#' @noRd
+option_value_for_set <- function(option_name, value) {
+  sizes <- option_name %in% c("target_file_size", "parquet_row_group_size_bytes") &
+    grepl("^[0-9]+$", value)
+  value[sizes] <- paste(value[sizes], "bytes")
+  versions <- option_name == "parquet_version"
+  value[versions] <- sub("^[Vv]", "", value[versions])
+  value
 }
 
 #' Put captured partition and sort keys on a freshly created, still empty table
@@ -155,8 +175,10 @@ reapply_table_options <- function(meta, conn = get_ducklake_connection()) {
       'set_ducklake_option("%s", "%s", table_name = "%s")',
       opts$option_name, opts$value, meta$table_name
     )
+    # qty() first: with two values after the {?s}, cli cannot pick the
+    # quantity and errors, which would roll the caller's transaction back
     cli::cli_warn(c(
-      "Table-scoped option{?s} {.val {opts$option_name}} could not be carried over to the rewritten table {.val {meta$table_name}} inside the open transaction.",
+      "{cli::qty(nrow(opts))}Table-scoped option{?s} {.val {opts$option_name}} could not be carried over to the rewritten table {.val {meta$table_name}} inside the open transaction.",
       "i" = "DuckLake cannot set options on a table created in the same transaction. After committing, run:",
       stats::setNames(calls, rep(" ", length(calls)))
     ))
