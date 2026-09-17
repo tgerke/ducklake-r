@@ -190,6 +190,130 @@ test_that("time-travel readers are DuckLake tables that restore labels", {
   expect_equal(attr(dplyr::collect(as_of)$v, "label"), "Value")
 })
 
+test_that("a versioned read restores the labels in force at that version", {
+  skip_if_not_installed("duckdb")
+  skip_if_not_installed("dplyr")
+
+  lake <- create_temp_ducklake()
+  on.exit(cleanup_temp_ducklake(lake), add = TRUE)
+
+  df <- data.frame(id = 1:3, amount = c(1, 2, 3))
+  attr(df$amount, "label") <- "amount v1"
+  suppressMessages(create_table(df, "tt_asof_labels"))
+  v1 <- max(list_table_snapshots("tt_asof_labels")$snapshot_id)
+  suppressMessages(
+    set_column_comments("tt_asof_labels", amount = "amount v2", id = "id added later")
+  )
+  v2 <- max(list_table_snapshots("tt_asof_labels")$snapshot_id)
+  suppressMessages(set_column_comments("tt_asof_labels", amount = NA))
+
+  old <- dplyr::collect(get_ducklake_table_version("tt_asof_labels", v1))
+  expect_equal(attr(old$amount, "label"), "amount v1")
+  expect_null(attr(old$id, "label"))
+
+  # verbs keep the version
+  mid <- get_ducklake_table_version("tt_asof_labels", v2) |>
+    dplyr::filter(id > 1) |>
+    dplyr::mutate(double = amount * 2) |>
+    dplyr::collect()
+  expect_equal(attr(mid$amount, "label"), "amount v2")
+  expect_equal(attr(mid$id, "label"), "id added later")
+  expect_null(attr(mid$double, "label"))
+
+  # the live table is unaffected: the amount label was cleared
+  now <- dplyr::collect(get_ducklake_table("tt_asof_labels"))
+  expect_null(attr(now$amount, "label"))
+  expect_equal(attr(now$id, "label"), "id added later")
+})
+
+test_that("an as-of read restores the labels in force at that time", {
+  skip_if_not_installed("duckdb")
+  skip_if_not_installed("dplyr")
+
+  lake <- create_temp_ducklake()
+  on.exit(cleanup_temp_ducklake(lake), add = TRUE)
+
+  df <- data.frame(id = 1:3, amount = c(1, 2, 3))
+  attr(df$amount, "label") <- "amount v1"
+  suppressMessages(create_table(df, "tt_asof_time"))
+  between <- Sys.time() + 1
+  Sys.sleep(2)
+  suppressMessages(set_column_comments("tt_asof_time", amount = "amount v2"))
+
+  old <- dplyr::collect(get_ducklake_table_asof("tt_asof_time", between))
+  expect_equal(attr(old$amount, "label"), "amount v1")
+
+  # a snapshot's own time resolves to that snapshot, for the rows and the labels
+  at_change <- max(list_table_snapshots("tt_asof_time")$snapshot_time)
+  new <- dplyr::collect(get_ducklake_table_asof("tt_asof_time", at_change + 1))
+  expect_equal(attr(new$amount, "label"), "amount v2")
+})
+
+test_that("versioned labels follow a column rename, a rebuild, and a table rename", {
+  skip_if_not_installed("duckdb")
+  skip_if_not_installed("dplyr")
+
+  lake <- create_temp_ducklake()
+  on.exit(cleanup_temp_ducklake(lake), add = TRUE)
+
+  df <- data.frame(id = 1:3, amount = c(1, 2, 3))
+  attr(df$amount, "label") <- "Amount as collected"
+  suppressMessages(create_table(df, "tt_asof_moves"))
+  v_start <- max(list_table_snapshots("tt_asof_moves")$snapshot_id)
+
+  suppressMessages({
+    rename_table_column("tt_asof_moves", "amount", "amt")
+    set_column_comments("tt_asof_moves", amt = "Amount, renamed")
+    get_ducklake_table("tt_asof_moves") |>
+      dplyr::mutate(amt = amt * 2) |>
+      replace_table("tt_asof_moves")
+  })
+  v_rebuilt <- max(list_table_snapshots("tt_asof_moves")$snapshot_id)
+  suppressMessages({
+    rename_ducklake_table("tt_asof_moves", "tt_asof_moved")
+    set_column_comments("tt_asof_moved", amt = "Amount, after the move")
+  })
+
+  # DuckLake resolves the name as of the version, so the old name reads the old table
+  start <- dplyr::collect(get_ducklake_table_version("tt_asof_moves", v_start))
+  expect_named(start, c("id", "amount"))
+  expect_equal(attr(start$amount, "label"), "Amount as collected")
+
+  rebuilt <- dplyr::collect(get_ducklake_table_version("tt_asof_moves", v_rebuilt))
+  expect_equal(attr(rebuilt$amt, "label"), "Amount, renamed")
+
+  now <- dplyr::collect(get_ducklake_table("tt_asof_moved"))
+  expect_equal(attr(now$amt, "label"), "Amount, after the move")
+})
+
+test_that("versioned labels work for a schema-qualified table and never fall back to today's", {
+  skip_if_not_installed("duckdb")
+  skip_if_not_installed("dplyr")
+
+  lake <- create_temp_ducklake()
+  on.exit(cleanup_temp_ducklake(lake), add = TRUE)
+
+  df <- data.frame(id = 1:2, amount = c(1, 2))
+  attr(df$amount, "label") <- "amount v1"
+  suppressMessages({
+    create_schema("bronze")
+    create_table(df, "bronze.tt_asof_schema")
+  })
+  v1 <- max(list_table_snapshots("bronze.tt_asof_schema")$snapshot_id)
+  suppressMessages(set_column_comments("bronze.tt_asof_schema", amount = "amount v2"))
+
+  old <- get_ducklake_table_version("bronze.tt_asof_schema", v1)
+  expect_equal(attr(dplyr::collect(old)$amount, "label"), "amount v1")
+
+  # a lookup that fails leaves the snapshot's rows unlabelled
+  testthat::local_mocked_bindings(
+    column_comments_asof = function(...) stop("metadata unavailable")
+  )
+  unlabelled <- dplyr::collect(old)
+  expect_equal(nrow(unlabelled), 2)
+  expect_null(attr(unlabelled$amount, "label"))
+})
+
 test_that("list_table_snapshots matches id-only snapshots and survives a rewrite", {
   skip_if_not_installed("duckdb")
   skip_if_not_installed("dplyr")

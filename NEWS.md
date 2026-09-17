@@ -55,6 +55,17 @@
   query did not inherit them. All of these now follow what the session
   sees.
 
+* A time-travel read restores the variable labels in force at its snapshot.
+  `collect()` on `get_ducklake_table_version()` or
+  `get_ducklake_table_asof()` used to attach today's labels to the
+  historical rows, so a label reworded since showed its new text and a
+  label added since appeared where none had been. The lazy table now
+  records the version or timestamp it asked for, and `collect()` reads the
+  column comments as of that snapshot from the catalog's versioned rows,
+  finding the table under the name and id it had then. A table written from
+  a time-travel read still takes the present-day comments, as
+  `restore_table_version()` does.
+
 * The lifecycle stage is now stable, with ducklake on CRAN since 0.6.0
   (published 2026-09-09): the interface is settled, and any breaking
   change will come with a deprecation cycle.
