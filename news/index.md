@@ -1,5 +1,7 @@
 # Changelog
 
+## ducklake (development version)
+
 ## ducklake 0.9.0
 
 - New
