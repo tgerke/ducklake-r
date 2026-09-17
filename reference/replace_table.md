@@ -62,6 +62,15 @@ they cannot be re-set at all, and a warning lists the calls to make
 after your commit. Earlier snapshots keep the earlier id and stay
 reachable by name through time travel.
 
+What the open transaction has done to the table counts. Comments set
+earlier in it are carried over, and so are keys set or reset there with
+[`set_table_partitioning()`](https://tgerke.github.io/ducklake-r/reference/set_table_partitioning.md),
+[`set_table_sorting()`](https://tgerke.github.io/ducklake-r/reference/set_table_sorting.md),
+and their `reset_` counterparts. DuckLake shows pending keys nowhere, so
+ducklake notes them as those functions run: keys changed in the same
+transaction with a raw `ALTER TABLE` statement are not seen, and the
+rewrite then carries the committed keys over instead.
+
 **When to use replace_table():**
 
 - **Bulk transformations** - a dplyr pipeline that recomputes, reshapes,

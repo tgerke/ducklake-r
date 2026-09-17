@@ -65,6 +65,16 @@ temporary DuckDB table, then drops and recreates `t` from it inside a
 transaction. Because the restore creates a new snapshot, it is itself
 reversible with another `restore_table_version()` call.
 
+The restore commits for itself, with its own author and message, so it
+cannot join a transaction that is already open and says so before it
+touches anything. To restore to a version and change it in one snapshot,
+pipe
+[`get_ducklake_table_version()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_table_version.md)
+into
+[`replace_table()`](https://tgerke.github.io/ducklake-r/reference/replace_table.md)
+inside
+[`with_transaction()`](https://tgerke.github.io/ducklake-r/reference/with_transaction.md).
+
 The restored table gets a new table id, and DuckLake keeps comments,
 partition keys, sort order, and table-scoped options against the id, so
 they are captured beforehand and put back: comments and keys for the

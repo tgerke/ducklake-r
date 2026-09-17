@@ -54,10 +54,10 @@ create_table(mtcars, "cars")
 get_ducklake_info()
 #>   ducklake_name backend
 #> 1     info_lake  duckdb
-#>                                                    catalog
-#> 1 /tmp/Rtmp4fhJlE/info_lake_18e1948d8de/info_lake.ducklake
-#>                                data_path format_version extension_version
-#> 1 /tmp/Rtmp4fhJlE/info_lake_18e1948d8de/            1.0          d8a1881e
+#>                                                     catalog
+#> 1 /tmp/RtmpAOc53Z/info_lake_199f17884ee0/info_lake.ducklake
+#>                                 data_path format_version extension_version
+#> 1 /tmp/RtmpAOc53Z/info_lake_199f17884ee0/            1.0          d8a1881e
 #>   encrypted current_snapshot
 #> 1     FALSE                1
 

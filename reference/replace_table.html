@@ -102,6 +102,13 @@ small follow-up snapshot; inside a transaction you opened yourself they
 cannot be re-set at all, and a warning lists the calls to make after
 your commit. Earlier snapshots keep the earlier id and stay reachable by
 name through time travel.</p>
+<p>What the open transaction has done to the table counts. Comments set
+earlier in it are carried over, and so are keys set or reset there with
+<code><a href="set_table_partitioning.html">set_table_partitioning()</a></code>, <code><a href="set_table_sorting.html">set_table_sorting()</a></code>, and their <code>reset_</code>
+counterparts. DuckLake shows pending keys nowhere, so ducklake notes
+them as those functions run: keys changed in the same transaction with a
+raw <code>ALTER TABLE</code> statement are not seen, and the rewrite then carries
+the committed keys over instead.</p>
 <p><strong>When to use replace_table():</strong></p><ul><li><p><strong>Bulk transformations</strong> - a dplyr pipeline that recomputes, reshapes,
 or filters most of the table</p></li>
 </ul><p><strong>When to reach elsewhere:</strong></p><ul><li><p><strong>Schema-only changes</strong> - <code><a href="add_table_column.html">add_table_column()</a></code>, <code><a href="drop_table_column.html">drop_table_column()</a></code>,

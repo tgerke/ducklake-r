@@ -115,6 +115,11 @@ Defaults to a message noting the restore point (e.g.
 temporary DuckDB table, then drops and recreates <code>t</code> from it inside
 a transaction. Because the restore creates a new snapshot, it is itself
 reversible with another <code>restore_table_version()</code> call.</p>
+<p>The restore commits for itself, with its own author and message, so it
+cannot join a transaction that is already open and says so before it
+touches anything. To restore to a version and change it in one snapshot,
+pipe <code><a href="get_ducklake_table_version.html">get_ducklake_table_version()</a></code> into <code><a href="replace_table.html">replace_table()</a></code> inside
+<code><a href="with_transaction.html">with_transaction()</a></code>.</p>
 <p>The restored table gets a new table id, and DuckLake keeps comments,
 partition keys, sort order, and table-scoped options against the id, so
 they are captured beforehand and put back: comments and keys for the
