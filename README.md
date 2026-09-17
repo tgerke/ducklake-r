@@ -31,7 +31,7 @@ create significant data management challenges:
 - **Lost audit trails**: No automatic tracking of who changed what and
   when
 - **Version control gaps**: Multiple dataset versions scattered across
-  folders with unclear provenance  
+  folders with unclear provenance
 - **Reproducibility issues**: Inability to recreate analyses from
   specific time points
 - **Collaboration friction**: Multiple analysts working with different
@@ -354,6 +354,10 @@ detailed vignettes:
   Labels](https://tgerke.github.io/ducklake-r/articles/views-comments-labels.html) -
   Shared query logic and documentation that live in the lake
 - [Data
+  Checks](https://tgerke.github.io/ducklake-r/articles/data-checks.html) -
+  Validation rules stored in the lake as views, run on demand or as a
+  gate before a commit
+- [Data
   Inlining](https://tgerke.github.io/ducklake-r/articles/data-inlining.html) -
   Streaming-friendly small writes
 - [Transactions](https://tgerke.github.io/ducklake-r/articles/transactions.html) -
@@ -366,49 +370,60 @@ detailed vignettes:
   Back up and recover your lake
 - [Visualizing Your
   Lake](https://tgerke.github.io/ducklake-r/articles/visualizing-your-lake.html) -
-  Plot snapshot history, change volume, and storage layout
+  Plot snapshot history, change volume, and storage layout, and browse
+  changed rows in an interactive viewer
 - [Quack Remote
   Access](https://tgerke.github.io/ducklake-r/articles/quack-remote-access.html) -
   Share a DuckLake over the network with the Quack protocol
 
 ## Key features
 
-- **Versioned data lake**: Every data change automatically tracked with
-  timestamps and metadata
+- **Versioned data lake**: Every data change is tracked automatically as
+  a snapshot, with timestamps and metadata, and a lake keeps as many
+  snapshots as it needs without frequent compaction
 - **Multi-backend catalogs**: Use DuckDB (default), PostgreSQL, SQLite,
-  or MySQL as the catalog database — enables concurrent multi-client
-  access with PostgreSQL or SQLite ([DuckLake 1.0
+  or MySQL as the catalog database. A PostgreSQL or SQLite catalog lets
+  several clients use the lake at once ([DuckLake 1.0
   spec](https://ducklake.select/docs/stable/specification/introduction))
 - **Remote access over Quack**: Serve a DuckLake to other R sessions
   over the network and let several people read and write it at once,
   using DuckDB’s Quack protocol
-- **Lightweight snapshots**: Create unlimited snapshots without frequent
-  compacting steps
-- **Medallion architecture**: Bronze/silver/gold layers for data lineage
-  and quality
 - **ACID transactions**: Atomic updates with concurrent access and
   transactional guarantees over multi-table operations;
   `set_ducklake_retry()` tunes how DuckLake retries transactions that
   race with another writer
 - **Time travel**: Query data exactly as it existed at any point in
-  time—essential for reproducibility. Pin a whole session to a snapshot
-  with `attach_ducklake(snapshot_version = ...)`
+  time, so an analysis can be rerun against the data it first saw. Pin a
+  whole session to a snapshot with
+  `attach_ducklake(snapshot_version = ...)`
+- **Change feed and viewer**: `get_table_changes()` returns every row
+  inserted, updated, or deleted between two snapshots as a lazy table,
+  and `view_table_changes()` opens that feed in an interactive viewer
+  with the changed cells highlighted. `plot_snapshots()`,
+  `plot_table_changes()`, and `plot_table_files()` chart a lake’s
+  history, change volume, and file layout
 - **Performance-oriented**: Uses Parquet columnar storage with
   statistics for filter pushdown, enabling fast queries on large
   datasets. Partitioning (`set_table_partitioning()`) and sorted tables
   (`set_table_sorting()`) prune files on large tables
 - **Migrate Parquet in place**: `add_data_files()` registers existing
   Parquet files with the lake without copying or rewriting them
-- **Cloud storage**: Keep data files on S3, GCS, R2, or Azure —
-  `create_storage_secret()` handles credentials
+- **Cloud storage**: Keep data files on S3, GCS, R2, or Azure, with
+  `create_storage_secret()` handling the credentials
 - **Tunable**: `set_ducklake_option()` adjusts DuckLake’s persisted
   settings (compression, file sizes, commit-message policy) at lake,
   schema, or table scope
+- **Maintenance and backups**: One call to `checkpoint_ducklake()`
+  flushes inlined data, merges small files, rewrites heavily deleted
+  ones, and, when the lake has a retention policy, expires old snapshots
+  and deletes the files they released. Each step is also a function of
+  its own, and `backup_ducklake()` makes a timestamped copy of the data
+  files and of a file-based catalog
 - **Schema evolution in place**: `add_table_column()`,
   `drop_table_column()`, `rename_table_column()`, `set_column_type()`,
   and `rename_ducklake_table()` change a table’s shape as metadata-only
-  operations — no data rewrite, and every earlier schema stays reachable
-  through time travel
+  operations. No data is rewritten, and every earlier schema stays
+  reachable through time travel
 - **Variable labels survive the lake**: `create_table()` stores
   haven/labelled column labels as catalog comments and `collect()`
   restores them, so gtsummary and gt keep displaying them;
@@ -416,21 +431,34 @@ detailed vignettes:
   `get_table_comments()` manage documentation any client of the lake can
   read
 - **Views**: `create_view()` stores a dplyr pipeline as a SQL view in
-  the lake — shared logic that always reads current data;
+  the lake, so shared logic always reads current data.
   `list_ducklake_tables()` shows what’s there
-- **Schemas**: Organize layers or studies with `create_schema()`; every
+- **Data checks** (experimental): `create_check()` stores a validation
+  rule in the lake as a view that returns the rows breaking it, and
+  `run_checks()` counts the failing rows for every rule. The rules are
+  versioned with the data and run from any client of the lake. Inside
+  `with_transaction()` they see pending writes, so a load that fails a
+  check can be rolled back before it commits
+- **Schemas**: `create_schema()` organizes a lake into medallion layers
+  (bronze, silver, gold), studies, or any other grouping, and every
   function accepts `"schema.table"`
 - **Tidyverse interface**: Familiar dplyr syntax for data manipulation
 - **In-database writes**: `create_table()` and `replace_table()` run
   dplyr pipelines inside DuckDB and write the result straight into the
   lake, so derived layers never pass through R memory
 - **Encryption**: Opt-in Parquet encryption with
-  `attach_ducklake(encrypted = TRUE)`
+  `attach_ducklake(encrypted = TRUE)`. The Parquet keys are kept in the
+  catalog, and the `meta_encryption_key` argument encrypts a DuckDB
+  catalog file as well
 - **A write style for every job**: `rows_insert()`, `rows_update()`,
   `rows_delete()`, and `rows_upsert()` for incremental changes;
   `merge_into()` for conditional merges and staging-table syncs;
-  `replace_table()` pipelines for bulk rewrites — all fully versioned
-- **Complete audit trails**: Who changed what, when, and why—suitable
-  for regulated industries
-- **Seamless integration**: Works with duckdb, DBI, dbplyr, and the
-  broader tidyverse ecosystem
+  `replace_table()` pipelines for bulk rewrites. All of them are
+  versioned
+- **Complete audit trails**: Who changed what, when, and why, in a form
+  suitable for regulated industries. `options(ducklake.author = ...)`
+  names the author once for a whole session
+- **Plain DBI underneath**: Lake tables are ordinary dbplyr lazy tables
+  on a duckdb connection, so DBI, dbplyr, and the rest of the tidyverse
+  work on them directly. `get_ducklake_connection()` hands you the
+  connection
