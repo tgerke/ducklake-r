@@ -1,3 +1,136 @@
+#' Create a data check from a rule
+#'
+#' **Experimental.** Stores a rule as a check: a view, in a schema set aside
+#' for checks, that returns the rows breaking the rule, with the rule's label
+#' as its comment. State the rule the way you would say it, as the condition
+#' every row should meet. `create_check()` keeps the rows where it is false,
+#' so the code reads like the label and a rule such as "dose is not 0" is
+#' written `dose != 0`, with no double negative. [run_checks()] then counts
+#' the failing rows of every check in the schema.
+#'
+#' @param .data A lazy table (a dplyr pipeline built on
+#'   [get_ducklake_table()]) holding the rows to check. Read the table by its
+#'   schema-qualified name, `get_ducklake_table("main.cars")`, so the check
+#'   binds whichever database is current.
+#' @param check_name The rule's id, which becomes the view's name and the
+#'   `check` column of [run_checks()].
+#' @param rule The rule, as an expression on the columns of `.data` that is
+#'   `TRUE` for a row in good standing, such as `cyl %in% c(4, 6, 8)`.
+#' @param label One sentence stating the rule, stored as the view's comment.
+#' @param listing <[`tidy-select`][dplyr::dplyr_tidy_select]> The columns
+#'   the check returns for a failing row: what someone needs to find the row
+#'   and fix it. All columns by default.
+#' @param schema_name The schema that holds the checks. Defaults to
+#'   `"checks"`, or to the schema in `check_name` when that is qualified
+#'   (`"qc.cyl_known"`). It is created if it does not exist.
+#' @param replace Replace an existing check of the same name (default TRUE).
+#'
+#' @details
+#' A row where the rule evaluates to `NA` passes, as it does under a SQL
+#' `CHECK` constraint: `NOT (rule)` is not true for it. When a missing value
+#' should fail, say so in the rule (`!is.na(dose) & dose != 0`) or give it a
+#' check of its own.
+#'
+#' The schema, the view, and its label are written in one transaction, so a
+#' new or revised check is one snapshot. Inside [with_transaction()] they
+#' join the open transaction, which is how a change of rules gets an author
+#' and a commit message.
+#'
+#' A check is an ordinary view, and `create_check()` is a convenience for
+#' the common case of one rule about each row. A rule that is easier to
+#' state as its failure (models that appear twice, visits without a
+#' subject) is a pipeline that returns those rows, stored with
+#' [create_view()] in the same schema and labelled with
+#' [set_table_comment()]. Both forms select the same rows, since
+#' three-valued logic treats `NOT (dose != 0)` and `dose = 0` alike, so
+#' choose the one that reads better.
+#'
+#' @returns Invisibly returns `NULL`.
+#' @export
+#'
+#' @seealso [run_checks()] to run the checks, [create_view()] for a check
+#'   written as its failure, and `vignette("data-checks")`.
+#'
+#' @examplesIf ducklake_extension_available()
+#' lake_dir <- tempfile("create_check_lake_")
+#' dir.create(lake_dir)
+#' attach_ducklake("create_check_lake", lake_path = lake_dir)
+#' create_table(
+#'   data.frame(model = rownames(mtcars), mtcars, row.names = NULL),
+#'   "cars"
+#' )
+#'
+#' get_ducklake_table("main.cars") |>
+#'   create_check(
+#'     "cyl_known", cyl %in% c(4, 6, 8),
+#'     label = "cyl is 4, 6, or 8",
+#'     listing = c(model, cyl)
+#'   )
+#'
+#' # A rule that forbids a value is stated as it is said
+#' get_ducklake_table("main.cars") |>
+#'   create_check("hp_not_zero", hp != 0, label = "hp is not 0")
+#'
+#' run_checks()
+#'
+#' detach_ducklake("create_check_lake", shutdown = TRUE)
+#' unlink(lake_dir, recursive = TRUE)
+create_check <- function(.data, check_name, rule, label,
+                         listing = dplyr::everything(),
+                         schema_name = NULL, replace = TRUE) {
+  if (!inherits(.data, "tbl_lazy")) {
+    cli::cli_abort(c(
+      "{.arg .data} must be a lazy table, e.g. a pipeline built on {.fun get_ducklake_table}.",
+      "i" = "A check is a view over the lake's tables, so it cannot be made from a data frame."
+    ))
+  }
+  if (!is.character(label) || length(label) != 1 || is.na(label) || !nzchar(label)) {
+    cli::cli_abort("{.arg label} must be one sentence stating the rule.")
+  }
+  ref <- resolve_table_ref(check_name, schema_name)
+  schema <- if (is.null(ref$schema)) "checks" else ref$schema
+  view_name <- paste(schema, ref$table, sep = ".")
+
+  conn <- dbplyr::remote_con(.data)
+  ducklake_name <- infer_ducklake_name(NULL, conn)
+  failing <- dplyr::select(dplyr::filter(.data, !({{ rule }})), {{ listing }})
+
+  # One snapshot for the schema, the view, and its label
+  own_txn <- !in_transaction(conn)
+  committed <- FALSE
+  if (own_txn) {
+    DBI::dbExecute(conn, "BEGIN TRANSACTION;")
+    on.exit(
+      if (!committed) {
+        tryCatch(DBI::dbExecute(conn, "ROLLBACK;"), error = function(e) NULL)
+      },
+      add = TRUE
+    )
+  }
+  quietly({
+    if (!schema_exists(schema, ducklake_name, conn)) {
+      create_schema(schema, ducklake_name = ducklake_name)
+    }
+    create_view(failing, view_name, replace = replace)
+    set_table_comment(view_name, label)
+  })
+  if (own_txn) {
+    DBI::dbExecute(conn, "COMMIT;")
+    committed <- TRUE
+  }
+  dl_inform("Created check {.val {ref$table}} in {.val {schema}}: {label}")
+
+  invisible(NULL)
+}
+
+#' Run code with the package's confirmations turned off
+#' @noRd
+quietly <- function(expr) {
+  old <- options(ducklake.verbose = FALSE)
+  on.exit(options(old), add = TRUE)
+  force(expr)
+}
+
 #' Run the data checks stored in a schema
 #'
 #' **Experimental.** Counts the rows returned by each view in a schema set
@@ -13,14 +146,14 @@
 #'   `NULL`, the current database is used.
 #'
 #' @details
-#' Write a check with [create_view()] from a pipeline that keeps the failing
-#' rows, such as `filter(!(cyl %in% c(4, 6, 8)))`, and label it with
-#' [set_table_comment()]. `NOT (condition)` is not true for a row where the
-#' condition is `NA`, so a missing value passes unless a check of its own
-#' looks for it. Read the table by its schema-qualified name,
-#' `get_ducklake_table("main.cars")`: the view then binds whichever database
-#' is current, for this function's `ducklake_name` and for other clients of
-#' the lake.
+#' Write a check with [create_check()], which takes the rule as it is said
+#' and keeps the rows that break it, or with [create_view()] from a pipeline
+#' that returns the failing rows itself, labelled with
+#' [set_table_comment()]. A row where the rule is `NA` passes, so a missing
+#' value needs a rule of its own. Read the table by its schema-qualified
+#' name, `get_ducklake_table("main.cars")`: the view then binds whichever
+#' database is current, for this function's `ducklake_name` and for other
+#' clients of the lake.
 #'
 #' Every view in the schema counts as a check, so keep other views
 #' elsewhere. A view that summarizes, returning a row of totals, reports a
@@ -40,9 +173,8 @@
 #'   schema holds no views.
 #' @export
 #'
-#' @seealso [create_view()] and [set_table_comment()] to write a check,
-#'   [with_transaction()] to gate a load on the result, and
-#'   `vignette("data-checks")`.
+#' @seealso [create_check()] to write a check, [with_transaction()] to gate
+#'   a load on the result, and `vignette("data-checks")`.
 #'
 #' @examplesIf ducklake_extension_available()
 #' lake_dir <- tempfile("checks_lake_")
@@ -50,12 +182,8 @@
 #' attach_ducklake("checks_lake", lake_path = lake_dir)
 #' create_table(mtcars, "cars")
 #'
-#' # A check is a view of the rows that break a rule
-#' create_schema("checks")
 #' get_ducklake_table("main.cars") |>
-#'   dplyr::filter(!(cyl %in% c(4, 6, 8))) |>
-#'   create_view("checks.cyl_known")
-#' set_table_comment("checks.cyl_known", "cyl is 4, 6, or 8")
+#'   create_check("cyl_known", cyl %in% c(4, 6, 8), label = "cyl is 4, 6, or 8")
 #'
 #' run_checks()
 #'

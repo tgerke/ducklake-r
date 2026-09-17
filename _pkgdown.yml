@@ -133,6 +133,7 @@ reference:
   - title: "Data Checks"
     desc: "Validation rules stored in the lake as views"
     contents:
+    - create_check
     - run_checks
 
   - title: "Metadata"

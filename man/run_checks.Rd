@@ -28,14 +28,14 @@ so they are versioned with the data and every client of the lake can run
 them. The interface may change while the convention settles.
 }
 \details{
-Write a check with \code{\link[=create_view]{create_view()}} from a pipeline that keeps the failing
-rows, such as \code{filter(!(cyl \%in\% c(4, 6, 8)))}, and label it with
-\code{\link[=set_table_comment]{set_table_comment()}}. \code{NOT (condition)} is not true for a row where the
-condition is \code{NA}, so a missing value passes unless a check of its own
-looks for it. Read the table by its schema-qualified name,
-\code{get_ducklake_table("main.cars")}: the view then binds whichever database
-is current, for this function's \code{ducklake_name} and for other clients of
-the lake.
+Write a check with \code{\link[=create_check]{create_check()}}, which takes the rule as it is said
+and keeps the rows that break it, or with \code{\link[=create_view]{create_view()}} from a pipeline
+that returns the failing rows itself, labelled with
+\code{\link[=set_table_comment]{set_table_comment()}}. A row where the rule is \code{NA} passes, so a missing
+value needs a rule of its own. Read the table by its schema-qualified
+name, \code{get_ducklake_table("main.cars")}: the view then binds whichever
+database is current, for this function's \code{ducklake_name} and for other
+clients of the lake.
 
 Every view in the schema counts as a check, so keep other views
 elsewhere. A view that summarizes, returning a row of totals, reports a
@@ -56,12 +56,8 @@ dir.create(lake_dir)
 attach_ducklake("checks_lake", lake_path = lake_dir)
 create_table(mtcars, "cars")
 
-# A check is a view of the rows that break a rule
-create_schema("checks")
 get_ducklake_table("main.cars") |>
-  dplyr::filter(!(cyl \%in\% c(4, 6, 8))) |>
-  create_view("checks.cyl_known")
-set_table_comment("checks.cyl_known", "cyl is 4, 6, or 8")
+  create_check("cyl_known", cyl \%in\% c(4, 6, 8), label = "cyl is 4, 6, or 8")
 
 run_checks()
 
@@ -70,7 +66,6 @@ unlink(lake_dir, recursive = TRUE)
 \dontshow{\}) # examplesIf}
 }
 \seealso{
-\code{\link[=create_view]{create_view()}} and \code{\link[=set_table_comment]{set_table_comment()}} to write a check,
-\code{\link[=with_transaction]{with_transaction()}} to gate a load on the result, and
-\code{vignette("data-checks")}.
+\code{\link[=create_check]{create_check()}} to write a check, \code{\link[=with_transaction]{with_transaction()}} to gate
+a load on the result, and \code{vignette("data-checks")}.
 }

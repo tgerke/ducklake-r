@@ -19,17 +19,22 @@
   lake, range) that `view_table_changes()` reads. The attribute survives
   dplyr verbs on the lazy table and is dropped by `collect()`.
 
-* New `run_checks()` (experimental) runs the data checks stored in a
-  schema. A check is a view that returns the rows breaking a rule, named
-  for the rule and labelled with `set_table_comment()`, so the rules live
-  in the catalog, are versioned with the data, and run from any client of
-  the lake. The result has one row per check: its label and how many rows
+* New `create_check()` and `run_checks()` (experimental) keep data checks
+  in the lake. A check is a view, in a schema of its own, that returns the
+  rows breaking a rule, with the rule's label as its comment, so the rules
+  live in the catalog, are versioned with the data, and run from any client
+  of the lake. `create_check()` takes the rule as it is said (`cyl %in%
+  c(4, 6, 8)`, `dose != 0`), keeps the rows where it is false, and writes
+  the schema, the view, and the label as one snapshot; a rule that is
+  easier to state as its failure is a pipeline into `create_view()`.
+  `run_checks()` returns one row per check: its label and how many rows
   fail. Inside `with_transaction()` the counts include pending writes, so
   a load that fails a check can be rolled back before it commits, and on a
   snapshot-pinned attach the rules and the data are both read as of that
-  snapshot. `vignette("data-checks")` walks through it. DuckLake enforces
-  `NOT NULL` and nothing else, and its catalog takes no custom tags from
-  SQL, which is why the rules are views.
+  snapshot. `vignette("data-checks")` walks through it and sets the
+  approach next to affirm and data-dict. DuckLake enforces `NOT NULL` and
+  nothing else, and its catalog takes no custom tags from SQL, which is why
+  the rules are views.
 
 * `set_table_comment()` comments a view as well as a table. It used to send
   `COMMENT ON TABLE` for every name, which DuckLake refuses for a view, so
