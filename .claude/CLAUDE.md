@@ -200,3 +200,86 @@
   timestamp bounds are inclusive at both ends. An attribute on the lazy
   feed survives dbplyr verbs because they assign into `x$lazy_query` on
   the same object.
+- **Validation rules are views, not catalog tags and not a rules table**
+  (2026-09-17). A check is a view in a schema of its own that returns the
+  rows breaking a rule; the view's comment is the label and
+  `run_checks()` (experimental) counts the rows of every view in the
+  schema. Views are the supported way to put rule logic in the catalog:
+  no format for the package to own, no metadata write, SQL written by
+  dbplyr when the rule is authored and never spliced from stored text (the
+  risk that kept macros unwrapped), cross-table rules as plain joins, and
+  `WHERE NOT (rule)` passing `NA` the way data-dict's `assert` does.
+  Rejected: custom keys in `ducklake_tag` / `ducklake_column_tag` (no SQL
+  surface but `COMMENT ON`; hand-written rows fabricate or edit a
+  snapshot, are invisible in an open transaction, and are keyed to ids
+  that `replace_table()` changes), and a rules table with a stored
+  predicate evaluator (a format to migrate, stored SQL text to execute).
+  Tags would not suit checks even if writable, since a string still needs
+  something to parse and run it; they would suit descriptive dictionary
+  facts (units, codelists, origin). `run_checks()` aborts on a missing
+  schema so a mistyped name cannot pass a gate, reads labels from
+  `duckdb_views()` instead of the metadata tables, and puts one `UNION ALL`
+  branch per line so a binder error quotes the broken view. Waiting was
+  considered and declined: DuckDB 2.0 triggers (stable projected for late
+  October 2026) are not announced for DuckLake tables and would call the
+  check views if they arrive, and nothing upstream signals a tag surface
+  (not on the April 2026 roadmap; duckdb/duckdb#10981 and
+  duckdb/ducklake#357 unanswered). Watch items: DuckLake CHECK constraints
+  ("likely" per the 1.0 docs), a SQL surface for tags (then view tags for
+  check attributes and a column dictionary), triggers on DuckLake tables,
+  data-dict SQL sources (then a catalog-to-`data-dict.yaml` exporter, with
+  `range` from `ducklake_table_column_stats`), and nested schemas
+  (tgerke/ducklake-r#72).
+- **View and tag behavior, confirmed empirically on DuckDB 1.5.5**
+  (2026-09-17, extension d8a1881e): `COMMENT ON TABLE` on a view is
+  refused ("Cannot use ALTER TABLE on entry ... it is not a table") and
+  leaves no aborted transaction in autocommit, `COMMENT ON VIEW` works, and
+  `COMMENT ON COLUMN` on a view is refused; `set_table_comment()` looks the
+  name up in `duckdb_views()` first because a failed statement aborts a
+  caller's open transaction. `CREATE VIEW` plus `COMMENT ON VIEW` in one
+  transaction is one snapshot. `CREATE OR REPLACE VIEW` assigns a new view
+  id and drops the comment (`create_view()` puts it back, see below).
+  `duckdb_views().comment` shows a label inside
+  the creating transaction and as of a snapshot-pinned attach, while
+  `get_table_comments()` reads the metadata tables and shows neither (on a
+  pinned attach it returns present-day comments). A view read inside an
+  open transaction sees pending inserts, updates, and an in-transaction
+  `replace_table()`, and views survive a committed `replace_table()` that
+  changes a column type. A view in another schema that reads an
+  unqualified table can fail to bind when it is first used while another
+  database is current, and recurses when it shares the table's name
+  (`checks.cars` over `cars`); a schema-qualified table (`main.cars`) binds
+  in every case. View changes carry the qualified name for a create
+  (`views_created`, also written by a replace) and the view id for
+  `views_altered` (comment) and `views_dropped`, and `table_ids_for_name()`
+  reads `ducklake_table` only, so `list_table_snapshots()` on a view shows
+  creates and replaces but not comment-only changes or drops. A second
+  attach of a lake under another name makes a new catalog file, so a pinned
+  view of a lake is a detach and re-attach of the same name. On a throwaway
+  lake: a hand-inserted `ducklake_tag` row with another key loads and shows
+  in `duckdb_tables().tags`; a hand-inserted `ducklake_column_tag` row with
+  another key makes every attach, read, and listing fail with "Only comment
+  tags are supported for columns currently".
+- **`create_schema()` keeps the SQL term** (2026-09-17). `create_layer()`
+  was considered. "Schema" is the literal object (`CREATE SCHEMA`,
+  `ducklake_schema`) and the word on every surface a user meets next
+  (`schema_name` in the listing and comment functions, `set_option(schema
+  => ...)`, dbplyr's `in_schema()`, the DuckLake docs, other clients);
+  "layer" names one use among several (medallion layers, per-study areas,
+  scratch space, `checks`). The second meaning of "schema", a table's
+  column layout as in the Schema Evolution reference section, is handled
+  in prose where it could confuse.
+- **`create_view()` carries a view's comment across a replace**
+  (2026-09-17). DuckLake keys the comment to the view id and a replace
+  assigns a new one, the situation `replace_table()` handles for tables,
+  and since the data checks work a view's comment is a check's label. With
+  `replace = TRUE` the comment is read from `duckdb_views()` and set again
+  inside the transaction that replaces the view (its own when none is
+  open, the caller's otherwise), so the replacement and the comment are one
+  snapshot and a view created earlier in the same transaction is covered.
+  Silent, like `replace_table()`, and with no argument to opt out:
+  `set_table_comment(view, NULL)` clears a comment. Confirmed on DuckDB
+  1.5.5: replace plus `COMMENT ON VIEW` in one transaction is one snapshot
+  (`views_created`, `views_dropped`, `views_altered`), and a second comment
+  in the same transaction leaves one current tag row holding the last
+  value, so re-labelling after a replace stays clean.

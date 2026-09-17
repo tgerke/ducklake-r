@@ -19,6 +19,30 @@
   lake, range) that `view_table_changes()` reads. The attribute survives
   dplyr verbs on the lazy table and is dropped by `collect()`.
 
+* New `run_checks()` (experimental) runs the data checks stored in a
+  schema. A check is a view that returns the rows breaking a rule, named
+  for the rule and labelled with `set_table_comment()`, so the rules live
+  in the catalog, are versioned with the data, and run from any client of
+  the lake. The result has one row per check: its label and how many rows
+  fail. Inside `with_transaction()` the counts include pending writes, so
+  a load that fails a check can be rolled back before it commits, and on a
+  snapshot-pinned attach the rules and the data are both read as of that
+  snapshot. `vignette("data-checks")` walks through it. DuckLake enforces
+  `NOT NULL` and nothing else, and its catalog takes no custom tags from
+  SQL, which is why the rules are views.
+
+* `set_table_comment()` comments a view as well as a table. It used to send
+  `COMMENT ON TABLE` for every name, which DuckLake refuses for a view, so
+  `get_table_comments()` could read a view's comment but nothing in the
+  package could write one.
+
+* `create_view()` keeps a view's comment when it replaces the view. DuckLake
+  stores the replacement as a new catalog entry and keys the comment to the
+  entry, so `CREATE OR REPLACE VIEW` by itself drops it. `create_view()`
+  reads the comment first and sets it again in the same snapshot, as
+  `replace_table()` does for a table's comments. A check's label is its
+  view's comment, so revising a rule keeps the label.
+
 * The lifecycle stage is now stable, with ducklake on CRAN since 0.6.0
   (published 2026-09-09): the interface is settled, and any breaking
   change will come with a deprecation cycle.

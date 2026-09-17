@@ -28,6 +28,9 @@ for example to label a derived variable.
 All comments from one call are written in a single transaction, so they
 land as one snapshot. Inside \code{\link[=with_transaction]{with_transaction()}} they join the open
 transaction instead.
+
+DuckLake accepts column comments on tables only. A view takes a comment
+of its own through \code{\link[=set_table_comment]{set_table_comment()}}, but not on its columns.
 }
 \examples{
 \dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}

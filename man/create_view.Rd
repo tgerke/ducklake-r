@@ -13,7 +13,8 @@ data -- use \code{\link[=create_table]{create_table()}} to store data.}
 
 \item{view_name}{Name for the view.}
 
-\item{replace}{Replace an existing view of the same name (default TRUE).}
+\item{replace}{Replace an existing view of the same name (default TRUE).
+The replaced view's comment carries over.}
 }
 \value{
 Invisibly returns \code{NULL}.
@@ -29,6 +30,21 @@ sees exactly the same definition.
 Read a view back with \code{\link[=get_ducklake_table]{get_ducklake_table()}}, which works for views and
 tables alike, and keep piping dplyr verbs onto it. Like tables, views
 are versioned: dropping or replacing one is a snapshot like any other.
+
+DuckLake stores a replaced view as a new catalog entry and keys the
+comment to the entry, so \verb{CREATE OR REPLACE VIEW} by itself drops the
+comment. \code{create_view()} reads the comment first and sets it again, in
+the same snapshot as the replacement, the way \code{\link[=replace_table]{replace_table()}} carries a
+table's comments over. Reword it with \code{\link[=set_table_comment]{set_table_comment()}}, or clear it
+with \code{NULL}.
+
+A view kept in a schema of its own should read its tables by
+schema-qualified name: \code{get_ducklake_table("main.cars")}, not \code{"cars"}.
+DuckDB resolves an unqualified name from the view's schema and the
+session's current database, so the view can fail to bind in a session
+where another database is current, and a view that shares its name with
+the table it reads (\code{checks.cars} over \code{cars}) reads itself and fails
+with a recursion error.
 }
 \examples{
 \dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}

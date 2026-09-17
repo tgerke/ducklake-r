@@ -44,6 +44,7 @@ articles:
   - title: More Features
     contents:
     - views-comments-labels
+    - data-checks
     - transactions
     - data-inlining
     - storage-and-backups
@@ -128,6 +129,11 @@ reference:
     - set_table_comment
     - set_column_comments
     - get_table_comments
+
+  - title: "Data Checks"
+    desc: "Validation rules stored in the lake as views"
+    contents:
+    - run_checks
 
   - title: "Metadata"
     desc: "Access metadata and snapshots"
