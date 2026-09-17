@@ -382,3 +382,30 @@
   the caller's pending work with it, so it aborts up front instead. The
   one-snapshot alternative, confirmed: `get_ducklake_table_version()` piped
   into `replace_table()` inside `with_transaction()`.
+- **`create_check()` takes the rule as it is said** (2026-09-17). A check
+  view holds the failure query, so writing one by hand means negating the
+  rule, and a rule that forbids something ("dose is not 0") turns into
+  `filter(!(dose != 0))`. affirm and data-dict both avoid that by taking
+  the rule in its natural polarity and working out the failures themselves:
+  affirm names the polarity (`affirm_true()`, `affirm_false()`), and
+  data-dict's `assert` only states what must be true, with a row passing on
+  TRUE or NULL. `create_check(.data, check_name, rule, label, listing,
+  schema_name, replace)` does the same: `filter(!({{ rule }}))`, a
+  tidy-select `listing` (affirm's `report_listing`), `create_view()`, and
+  the label, with the schema created when missing, all in one transaction
+  (its own when none is open), so a new or revised check is one snapshot.
+  `label` is required, because the point is that code and label are read
+  side by side. The two ways of writing a check select the same rows,
+  NULLs included, since three-valued logic obeys De Morgan (pinned by a
+  test), and dbplyr even stores `dose != 0` as `WHERE (dose = 0.0)`. Checks
+  that are naturally failure queries (duplicates, orphans through an
+  `anti_join()`) stay pipelines into `create_view()`. The schema defaults
+  to `"checks"` through `resolve_table_ref()`, so a qualified `check_name`
+  names its own schema and a conflicting `schema_name` is an error. The
+  inner confirmations are silenced with the package's own
+  `ducklake.verbose` option (`quietly()`), leaving one line per check. The
+  article compares the approach with affirm and data-dict; the data-dict
+  facts are dated to its 0.0.3 preview (August 2026: Parquet sources only,
+  its own expression engine without joins, subqueries, windows, or
+  references to other tables, `draft` generating types and observed
+  ranges), and want re-checking when it moves.
