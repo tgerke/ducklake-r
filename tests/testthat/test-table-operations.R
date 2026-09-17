@@ -305,6 +305,117 @@ test_that("replace_table keeps comments set earlier in the same transaction", {
   )
 })
 
+test_that("replace_table keeps partition and sort keys set earlier in the same transaction", {
+  skip_if_not_installed("duckdb")
+  skip_if_not_installed("dplyr")
+
+  lake <- create_temp_ducklake()
+  on.exit(cleanup_temp_ducklake(lake), add = TRUE)
+
+  create_table(
+    data.frame(grp = c("a", "b", "a"), id = 1:3, day = as.Date("2026-01-01") + 0:2),
+    "test_replace_txn_keys"
+  )
+
+  suppressMessages(with_transaction({
+    set_table_partitioning("test_replace_txn_keys", c("grp", "year(day)"))
+    set_table_sorting("test_replace_txn_keys", "id DESC NULLS FIRST")
+    get_ducklake_table("test_replace_txn_keys") |>
+      dplyr::mutate(id = id * 10L) |>
+      replace_table("test_replace_txn_keys")
+  }))
+
+  partitions <- get_table_partitions("test_replace_txn_keys")
+  expect_equal(partitions$column_name, c("grp", "day"))
+  expect_equal(partitions$transform, c("identity", "year"))
+  sorting <- get_table_sorting("test_replace_txn_keys")
+  expect_equal(sorting$expression, "id")
+  expect_equal(sorting$sort_direction, "DESC")
+  expect_equal(sorting$null_order, "NULLS_FIRST")
+})
+
+test_that("replace_table leaves keys off that were reset earlier in the same transaction", {
+  skip_if_not_installed("duckdb")
+  skip_if_not_installed("dplyr")
+
+  lake <- create_temp_ducklake()
+  on.exit(cleanup_temp_ducklake(lake), add = TRUE)
+
+  create_table(data.frame(grp = c("a", "b"), id = 1:2), "test_replace_txn_reset")
+  suppressMessages({
+    set_table_partitioning("test_replace_txn_reset", "grp")
+    set_table_sorting("test_replace_txn_reset", "id")
+  })
+
+  suppressMessages(with_transaction({
+    reset_table_partitioning("test_replace_txn_reset")
+    reset_table_sorting("test_replace_txn_reset")
+    get_ducklake_table("test_replace_txn_reset") |>
+      dplyr::mutate(id = id * 10L) |>
+      replace_table("test_replace_txn_reset")
+  }))
+
+  expect_equal(nrow(get_table_partitions("test_replace_txn_reset")), 0)
+  expect_equal(nrow(get_table_sorting("test_replace_txn_reset")), 0)
+})
+
+test_that("keys set in a transaction that was rolled back do not leak into a later replace", {
+  skip_if_not_installed("duckdb")
+  skip_if_not_installed("dplyr")
+
+  lake <- create_temp_ducklake()
+  on.exit(cleanup_temp_ducklake(lake), add = TRUE)
+
+  create_table(data.frame(grp = c("a", "b"), id = 1:2), "test_replace_txn_leak")
+  suppressMessages({
+    begin_transaction()
+    set_table_partitioning("test_replace_txn_leak", "grp")
+    rollback_transaction()
+  })
+
+  suppressMessages(with_transaction(
+    get_ducklake_table("test_replace_txn_leak") |>
+      dplyr::mutate(id = id * 10L) |>
+      replace_table("test_replace_txn_leak")
+  ))
+
+  expect_equal(nrow(get_table_partitions("test_replace_txn_leak")), 0)
+})
+
+test_that("pending keys are noted only inside a transaction and follow every rewrite in it", {
+  skip_if_not_installed("duckdb")
+  skip_if_not_installed("dplyr")
+
+  lake <- create_temp_ducklake()
+  on.exit(cleanup_temp_ducklake(lake), add = TRUE)
+  env <- get_ducklake_env()
+
+  create_table(
+    data.frame(grp = c("a", "b"), id = 1:2, extra = c(5, 6)),
+    "test_replace_txn_edges"
+  )
+
+  # autocommit: the keys are committed at once, so nothing is kept
+  suppressMessages(set_table_sorting("test_replace_txn_edges", "extra"))
+  key <- paste(lake$ducklake_name, "main", "test_replace_txn_edges", sep = ".")
+  expect_null(env$pending_keys[[key]])
+
+  suppressMessages(with_transaction({
+    set_table_partitioning("test_replace_txn_edges", "grp")
+    set_table_sorting("test_replace_txn_edges", c("id", "extra DESC"))
+    # the first rewrite drops a sort column; the second has both keys to keep
+    get_ducklake_table("test_replace_txn_edges") |>
+      dplyr::select(-extra) |>
+      replace_table("test_replace_txn_edges")
+    get_ducklake_table("test_replace_txn_edges") |>
+      dplyr::mutate(id = id * 10L) |>
+      replace_table("test_replace_txn_edges")
+  }))
+
+  expect_equal(get_table_partitions("test_replace_txn_edges")$column_name, "grp")
+  expect_equal(get_table_sorting("test_replace_txn_edges")$expression, "id")
+})
+
 test_that("replace_table inside a transaction warns about table options it cannot carry over", {
   skip_if_not_installed("duckdb")
   skip_if_not_installed("dplyr")

@@ -176,6 +176,19 @@ format_timestamp <- function(x) {
 #' @returns `TRUE` if a transaction is open, otherwise `FALSE`.
 #' @noRd
 in_transaction <- function(conn = get_ducklake_connection()) {
+  !is.na(open_transaction_id(conn))
+}
+
+#' The id of the connection's open transaction
+#'
+#' Read the way `in_transaction()` describes. The id is constant while the
+#' transaction is open and is not handed out again, so it identifies the
+#' transaction to anything that has to be forgotten when it ends.
+#'
+#' @param conn A DBI connection.
+#' @returns The transaction id, or `NA` when no transaction is open.
+#' @noRd
+open_transaction_id <- function(conn = get_ducklake_connection()) {
   ids <- tryCatch(
     c(
       DBI::dbGetQuery(conn, "SELECT current_transaction_id() AS id")$id,
@@ -183,7 +196,7 @@ in_transaction <- function(conn = get_ducklake_connection()) {
     ),
     error = function(e) NULL
   )
-  length(ids) == 2 && ids[1] == ids[2]
+  if (length(ids) == 2 && ids[1] == ids[2]) ids[[1]] else NA
 }
 
 #' Quote a value as a SQL string literal

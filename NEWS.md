@@ -67,6 +67,18 @@
   forms `set_option()` refuses, so the reapply failed after the data had
   already been replaced and the option stayed behind on the dropped table.
 
+* `replace_table()` respects partition and sort keys changed earlier in the
+  same transaction. It reads the keys to carry over from DuckLake's
+  metadata tables, which hold committed rows only, and no other surface
+  shows pending keys. A table given keys with `set_table_partitioning()` or
+  `set_table_sorting()` and rewritten in one transaction therefore lost
+  them, and keys removed with `reset_table_partitioning()` or
+  `reset_table_sorting()` came back. Those four functions now note what
+  they did while a transaction is open, tagged with its transaction id so
+  that nothing outlives it, and the rewrite uses the note. Keys changed
+  with a raw `ALTER TABLE` statement in the same transaction are still not
+  seen.
+
 * The lifecycle stage is now stable, with ducklake on CRAN since 0.6.0
   (published 2026-09-09): the interface is settled, and any breaking
   change will come with a deprecation cycle.

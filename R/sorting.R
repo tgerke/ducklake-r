@@ -77,6 +77,7 @@ set_table_sorting <- function(table_name, sort_by) {
     ),
     conn = conn
   )
+  stash_pending_keys(table_name, "sorting", sort_by, conn)
   dl_inform(c(
     "Table {.val {table_name}} is now sorted by {.val {sort_by}}.",
     "i" = "Only newly written data is sorted; existing files keep their layout until compaction."
@@ -119,6 +120,7 @@ reset_table_sorting <- function(table_name) {
     ),
     conn = conn
   )
+  stash_pending_keys(table_name, "sorting", character(), conn)
   dl_inform("Sort order removed from table {.val {table_name}}.")
 
   invisible(NULL)
