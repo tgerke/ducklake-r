@@ -1,3 +1,5 @@
+# ducklake (development version)
+
 # ducklake 0.9.0
 
 * New `view_table_changes()` opens a table's change feed in an interactive
