@@ -37,6 +37,11 @@ land as one snapshot. Inside
 [`with_transaction()`](https://tgerke.github.io/ducklake-r/reference/with_transaction.md)
 they join the open transaction instead.
 
+DuckLake accepts column comments on tables only. A view takes a comment
+of its own through
+[`set_table_comment()`](https://tgerke.github.io/ducklake-r/reference/set_table_comment.md),
+but not on its columns.
+
 ## See also
 
 [`set_table_comment()`](https://tgerke.github.io/ducklake-r/reference/set_table_comment.md),

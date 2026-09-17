@@ -128,11 +128,18 @@ Query and restore historical data
 Comments and variable labels stored in the lake
 
 - [`set_table_comment()`](https://tgerke.github.io/ducklake-r/reference/set_table_comment.md)
-  : Set the comment on a DuckLake table
+  : Set the comment on a DuckLake table or view
 - [`set_column_comments()`](https://tgerke.github.io/ducklake-r/reference/set_column_comments.md)
   : Set column comments on a DuckLake table
 - [`get_table_comments()`](https://tgerke.github.io/ducklake-r/reference/get_table_comments.md)
   : Read table, view, and column comments from a DuckLake catalog
+
+## Data Checks
+
+Validation rules stored in the lake as views
+
+- [`run_checks()`](https://tgerke.github.io/ducklake-r/reference/run_checks.md)
+  : Run the data checks stored in a schema
 
 ## Metadata
 

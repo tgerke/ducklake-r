@@ -3,6 +3,7 @@ pkgdown: 2.2.1
 pkgdown_sha: ~
 articles:
   articles/clinical-trial-datalake: clinical-trial-datalake.html
+  data-checks: data-checks.html
   data-inlining: data-inlining.html
   deployment: deployment.html
   ducklake: ducklake.html
@@ -14,7 +15,7 @@ articles:
   transactions: transactions.html
   views-comments-labels: views-comments-labels.html
   visualizing-your-lake: visualizing-your-lake.html
-last_built: 2026-09-16T16:23Z
+last_built: 2026-09-17T18:30Z
 urls:
   reference: https://tgerke.github.io/ducklake-r/reference
   article: https://tgerke.github.io/ducklake-r/articles

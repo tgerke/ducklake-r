@@ -63,7 +63,7 @@ would onto a table:
 get_ducklake_table("v_efficient_cars") |>
   count(cyl)
 #> # A query:  ?? x 2
-#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpCHc17O/ducklake/ducklake2dfae07ba6a.duckdb]
+#> # Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmph6zY3I/ducklake/ducklake2e5e668ee609.duckdb]
 #>     cyl     n
 #>   <dbl> <dbl>
 #> 1     4     6
@@ -76,7 +76,7 @@ in the lake’s history, like any change to a table:
 
 list_table_snapshots("v_efficient_cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 1           2 2026-09-16 16:24:44              2
+#> 1           2 2026-09-17 18:31:59              2
 #>                                changes        author
 #> 1 views_created, main.v_efficient_cars Data Engineer
 #>                                  commit_message commit_extra_info
@@ -90,7 +90,10 @@ a team’s shared definition of an analysis population, a filter every
 report must apply, or a derived layer that is cheap enough to compute on
 read and so need not be stored. Every client sees the same definition,
 whether it connects from R, Python, or plain SQL, and a change to the
-definition is recorded in the snapshot history.
+definition is recorded in the snapshot history. A validation rule is
+logic of this kind:
+[`vignette("data-checks")`](https://tgerke.github.io/ducklake-r/articles/data-checks.md)
+stores each rule as a view of the rows that break it.
 
 Two cases call for something else. An exploratory pipeline that only you
 use is better kept in your R script under version control, where it can

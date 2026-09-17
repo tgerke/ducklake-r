@@ -130,7 +130,7 @@ further verbs pipe onto a view as they would onto a table:</p>
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"v_efficient_cars"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">cyl</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A query:  ?? x 2</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpCHc17O/ducklake/ducklake2dfae07ba6a.duckdb]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Database: DuckDB 1.5.5 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/Rtmph6zY3I/ducklake/ducklake2e5e668ee609.duckdb]</span></span></span>
 <span><span class="co">#&gt;     cyl     n</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>     4     6</span></span></code></pre></div>
@@ -139,7 +139,7 @@ snapshot in the lake’s history, like any change to a table:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"v_efficient_cars"</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   snapshot_id       snapshot_time schema_version</span></span>
-<span><span class="co">#&gt; 1           2 2026-09-16 16:24:44              2</span></span>
+<span><span class="co">#&gt; 1           2 2026-09-17 18:31:59              2</span></span>
 <span><span class="co">#&gt;                                changes        author</span></span>
 <span><span class="co">#&gt; 1 views_created, main.v_efficient_cars Data Engineer</span></span>
 <span><span class="co">#&gt;                                  commit_message commit_extra_info</span></span>
@@ -152,7 +152,10 @@ you: a team’s shared definition of an analysis population, a filter
 every report must apply, or a derived layer that is cheap enough to
 compute on read and so need not be stored. Every client sees the same
 definition, whether it connects from R, Python, or plain SQL, and a
-change to the definition is recorded in the snapshot history.</p>
+change to the definition is recorded in the snapshot history. A
+validation rule is logic of this kind:
+<code><a href="../articles/data-checks.html">vignette("data-checks")</a></code> stores each rule as a view of the
+rows that break it.</p>
 <p>Two cases call for something else. An exploratory pipeline that only
 you use is better kept in your R script under version control, where it
 can change freely without adding snapshots to a shared lake. And a

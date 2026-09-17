@@ -26,6 +26,41 @@
   dropped by
   [`collect()`](https://dplyr.tidyverse.org/reference/compute.html).
 
+- New
+  [`run_checks()`](https://tgerke.github.io/ducklake-r/reference/run_checks.md)
+  (experimental) runs the data checks stored in a schema. A check is a
+  view that returns the rows breaking a rule, named for the rule and
+  labelled with
+  [`set_table_comment()`](https://tgerke.github.io/ducklake-r/reference/set_table_comment.md),
+  so the rules live in the catalog, are versioned with the data, and run
+  from any client of the lake. The result has one row per check: its
+  label and how many rows fail. Inside
+  [`with_transaction()`](https://tgerke.github.io/ducklake-r/reference/with_transaction.md)
+  the counts include pending writes, so a load that fails a check can be
+  rolled back before it commits, and on a snapshot-pinned attach the
+  rules and the data are both read as of that snapshot.
+  [`vignette("data-checks")`](https://tgerke.github.io/ducklake-r/articles/data-checks.md)
+  walks through it. DuckLake enforces `NOT NULL` and nothing else, and
+  its catalog takes no custom tags from SQL, which is why the rules are
+  views.
+
+- [`set_table_comment()`](https://tgerke.github.io/ducklake-r/reference/set_table_comment.md)
+  comments a view as well as a table. It used to send `COMMENT ON TABLE`
+  for every name, which DuckLake refuses for a view, so
+  [`get_table_comments()`](https://tgerke.github.io/ducklake-r/reference/get_table_comments.md)
+  could read a view’s comment but nothing in the package could write
+  one.
+
+- [`create_view()`](https://tgerke.github.io/ducklake-r/reference/create_view.md)
+  keeps a view’s comment when it replaces the view. DuckLake stores the
+  replacement as a new catalog entry and keys the comment to the entry,
+  so `CREATE OR REPLACE VIEW` by itself drops it.
+  [`create_view()`](https://tgerke.github.io/ducklake-r/reference/create_view.md)
+  reads the comment first and sets it again in the same snapshot, as
+  [`replace_table()`](https://tgerke.github.io/ducklake-r/reference/replace_table.md)
+  does for a table’s comments. A check’s label is its view’s comment, so
+  revising a rule keeps the label.
+
 - The lifecycle stage is now stable, with ducklake on CRAN since 0.6.0
   (published 2026-09-09): the interface is settled, and any breaking
   change will come with a deprecation cycle.

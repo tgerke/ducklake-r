@@ -3,6 +3,7 @@
 <url><loc>https://tgerke.github.io/ducklake-r/LICENSE-text.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/LICENSE.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/articles/clinical-trial-datalake.html</loc></url>
+<url><loc>https://tgerke.github.io/ducklake-r/articles/data-checks.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/articles/data-inlining.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/articles/deployment.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/articles/ducklake.html</loc></url>
@@ -92,6 +93,7 @@
 <url><loc>https://tgerke.github.io/ducklake-r/reference/rows_insert.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/rows_update.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/rows_upsert.html</loc></url>
+<url><loc>https://tgerke.github.io/ducklake-r/reference/run_checks.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/set_column_comments.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/set_column_not_null.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/set_column_type.html</loc></url>

@@ -30,6 +30,8 @@
 
 - [Views, Comments, and
   Labels](https://tgerke.github.io/ducklake-r/articles/views-comments-labels.md):
+- [Data
+  Checks](https://tgerke.github.io/ducklake-r/articles/data-checks.md):
 - [Working with
   Transactions](https://tgerke.github.io/ducklake-r/articles/transactions.md):
 - [Data

@@ -55,9 +55,9 @@ get_ducklake_info()
 #>   ducklake_name backend
 #> 1     info_lake  duckdb
 #>                                                     catalog
-#> 1 /tmp/Rtmp1xnHcn/info_lake_194438ce70b5/info_lake.ducklake
+#> 1 /tmp/RtmpyLm6vz/info_lake_18dd111957c5/info_lake.ducklake
 #>                                 data_path format_version extension_version
-#> 1 /tmp/Rtmp1xnHcn/info_lake_194438ce70b5/            1.0          d8a1881e
+#> 1 /tmp/RtmpyLm6vz/info_lake_18dd111957c5/            1.0          d8a1881e
 #>   encrypted current_snapshot
 #> 1     FALSE                1
 
