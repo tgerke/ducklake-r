@@ -87,8 +87,7 @@
 <li>
 <strong>Lost audit trails</strong>: No automatic tracking of who changed what and when</li>
 <li>
-<strong>Version control gaps</strong>: Multiple dataset versions scattered across folders with unclear provenance<br>
-</li>
+<strong>Version control gaps</strong>: Multiple dataset versions scattered across folders with unclear provenance</li>
 <li>
 <strong>Reproducibility issues</strong>: Inability to recreate analyses from specific time points</li>
 <li>
@@ -297,6 +296,8 @@
 <li>
 <a href="https://tgerke.github.io/ducklake-r/articles/views-comments-labels.html">Views, Comments, and Labels</a> - Shared query logic and documentation that live in the lake</li>
 <li>
+<a href="https://tgerke.github.io/ducklake-r/articles/data-checks.html">Data Checks</a> - Validation rules stored in the lake as views, run on demand or as a gate before a commit</li>
+<li>
 <a href="https://tgerke.github.io/ducklake-r/articles/data-inlining.html">Data Inlining</a> - Streaming-friendly small writes</li>
 <li>
 <a href="https://tgerke.github.io/ducklake-r/articles/transactions.html">Transactions</a> - ACID transaction support</li>
@@ -305,7 +306,7 @@
 <li>
 <a href="https://tgerke.github.io/ducklake-r/articles/storage-and-backups.html">Storage and Backups</a> - Back up and recover your lake</li>
 <li>
-<a href="https://tgerke.github.io/ducklake-r/articles/visualizing-your-lake.html">Visualizing Your Lake</a> - Plot snapshot history, change volume, and storage layout</li>
+<a href="https://tgerke.github.io/ducklake-r/articles/visualizing-your-lake.html">Visualizing Your Lake</a> - Plot snapshot history, change volume, and storage layout, and browse changed rows in an interactive viewer</li>
 <li>
 <a href="https://tgerke.github.io/ducklake-r/articles/quack-remote-access.html">Quack Remote Access</a> - Share a DuckLake over the network with the Quack protocol</li>
 </ul>
@@ -315,50 +316,51 @@
 </h2>
 <ul>
 <li>
-<strong>Versioned data lake</strong>: Every data change automatically tracked with timestamps and metadata</li>
+<strong>Versioned data lake</strong>: Every data change is tracked automatically as a snapshot, with timestamps and metadata, and a lake keeps as many snapshots as it needs without frequent compaction</li>
 <li>
-<strong>Multi-backend catalogs</strong>: Use DuckDB (default), PostgreSQL, SQLite, or MySQL as the catalog database — enables concurrent multi-client access with PostgreSQL or SQLite (<a href="https://ducklake.select/docs/stable/specification/introduction" class="external-link">DuckLake 1.0 spec</a>)</li>
+<strong>Multi-backend catalogs</strong>: Use DuckDB (default), PostgreSQL, SQLite, or MySQL as the catalog database. A PostgreSQL or SQLite catalog lets several clients use the lake at once (<a href="https://ducklake.select/docs/stable/specification/introduction" class="external-link">DuckLake 1.0 spec</a>)</li>
 <li>
 <strong>Remote access over Quack</strong>: Serve a DuckLake to other R sessions over the network and let several people read and write it at once, using DuckDB’s Quack protocol</li>
 <li>
-<strong>Lightweight snapshots</strong>: Create unlimited snapshots without frequent compacting steps</li>
-<li>
-<strong>Medallion architecture</strong>: Bronze/silver/gold layers for data lineage and quality</li>
-<li>
 <strong>ACID transactions</strong>: Atomic updates with concurrent access and transactional guarantees over multi-table operations; <code><a href="reference/set_ducklake_retry.html">set_ducklake_retry()</a></code> tunes how DuckLake retries transactions that race with another writer</li>
 <li>
-<strong>Time travel</strong>: Query data exactly as it existed at any point in time—essential for reproducibility. Pin a whole session to a snapshot with <code>attach_ducklake(snapshot_version = ...)</code>
+<strong>Time travel</strong>: Query data exactly as it existed at any point in time, so an analysis can be rerun against the data it first saw. Pin a whole session to a snapshot with <code>attach_ducklake(snapshot_version = ...)</code>
 </li>
+<li>
+<strong>Change feed and viewer</strong>: <code><a href="reference/get_table_changes.html">get_table_changes()</a></code> returns every row inserted, updated, or deleted between two snapshots as a lazy table, and <code><a href="reference/view_table_changes.html">view_table_changes()</a></code> opens that feed in an interactive viewer with the changed cells highlighted. <code><a href="reference/plot_snapshots.html">plot_snapshots()</a></code>, <code><a href="reference/plot_table_changes.html">plot_table_changes()</a></code>, and <code><a href="reference/plot_table_files.html">plot_table_files()</a></code> chart a lake’s history, change volume, and file layout</li>
 <li>
 <strong>Performance-oriented</strong>: Uses Parquet columnar storage with statistics for filter pushdown, enabling fast queries on large datasets. Partitioning (<code><a href="reference/set_table_partitioning.html">set_table_partitioning()</a></code>) and sorted tables (<code><a href="reference/set_table_sorting.html">set_table_sorting()</a></code>) prune files on large tables</li>
 <li>
 <strong>Migrate Parquet in place</strong>: <code><a href="reference/add_data_files.html">add_data_files()</a></code> registers existing Parquet files with the lake without copying or rewriting them</li>
 <li>
-<strong>Cloud storage</strong>: Keep data files on S3, GCS, R2, or Azure — <code><a href="reference/create_storage_secret.html">create_storage_secret()</a></code> handles credentials</li>
+<strong>Cloud storage</strong>: Keep data files on S3, GCS, R2, or Azure, with <code><a href="reference/create_storage_secret.html">create_storage_secret()</a></code> handling the credentials</li>
 <li>
 <strong>Tunable</strong>: <code><a href="reference/set_ducklake_option.html">set_ducklake_option()</a></code> adjusts DuckLake’s persisted settings (compression, file sizes, commit-message policy) at lake, schema, or table scope</li>
 <li>
-<strong>Schema evolution in place</strong>: <code><a href="reference/add_table_column.html">add_table_column()</a></code>, <code><a href="reference/drop_table_column.html">drop_table_column()</a></code>, <code><a href="reference/rename_table_column.html">rename_table_column()</a></code>, <code><a href="reference/set_column_type.html">set_column_type()</a></code>, and <code><a href="reference/rename_ducklake_table.html">rename_ducklake_table()</a></code> change a table’s shape as metadata-only operations — no data rewrite, and every earlier schema stays reachable through time travel</li>
+<strong>Maintenance and backups</strong>: One call to <code><a href="reference/checkpoint_ducklake.html">checkpoint_ducklake()</a></code> flushes inlined data, merges small files, rewrites heavily deleted ones, and, when the lake has a retention policy, expires old snapshots and deletes the files they released. Each step is also a function of its own, and <code><a href="reference/backup_ducklake.html">backup_ducklake()</a></code> makes a timestamped copy of the data files and of a file-based catalog</li>
+<li>
+<strong>Schema evolution in place</strong>: <code><a href="reference/add_table_column.html">add_table_column()</a></code>, <code><a href="reference/drop_table_column.html">drop_table_column()</a></code>, <code><a href="reference/rename_table_column.html">rename_table_column()</a></code>, <code><a href="reference/set_column_type.html">set_column_type()</a></code>, and <code><a href="reference/rename_ducklake_table.html">rename_ducklake_table()</a></code> change a table’s shape as metadata-only operations. No data is rewritten, and every earlier schema stays reachable through time travel</li>
 <li>
 <strong>Variable labels survive the lake</strong>: <code><a href="reference/create_table.html">create_table()</a></code> stores haven/labelled column labels as catalog comments and <code><a href="https://dplyr.tidyverse.org/reference/compute.html" class="external-link">collect()</a></code> restores them, so gtsummary and gt keep displaying them; <code><a href="reference/set_table_comment.html">set_table_comment()</a></code>, <code><a href="reference/set_column_comments.html">set_column_comments()</a></code>, and <code><a href="reference/get_table_comments.html">get_table_comments()</a></code> manage documentation any client of the lake can read</li>
 <li>
-<strong>Views</strong>: <code><a href="reference/create_view.html">create_view()</a></code> stores a dplyr pipeline as a SQL view in the lake — shared logic that always reads current data; <code><a href="reference/list_ducklake_tables.html">list_ducklake_tables()</a></code> shows what’s there</li>
+<strong>Views</strong>: <code><a href="reference/create_view.html">create_view()</a></code> stores a dplyr pipeline as a SQL view in the lake, so shared logic always reads current data. <code><a href="reference/list_ducklake_tables.html">list_ducklake_tables()</a></code> shows what’s there</li>
 <li>
-<strong>Schemas</strong>: Organize layers or studies with <code><a href="reference/create_schema.html">create_schema()</a></code>; every function accepts <code>"schema.table"</code>
+<strong>Data checks</strong> (experimental): <code><a href="reference/create_check.html">create_check()</a></code> stores a validation rule in the lake as a view that returns the rows breaking it, and <code><a href="reference/run_checks.html">run_checks()</a></code> counts the failing rows for every rule. The rules are versioned with the data and run from any client of the lake. Inside <code><a href="reference/with_transaction.html">with_transaction()</a></code> they see pending writes, so a load that fails a check can be rolled back before it commits</li>
+<li>
+<strong>Schemas</strong>: <code><a href="reference/create_schema.html">create_schema()</a></code> organizes a lake into medallion layers (bronze, silver, gold), studies, or any other grouping, and every function accepts <code>"schema.table"</code>
 </li>
 <li>
 <strong>Tidyverse interface</strong>: Familiar dplyr syntax for data manipulation</li>
 <li>
 <strong>In-database writes</strong>: <code><a href="reference/create_table.html">create_table()</a></code> and <code><a href="reference/replace_table.html">replace_table()</a></code> run dplyr pipelines inside DuckDB and write the result straight into the lake, so derived layers never pass through R memory</li>
 <li>
-<strong>Encryption</strong>: Opt-in Parquet encryption with <code>attach_ducklake(encrypted = TRUE)</code>
-</li>
+<strong>Encryption</strong>: Opt-in Parquet encryption with <code>attach_ducklake(encrypted = TRUE)</code>. The Parquet keys are kept in the catalog, and the <code>meta_encryption_key</code> argument encrypts a DuckDB catalog file as well</li>
 <li>
-<strong>A write style for every job</strong>: <code><a href="reference/rows_insert.html">rows_insert()</a></code>, <code><a href="reference/rows_update.html">rows_update()</a></code>, <code><a href="reference/rows_delete.html">rows_delete()</a></code>, and <code><a href="reference/rows_upsert.html">rows_upsert()</a></code> for incremental changes; <code><a href="reference/merge_into.html">merge_into()</a></code> for conditional merges and staging-table syncs; <code><a href="reference/replace_table.html">replace_table()</a></code> pipelines for bulk rewrites — all fully versioned</li>
+<strong>A write style for every job</strong>: <code><a href="reference/rows_insert.html">rows_insert()</a></code>, <code><a href="reference/rows_update.html">rows_update()</a></code>, <code><a href="reference/rows_delete.html">rows_delete()</a></code>, and <code><a href="reference/rows_upsert.html">rows_upsert()</a></code> for incremental changes; <code><a href="reference/merge_into.html">merge_into()</a></code> for conditional merges and staging-table syncs; <code><a href="reference/replace_table.html">replace_table()</a></code> pipelines for bulk rewrites. All of them are versioned</li>
 <li>
-<strong>Complete audit trails</strong>: Who changed what, when, and why—suitable for regulated industries</li>
+<strong>Complete audit trails</strong>: Who changed what, when, and why, in a form suitable for regulated industries. <code>options(ducklake.author = ...)</code> names the author once for a whole session</li>
 <li>
-<strong>Seamless integration</strong>: Works with duckdb, DBI, dbplyr, and the broader tidyverse ecosystem</li>
+<strong>Plain DBI underneath</strong>: Lake tables are ordinary dbplyr lazy tables on a duckdb connection, so DBI, dbplyr, and the rest of the tidyverse work on them directly. <code><a href="reference/get_ducklake_connection.html">get_ducklake_connection()</a></code> hands you the connection</li>
 </ul>
 </div>
 </div>
