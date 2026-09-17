@@ -31,10 +31,18 @@ A data frame with one row per comment: `object_type` (`"table"`,
 (`NA` for tables and views), and `comment`. Zero rows when nothing is
 commented.
 
+## Details
+
+The comments are read through DuckDB's catalog functions, so they match
+what the session sees. On a lake attached with `snapshot_version` or
+`snapshot_time` they are the comments as of that snapshot, and inside an
+open transaction they include the ones it has set and not yet committed.
+
 ## See also
 
 [`get_metadata_table()`](https://tgerke.github.io/ducklake-r/reference/get_metadata_table.md)
-for the raw `ducklake_tag` and `ducklake_column_tag` catalog tables.
+for the raw `ducklake_tag` and `ducklake_column_tag` catalog tables,
+which keep every version of a comment.
 
 Other table documentation:
 [`set_column_comments()`](https://tgerke.github.io/ducklake-r/reference/set_column_comments.md),

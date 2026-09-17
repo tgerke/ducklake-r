@@ -61,6 +61,22 @@
   does for a table’s comments. A check’s label is its view’s comment, so
   revising a rule keeps the label.
 
+- [`get_table_comments()`](https://tgerke.github.io/ducklake-r/reference/get_table_comments.md)
+  reads comments through DuckDB’s catalog functions (`duckdb_tables()`,
+  `duckdb_views()`, `duckdb_columns()`) instead of the DuckLake metadata
+  tables. It used to return the lake’s latest committed comments
+  whatever the session was looking at, which was wrong in two
+  situations. On a lake attached with `snapshot_version` or
+  `snapshot_time` it returned present-day comments, so
+  [`collect()`](https://dplyr.tidyverse.org/reference/compute.html)
+  restored labels that were not in force at that snapshot. Inside an
+  open transaction it missed the comments that transaction had set, so a
+  [`replace_table()`](https://tgerke.github.io/ducklake-r/reference/replace_table.md)
+  there put the older committed comments back over them, and
+  [`create_table()`](https://tgerke.github.io/ducklake-r/reference/create_table.md)
+  from a query did not inherit them. All of these now follow what the
+  session sees.
+
 - The lifecycle stage is now stable, with ducklake on CRAN since 0.6.0
   (published 2026-09-09): the interface is settled, and any breaking
   change will come with a deprecation cycle.

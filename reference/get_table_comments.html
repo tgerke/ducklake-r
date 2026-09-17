@@ -82,9 +82,17 @@ schema.</p></dd>
 when nothing is commented.</p>
     </div>
     <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>The comments are read through DuckDB's catalog functions, so they match
+what the session sees. On a lake attached with <code>snapshot_version</code> or
+<code>snapshot_time</code> they are the comments as of that snapshot, and inside an
+open transaction they include the ones it has set and not yet committed.</p>
+    </div>
+    <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
     <div class="dont-index"><p><code><a href="get_metadata_table.html">get_metadata_table()</a></code> for the raw <code>ducklake_tag</code> and
-<code>ducklake_column_tag</code> catalog tables.</p>
+<code>ducklake_column_tag</code> catalog tables, which keep every version of a
+comment.</p>
 <p>Other table documentation:
 <code><a href="set_column_comments.html">set_column_comments()</a></code>,
 <code><a href="set_table_comment.html">set_table_comment()</a></code></p></div>
