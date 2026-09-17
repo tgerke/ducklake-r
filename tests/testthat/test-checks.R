@@ -1,9 +1,10 @@
-# UNIT TESTS: run_checks()
+# UNIT TESTS: create_check() and run_checks()
 #
 # A check is a view that returns the rows breaking a rule. These tests cover
-# the counts and labels, the empty and missing schema, quoting, lake scope,
-# and the behaviors the pattern rests on: a gate inside a transaction, a
-# rebuilt base table, and a snapshot-pinned attach.
+# writing one from the rule as stated, the counts and labels, the empty and
+# missing schema, quoting, lake scope, and the behaviors the pattern rests
+# on: a gate inside a transaction, a rebuilt base table, and a
+# snapshot-pinned attach.
 
 # Two checks on one table: `amount_positive` is labelled, `id_present` is
 # not. Tables are read by schema-qualified name so the views bind whichever
@@ -19,6 +20,135 @@ create_test_checks <- function(table_name) {
     dplyr::filter(is.na(id)) |>
     create_view("checks.id_present")
 }
+
+test_that("create_check takes the rule as stated and keeps the rows that break it", {
+  skip_if_not_installed("duckdb")
+  skip_if_not_installed("dplyr")
+
+  lake <- create_temp_ducklake()
+  on.exit(cleanup_temp_ducklake(lake), add = TRUE)
+
+  create_table(
+    data.frame(id = 1:5, dose = c(10, 0, NA, 5, 0), site = c("a", "b", "a", "b", "a")),
+    "test_cc_base"
+  )
+  before <- max(list_table_snapshots()$snapshot_id)
+
+  # a prohibition, stated as it is said: no double negative to write
+  expect_message(
+    get_ducklake_table("main.test_cc_base") |>
+      create_check("dose_not_zero", dose != 0, label = "dose is not 0", listing = c(id, dose)),
+    "dose_not_zero"
+  )
+
+  # the schema, the view, and the label are one snapshot
+  expect_equal(max(list_table_snapshots()$snapshot_id) - before, 1)
+  expect_false(ducklake:::in_transaction(lake$conn))
+
+  result <- run_checks()
+  expect_equal(result$check, "dose_not_zero")
+  expect_equal(result$label, "dose is not 0")
+  expect_equal(result$n_fail, 2)
+
+  # the listing, and a missing dose passes
+  failing <- dplyr::collect(get_ducklake_table("checks.dose_not_zero"))
+  expect_named(failing, c("id", "dose"))
+  expect_equal(sort(failing$id), c(2, 5))
+})
+
+test_that("create_check selects the same rows as the failure written by hand", {
+  skip_if_not_installed("duckdb")
+  skip_if_not_installed("dplyr")
+
+  lake <- create_temp_ducklake()
+  on.exit(cleanup_temp_ducklake(lake), add = TRUE)
+
+  create_table(
+    data.frame(id = 1:6, a = c(1, -1, NA, 2, NA, -3), b = c(1, 1, 1, NA, -1, NA)),
+    "test_cc_logic"
+  )
+  suppressMessages({
+    get_ducklake_table("main.test_cc_logic") |>
+      create_check("both_positive", a > 0 & b > 0, label = "a and b are above zero")
+    # De Morgan by hand, under three-valued logic
+    get_ducklake_table("main.test_cc_logic") |>
+      dplyr::filter(a <= 0 | b <= 0) |>
+      create_view("checks.both_positive_by_hand")
+  })
+
+  stated <- dplyr::pull(get_ducklake_table("checks.both_positive"), id)
+  by_hand <- dplyr::pull(get_ducklake_table("checks.both_positive_by_hand"), id)
+  expect_equal(sort(stated), sort(by_hand))
+  expect_equal(sort(stated), c(2, 5, 6))
+})
+
+test_that("create_check joins a transaction and revises a check in one snapshot", {
+  skip_if_not_installed("duckdb")
+  skip_if_not_installed("dplyr")
+
+  lake <- create_temp_ducklake()
+  on.exit(cleanup_temp_ducklake(lake), add = TRUE)
+
+  create_table(data.frame(id = 1:4, hp = c(30, 90, 450, 120)), "test_cc_revise")
+  suppressMessages(
+    get_ducklake_table("main.test_cc_revise") |>
+      create_check("hp_plausible", hp > 0 & hp < 500, label = "hp is between 0 and 500")
+  )
+  expect_equal(run_checks()$n_fail, 0)
+  before <- max(list_table_snapshots()$snapshot_id)
+
+  suppressMessages(with_transaction(
+    get_ducklake_table("main.test_cc_revise") |>
+      create_check("hp_plausible", hp >= 40 & hp <= 400, label = "hp is between 40 and 400"),
+    author = "Data Manager", commit_message = "Narrow the plausible hp range"
+  ))
+
+  expect_equal(max(list_table_snapshots()$snapshot_id) - before, 1)
+  snapshot <- list_table_snapshots()
+  expect_equal(snapshot$author[nrow(snapshot)], "Data Manager")
+  result <- run_checks()
+  expect_equal(result$label, "hp is between 40 and 400")
+  expect_equal(result$n_fail, 2)
+
+  # replace = FALSE refuses an existing check, and rolls its transaction back
+  expect_error(
+    suppressMessages(
+      get_ducklake_table("main.test_cc_revise") |>
+        create_check("hp_plausible", hp > 0, label = "hp is positive", replace = FALSE)
+    )
+  )
+  expect_false(ducklake:::in_transaction(lake$conn))
+  expect_equal(run_checks()$label, "hp is between 40 and 400")
+})
+
+test_that("create_check resolves its schema and validates its input", {
+  skip_if_not_installed("duckdb")
+  skip_if_not_installed("dplyr")
+
+  lake <- create_temp_ducklake()
+  on.exit(cleanup_temp_ducklake(lake), add = TRUE)
+
+  create_table(data.frame(id = 1:3), "test_cc_schema")
+  tbl <- get_ducklake_table("main.test_cc_schema")
+  suppressMessages({
+    create_check(tbl, "qc.id_small", id < 3, label = "id is below 3")
+    create_check(tbl, "ID under 3; DROP TABLE x", id < 3, label = "quoted", schema_name = "Edit Checks")
+  })
+  expect_equal(run_checks("qc")$check, "id_small")
+  expect_equal(run_checks("Edit Checks")$check, "ID under 3; DROP TABLE x")
+  expect_equal(run_checks("Edit Checks")$n_fail, 1)
+
+  expect_error(
+    create_check(tbl, "qc.id_small", id < 3, label = "x", schema_name = "checks"),
+    "names schema"
+  )
+  expect_error(create_check(tbl, "no_label", id < 3), "label")
+  expect_error(create_check(tbl, "empty_label", id < 3, label = ""), "label")
+  expect_error(
+    create_check(data.frame(id = 1), "from_df", id < 3, label = "x"),
+    "lazy table"
+  )
+})
 
 test_that("run_checks counts failing rows and reads labels", {
   skip_if_not_installed("duckdb")
