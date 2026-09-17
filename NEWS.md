@@ -79,6 +79,12 @@
   with a raw `ALTER TABLE` statement in the same transaction are still not
   seen.
 
+* `restore_table_version()` refuses to run inside an open transaction, and
+  says why, before it touches anything. It commits for itself, so its own
+  `BEGIN` failed there with "cannot start a transaction within a
+  transaction", under a hint about snapshots that did not apply, and the
+  error handler's rollback discarded the caller's uncommitted work.
+
 * The lifecycle stage is now stable, with ducklake on CRAN since 0.6.0
   (published 2026-09-09): the interface is settled, and any breaking
   change will come with a deprecation cycle.

@@ -256,6 +256,12 @@ list_table_snapshots <- function(table_name = NULL, ducklake_name = NULL, conn =
 #' a transaction. Because the restore creates a new snapshot, it is itself
 #' reversible with another \code{restore_table_version()} call.
 #'
+#' The restore commits for itself, with its own author and message, so it
+#' cannot join a transaction that is already open and says so before it
+#' touches anything. To restore to a version and change it in one snapshot,
+#' pipe [get_ducklake_table_version()] into [replace_table()] inside
+#' [with_transaction()].
+#'
 #' The restored table gets a new table id, and DuckLake keeps comments,
 #' partition keys, sort order, and table-scoped options against the id, so
 #' they are captured beforehand and put back: comments and keys for the
@@ -307,6 +313,14 @@ restore_table_version <- function(table_name, version = NULL, timestamp = NULL,
   }
   if (!is.null(version) && !is.null(timestamp)) {
     cli::cli_abort("Cannot provide both {.arg version} and {.arg timestamp}.")
+  }
+  # Its own BEGIN would fail there, and the error handler's rollback would
+  # then take the caller's uncommitted work with it
+  if (in_transaction(conn)) {
+    cli::cli_abort(c(
+      "{.fun restore_table_version} cannot run inside an open transaction.",
+      "i" = "It commits the restore as a snapshot of its own. Commit or roll back first."
+    ))
   }
 
   if (!is.null(version)) {

@@ -482,6 +482,35 @@ test_that("replace_table and restore_table_version carry size and version option
   )
 })
 
+test_that("restore_table_version refuses an open transaction and leaves it alone", {
+  skip_if_not_installed("duckdb")
+  skip_if_not_installed("dplyr")
+
+  lake <- create_temp_ducklake()
+  on.exit(cleanup_temp_ducklake(lake), add = TRUE)
+
+  create_table(data.frame(id = 1:2), "test_restore_in_txn")
+  v1 <- max(list_table_snapshots("test_restore_in_txn")$snapshot_id)
+  suppressMessages(
+    rows_insert(get_ducklake_table("test_restore_in_txn"), data.frame(id = 3L), by = "id")
+  )
+
+  suppressMessages(begin_transaction())
+  suppressMessages(
+    rows_insert(get_ducklake_table("test_restore_in_txn"), data.frame(id = 4L), by = "id")
+  )
+  expect_error(
+    restore_table_version("test_restore_in_txn", version = v1),
+    "open transaction"
+  )
+  # the caller's pending insert is still there to commit
+  expect_true(ducklake:::in_transaction(lake$conn))
+  suppressMessages(commit_transaction())
+  expect_equal(
+    sort(dplyr::pull(get_ducklake_table("test_restore_in_txn"), id)), 1:4
+  )
+})
+
 test_that("restore_table_version keeps comments and partition keys", {
   skip_if_not_installed("duckdb")
   skip_if_not_installed("dplyr")

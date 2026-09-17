@@ -48,6 +48,12 @@ temporary DuckDB table, then drops and recreates \code{t} from it inside
 a transaction. Because the restore creates a new snapshot, it is itself
 reversible with another \code{restore_table_version()} call.
 
+The restore commits for itself, with its own author and message, so it
+cannot join a transaction that is already open and says so before it
+touches anything. To restore to a version and change it in one snapshot,
+pipe \code{\link[=get_ducklake_table_version]{get_ducklake_table_version()}} into \code{\link[=replace_table]{replace_table()}} inside
+\code{\link[=with_transaction]{with_transaction()}}.
+
 The restored table gets a new table id, and DuckLake keeps comments,
 partition keys, sort order, and table-scoped options against the id, so
 they are captured beforehand and put back: comments and keys for the
