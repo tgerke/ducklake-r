@@ -21,10 +21,13 @@
 #' [set_table_comment()] does not carry over. Set it again in the same
 #' transaction as the replacement.
 #'
-#' A view looks up an unqualified table name in its own schema first. A view
-#' in another schema that shares its name with the table it reads
-#' (`checks.cars` over `cars`) therefore reads itself and fails with a
-#' recursion error, so give such views names of their own.
+#' A view kept in a schema of its own should read its tables by
+#' schema-qualified name: `get_ducklake_table("main.cars")`, not `"cars"`.
+#' DuckDB resolves an unqualified name from the view's schema and the
+#' session's current database, so the view can fail to bind in a session
+#' where another database is current, and a view that shares its name with
+#' the table it reads (`checks.cars` over `cars`) reads itself and fails
+#' with a recursion error.
 #'
 #' @returns Invisibly returns `NULL`.
 #' @family table operations

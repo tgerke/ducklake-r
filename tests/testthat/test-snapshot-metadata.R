@@ -44,6 +44,27 @@ test_that("with_transaction sets commit_extra_info via CALL API", {
   cleanup_temp_ducklake(lake)
 })
 
+test_that("with_transaction evaluates commit_extra_info after expr", {
+  skip_if_not_installed("duckdb")
+  skip_if_not_installed("dplyr")
+
+  lake <- create_temp_ducklake()
+
+  # the value is computed inside the block it describes, e.g. check results
+  with_transaction(
+    {
+      create_table(mtcars[1:5, ], "meta_lazy_extra")
+      rows_written <- 5
+    },
+    commit_extra_info = paste("rows:", rows_written)
+  )
+
+  snapshots <- list_table_snapshots("meta_lazy_extra")
+  expect_equal(snapshots$commit_extra_info, "rows: 5")
+
+  cleanup_temp_ducklake(lake)
+})
+
 # --- commit_transaction() metadata (uses CALL API directly) ---
 
 test_that("commit_transaction sets metadata via CALL API", {
