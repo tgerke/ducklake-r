@@ -35,15 +35,17 @@ views.
 ## Details
 
 Write a check with
+[`create_check()`](https://tgerke.github.io/ducklake-r/reference/create_check.md),
+which takes the rule as it is said and keeps the rows that break it, or
+with
 [`create_view()`](https://tgerke.github.io/ducklake-r/reference/create_view.md)
-from a pipeline that keeps the failing rows, such as
-`filter(!(cyl %in% c(4, 6, 8)))`, and label it with
+from a pipeline that returns the failing rows itself, labelled with
 [`set_table_comment()`](https://tgerke.github.io/ducklake-r/reference/set_table_comment.md).
-`NOT (condition)` is not true for a row where the condition is `NA`, so
-a missing value passes unless a check of its own looks for it. Read the
-table by its schema-qualified name, `get_ducklake_table("main.cars")`:
-the view then binds whichever database is current, for this function's
-`ducklake_name` and for other clients of the lake.
+A row where the rule is `NA` passes, so a missing value needs a rule of
+its own. Read the table by its schema-qualified name,
+`get_ducklake_table("main.cars")`: the view then binds whichever
+database is current, for this function's `ducklake_name` and for other
+clients of the lake.
 
 Every view in the schema counts as a check, so keep other views
 elsewhere. A view that summarizes, returning a row of totals, reports a
@@ -61,9 +63,7 @@ both read as of that snapshot.
 
 ## See also
 
-[`create_view()`](https://tgerke.github.io/ducklake-r/reference/create_view.md)
-and
-[`set_table_comment()`](https://tgerke.github.io/ducklake-r/reference/set_table_comment.md)
+[`create_check()`](https://tgerke.github.io/ducklake-r/reference/create_check.md)
 to write a check,
 [`with_transaction()`](https://tgerke.github.io/ducklake-r/reference/with_transaction.md)
 to gate a load on the result, and
@@ -77,15 +77,9 @@ dir.create(lake_dir)
 attach_ducklake("checks_lake", lake_path = lake_dir)
 create_table(mtcars, "cars")
 
-# A check is a view of the rows that break a rule
-create_schema("checks")
-#> Created schema "checks".
 get_ducklake_table("main.cars") |>
-  dplyr::filter(!(cyl %in% c(4, 6, 8))) |>
-  create_view("checks.cyl_known")
-#> Created view "checks.cyl_known".
-set_table_comment("checks.cyl_known", "cyl is 4, 6, or 8")
-#> Commented view "checks.cyl_known".
+  create_check("cyl_known", cyl %in% c(4, 6, 8), label = "cyl is 4, 6, or 8")
+#> Created check "cyl_known" in "checks": cyl is 4, 6, or 8
 
 run_checks()
 #>       check             label n_fail

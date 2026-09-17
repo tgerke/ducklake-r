@@ -24,13 +24,15 @@ hold views. A view that returns the rows breaking a rule is a check: the
 rule’s logic sits in the catalog, it is versioned with the data it
 describes, and any client of the lake runs it by reading the view.
 
-This article writes checks that way and runs them with
+This article writes checks that way with
+[`create_check()`](https://tgerke.github.io/ducklake-r/reference/create_check.md)
+and runs them with
 [`run_checks()`](https://tgerke.github.io/ducklake-r/reference/run_checks.md).
 Then it uses what a lake adds: a load that rolls back when a check
 fails, the outcome of the checks recorded on a commit, and the rules and
-the data read together as of an earlier snapshot.
-[`run_checks()`](https://tgerke.github.io/ducklake-r/reference/run_checks.md)
-is experimental while the convention settles.
+the data read together as of an earlier snapshot. It closes with how
+this sits next to affirm and data-dict. Both functions are experimental
+while the convention settles.
 
 ## The rule the lake enforces
 
@@ -67,44 +69,86 @@ Every other rule is a view. The checks get a schema of their own (a
 schema is the lake’s namespace for tables and views), which keeps them
 apart from the data and tells
 [`run_checks()`](https://tgerke.github.io/ducklake-r/reference/run_checks.md)
-where to look. Each one is a dplyr pipeline that keeps the rows breaking
-the rule, stored with
-[`create_view()`](https://tgerke.github.io/ducklake-r/reference/create_view.md)
-and labelled with
-[`set_table_comment()`](https://tgerke.github.io/ducklake-r/reference/set_table_comment.md):
+where to look.
+[`create_check()`](https://tgerke.github.io/ducklake-r/reference/create_check.md)
+takes a rule the way you would say it, as the condition every row should
+meet, and stores the view of the rows where it is false, with the rule’s
+label as the view’s comment:
 
 ``` r
 
 with_transaction({
-  create_schema("checks")
+  get_ducklake_table("main.cars") |>
+    create_check(
+      "cyl_known", cyl %in% c(4, 6, 8),
+      label = "cyl is 4, 6, or 8",
+      listing = c(model, cyl)
+    )
 
   get_ducklake_table("main.cars") |>
-    filter(!(cyl %in% c(4, 6, 8))) |>
-    select(model, cyl) |>
-    create_view("checks.cyl_known")
-  set_table_comment("checks.cyl_known", "cyl is 4, 6, or 8")
-
-  get_ducklake_table("main.cars") |>
-    filter(!(hp > 0 & hp < 500)) |>
-    select(model, hp) |>
-    create_view("checks.hp_plausible")
-  set_table_comment("checks.hp_plausible", "hp is between 0 and 500")
+    create_check(
+      "hp_plausible", hp > 0 & hp < 500,
+      label = "hp is between 0 and 500",
+      listing = c(model, hp)
+    )
 }, author = "Data Manager", commit_message = "Add the first checks on cars")
-#> Created schema "checks".
-#> Created view "checks.cyl_known".
-#> Commented view "checks.cyl_known".
-#> Created view "checks.hp_plausible".
-#> Commented view "checks.hp_plausible".
+#> Created check "cyl_known" in "checks": cyl is 4, 6, or 8
+#> Created check "hp_plausible" in "checks": hp is between 0 and 500
 #> Committed snapshot 3 (Data Manager): Add the first checks on cars
 ```
 
-Four habits keep a check dependable:
+There is nothing more to a check than that view. The first call above
+stores what this pipeline would, creating the `checks` schema on the
+way:
 
-- State the rule and negate it: `filter(!(rule))`. In SQL, `NOT` is not
-  true for a row where the rule evaluates to `NA`, so a missing `cyl`
-  passes `cyl_known`. When a missing value matters, give it a check of
-  its own, or make the column `NOT NULL`.
-- Select the columns a reviewer needs. The view is the listing of what
+``` r
+
+get_ducklake_table("main.cars") |>
+  filter(!(cyl %in% c(4, 6, 8))) |>
+  select(model, cyl) |>
+  create_view("checks.cyl_known")
+set_table_comment("checks.cyl_known", "cyl is 4, 6, or 8")
+```
+
+Some rules are easier to state as their failure, and those are written
+just like that. No model should appear twice, and the rows that break
+the rule are the models counted more than once:
+
+``` r
+
+with_transaction({
+  get_ducklake_table("main.cars") |>
+    count(model) |>
+    filter(n > 1) |>
+    create_view("checks.model_unique")
+  set_table_comment("checks.model_unique", "model appears once")
+}, author = "Data Manager", commit_message = "Check that models are unique")
+#> Created view "checks.model_unique".
+#> Commented view "checks.model_unique".
+#> Committed snapshot 4 (Data Manager): Check that models are unique
+```
+
+A rule that spans tables is written the same way, as a join: an
+[`anti_join()`](https://dplyr.tidyverse.org/reference/filter-joins.html)
+of visits against subjects returns the visits with no subject.
+
+A few habits keep a check dependable:
+
+- State a rule the way its label reads and let
+  [`create_check()`](https://tgerke.github.io/ducklake-r/reference/create_check.md)
+  find the rows where it is false. A rule that forbids something stays
+  readable (`hp != 0`, where the pipeline by hand would negate a
+  negation), and a compound rule is not negated by hand, where `&` and
+  `|` are easy to swap. When the failure is the natural thing to
+  describe, write it as a pipeline into
+  [`create_view()`](https://tgerke.github.io/ducklake-r/reference/create_view.md).
+  The two forms select the same rows, because three-valued logic treats
+  `NOT (hp != 0)` and `hp = 0` alike.
+- A row where the rule is `NA` passes, as it does under a SQL `CHECK`
+  constraint, so a missing `cyl` passes `cyl_known`. When a missing
+  value matters, say so in the rule, give it a check of its own, or make
+  the column `NOT NULL`.
+- List the columns a reviewer needs. The view is the listing of what
   failed, so its columns are the ones someone will act on.
 - Read the table by its schema-qualified name, `"main.cars"`. DuckDB
   resolves an unqualified name from the view’s schema and the session’s
@@ -114,11 +158,6 @@ Four habits keep a check dependable:
   [`run_checks()`](https://tgerke.github.io/ducklake-r/reference/run_checks.md)
   counts the rows of every view it finds there, and a view that
   summarizes (a row of totals) would report a failure every time.
-
-A rule that spans tables is a join. An
-[`anti_join()`](https://dplyr.tidyverse.org/reference/filter-joins.html)
-of visits against subjects, for example, returns the visits with no
-subject.
 
 ## Running the checks
 
@@ -131,10 +170,11 @@ run_checks()
 #>          check                   label n_fail
 #> 1    cyl_known       cyl is 4, 6, or 8      0
 #> 2 hp_plausible hp is between 0 and 500      0
+#> 3 model_unique      model appears once      0
 ```
 
 The label comes from the view’s comment and `n_fail` is the number of
-rows breaking the rule. The car data passes both.
+rows breaking the rule. The car data passes all three.
 
 ## Gating a load
 
@@ -217,7 +257,7 @@ commit_transaction(
     jsonlite::toJSON(list(checks_failed = df_failed))
   )
 )
-#> Committed snapshot 4 (Data Manager): Load the September batch
+#> Committed snapshot 5 (Data Manager): Load the September batch
 
 v_loaded <- max(list_table_snapshots("cars")$snapshot_id)
 ```
@@ -230,7 +270,7 @@ list_table_snapshots("cars") |>
   select(snapshot_id, commit_message, commit_extra_info) |>
   tail(1)
 #>   snapshot_id           commit_message
-#> 3           4 Load the September batch
+#> 3           5 Load the September batch
 #>                                      commit_extra_info
 #> 3 {"checks_failed":[{"check":"cyl_known","n_fail":1}]}
 ```
@@ -246,6 +286,7 @@ run_checks()
 #>          check                   label n_fail
 #> 1    cyl_known       cyl is 4, 6, or 8      1
 #> 2 hp_plausible hp is between 0 and 500      0
+#> 3 model_unique      model appears once      0
 
 get_ducklake_table("checks.cyl_known") |> collect()
 #> # A tibble: 1 × 2
@@ -269,43 +310,50 @@ with_transaction(
   author = "Data Manager",
   commit_message = "cyl_known: Audi 100 LS cyl corrected from 40 to 4"
 )
-#> Committed snapshot 5 (Data Manager): cyl_known: Audi 100 LS cyl corrected from
+#> Committed snapshot 6 (Data Manager): cyl_known: Audi 100 LS cyl corrected from
 #> 40 to 4
 
 run_checks()
 #>          check                   label n_fail
 #> 1    cyl_known       cyl is 4, 6, or 8      0
 #> 2 hp_plausible hp is between 0 and 500      0
+#> 3 model_unique      model appears once      0
 ```
 
 ## Rules have history
 
 A check is a catalog object, so changing a rule is a snapshot with an
-author and a message, like a change to the data.
-[`create_view()`](https://tgerke.github.io/ducklake-r/reference/create_view.md)
-replaces a view of the same name and keeps its label. This revision
-changes what the rule says, so it sets a new label in the same
-transaction:
+author and a message, like a change to the data. Calling
+[`create_check()`](https://tgerke.github.io/ducklake-r/reference/create_check.md)
+again under the same name replaces the rule and its label together:
 
 ``` r
 
-with_transaction({
+with_transaction(
   get_ducklake_table("main.cars") |>
-    filter(!(hp >= 40 & hp <= 400)) |>
-    select(model, hp) |>
-    create_view("checks.hp_plausible")
-  set_table_comment("checks.hp_plausible", "hp is between 40 and 400")
-}, author = "Data Manager", commit_message = "Narrow the plausible hp range")
-#> Created view "checks.hp_plausible".
-#> Commented view "checks.hp_plausible".
-#> Committed snapshot 6 (Data Manager): Narrow the plausible hp range
+    create_check(
+      "hp_plausible", hp >= 40 & hp <= 400,
+      label = "hp is between 40 and 400",
+      listing = c(model, hp)
+    ),
+  author = "Data Manager", commit_message = "Narrow the plausible hp range"
+)
+#> Created check "hp_plausible" in "checks": hp is between 40 and 400
+#> Committed snapshot 7 (Data Manager): Narrow the plausible hp range
 
 list_table_snapshots("checks.hp_plausible") |>
   select(snapshot_id, author, commit_message)
 #>   snapshot_id       author                commit_message
 #> 1           3 Data Manager  Add the first checks on cars
-#> 2           6 Data Manager Narrow the plausible hp range
+#> 2           7 Data Manager Narrow the plausible hp range
 ```
+
+A check written with
+[`create_view()`](https://tgerke.github.io/ducklake-r/reference/create_view.md)
+keeps its label when the view is replaced, so only a change of wording
+needs
+[`set_table_comment()`](https://tgerke.github.io/ducklake-r/reference/set_table_comment.md)
+again.
 
 ## Rules and data as of a snapshot
 
@@ -327,24 +375,80 @@ run_checks()
 #>          check                   label n_fail
 #> 1    cyl_known       cyl is 4, 6, or 8      1
 #> 2 hp_plausible hp is between 0 and 500      0
+#> 3 model_unique      model appears once      0
 ```
 
 That answers a question an audit asks: which rules were in force when
 this data was committed, and did the data pass them?
 
-## Where other tools fit
+## Next to affirm and data-dict
+
+Two other tools take a rule in the same form.
+[affirm](https://pcctc.github.io/affirm/), from PCCTC, runs checks in R
+on data frames and turns the failures into a report.
+[data-dict](https://data-dict.tidyverse.org), from the tidyverse team,
+keeps the dictionary of a dataset and its rules in a YAML file and
+validates the data against it. The rule from the top of this article, in
+each:
+
+``` r
+
+# affirm
+df_cars |>
+  affirm_true(label = "cyl is 4, 6, or 8", condition = cyl %in% c(4, 6, 8))
+```
+
+``` yaml
+# data-dict.yaml
+columns:
+  - name: cyl
+    constraints:
+      - assert: cyl IN (4, 6, 8)
+        description: cyl is 4, 6, or 8
+```
+
+``` r
+
+# ducklake
+get_ducklake_table("main.cars") |>
+  create_check("cyl_known", cyl %in% c(4, 6, 8), label = "cyl is 4, 6, or 8")
+```
+
+All three ask for the rule as it is said and work out the failing rows
+themselves. A missing value passes in data-dict and in a lake check, the
+way it does under a SQL `CHECK` constraint. They differ in where the
+rule lives and in what runs it:
+
+|  | affirm | data-dict | ducklake checks |
+|----|----|----|----|
+| The rule lives | in an R script | in a YAML file beside the data, easy to diff in git | in the lake’s catalog, in the same snapshots as the data |
+| What runs it | R, on a data frame in memory | its own engine, on Parquet files | DuckDB, on the lake’s tables, from any client |
+| What a rule can say | any R expression | an expression about one table’s rows, plus declared keys, required columns, allowed values, and ranges | anything a query can return, joins and aggregates included |
+| What comes back | a gt or Excel report of the failing rows | an HTML report, and the dictionary rendered as a site | counts from [`run_checks()`](https://tgerke.github.io/ducklake-r/reference/run_checks.md), and the failing rows as a view |
+
+The data-dict column describes its 0.0.3 preview of August 2026, and the
+project is moving quickly.
+
+The three answer different questions, so they combine. data-dict
+describes a whole dataset (types, units, what the values of an enum
+mean, a glossary) in a file that people and agents can read without a
+database, and its `draft` command writes most of that file from the
+data. A lake’s checks are narrower and sit closer to the data. They run
+where the data is, inside the transaction that loads it if need be, and
+a change to a rule is a snapshot with an author, like a change to the
+data. For now data-dict reads Parquet files, and a lake table is more
+than its Parquet data files, since deletes are recorded separately and
+small inserts live in the catalog, so a table has to be exported before
+data-dict can validate it. What a lake holds of a dictionary today is
+the comments and labels of
+[`vignette("views-comments-labels")`](https://tgerke.github.io/ducklake-r/articles/views-comments-labels.md).
 
 [`run_checks()`](https://tgerke.github.io/ducklake-r/reference/run_checks.md)
-counts and nothing more. A report is a job for the tools built for one:
-the rows collected from a check view are a data frame, ready for gt, or
-for a validation report from affirm or pointblank. pointblank also
-interrogates lazy tables, so one of its agents can run on
-`get_ducklake_table("cars")` inside DuckDB. For a dictionary of a lake’s
-tables and columns that travels as a file,
-[data-dict](https://data-dict.tidyverse.org) defines a YAML format.
-Comments and labels, the descriptive half of a dictionary, are covered
-in
-[`vignette("views-comments-labels")`](https://tgerke.github.io/ducklake-r/articles/views-comments-labels.md).
+counts and nothing more, and a report is a job for the tools built for
+one. The rows collected from a check view are a data frame, ready for gt
+or for a report from affirm. pointblank interrogates lazy tables, so one
+of its agents can also run on `get_ducklake_table("main.cars")` inside
+DuckDB.
 
 ``` r
 

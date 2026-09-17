@@ -138,6 +138,8 @@ Comments and variable labels stored in the lake
 
 Validation rules stored in the lake as views
 
+- [`create_check()`](https://tgerke.github.io/ducklake-r/reference/create_check.md)
+  : Create a data check from a rule
 - [`run_checks()`](https://tgerke.github.io/ducklake-r/reference/run_checks.md)
   : Run the data checks stored in a schema
 

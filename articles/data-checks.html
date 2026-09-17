@@ -98,11 +98,12 @@ its own. The catalog does hold views. A view that returns the rows
 breaking a rule is a check: the rule’s logic sits in the catalog, it is
 versioned with the data it describes, and any client of the lake runs it
 by reading the view.</p>
-<p>This article writes checks that way and runs them with
-<code><a href="../reference/run_checks.html">run_checks()</a></code>. Then it uses what a lake adds: a load that
-rolls back when a check fails, the outcome of the checks recorded on a
-commit, and the rules and the data read together as of an earlier
-snapshot. <code><a href="../reference/run_checks.html">run_checks()</a></code> is experimental while the convention
+<p>This article writes checks that way with <code><a href="../reference/create_check.html">create_check()</a></code>
+and runs them with <code><a href="../reference/run_checks.html">run_checks()</a></code>. Then it uses what a lake
+adds: a load that rolls back when a check fails, the outcome of the
+checks recorded on a commit, and the rules and the data read together as
+of an earlier snapshot. It closes with how this sits next to affirm and
+data-dict. Both functions are experimental while the convention
 settles.</p>
 <div class="section level2">
 <h2 id="the-rule-the-lake-enforces">The rule the lake enforces<a class="anchor" aria-label="anchor" href="#the-rule-the-lake-enforces"></a>
@@ -137,39 +138,71 @@ here:</p>
 <p>Every other rule is a view. The checks get a schema of their own (a
 schema is the lake’s namespace for tables and views), which keeps them
 apart from the data and tells <code><a href="../reference/run_checks.html">run_checks()</a></code> where to look.
-Each one is a dplyr pipeline that keeps the rows breaking the rule,
-stored with <code><a href="../reference/create_view.html">create_view()</a></code> and labelled with
-<code><a href="../reference/set_table_comment.html">set_table_comment()</a></code>:</p>
+<code><a href="../reference/create_check.html">create_check()</a></code> takes a rule the way you would say it, as
+the condition every row should meet, and stores the view of the rows
+where it is false, with the rule’s label as the view’s comment:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/with_transaction.html">with_transaction</a></span><span class="op">(</span><span class="op">{</span></span>
-<span>  <span class="fu"><a href="../reference/create_schema.html">create_schema</a></span><span class="op">(</span><span class="st">"checks"</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"main.cars"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>    <span class="fu"><a href="../reference/create_check.html">create_check</a></span><span class="op">(</span></span>
+<span>      <span class="st">"cyl_known"</span>, <span class="va">cyl</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">4</span>, <span class="fl">6</span>, <span class="fl">8</span><span class="op">)</span>,</span>
+<span>      label <span class="op">=</span> <span class="st">"cyl is 4, 6, or 8"</span>,</span>
+<span>      listing <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">model</span>, <span class="va">cyl</span><span class="op">)</span></span>
+<span>    <span class="op">)</span></span>
 <span></span>
 <span>  <span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"main.cars"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="op">!</span><span class="op">(</span><span class="va">cyl</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">4</span>, <span class="fl">6</span>, <span class="fl">8</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">model</span>, <span class="va">cyl</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>    <span class="fu"><a href="../reference/create_view.html">create_view</a></span><span class="op">(</span><span class="st">"checks.cyl_known"</span><span class="op">)</span></span>
-<span>  <span class="fu"><a href="../reference/set_table_comment.html">set_table_comment</a></span><span class="op">(</span><span class="st">"checks.cyl_known"</span>, <span class="st">"cyl is 4, 6, or 8"</span><span class="op">)</span></span>
-<span></span>
-<span>  <span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"main.cars"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="op">!</span><span class="op">(</span><span class="va">hp</span> <span class="op">&gt;</span> <span class="fl">0</span> <span class="op">&amp;</span> <span class="va">hp</span> <span class="op">&lt;</span> <span class="fl">500</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">model</span>, <span class="va">hp</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>    <span class="fu"><a href="../reference/create_view.html">create_view</a></span><span class="op">(</span><span class="st">"checks.hp_plausible"</span><span class="op">)</span></span>
-<span>  <span class="fu"><a href="../reference/set_table_comment.html">set_table_comment</a></span><span class="op">(</span><span class="st">"checks.hp_plausible"</span>, <span class="st">"hp is between 0 and 500"</span><span class="op">)</span></span>
+<span>    <span class="fu"><a href="../reference/create_check.html">create_check</a></span><span class="op">(</span></span>
+<span>      <span class="st">"hp_plausible"</span>, <span class="va">hp</span> <span class="op">&gt;</span> <span class="fl">0</span> <span class="op">&amp;</span> <span class="va">hp</span> <span class="op">&lt;</span> <span class="fl">500</span>,</span>
+<span>      label <span class="op">=</span> <span class="st">"hp is between 0 and 500"</span>,</span>
+<span>      listing <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">model</span>, <span class="va">hp</span><span class="op">)</span></span>
+<span>    <span class="op">)</span></span>
 <span><span class="op">}</span>, author <span class="op">=</span> <span class="st">"Data Manager"</span>, commit_message <span class="op">=</span> <span class="st">"Add the first checks on cars"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Created schema <span style="color: #0000BB;">"checks"</span>.</span></span>
-<span><span class="co">#&gt; Created view <span style="color: #0000BB;">"checks.cyl_known"</span>.</span></span>
-<span><span class="co">#&gt; Commented view <span style="color: #0000BB;">"checks.cyl_known"</span>.</span></span>
-<span><span class="co">#&gt; Created view <span style="color: #0000BB;">"checks.hp_plausible"</span>.</span></span>
-<span><span class="co">#&gt; Commented view <span style="color: #0000BB;">"checks.hp_plausible"</span>.</span></span>
+<span><span class="co">#&gt; Created check <span style="color: #0000BB;">"cyl_known"</span> in <span style="color: #0000BB;">"checks"</span>: cyl is 4, 6, or 8</span></span>
+<span><span class="co">#&gt; Created check <span style="color: #0000BB;">"hp_plausible"</span> in <span style="color: #0000BB;">"checks"</span>: hp is between 0 and 500</span></span>
 <span><span class="co">#&gt; Committed snapshot 3 (Data Manager): Add the first checks on cars</span></span></code></pre></div>
-<p>Four habits keep a check dependable:</p>
+<p>There is nothing more to a check than that view. The first call above
+stores what this pipeline would, creating the <code>checks</code> schema
+on the way:</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"main.cars"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="op">!</span><span class="op">(</span><span class="va">cyl</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">4</span>, <span class="fl">6</span>, <span class="fl">8</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">model</span>, <span class="va">cyl</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/create_view.html">create_view</a></span><span class="op">(</span><span class="st">"checks.cyl_known"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/set_table_comment.html">set_table_comment</a></span><span class="op">(</span><span class="st">"checks.cyl_known"</span>, <span class="st">"cyl is 4, 6, or 8"</span><span class="op">)</span></span></code></pre></div>
+<p>Some rules are easier to state as their failure, and those are
+written just like that. No model should appear twice, and the rows that
+break the rule are the models counted more than once:</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/with_transaction.html">with_transaction</a></span><span class="op">(</span><span class="op">{</span></span>
+<span>  <span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"main.cars"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">model</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">n</span> <span class="op">&gt;</span> <span class="fl">1</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>    <span class="fu"><a href="../reference/create_view.html">create_view</a></span><span class="op">(</span><span class="st">"checks.model_unique"</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="../reference/set_table_comment.html">set_table_comment</a></span><span class="op">(</span><span class="st">"checks.model_unique"</span>, <span class="st">"model appears once"</span><span class="op">)</span></span>
+<span><span class="op">}</span>, author <span class="op">=</span> <span class="st">"Data Manager"</span>, commit_message <span class="op">=</span> <span class="st">"Check that models are unique"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Created view <span style="color: #0000BB;">"checks.model_unique"</span>.</span></span>
+<span><span class="co">#&gt; Commented view <span style="color: #0000BB;">"checks.model_unique"</span>.</span></span>
+<span><span class="co">#&gt; Committed snapshot 4 (Data Manager): Check that models are unique</span></span></code></pre></div>
+<p>A rule that spans tables is written the same way, as a join: an
+<code><a href="https://dplyr.tidyverse.org/reference/filter-joins.html" class="external-link">anti_join()</a></code> of visits against subjects returns the visits
+with no subject.</p>
+<p>A few habits keep a check dependable:</p>
 <ul>
-<li>State the rule and negate it: <code>filter(!(rule))</code>. In SQL,
-<code>NOT</code> is not true for a row where the rule evaluates to
-<code>NA</code>, so a missing <code>cyl</code> passes
-<code>cyl_known</code>. When a missing value matters, give it a check of
-its own, or make the column <code>NOT NULL</code>.</li>
-<li>Select the columns a reviewer needs. The view is the listing of what
+<li>State a rule the way its label reads and let
+<code><a href="../reference/create_check.html">create_check()</a></code> find the rows where it is false. A rule that
+forbids something stays readable (<code>hp != 0</code>, where the
+pipeline by hand would negate a negation), and a compound rule is not
+negated by hand, where <code>&amp;</code> and <code>|</code> are easy to
+swap. When the failure is the natural thing to describe, write it as a
+pipeline into <code><a href="../reference/create_view.html">create_view()</a></code>. The two forms select the same
+rows, because three-valued logic treats <code>NOT (hp != 0)</code> and
+<code>hp = 0</code> alike.</li>
+<li>A row where the rule is <code>NA</code> passes, as it does under a
+SQL <code>CHECK</code> constraint, so a missing <code>cyl</code> passes
+<code>cyl_known</code>. When a missing value matters, say so in the
+rule, give it a check of its own, or make the column
+<code>NOT NULL</code>.</li>
+<li>List the columns a reviewer needs. The view is the listing of what
 failed, so its columns are the ones someone will act on.</li>
 <li>Read the table by its schema-qualified name,
 <code>"main.cars"</code>. DuckDB resolves an unqualified name from the
@@ -179,27 +212,25 @@ can fail to bind for a client where another database is current.</li>
 rows of every view it finds there, and a view that summarizes (a row of
 totals) would report a failure every time.</li>
 </ul>
-<p>A rule that spans tables is a join. An <code><a href="https://dplyr.tidyverse.org/reference/filter-joins.html" class="external-link">anti_join()</a></code> of
-visits against subjects, for example, returns the visits with no
-subject.</p>
 </div>
 <div class="section level2">
 <h2 id="running-the-checks">Running the checks<a class="anchor" aria-label="anchor" href="#running-the-checks"></a>
 </h2>
 <p><code><a href="../reference/run_checks.html">run_checks()</a></code> counts the rows each check returns:</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/run_checks.html">run_checks</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt;          check                   label n_fail</span></span>
 <span><span class="co">#&gt; 1    cyl_known       cyl is 4, 6, or 8      0</span></span>
-<span><span class="co">#&gt; 2 hp_plausible hp is between 0 and 500      0</span></span></code></pre></div>
+<span><span class="co">#&gt; 2 hp_plausible hp is between 0 and 500      0</span></span>
+<span><span class="co">#&gt; 3 model_unique      model appears once      0</span></span></code></pre></div>
 <p>The label comes from the view’s comment and <code>n_fail</code> is
-the number of rows breaking the rule. The car data passes both.</p>
+the number of rows breaking the rule. The car data passes all three.</p>
 </div>
 <div class="section level2">
 <h2 id="gating-a-load">Gating a load<a class="anchor" aria-label="anchor" href="#gating-a-load"></a>
 </h2>
 <p>A new batch arrives, and one of its rows has a typing error:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">df_batch</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  model <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Saab 99"</span>, <span class="st">"Audi 100 LS"</span><span class="op">)</span>,</span>
 <span>  mpg <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">24.5</span>, <span class="fl">23.0</span><span class="op">)</span>,</span>
@@ -209,7 +240,7 @@ the number of rows breaking the rule. The car data passes both.</p>
 <p>Inside a transaction the checks see the rows that are waiting to be
 committed. So a load can run the checks on itself and stop, and
 <code><a href="../reference/with_transaction.html">with_transaction()</a></code> rolls everything back when it does:</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/try.html" class="external-link">try</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="../reference/with_transaction.html">with_transaction</a></span><span class="op">(</span><span class="op">{</span></span>
 <span>    <span class="fu"><a href="../reference/rows_insert.html">rows_insert</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span>, <span class="va">df_batch</span>, by <span class="op">=</span> <span class="st">"model"</span><span class="op">)</span></span>
@@ -224,7 +255,7 @@ committed. So a load can run the checks on itself and stop, and
 <span><span class="co">#&gt; Error : Transaction rolled back due to error: failed cyl_known</span></span></code></pre></div>
 <p>Nothing of the batch reached the lake. The table has its 32 rows and
 the history has no new snapshot:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/compute.html" class="external-link">collect</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 1</span></span></span>
 <span><span class="co">#&gt;       n</span></span>
@@ -248,7 +279,7 @@ running the checks is not stopped.</p>
 as it arrived, with the problems flagged for follow-up. A manual
 transaction can run the checks after the write and put the outcome on
 the commit, in <code>commit_extra_info</code>:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/begin_transaction.html">begin_transaction</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/rows_insert.html">rows_insert</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span>, <span class="va">df_batch</span>, by <span class="op">=</span> <span class="st">"model"</span><span class="op">)</span></span>
 <span></span>
@@ -263,17 +294,17 @@ the commit, in <code>commit_extra_info</code>:</p>
 <span>    <span class="fu">jsonlite</span><span class="fu">::</span><span class="fu"><a href="https://jeroen.r-universe.dev/jsonlite/reference/fromJSON.html" class="external-link">toJSON</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>checks_failed <span class="op">=</span> <span class="va">df_failed</span><span class="op">)</span><span class="op">)</span></span>
 <span>  <span class="op">)</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; Committed snapshot 4 (Data Manager): Load the September batch</span></span>
+<span><span class="co">#&gt; Committed snapshot 5 (Data Manager): Load the September batch</span></span>
 <span></span>
 <span><span class="va">v_loaded</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span><span class="op">$</span><span class="va">snapshot_id</span><span class="op">)</span></span></code></pre></div>
 <p>The snapshot now says what state the data was in when it was
 committed:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">snapshot_id</span>, <span class="va">commit_message</span>, <span class="va">commit_extra_info</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">tail</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   snapshot_id           commit_message</span></span>
-<span><span class="co">#&gt; 3           4 Load the September batch</span></span>
+<span><span class="co">#&gt; 3           5 Load the September batch</span></span>
 <span><span class="co">#&gt;                                      commit_extra_info</span></span>
 <span><span class="co">#&gt; 3 {"checks_failed":[{"check":"cyl_known","n_fail":1}]}</span></span></code></pre></div>
 </div>
@@ -282,11 +313,12 @@ committed:</p>
 </h2>
 <p>The check is a view, so the failing rows are one read away, with the
 columns the check selected:</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/run_checks.html">run_checks</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt;          check                   label n_fail</span></span>
 <span><span class="co">#&gt; 1    cyl_known       cyl is 4, 6, or 8      1</span></span>
 <span><span class="co">#&gt; 2 hp_plausible hp is between 0 and 500      0</span></span>
+<span><span class="co">#&gt; 3 model_unique      model appears once      0</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"checks.cyl_known"</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/compute.html" class="external-link">collect</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 2</span></span></span>
@@ -296,7 +328,7 @@ columns the check selected:</p>
 <p>The correction is an ordinary update, and its commit message can name
 the check it answers. Afterwards the lake’s history holds the load, the
 finding, and the fix:</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/with_transaction.html">with_transaction</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="../reference/rows_update.html">rows_update</a></span><span class="op">(</span></span>
 <span>    <span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"cars"</span><span class="op">)</span>,</span>
@@ -306,39 +338,43 @@ finding, and the fix:</p>
 <span>  author <span class="op">=</span> <span class="st">"Data Manager"</span>,</span>
 <span>  commit_message <span class="op">=</span> <span class="st">"cyl_known: Audi 100 LS cyl corrected from 40 to 4"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; Committed snapshot 5 (Data Manager): cyl_known: Audi 100 LS cyl corrected from</span></span>
+<span><span class="co">#&gt; Committed snapshot 6 (Data Manager): cyl_known: Audi 100 LS cyl corrected from</span></span>
 <span><span class="co">#&gt; 40 to 4</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/run_checks.html">run_checks</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt;          check                   label n_fail</span></span>
 <span><span class="co">#&gt; 1    cyl_known       cyl is 4, 6, or 8      0</span></span>
-<span><span class="co">#&gt; 2 hp_plausible hp is between 0 and 500      0</span></span></code></pre></div>
+<span><span class="co">#&gt; 2 hp_plausible hp is between 0 and 500      0</span></span>
+<span><span class="co">#&gt; 3 model_unique      model appears once      0</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="rules-have-history">Rules have history<a class="anchor" aria-label="anchor" href="#rules-have-history"></a>
 </h2>
 <p>A check is a catalog object, so changing a rule is a snapshot with an
-author and a message, like a change to the data.
-<code><a href="../reference/create_view.html">create_view()</a></code> replaces a view of the same name and keeps
-its label. This revision changes what the rule says, so it sets a new
-label in the same transaction:</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/with_transaction.html">with_transaction</a></span><span class="op">(</span><span class="op">{</span></span>
+author and a message, like a change to the data. Calling
+<code><a href="../reference/create_check.html">create_check()</a></code> again under the same name replaces the rule
+and its label together:</p>
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/with_transaction.html">with_transaction</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"main.cars"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="op">!</span><span class="op">(</span><span class="va">hp</span> <span class="op">&gt;=</span> <span class="fl">40</span> <span class="op">&amp;</span> <span class="va">hp</span> <span class="op">&lt;=</span> <span class="fl">400</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">model</span>, <span class="va">hp</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>    <span class="fu"><a href="../reference/create_view.html">create_view</a></span><span class="op">(</span><span class="st">"checks.hp_plausible"</span><span class="op">)</span></span>
-<span>  <span class="fu"><a href="../reference/set_table_comment.html">set_table_comment</a></span><span class="op">(</span><span class="st">"checks.hp_plausible"</span>, <span class="st">"hp is between 40 and 400"</span><span class="op">)</span></span>
-<span><span class="op">}</span>, author <span class="op">=</span> <span class="st">"Data Manager"</span>, commit_message <span class="op">=</span> <span class="st">"Narrow the plausible hp range"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Created view <span style="color: #0000BB;">"checks.hp_plausible"</span>.</span></span>
-<span><span class="co">#&gt; Commented view <span style="color: #0000BB;">"checks.hp_plausible"</span>.</span></span>
-<span><span class="co">#&gt; Committed snapshot 6 (Data Manager): Narrow the plausible hp range</span></span>
+<span>    <span class="fu"><a href="../reference/create_check.html">create_check</a></span><span class="op">(</span></span>
+<span>      <span class="st">"hp_plausible"</span>, <span class="va">hp</span> <span class="op">&gt;=</span> <span class="fl">40</span> <span class="op">&amp;</span> <span class="va">hp</span> <span class="op">&lt;=</span> <span class="fl">400</span>,</span>
+<span>      label <span class="op">=</span> <span class="st">"hp is between 40 and 400"</span>,</span>
+<span>      listing <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">model</span>, <span class="va">hp</span><span class="op">)</span></span>
+<span>    <span class="op">)</span>,</span>
+<span>  author <span class="op">=</span> <span class="st">"Data Manager"</span>, commit_message <span class="op">=</span> <span class="st">"Narrow the plausible hp range"</span></span>
+<span><span class="op">)</span></span>
+<span><span class="co">#&gt; Created check <span style="color: #0000BB;">"hp_plausible"</span> in <span style="color: #0000BB;">"checks"</span>: hp is between 40 and 400</span></span>
+<span><span class="co">#&gt; Committed snapshot 7 (Data Manager): Narrow the plausible hp range</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"checks.hp_plausible"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">snapshot_id</span>, <span class="va">author</span>, <span class="va">commit_message</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   snapshot_id       author                commit_message</span></span>
 <span><span class="co">#&gt; 1           3 Data Manager  Add the first checks on cars</span></span>
-<span><span class="co">#&gt; 2           6 Data Manager Narrow the plausible hp range</span></span></code></pre></div>
+<span><span class="co">#&gt; 2           7 Data Manager Narrow the plausible hp range</span></span></code></pre></div>
+<p>A check written with <code><a href="../reference/create_view.html">create_view()</a></code> keeps its label when
+the view is replaced, so only a change of wording needs
+<code><a href="../reference/set_table_comment.html">set_table_comment()</a></code> again.</p>
 </div>
 <div class="section level2">
 <h2 id="rules-and-data-as-of-a-snapshot">Rules and data as of a snapshot<a class="anchor" aria-label="anchor" href="#rules-and-data-as-of-a-snapshot"></a>
@@ -348,7 +384,7 @@ along with its tables. Re-attaching at the snapshot of the September
 load runs the rules of that day against the data of that day. The
 uncorrected row fails again, and the <code>hp</code> rule reads as it
 did then:</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/detach_ducklake.html">detach_ducklake</a></span><span class="op">(</span><span class="st">"checks_lake"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/attach_ducklake.html">attach_ducklake</a></span><span class="op">(</span></span>
 <span>  <span class="st">"checks_lake"</span>,</span>
@@ -359,23 +395,100 @@ did then:</p>
 <span><span class="fu"><a href="../reference/run_checks.html">run_checks</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt;          check                   label n_fail</span></span>
 <span><span class="co">#&gt; 1    cyl_known       cyl is 4, 6, or 8      1</span></span>
-<span><span class="co">#&gt; 2 hp_plausible hp is between 0 and 500      0</span></span></code></pre></div>
+<span><span class="co">#&gt; 2 hp_plausible hp is between 0 and 500      0</span></span>
+<span><span class="co">#&gt; 3 model_unique      model appears once      0</span></span></code></pre></div>
 <p>That answers a question an audit asks: which rules were in force when
 this data was committed, and did the data pass them?</p>
 </div>
 <div class="section level2">
-<h2 id="where-other-tools-fit">Where other tools fit<a class="anchor" aria-label="anchor" href="#where-other-tools-fit"></a>
+<h2 id="next-to-affirm-and-data-dict">Next to affirm and data-dict<a class="anchor" aria-label="anchor" href="#next-to-affirm-and-data-dict"></a>
 </h2>
-<p><code><a href="../reference/run_checks.html">run_checks()</a></code> counts and nothing more. A report is a job
-for the tools built for one: the rows collected from a check view are a
-data frame, ready for gt, or for a validation report from affirm or
-pointblank. pointblank also interrogates lazy tables, so one of its
-agents can run on <code>get_ducklake_table("cars")</code> inside DuckDB.
-For a dictionary of a lake’s tables and columns that travels as a file,
-<a href="https://data-dict.tidyverse.org" class="external-link">data-dict</a> defines a YAML
-format. Comments and labels, the descriptive half of a dictionary, are
-covered in <code><a href="../articles/views-comments-labels.html">vignette("views-comments-labels")</a></code>.</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<p>Two other tools take a rule in the same form. <a href="https://pcctc.github.io/affirm/" class="external-link">affirm</a>, from PCCTC, runs
+checks in R on data frames and turns the failures into a report. <a href="https://data-dict.tidyverse.org" class="external-link">data-dict</a>, from the tidyverse
+team, keeps the dictionary of a dataset and its rules in a YAML file and
+validates the data against it. The rule from the top of this article, in
+each:</p>
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># affirm</span></span>
+<span><span class="va">df_cars</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">affirm_true</span><span class="op">(</span>label <span class="op">=</span> <span class="st">"cyl is 4, 6, or 8"</span>, condition <span class="op">=</span> <span class="va">cyl</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">4</span>, <span class="fl">6</span>, <span class="fl">8</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a><span class="co"># data-dict.yaml</span></span>
+<span id="cb17-2"><a href="#cb17-2" tabindex="-1"></a><span class="fu">columns</span><span class="kw">:</span></span>
+<span id="cb17-3"><a href="#cb17-3" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> cyl</span></span>
+<span id="cb17-4"><a href="#cb17-4" tabindex="-1"></a><span class="at">    </span><span class="fu">constraints</span><span class="kw">:</span></span>
+<span id="cb17-5"><a href="#cb17-5" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">assert</span><span class="kw">:</span><span class="at"> cyl IN (4, 6, 8)</span></span>
+<span id="cb17-6"><a href="#cb17-6" tabindex="-1"></a><span class="at">        </span><span class="fu">description</span><span class="kw">:</span><span class="at"> cyl is 4, 6, or 8</span></span></code></pre></div>
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># ducklake</span></span>
+<span><span class="fu"><a href="../reference/get_ducklake_table.html">get_ducklake_table</a></span><span class="op">(</span><span class="st">"main.cars"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/create_check.html">create_check</a></span><span class="op">(</span><span class="st">"cyl_known"</span>, <span class="va">cyl</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">4</span>, <span class="fl">6</span>, <span class="fl">8</span><span class="op">)</span>, label <span class="op">=</span> <span class="st">"cyl is 4, 6, or 8"</span><span class="op">)</span></span></code></pre></div>
+<p>All three ask for the rule as it is said and work out the failing
+rows themselves. A missing value passes in data-dict and in a lake
+check, the way it does under a SQL <code>CHECK</code> constraint. They
+differ in where the rule lives and in what runs it:</p>
+<table class="table">
+<colgroup>
+<col width="25%">
+<col width="25%">
+<col width="25%">
+<col width="25%">
+</colgroup>
+<thead><tr class="header">
+<th></th>
+<th>affirm</th>
+<th>data-dict</th>
+<th>ducklake checks</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>The rule lives</td>
+<td>in an R script</td>
+<td>in a YAML file beside the data, easy to diff in git</td>
+<td>in the lake’s catalog, in the same snapshots as the data</td>
+</tr>
+<tr class="even">
+<td>What runs it</td>
+<td>R, on a data frame in memory</td>
+<td>its own engine, on Parquet files</td>
+<td>DuckDB, on the lake’s tables, from any client</td>
+</tr>
+<tr class="odd">
+<td>What a rule can say</td>
+<td>any R expression</td>
+<td>an expression about one table’s rows, plus declared keys, required
+columns, allowed values, and ranges</td>
+<td>anything a query can return, joins and aggregates included</td>
+</tr>
+<tr class="even">
+<td>What comes back</td>
+<td>a gt or Excel report of the failing rows</td>
+<td>an HTML report, and the dictionary rendered as a site</td>
+<td>counts from <code><a href="../reference/run_checks.html">run_checks()</a></code>, and the failing rows as a
+view</td>
+</tr>
+</tbody>
+</table>
+<p>The data-dict column describes its 0.0.3 preview of August 2026, and
+the project is moving quickly.</p>
+<p>The three answer different questions, so they combine. data-dict
+describes a whole dataset (types, units, what the values of an enum
+mean, a glossary) in a file that people and agents can read without a
+database, and its <code>draft</code> command writes most of that file
+from the data. A lake’s checks are narrower and sit closer to the data.
+They run where the data is, inside the transaction that loads it if need
+be, and a change to a rule is a snapshot with an author, like a change
+to the data. For now data-dict reads Parquet files, and a lake table is
+more than its Parquet data files, since deletes are recorded separately
+and small inserts live in the catalog, so a table has to be exported
+before data-dict can validate it. What a lake holds of a dictionary
+today is the comments and labels of
+<code><a href="../articles/views-comments-labels.html">vignette("views-comments-labels")</a></code>.</p>
+<p><code><a href="../reference/run_checks.html">run_checks()</a></code> counts and nothing more, and a report is a
+job for the tools built for one. The rows collected from a check view
+are a data frame, ready for gt or for a report from affirm. pointblank
+interrogates lazy tables, so one of its agents can also run on
+<code>get_ducklake_table("main.cars")</code> inside DuckDB.</p>
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/detach_ducklake.html">detach_ducklake</a></span><span class="op">(</span><span class="st">"checks_lake"</span><span class="op">)</span></span></code></pre></div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

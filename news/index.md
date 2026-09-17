@@ -27,22 +27,29 @@
   [`collect()`](https://dplyr.tidyverse.org/reference/compute.html).
 
 - New
+  [`create_check()`](https://tgerke.github.io/ducklake-r/reference/create_check.md)
+  and
   [`run_checks()`](https://tgerke.github.io/ducklake-r/reference/run_checks.md)
-  (experimental) runs the data checks stored in a schema. A check is a
-  view that returns the rows breaking a rule, named for the rule and
-  labelled with
-  [`set_table_comment()`](https://tgerke.github.io/ducklake-r/reference/set_table_comment.md),
-  so the rules live in the catalog, are versioned with the data, and run
-  from any client of the lake. The result has one row per check: its
-  label and how many rows fail. Inside
+  (experimental) keep data checks in the lake. A check is a view, in a
+  schema of its own, that returns the rows breaking a rule, with the
+  rule’s label as its comment, so the rules live in the catalog, are
+  versioned with the data, and run from any client of the lake.
+  [`create_check()`](https://tgerke.github.io/ducklake-r/reference/create_check.md)
+  takes the rule as it is said (`cyl %in% c(4, 6, 8)`, `dose != 0`),
+  keeps the rows where it is false, and writes the schema, the view, and
+  the label as one snapshot; a rule that is easier to state as its
+  failure is a pipeline into
+  [`create_view()`](https://tgerke.github.io/ducklake-r/reference/create_view.md).
+  [`run_checks()`](https://tgerke.github.io/ducklake-r/reference/run_checks.md)
+  returns one row per check: its label and how many rows fail. Inside
   [`with_transaction()`](https://tgerke.github.io/ducklake-r/reference/with_transaction.md)
   the counts include pending writes, so a load that fails a check can be
   rolled back before it commits, and on a snapshot-pinned attach the
   rules and the data are both read as of that snapshot.
   [`vignette("data-checks")`](https://tgerke.github.io/ducklake-r/articles/data-checks.md)
-  walks through it. DuckLake enforces `NOT NULL` and nothing else, and
-  its catalog takes no custom tags from SQL, which is why the rules are
-  views.
+  walks through it and sets the approach next to affirm and data-dict.
+  DuckLake enforces `NOT NULL` and nothing else, and its catalog takes
+  no custom tags from SQL, which is why the rules are views.
 
 - [`set_table_comment()`](https://tgerke.github.io/ducklake-r/reference/set_table_comment.md)
   comments a view as well as a table. It used to send `COMMENT ON TABLE`
