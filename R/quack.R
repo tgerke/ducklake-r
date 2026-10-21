@@ -27,7 +27,6 @@
 #' install_quack()
 #' }
 install_quack <- function(load = TRUE) {
-  check_quack_version()
 
   db_execute("INSTALL quack;")
   dl_inform("Installed {.pkg quack} extension.")
@@ -88,7 +87,6 @@ attach_quack <- function(quack_name, uri, token = NULL, disable_ssl = FALSE) {
   }
 
   uri <- build_quack_uri(uri)
-  check_quack_version()
   ensure_quack_extension()
 
   conn <- get_ducklake_connection()
@@ -181,7 +179,6 @@ quack_query <- function(uri, query, token = NULL, disable_ssl = FALSE) {
   }
 
   uri <- build_quack_uri(uri)
-  check_quack_version()
   ensure_quack_extension()
 
   args <- c(quote_sql(uri), quote_sql(query))
@@ -230,7 +227,6 @@ quack_query <- function(uri, query, token = NULL, disable_ssl = FALSE) {
 quack_serve <- function(uri = "quack:localhost", token = NULL,
                         allow_other_hostname = FALSE, disable_ssl = FALSE) {
   uri <- build_quack_uri(uri)
-  check_quack_version()
   ensure_quack_extension()
 
   if (is.null(token)) {
@@ -276,50 +272,12 @@ quack_serve <- function(uri = "quack:localhost", token = NULL,
 #' }
 quack_stop <- function(uri = "quack:localhost") {
   uri <- build_quack_uri(uri)
-  check_quack_version()
   ensure_quack_extension()
 
   db_execute(sprintf("CALL quack_stop(%s);", quote_sql(uri)))
   dl_inform("Quack server on {.val {uri}} stopped.")
 
   invisible(TRUE)
-}
-
-#' Check that the active DuckDB engine supports Quack
-#'
-#' @param conn Optional DuckDB connection. Defaults to the ducklake connection.
-#' @returns Invisibly, `TRUE`. Aborts when the engine is too old.
-#' @keywords internal
-check_quack_version <- function(conn = NULL) {
-  if (is.null(conn)) {
-    conn <- get_ducklake_connection()
-  }
-
-  version <- DBI::dbGetQuery(conn, "SELECT version() AS version")$version
-
-  if (!quack_version_supported(version)) {
-    cli::cli_abort(c(
-      "Quack requires DuckDB 1.5.3 or higher.",
-      "i" = "The active DuckDB engine reports version {version}.",
-      "i" = "Quack shipped as a core extension in DuckDB 1.5.3. Update the {.pkg duckdb} R package to a build of 1.5.3 or newer."
-    ))
-  }
-
-  invisible(TRUE)
-}
-
-#' Test a DuckDB version string against the Quack minimum
-#'
-#' @param version A DuckDB version string such as `"v1.5.3"`.
-#' @returns `TRUE` if `version` is 1.5.3 or higher, otherwise `FALSE`.
-#' @keywords internal
-quack_version_supported <- function(version) {
-  cleaned <- sub("^v", "", version)
-  core <- regmatches(cleaned, regexpr("^[0-9]+\\.[0-9]+\\.[0-9]+", cleaned))
-  if (length(core) == 0) {
-    return(FALSE)
-  }
-  numeric_version(core) >= "1.5.3"
 }
 
 #' Load the Quack extension, installing it first if needed

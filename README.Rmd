@@ -63,10 +63,12 @@ pak::pak("tgerke/ducklake-r")
 ```
 
 ducklake requires the [duckdb](https://r.duckdb.org) R package version
-1.5.5 or newer. DuckDB 1.5.2 is the release that ships the stable
-[DuckLake 1.0 specification](https://ducklake.select/docs/stable/specification/introduction),
-and duckdb 1.5.5 is where the R package settled how it stores downloaded
-extensions, which ducklake relies on.
+2.0.0 or newer, the release that ships DuckDB 2.0 and
+[DuckLake 1.1](https://ducklake.select/docs/stable/specification/introduction).
+Lakes made with earlier versions open as they are. One caution for a team
+that shares a lake whose catalog is a DuckDB file: the first write from
+duckdb 2.0 puts that file in a storage format duckdb 1.5 cannot open, so
+upgrade every client of such a lake together.
 
 DuckLake itself ships as a DuckDB extension. `attach_ducklake()` downloads
 it the first time it is needed and says where it put it, so there is no

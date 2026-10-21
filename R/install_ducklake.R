@@ -38,16 +38,7 @@
 #' install_ducklake(backend = c("postgres", "sqlite", "mysql"))
 #' }
 install_ducklake <- function(backend = NULL) {
-  # DuckLake 1.0 ships with DuckDB 1.5.2; the extension built for 1.5.1
-  # writes the earlier 0.4 catalog format. SELECT version() returns the
-  # engine version, not the R package version.
   conn <- get_ducklake_connection()
-  duckdb_version <- DBI::dbGetQuery(conn, "SELECT version()")[1, 1]
-  if (!duckdb_version_at_least(duckdb_version, "1.5.2")) {
-    cli::cli_abort(
-      "DuckLake 1.0 requires DuckDB version 1.5.2 or higher (found {duckdb_version})."
-    )
-  }
 
   db_execute("INSTALL ducklake;")
   reset_extension_available_cache()

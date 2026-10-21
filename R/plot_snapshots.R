@@ -424,10 +424,17 @@ classify_change_tokens <- function(tokens) {
     return("other")
   }
   x <- paste(tokens, collapse = ", ")
-  if (grepl("\\btables_created\\b|\\bschemas_created\\b", x)) {
+  # The keys of snapshots()' changes map: tables, schemas, views, and
+  # scalar/table macros are created and dropped; tables and views are
+  # altered (a comment counts); compaction writes merge_adjacent and
+  # rewrite_delete, and catalogs written by older extensions compacted_table
+  if (grepl("\\b(tables|schemas|views|scalar_macros|table_macros)_created\\b", x)) {
     return("created")
   }
-  if (grepl("\\btables_altered\\b|\\btables_dropped\\b", x)) {
+  if (grepl(
+    "\\b(tables|views)_altered\\b|\\b(tables|schemas|views|scalar_macros|table_macros)_dropped\\b",
+    x
+  )) {
     return("schema change")
   }
   if (grepl(
@@ -436,7 +443,10 @@ classify_change_tokens <- function(tokens) {
   )) {
     return("data change")
   }
-  if (grepl("\\bflushed_inlined\\b|\\bcompacted\\b", x)) {
+  if (grepl(
+    "\\bflushed_inlined\\b|\\bmerge_adjacent\\b|\\brewrite_delete\\b|\\bcompacted_table\\b",
+    x
+  )) {
     return("maintenance")
   }
   "other"

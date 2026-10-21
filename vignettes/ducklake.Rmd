@@ -48,7 +48,7 @@ on disk and where the catalog and the data files can live.
 install.packages("ducklake")
 ```
 
-ducklake needs the duckdb package at version 1.5.5 or newer. DuckLake
+ducklake needs the duckdb package at version 2.0.0 or newer. DuckLake
 itself is a DuckDB extension, and the first `attach_ducklake()` downloads
 it and says where it went. The first time duckdb connects in an interactive
 session it offers to create `~/.duckdb`; say yes, and the download happens

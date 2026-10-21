@@ -97,25 +97,6 @@ check_identifier <- function(x, arg = "ducklake_name") {
   invisible(x)
 }
 
-#' Test a DuckDB engine version string against a minimum
-#'
-#' Tolerates a leading `v` and dev/suffixed versions such as
-#' `"v1.5.4-dev123"` by comparing only the leading `major.minor.patch`.
-#'
-#' @param version Version string as reported by `SELECT version()`.
-#' @param minimum Minimum required version, e.g. `"1.5.1"`.
-#' @returns `TRUE` if `version` is at least `minimum`, otherwise `FALSE`
-#'   (including when `version` cannot be parsed).
-#' @noRd
-duckdb_version_at_least <- function(version, minimum) {
-  cleaned <- sub("^v", "", version)
-  core <- regmatches(cleaned, regexpr("^[0-9]+\\.[0-9]+\\.[0-9]+", cleaned))
-  if (length(core) == 0) {
-    return(FALSE)
-  }
-  numeric_version(core) >= minimum
-}
-
 #' Resolve the target DuckLake catalog name
 #'
 #' Uses the supplied name, or falls back to the currently USEd database.
@@ -156,12 +137,49 @@ infer_ducklake_name <- function(ducklake_name = NULL,
 #' @noRd
 format_timestamp <- function(x) {
   if (inherits(x, "POSIXct")) {
-    # %OS6 keeps sub-second precision: flooring to the second can move the
-    # instant before a snapshot taken in the same second
-    format(x, "%Y-%m-%d %H:%M:%OS6", tz = "UTC")
+    # Rendered to the nearest microsecond, DuckLake's precision. %OS6 would
+    # truncate the binary fraction, which puts the literal a microsecond
+    # before the snapshot it was read from about half the time, so a
+    # snapshot's own time would miss that snapshot
+    micros <- round(as.numeric(x) * 1e6)
+    whole <- as.POSIXct(micros %/% 1e6, origin = "1970-01-01", tz = "UTC")
+    out <- sprintf(
+      "%s.%06d",
+      format(whole, "%Y-%m-%d %H:%M:%S", tz = "UTC"),
+      as.integer(micros %% 1e6)
+    )
+    out[is.na(x)] <- NA_character_
+    out
   } else {
     as.character(x)
   }
+}
+
+#' Refuse a time-travel timestamp that lies in the future
+#'
+#' DuckLake 1.1 rejects time travel to a future timestamp, and through
+#' dbplyr that error surfaces as "Can't query fields" when the lazy table is
+#' first touched. Checking in R first gives the message at the call. A
+#' character timestamp is read as UTC, the way DuckLake reads the literal;
+#' one that does not parse is left for DuckLake to refuse.
+#'
+#' @param x A POSIXct or character timestamp.
+#' @param arg The argument name, for the message.
+#' @returns Invisibly, `x`.
+#' @noRd
+check_not_future <- function(x, arg = "timestamp") {
+  instant <- if (inherits(x, "POSIXct")) {
+    x
+  } else {
+    tryCatch(as.POSIXct(x, tz = "UTC"), error = function(e) NA)
+  }
+  if (length(instant) == 1 && !is.na(instant) && instant > Sys.time()) {
+    cli::cli_abort(c(
+      "{.arg {arg}} is in the future: {format_timestamp(instant)} UTC.",
+      "i" = "DuckLake reads committed snapshots, so a time-travel timestamp must be no later than now ({format_timestamp(Sys.time())} UTC)."
+    ))
+  }
+  invisible(x)
 }
 
 #' Test whether the connection has an open transaction

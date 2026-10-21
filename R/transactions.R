@@ -85,9 +85,9 @@ begin_transaction <- function(conn = NULL) {
 #'
 #' The commit is confirmed with one message naming the snapshot it created,
 #' with the author and commit message when they were given. The id comes
-#' from DuckLake's `last_committed_snapshot()`, which tracks this
-#' connection's own commits, so it is right even when other sessions
-#' commit to the same lake at the same time. A transaction that changed
+#' from DuckLake's `last_committed_snapshot()`, which tracks the commits
+#' made through this session's attachment of the lake, so it is right even
+#' when other sessions commit to the same lake at the same time. A transaction that changed
 #' nothing creates no snapshot, and the message says so, naming the
 #' snapshot the lake stands at. `options(ducklake.verbose = FALSE)`
 #' silences these confirmations.
@@ -609,14 +609,13 @@ current_snapshot_id <- function(conn) {
   )
 }
 
-#' The snapshot this connection last committed, or NA
+#' The snapshot this session last committed, or NA
 #'
-#' DuckLake's `last_committed_snapshot()` is connection state: NA until the
-#' connection commits a change to the lake, then the id of the snapshot its
-#' latest writing commit created, unmoved by empty commits, rollbacks, and
-#' other connections' commits. That makes it the id a commit confirmation
-#' should name. An extension without the function falls back to the lake's
-#' current snapshot, the newest commit from any connection.
+#' DuckLake's `last_committed_snapshot()` is attachment state, shared by
+#' the connections of one DuckDB instance: NA until a change is committed
+#' through the attached lake, then the id of the snapshot the latest such
+#' commit created, unmoved by empty commits, rollbacks, and commits from
+#' other processes. That makes it the id a commit confirmation should name.
 #' @noRd
 committed_snapshot_id <- function(conn) {
   name <- tryCatch(infer_ducklake_name(NULL, conn), error = function(e) NULL)
@@ -628,12 +627,7 @@ committed_snapshot_id <- function(conn) {
       conn,
       sprintf("FROM %s.last_committed_snapshot()", quote_ident(name, conn))
     )[[1]],
-    error = function(e) {
-      missing_function <- grepl(
-        "last_committed_snapshot does not exist", conditionMessage(e), fixed = TRUE
-      )
-      if (missing_function) current_snapshot_id(conn) else NA_integer_
-    }
+    error = function(e) NA_integer_
   )
   if (length(id) != 1) NA_integer_ else as.integer(id)
 }

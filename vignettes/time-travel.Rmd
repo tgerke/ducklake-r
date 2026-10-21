@@ -201,9 +201,9 @@ We can also query data as it existed at any point in time:
 # Get the timestamp of the second snapshot (the MPG adjustment)
 version2_timestamp <- snapshots$snapshot_time[[2]]
 
-# Query data as it existed at that time
-# Note: Add 1 second to ensure we query AFTER the snapshot was created
-get_ducklake_table_asof("cars", version2_timestamp + 1) |>
+# Query data as it existed at that time: a snapshot's own time reads that
+# snapshot, and a time in the future is refused
+get_ducklake_table_asof("cars", version2_timestamp) |>
   summarise(
     avg_mpg = mean(mpg, na.rm = TRUE)
   )

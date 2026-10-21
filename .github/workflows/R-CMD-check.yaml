@@ -51,6 +51,9 @@ jobs:
           r-version: ${{ matrix.config.r }}
           http-user-agent: ${{ matrix.config.http-user-agent }}
           use-public-rspm: true
+          # duckdb 2.0.0 is not on CRAN yet; r-universe builds it from the
+          # duckdb-r main branch. Drop this once CRAN has 2.0.0.
+          extra-repositories: https://duckdb.r-universe.dev
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:

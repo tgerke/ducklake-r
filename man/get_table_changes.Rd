@@ -86,10 +86,11 @@ get_table_changes("orders") |> dplyr::collect()
 latest <- max(snaps$snapshot_id)
 get_table_changes("orders", latest, latest) |> dplyr::collect()
 
-# Every change across the table's full history, by timestamp
+# Every change across the table's full history, by timestamp (both
+# bounds are inclusive, so the snapshot times serve as they are)
 get_table_changes(
   "orders",
-  min(snaps$snapshot_time), max(snaps$snapshot_time) + 1
+  min(snaps$snapshot_time), max(snaps$snapshot_time)
 ) |>
   dplyr::filter(change_type == "delete") |>
   dplyr::collect()

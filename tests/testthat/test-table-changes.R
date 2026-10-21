@@ -34,11 +34,12 @@ test_that("get_table_changes returns inserts, updates, and deletes", {
   expect_equal(nrow(deletes), 1)
   expect_equal(deletes$id, 3)
 
-  # Timestamp bounds cover the same range (snapshot times are UTC)
+  # Timestamp bounds cover the same range: snapshot times are UTC, and
+  # exact bounds are inclusive at both ends
   changes_t <- get_table_changes(
     "cdc",
     min(snaps$snapshot_time),
-    max(snaps$snapshot_time) + 1
+    max(snaps$snapshot_time)
   ) |>
     dplyr::collect()
   expect_equal(nrow(changes_t), nrow(changes))

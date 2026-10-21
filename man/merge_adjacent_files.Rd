@@ -33,8 +33,9 @@ are excluded from merging.}
 above this size are excluded. Defaults to the lake's target file size.}
 }
 \value{
-A data frame with one row per output file (columns
-\code{schema_name}, \code{table_name}, \code{files_processed}, \code{files_created}).
+A data frame with one row per compaction operation (columns
+\code{schema_name}, \code{table_name}, \code{files_processed}, \code{files_created}); an
+operation can write several output files, or none.
 }
 \description{
 Compacts small adjacent Parquet files into larger ones. Frequent small
