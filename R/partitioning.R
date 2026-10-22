@@ -200,12 +200,8 @@ get_table_partitions <- function(table_name = NULL, ducklake_name = NULL) {
        AND c.end_snapshot IS NULL
      WHERE pi.end_snapshot IS NULL %2$s
      ORDER BY s.schema_path, t.table_name, pc.partition_key_index",
-    prefix, filter$sql, metadata_schema_paths_cte(ducklake_name, conn)
+    prefix, filter, metadata_schema_paths_cte(ducklake_name, conn)
   )
 
-  if (length(filter$params) == 0) {
-    DBI::dbGetQuery(conn, sql)
-  } else {
-    DBI::dbGetQuery(conn, sql, params = filter$params)
-  }
+  DBI::dbGetQuery(conn, sql)
 }

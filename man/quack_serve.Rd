@@ -8,24 +8,48 @@ quack_serve(
   uri = "quack:localhost",
   token = NULL,
   allow_other_hostname = FALSE,
-  disable_ssl = FALSE
+  disable_ssl = FALSE,
+  secret = NULL,
+  create_secret_if_not_exists = FALSE,
+  ssl_cert_file = NULL,
+  ssl_key_file = NULL
 )
 }
 \arguments{
 \item{uri}{Address to listen on (default \code{"quack:localhost"}). The default
 port is 9494.}
 
-\item{token}{Authentication token that clients must supply. If \code{NULL}, the
-server accepts any client that can reach it, and a warning is issued.}
+\item{token}{Authentication token that clients must supply (at least 4
+characters). If \code{NULL}, the server takes the token of the session's
+default Quack secret when there is one (see \code{secret} and
+\code{create_secret_if_not_exists}), and otherwise generates a random token,
+which the returned data frame carries in \code{auth_token}. A server is never
+open: clients always present a token.}
 
 \item{allow_other_hostname}{Accept connections addressed to a hostname other
-than the one in \code{uri} (default \code{FALSE}).}
+than the one in \code{uri} (default \code{FALSE}). A server reachable from other
+machines belongs behind a TLS-terminating reverse proxy.}
 
-\item{disable_ssl}{Serve over plain HTTP instead of HTTPS (default \code{FALSE}).
-Only appropriate on a trusted network.}
+\item{disable_ssl}{Serve over plain HTTP instead of HTTPS (default \code{FALSE},
+which leaves the choice to DuckDB: plain HTTP for a local address, HTTPS
+otherwise). Only appropriate on a trusted network.}
+
+\item{secret}{Optional name of an existing Quack secret whose token the
+server uses.}
+
+\item{create_secret_if_not_exists}{When no \code{token} is given and no default
+Quack secret exists, store the generated token in a persistent default
+secret, so later servers (and clients in this session) reuse it (default
+\code{FALSE}).}
+
+\item{ssl_cert_file, ssl_key_file}{Optional certificate and private key
+files for serving over HTTPS, such as the pair \code{\link[=quack_generate_keys]{quack_generate_keys()}}
+writes. Without them DuckDB generates a self-signed certificate when it
+serves HTTPS.}
 }
 \value{
-The server \code{uri}, invisibly.
+Invisibly, a data frame with one row: \code{listen_uri}, \code{listen_url},
+and \code{auth_token}, the token clients must present.
 }
 \description{
 Starts a Quack server in the current DuckDB instance. Everything attached to
@@ -39,15 +63,20 @@ attach_ducklake("trial", lake_path = "path/to/lake")
 quack_serve(token = "super_secret")
 # ... colleagues connect with attach_quack() ...
 quack_stop()
+
+# Let DuckDB pick the token and keep it in a secret for later servers
+server <- quack_serve(create_secret_if_not_exists = TRUE)
+server$auth_token
 }
 }
 \seealso{
-\code{\link[=quack_stop]{quack_stop()}}, \code{\link[=attach_quack]{attach_quack()}}
+\code{\link[=quack_stop]{quack_stop()}}, \code{\link[=attach_quack]{attach_quack()}}, \code{\link[=quack_generate_keys]{quack_generate_keys()}}
 
 Other quack:
 \code{\link[=attach_quack]{attach_quack()}},
 \code{\link[=detach_quack]{detach_quack()}},
 \code{\link[=install_quack]{install_quack()}},
+\code{\link[=quack_generate_keys]{quack_generate_keys()}},
 \code{\link[=quack_query]{quack_query()}},
 \code{\link[=quack_stop]{quack_stop()}}
 }

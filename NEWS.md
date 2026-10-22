@@ -121,6 +121,30 @@
   types `add_data_files()` imports; and the unencrypted Puffin deletion
   vectors on an encrypted lake.
 
+* `attach_ducklake()` gains `backend = "quack"` (experimental, as DuckLake
+  marks it): a DuckDB-file catalog that one process holds open and serves
+  with Quack, so any number of sessions attach the lake through it, each
+  reading and writing the Parquet files on shared storage itself. The
+  server's address is the `catalog_connection_string` and `quack_token`
+  carries its token (DuckLake's `META_TOKEN`). Every package function
+  works unchanged through the served catalog; `backup_ducklake()` copies
+  the data files only. `vignette("quack-remote-access")` has the server
+  script and the comparison with a PostgreSQL or SQLite catalog. One
+  change underneath: the package's queries on the metadata tables write
+  their values as SQL literals instead of bound parameters, because a
+  statement that touches a catalog served over Quack cannot bind them.
+
+* Quack is stable in DuckDB 2.0, and the wrappers follow it. `quack_serve()`
+  gains `secret`, `create_secret_if_not_exists`, `ssl_cert_file`, and
+  `ssl_key_file`, and returns the server's listen URI, URL, and token
+  invisibly: DuckDB generates a token when none is given, so a server is
+  never open and the old warning about one is gone. `attach_quack()` and
+  `quack_query()` gain `ssl_fingerprint`, `client_id`, and
+  `heartbeat_timeout`. New `quack_generate_keys()` writes a self-signed
+  certificate and key for HTTPS and reports the fingerprint clients pin.
+  DuckDB 2.0's `CONNECT` statement is not wrapped: on the duckdb R client
+  it leaves the connection unable to prepare any further statement.
+
 # ducklake 0.9.0
 
 * New `view_table_changes()` opens a table's change feed in an interactive

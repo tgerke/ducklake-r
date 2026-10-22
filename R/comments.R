@@ -247,16 +247,12 @@ get_table_comments <- function(table_name = NULL, ducklake_name = NULL) {
      JOIN schema_paths sp ON c.schema_oid = sp.oid
      WHERE c.database_name = ? AND NOT c.internal AND c.comment IS NOT NULL %3$s
      ORDER BY object_type, schema_name, table_name, column_name",
-    tables$sql, views$sql, columns$sql, catalog_schema_paths_cte(ducklake_name)
+    tables, views, columns, catalog_schema_paths_cte(ducklake_name)
   )
 
   DBI::dbGetQuery(
     conn, sql,
-    params = c(
-      list(ducklake_name), tables$params,
-      list(ducklake_name), views$params,
-      list(ducklake_name), columns$params
-    )
+    params = list(ducklake_name, ducklake_name, ducklake_name)
   )
 }
 
@@ -328,16 +324,15 @@ column_comments_asof <- function(table_name, asof, conn) {
   prefix <- metadata_prefix(ducklake_name, conn)
   ref <- split_table_name(table_name)
 
+  # Literals, not bound parameters: see table_filter()
   if (!is.null(asof$version)) {
-    pin <- "SELECT CAST(? AS BIGINT) AS n"
-    pin_param <- as.integer(asof$version)
+    pin <- sprintf("SELECT CAST(%d AS BIGINT) AS n", as.integer(asof$version))
   } else {
     pin <- sprintf(
       "SELECT max(snapshot_id) AS n FROM %s.ducklake_snapshot
-       WHERE snapshot_time <= CAST(? AS TIMESTAMPTZ)",
-      prefix
+       WHERE snapshot_time <= CAST(%s AS TIMESTAMPTZ)",
+      prefix, quote_sql(asof$timestamp)
     )
-    pin_param <- asof$timestamp
   }
 
   valid <- function(alias) {
@@ -356,19 +351,16 @@ column_comments_asof <- function(table_name, asof, conn) {
      JOIN %1$s.ducklake_column c ON c.table_id = t.table_id AND %5$s
      JOIN %1$s.ducklake_column_tag ct
        ON ct.table_id = c.table_id AND ct.column_id = c.column_id AND %6$s
-     WHERE t.table_name = ? AND s.schema_path = ?
+     WHERE t.table_name = %8$s AND s.schema_path = %9$s
        AND ct.key = 'comment' AND ct.value IS NOT NULL
      ORDER BY c.column_name",
     prefix, pin, valid("t"), valid("s"), valid("c"), valid("ct"),
-    metadata_schema_paths_cte(ducklake_name, conn)
+    metadata_schema_paths_cte(ducklake_name, conn),
+    quote_sql(ref$table),
+    quote_sql(if (is.null(ref$schema)) "main" else ref$schema)
   )
 
-  DBI::dbGetQuery(
-    conn, sql,
-    params = list(
-      pin_param, ref$table, if (is.null(ref$schema)) "main" else ref$schema
-    )
-  )
+  DBI::dbGetQuery(conn, sql)
 }
 
 #' Render a comment value for COMMENT ON

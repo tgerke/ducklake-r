@@ -33,7 +33,7 @@ is to copy files around (a CSV here, an XPT there) and hope everyone is looking
 at the same version.
 
 [Quack](https://duckdb.org/quack/) offers a different answer. It is a protocol,
-shipped as a core DuckDB extension in DuckDB 1.5.3, that lets one DuckDB instance
+a core DuckDB extension stable since DuckDB 2.0, that lets one DuckDB instance
 act as a server while other DuckDB instances connect to it as clients. A
 DuckLake held by the server can then be read and updated by other R sessions over
 the network, with the same snapshots and time travel you get locally. Several
@@ -147,7 +147,14 @@ detach_quack("warehouse")
 
 A served DuckLake is a separate catalog on the server, not part of its default
 database, so its tables are not exposed this way. Reach a served DuckLake with
-`quack_query()` and the lake's catalog name, as in the previous section.
+`quack_query()` and the lake's catalog name, as in the previous section, or
+attach the lake itself through its served catalog as the section after next
+shows.
+
+DuckDB 2.0 also has a `CONNECT` statement that points a whole session at a
+server. Leave it alone on the package's connection: on the duckdb R client it
+breaks every statement that follows, with no way back short of a new
+connection.
 
 ## Serving a lake of your own
 
@@ -191,30 +198,79 @@ quack_stop()
 ### A note on access
 
 A token is the only thing standing between your data and anyone who can reach the
-server. Pick a strong one. If you start a server without a token, `quack_serve()`
-warns you, because an open server lets any client that can reach it read and
-write the lake. On an untrusted network, put the server behind TLS or a reverse
-proxy rather than exposing it directly. The DuckDB
+server. Pick a strong one. A server is never open: when you start one without a
+token, DuckDB generates a random one and `quack_serve()` returns it in
+`auth_token`, and `create_secret_if_not_exists = TRUE` keeps a generated token
+in a secret so later servers reuse it. On an untrusted network, serve HTTPS with
+the certificate and key `quack_generate_keys()` writes and hand clients the
+fingerprint it reports as `ssl_fingerprint`, or put the server behind a
+TLS-terminating reverse proxy. The DuckDB
 [Quack documentation](https://duckdb.org/docs/current/quack/overview) covers
 these deployment options.
+
+## Serving the catalog instead of the tables
+
+The server above serves a lake's tables: clients query them, and only the server
+touches the files. DuckLake 1.1 adds a second arrangement, experimental for now,
+where a Quack server holds a lake's *catalog* open and every client attaches the
+lake through it. The catalog is a plain DuckDB file, which on its own admits one
+process at a time; served, it takes any number of sessions, each of them a full
+client of the lake that reads and writes the Parquet files itself. That makes
+the arrangement a fit for a team on a shared drive that would rather not run
+PostgreSQL.
+
+The server is a DuckDB process that opens the catalog file and serves it. Any
+DuckDB client will do; from R:
+
+```{r serve-catalog}
+con <- DBI::dbConnect(duckdb::duckdb(), dbdir = "/shared/lakes/trial/catalog.duckdb")
+DBI::dbExecute(con, "INSTALL ducklake; LOAD ducklake; INSTALL httpfs; LOAD httpfs; INSTALL quack; LOAD quack")
+DBI::dbGetQuery(con, "CALL quack_serve('quack:catalog.example.org', token = 'super_secret', allow_other_hostname = true)")
+```
+
+Each client attaches the lake with `backend = "quack"`, the server's address
+as the catalog connection string, and the data path as every client reaches
+it:
+
+```{r attach-catalog}
+attach_ducklake(
+  "trial",
+  backend = "quack",
+  catalog_connection_string = "quack:catalog.example.org",
+  quack_token = "super_secret",
+  lake_path = "/shared/lakes/trial/data"
+)
+
+with_transaction(
+  create_table(mtcars, "vehicles"),
+  author = "You",
+  commit_message = "Seed the shared lake"
+)
+list_table_snapshots("vehicles")
+```
+
+From here on nothing is different: snapshots, time travel, comments, and the
+maintenance functions all go through the served catalog, and commits run on the
+server. Back up the catalog by stopping the server and copying its file;
+`backup_ducklake()` copies the data files only.
 
 ## Quack or a shared catalog?
 
 ducklake already supports PostgreSQL and SQLite catalogs for concurrent access
-(see `?attach_ducklake` and the package NEWS). Quack covers a similar need from a
-different angle, and the right choice depends on where your data lives and who
-can reach it.
+(see `?attach_ducklake` and the package NEWS). Quack covers a similar need from
+two angles, and the right choice depends on where your data lives and who can
+reach it.
 
-| | Shared catalog (PostgreSQL or SQLite) | Quack |
-|---|---|---|
-| What clients connect to | The catalog database and the Parquet storage directly | One DuckDB server |
-| Storage access each client needs | Read and write access to the same data path | None; only the server touches the files |
-| Extra service to run | A PostgreSQL server (SQLite needs none) | A DuckDB server process |
-| Good fit when | Everyone can mount the same shared storage | The data sits on one machine and you want to share access to it |
+| | Shared catalog (PostgreSQL or SQLite) | Catalog served over Quack | Tables served over Quack |
+|---|---|---|---|
+| What clients connect to | The catalog database and the Parquet storage directly | One DuckDB server for the catalog, the Parquet storage directly | One DuckDB server |
+| Storage access each client needs | Read and write access to the same data path | Read and write access to the same data path | None; only the server touches the files |
+| Extra service to run | A PostgreSQL server (SQLite needs none) | A DuckDB server process | A DuckDB server process |
+| Good fit when | Everyone can mount the same shared storage | Everyone can mount the storage and nobody wants to run PostgreSQL | The data sits on one machine and you want to share access to it |
 
-A common pattern is to use both: a PostgreSQL catalog so the lake itself supports
-many writers, and a Quack server in front so analysts who cannot mount the
-storage can still connect.
+A common pattern is to use two of them: a PostgreSQL catalog so the lake itself
+supports many writers, and a Quack server in front so analysts who cannot mount
+the storage can still connect.
 
 ## Caveats
 

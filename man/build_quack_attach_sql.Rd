@@ -4,7 +4,15 @@
 \alias{build_quack_attach_sql}
 \title{Build the ATTACH SQL for a Quack server}
 \usage{
-build_quack_attach_sql(quack_name, uri, token = NULL, disable_ssl = FALSE)
+build_quack_attach_sql(
+  quack_name,
+  uri,
+  token = NULL,
+  disable_ssl = FALSE,
+  ssl_fingerprint = NULL,
+  client_id = NULL,
+  heartbeat_timeout = NULL
+)
 }
 \arguments{
 \item{quack_name}{Name for the remote catalog alias.}
@@ -14,6 +22,10 @@ build_quack_attach_sql(quack_name, uri, token = NULL, disable_ssl = FALSE)
 \item{token}{Optional authentication token.}
 
 \item{disable_ssl}{Whether to add the \code{DISABLE_SSL} option.}
+
+\item{ssl_fingerprint, client_id, heartbeat_timeout}{Optional client
+options, rendered as \code{SSL_FINGERPRINT}, \code{CLIENT_ID}, and
+\code{HEARTBEAT_TIMEOUT}.}
 }
 \value{
 A SQL ATTACH statement string.

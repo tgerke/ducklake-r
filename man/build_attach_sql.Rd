@@ -19,7 +19,8 @@ build_attach_sql(
   automatic_migration = FALSE,
   create = TRUE,
   metadata_schema = NULL,
-  ducklake_version = NULL
+  ducklake_version = NULL,
+  quack_token = NULL
 )
 }
 \arguments{
@@ -54,6 +55,8 @@ the duckdb backend, an optional path for the catalog file}
 
 \item{ducklake_version}{Optional catalog format version for
 DUCKLAKE_VERSION, \code{"1.0"} or \code{"1.1"}}
+
+\item{quack_token}{Optional token for META_TOKEN (\code{"quack"} backend)}
 }
 \value{
 A SQL ATTACH statement string

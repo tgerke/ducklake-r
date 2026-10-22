@@ -8,8 +8,8 @@
 #' step, or a machine that is offline at attach time.
 #'
 #' @param backend Optional character vector of backends to install. The ducklake
-#'   extension is always installed. Pass `"postgres"`, `"sqlite"`, and/or
-#'   `"mysql"` to install the corresponding backend extensions.
+#'   extension is always installed. Pass `"postgres"`, `"sqlite"`, `"mysql"`,
+#'   and/or `"quack"` to install the corresponding backend extensions.
 #'
 #' @details
 #' Where the extension lands is decided by the duckdb R package (see
@@ -48,7 +48,7 @@ install_ducklake <- function(backend = NULL) {
     extension_persistence_hint(dir)
   ))
 
-  valid_backends <- c("postgres", "sqlite", "mysql")
+  valid_backends <- c("postgres", "sqlite", "mysql", "quack")
   if (!is.null(backend)) {
     backend <- match.arg(backend, valid_backends, several.ok = TRUE)
     for (ext in backend) {

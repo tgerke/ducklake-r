@@ -544,6 +544,48 @@
   `create_view(replace = TRUE)` reads them through `get_table_comments()`
   (whose column union reads `duckdb_columns()`, which lists view columns)
   and puts back the ones the new view still has.
+- **A DuckLake catalog served over Quack, and the duckdb R client**
+  (2026-10-22, confirmed on DuckDB 2.0.0 with DuckLake 1.1 and duckdb-r
+  2.0.0, server and client in separate R processes). `ATTACH
+  'ducklake:quack:host:port' AS lake (DATA_PATH ..., META_TOKEN 'tok')`
+  authenticates through the forwarded `META_` option, so no secret is
+  needed; a wrong token fails with "Authentication failed"; `META_CLIENT_ID`
+  forwards too; `READ_ONLY` refuses writes. Through the served catalog,
+  everything the package does works unchanged: the metadata tables read
+  and write at `__ducklake_metadata_<lake>.main` (so the creation-snapshot
+  `UPDATE` labels snapshot 0), `set_commit_message()`, `set_option()`,
+  `ALTER TABLE SET PARTITIONED BY`, time travel, the change feed,
+  comments, and a second attach of the same served catalog under another
+  name. `backend = "quack"` takes the server URI as
+  `catalog_connection_string` and `quack_token` for `META_TOKEN`, loads
+  `quack` and `httpfs`, and falls into the `main` metadata-prefix branch.
+  A statement that touches a Quack-served catalog cannot bind parameters
+  ("Values were not provided for the following parameters: 1" from
+  `rapi_prepare`, for a `SELECT` or `UPDATE` on
+  `__ducklake_metadata_lk.main.*`), while the same query with literals
+  works and a parameterized read of a lake *table* through DuckLake works;
+  so `table_filter()`, `table_ids_for_name()`, `column_comments_asof()`,
+  `schema_history()`, `read_snapshot_metadata()`, and
+  `update_snapshot_metadata()` interpolate `quote_sql()` literals and
+  `%d` integers, and new metadata queries must do the same. Queries on
+  DuckDB's catalog functions (`duckdb_tables()` and friends) may keep
+  parameters.
+  DuckDB 2.0's `CONNECT qk` breaks the duckdb R client: every statement
+  after it, `USE memory` included, fails with "INTERNAL Error: PREPARE
+  succeeded but the prepared statement was not registered", so `CONNECT`
+  is not wrapped and the docs say not to run it; worth a duckdb-r issue.
+  `quack_serve()` on 2.0 never leaves a server open: with no `token` it
+  uses the default Quack secret or generates a random token and returns
+  it (`listen_uri`, `listen_url`, `auth_token`); `secret = name`,
+  `create_secret_if_not_exists` (writes a persistent `__default_quack`
+  secret), and `ssl_cert_file`/`ssl_key_file` with the pair
+  `quack_generate_keys(directory =)` writes all work, and `disable_ssl =
+  false` with the pair serves HTTPS even on localhost. Client options
+  `client_id`, `heartbeat_timeout`, and `ssl_fingerprint` (must be 64 hex
+  digits) are accepted by `ATTACH` and `quack_query()`. The live test
+  starts the server as a second `Rscript` process that polls for a stop
+  file, since one process cannot both serve a catalog file and attach the
+  lake through it in the package's model.
 - **`restore_table_version()` joins an open transaction** (2026-10-21,
   reversing the 2026-09-17 refusal). It refused because its own
   `with_transaction()` could not nest and the options needed a post-commit

@@ -413,6 +413,7 @@ sort_expressions <- function(sorting) {
 table_ids_for_name <- function(table, schema, ducklake_name,
                                conn = get_ducklake_connection()) {
   prefix <- metadata_prefix(ducklake_name, conn)
+  # Literals, not bound parameters: see table_filter()
   tryCatch(
     DBI::dbGetQuery(
       conn,
@@ -421,10 +422,10 @@ table_ids_for_name <- function(table, schema, ducklake_name,
          SELECT DISTINCT t.table_id
          FROM %s.ducklake_table t
          JOIN schema_paths s ON t.schema_id = s.schema_id
-         WHERE t.table_name = ? AND s.schema_path = ?",
-        metadata_schema_paths_cte(ducklake_name, conn), prefix
-      ),
-      params = list(table, schema)
+         WHERE t.table_name = %s AND s.schema_path = %s",
+        metadata_schema_paths_cte(ducklake_name, conn), prefix,
+        quote_sql(table), quote_sql(schema)
+      )
     )$table_id,
     error = function(e) integer(0)
   )

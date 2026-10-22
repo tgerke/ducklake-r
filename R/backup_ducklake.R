@@ -113,6 +113,12 @@ backup_ducklake <- function(ducklake_name, lake_path, backup_path) {
     } else {
       cli::cli_warn("Catalog file not found: {.path {catalog_file}}")
     }
+  } else if (backend == "quack") {
+    cli::cli_warn(c(
+      "Catalog backup is not included for the {.val quack} backend.",
+      "i" = "The catalog is the DuckDB file the Quack server opened; stop the server and copy that file.",
+      "i" = "Only Parquet data files will be backed up."
+    ))
   } else {
     tool <- if (backend == "postgres") "pg_dump" else "mysqldump"
     cli::cli_warn(c(

@@ -7,7 +7,7 @@
 attach_ducklake(
   ducklake_name,
   lake_path,
-  backend = c("duckdb", "postgres", "sqlite", "mysql"),
+  backend = c("duckdb", "postgres", "sqlite", "mysql", "quack"),
   catalog_connection_string = NULL,
   read_only = FALSE,
   override_data_path = FALSE,
@@ -20,6 +20,7 @@ attach_ducklake(
   automatic_migration = FALSE,
   create = TRUE,
   metadata_schema = NULL,
+  quack_token = NULL,
   author = NULL,
   commit_message = "Create lake"
 )
@@ -35,7 +36,8 @@ directory too by default; give \code{catalog_connection_string} to place it
 elsewhere, which is how a local catalog pairs with remote data.}
 
 \item{backend}{Catalog backend: \code{"duckdb"} (default), \code{"postgres"},
-\code{"sqlite"}, or \code{"mysql"}.}
+\code{"sqlite"}, \code{"mysql"}, or \code{"quack"} (experimental: a DuckDB catalog
+that a Quack server holds open for several clients, see Details).}
 
 \item{catalog_connection_string}{Backend-specific connection string:
 \describe{
@@ -46,6 +48,9 @@ storage.}
 \item{\code{"postgres"}}{libpq string, e.g. \code{"dbname=mydb host=localhost"}.}
 \item{\code{"sqlite"}}{Path to the SQLite file, e.g. \code{"metadata.sqlite"}.}
 \item{\code{"mysql"}}{MySQL connection string, e.g. \code{"db=mydb host=localhost"}.}
+\item{\code{"quack"}}{The Quack server's address, e.g.
+\code{"quack:catalog.example.org:9494"}; a bare host is prefixed with
+\verb{quack:}, and the default port is 9494.}
 }}
 
 \item{read_only}{Attach in read-only mode (default \code{FALSE}).}
@@ -130,6 +135,11 @@ DuckDB or SQLite catalog, usually \code{public} for PostgreSQL. Lets several
 lakes share one PostgreSQL database, each in its own schema. A SQLite
 catalog has no schemas and refuses the option.}
 
+\item{quack_token}{Token of the Quack server that holds the catalog
+(\code{"quack"} backend only), sent as DuckLake's \code{META_TOKEN} option. Like
+\code{meta_encryption_key}, it is interpolated into the \code{ATTACH} statement
+text. \code{NULL} lets a Quack secret in the session supply it.}
+
 \item{author}{Author to record on snapshot 0, the creation snapshot, when
 this call creates the lake. Defaults to the \code{ducklake.author} option
 when it is set (see \code{?ducklake}), otherwise none. Not written for a
@@ -191,6 +201,17 @@ every client of the lake to 2.0 together; a team that cannot upgrade
 together belongs on a SQLite or PostgreSQL catalog. The catalog format
 migration (\code{automatic_migration}) is a separate, opt-in step.
 \code{vignette("deployment")} has the full sequence.
+
+\strong{A catalog served over Quack (experimental).} A DuckDB-file catalog
+admits one process at a time. With \code{backend = "quack"}, that file is
+opened by one DuckDB process running a Quack server (see
+\code{\link[=quack_serve]{quack_serve()}} and \code{vignette("quack-remote-access")}), and every
+client attaches the lake through it: the metadata lives on the server,
+commits go through it, and the clients read and write the Parquet files
+themselves, so \code{lake_path} must be storage the server and every client
+can reach by the same path, such as a mounted share or an object store.
+DuckLake marks this catalog experimental. Backups of the catalog are the
+server's DuckDB file; \code{\link[=backup_ducklake]{backup_ducklake()}} copies the data files only.
 
 For credential management with PostgreSQL or MySQL, consider DuckDB's
 built-in secrets manager instead of embedding credentials in the connection
@@ -263,6 +284,16 @@ attach_ducklake(
   backend = "mysql",
   catalog_connection_string = "db=ducklake_catalog host=localhost",
   lake_path = "data_files/"
+)
+
+# A DuckDB catalog held open by a Quack server, shared by several clients
+# (experimental); the data path is a share every client mounts
+attach_ducklake(
+  "my_lake",
+  backend = "quack",
+  catalog_connection_string = "quack:catalog.example.org",
+  quack_token = askpass::askpass("Quack token"),
+  lake_path = "/shared/lake/data/"
 )
 
 # DuckDB catalog on local disk, Parquet data on S3
