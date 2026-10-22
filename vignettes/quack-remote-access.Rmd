@@ -154,7 +154,7 @@ shows.
 DuckDB 2.0 also has a `CONNECT` statement that points a whole session at a
 server. Leave it alone on the package's connection: on the duckdb R client it
 breaks every statement that follows, with no way back short of a new
-connection.
+connection ([duckdb/duckdb#27269](https://github.com/duckdb/duckdb/issues/27269)).
 
 ## Serving a lake of your own
 

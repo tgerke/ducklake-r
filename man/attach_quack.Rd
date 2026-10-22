@@ -59,7 +59,8 @@ work with a lake whose catalog a Quack server holds open, attach it with
 DuckDB 2.0's \code{CONNECT} statement, which points a whole session at a
 server, is not used here and should not be run on the package's
 connection: on the duckdb R client it leaves the connection unable to
-prepare any further statement.
+prepare any further statement
+(\url{https://github.com/duckdb/duckdb/issues/27269}).
 }
 \examples{
 \dontrun{

@@ -53,7 +53,7 @@ Good news first: **every committed change to a DuckLake table creates a
 snapshot**. Whether you use `rows_insert()`, `replace_table()`, or raw SQL,
 DuckLake records what changed and you can time-travel back to any earlier
 state. (Earlier versions of this vignette said the `rows_*` functions skip
-versioning. That is not true in DuckLake v1.0.) The choice between the
+versioning; they do not.) The choice between the
 styles is about *what kind of change* you are making, not about whether it is
 audited.
 

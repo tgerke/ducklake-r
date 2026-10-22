@@ -6,7 +6,7 @@
 # remote queries, and serve the current session (including any attached
 # DuckLake) to other clients. DuckDB 2.0's CONNECT statement, which routes a
 # whole session to a server, is not wrapped: on the duckdb R client it leaves
-# the connection unable to prepare any further statement.
+# the connection unable to prepare any further statement (duckdb/duckdb#27269).
 
 #' Install the Quack extension
 #'
@@ -57,7 +57,8 @@ install_quack <- function(load = TRUE) {
 #' DuckDB 2.0's `CONNECT` statement, which points a whole session at a
 #' server, is not used here and should not be run on the package's
 #' connection: on the duckdb R client it leaves the connection unable to
-#' prepare any further statement.
+#' prepare any further statement
+#' (<https://github.com/duckdb/duckdb/issues/27269>).
 #'
 #' @param quack_name Name for the attached remote catalog, used as the database
 #'   alias in DuckDB.
