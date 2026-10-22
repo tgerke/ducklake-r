@@ -4,7 +4,15 @@
 \alias{quack_query}
 \title{Run a one-off query against a remote Quack server}
 \usage{
-quack_query(uri, query, token = NULL, disable_ssl = FALSE)
+quack_query(
+  uri,
+  query,
+  token = NULL,
+  disable_ssl = FALSE,
+  ssl_fingerprint = NULL,
+  client_id = NULL,
+  heartbeat_timeout = NULL
+)
 }
 \arguments{
 \item{uri}{Address of the Quack server, for example \code{"quack:localhost"}.}
@@ -14,7 +22,19 @@ quack_query(uri, query, token = NULL, disable_ssl = FALSE)
 \item{token}{Authentication token expected by the server. If \code{NULL}, a Quack
 secret is used if one exists.}
 
-\item{disable_ssl}{Connect over plain HTTP instead of HTTPS (default \code{FALSE}).}
+\item{disable_ssl}{Connect over plain HTTP instead of HTTPS (default \code{FALSE},
+which leaves the choice to DuckDB: plain HTTP for a local server, HTTPS
+otherwise).}
+
+\item{ssl_fingerprint}{Optional SHA-256 fingerprint (64 hex digits) of the
+server's certificate, for a server with a self-signed certificate; the
+value \code{\link[=quack_generate_keys]{quack_generate_keys()}} returns on the server side.}
+
+\item{client_id}{Optional identifier the server records for this client
+(at least 4 characters), shown by its \code{quack_active_connections()}.}
+
+\item{heartbeat_timeout}{Optional heartbeat lease, in seconds, requested
+from the server.}
 }
 \value{
 A data.frame with the query result.
@@ -40,6 +60,7 @@ Other quack:
 \code{\link[=attach_quack]{attach_quack()}},
 \code{\link[=detach_quack]{detach_quack()}},
 \code{\link[=install_quack]{install_quack()}},
+\code{\link[=quack_generate_keys]{quack_generate_keys()}},
 \code{\link[=quack_serve]{quack_serve()}},
 \code{\link[=quack_stop]{quack_stop()}}
 }

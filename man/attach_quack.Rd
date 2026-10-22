@@ -4,7 +4,15 @@
 \alias{attach_quack}
 \title{Connect to a remote Quack server}
 \usage{
-attach_quack(quack_name, uri, token = NULL, disable_ssl = FALSE)
+attach_quack(
+  quack_name,
+  uri,
+  token = NULL,
+  disable_ssl = FALSE,
+  ssl_fingerprint = NULL,
+  client_id = NULL,
+  heartbeat_timeout = NULL
+)
 }
 \arguments{
 \item{quack_name}{Name for the attached remote catalog, used as the database
@@ -17,8 +25,19 @@ prefixed with \verb{quack:} automatically. The default port is 9494.}
 \item{token}{Authentication token expected by the server. If \code{NULL}, the token
 is taken from a Quack secret (see \verb{CREATE SECRET}) if one exists.}
 
-\item{disable_ssl}{Connect over plain HTTP instead of HTTPS (default \code{FALSE}).
-Only appropriate on a trusted network.}
+\item{disable_ssl}{Connect over plain HTTP instead of HTTPS (default \code{FALSE},
+which leaves the choice to DuckDB: plain HTTP for a local server, HTTPS
+otherwise). Only appropriate on a trusted network.}
+
+\item{ssl_fingerprint}{Optional SHA-256 fingerprint (64 hex digits) of the
+server's certificate, for a server with a self-signed certificate; the
+value \code{\link[=quack_generate_keys]{quack_generate_keys()}} returns on the server side.}
+
+\item{client_id}{Optional identifier the server records for this client
+(at least 4 characters), shown by its \code{quack_active_connections()}.}
+
+\item{heartbeat_timeout}{Optional heartbeat lease, in seconds, requested
+from the server.}
 }
 \value{
 Invisibly, \code{NULL}. Called for its side effect of attaching the
@@ -33,7 +52,14 @@ and can be queried with \code{\link[=get_ducklake_table]{get_ducklake_table()}} 
 A DuckLake served over Quack lives in its own catalog on the server rather
 than in the default database, so its tables are not exposed under
 \code{quack_name}. Query a served DuckLake with \code{\link[=quack_query]{quack_query()}}, naming the lake's
-catalog, for example \code{quack_query(uri, "SELECT * FROM trial.adsl")}.
+catalog, for example \code{quack_query(uri, "SELECT * FROM trial.adsl")}. To
+work with a lake whose catalog a Quack server holds open, attach it with
+\code{attach_ducklake(backend = "quack")} instead.
+
+DuckDB 2.0's \code{CONNECT} statement, which points a whole session at a
+server, is not used here and should not be run on the package's
+connection: on the duckdb R client it leaves the connection unable to
+prepare any further statement.
 }
 \examples{
 \dontrun{
@@ -53,6 +79,7 @@ detach_quack("warehouse")
 Other quack:
 \code{\link[=detach_quack]{detach_quack()}},
 \code{\link[=install_quack]{install_quack()}},
+\code{\link[=quack_generate_keys]{quack_generate_keys()}},
 \code{\link[=quack_query]{quack_query()}},
 \code{\link[=quack_serve]{quack_serve()}},
 \code{\link[=quack_stop]{quack_stop()}}

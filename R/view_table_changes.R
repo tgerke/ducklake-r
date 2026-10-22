@@ -541,15 +541,17 @@ schema_history <- function(table, schema, ducklake_name, conn, start_id, end_id)
        ON c.table_id = t.table_id AND t.end_snapshot IS NULL
      JOIN schema_paths s
        ON t.schema_id = s.schema_id AND s.end_snapshot IS NULL
-     WHERE t.table_name = ? AND s.schema_path = ?
+     WHERE t.table_name = %3$s AND s.schema_path = %4$s
        AND c.parent_column IS NULL
-       AND c.begin_snapshot <= ?
-       AND (c.end_snapshot IS NULL OR c.end_snapshot >= ?)
+       AND c.begin_snapshot <= %5$d
+       AND (c.end_snapshot IS NULL OR c.end_snapshot >= %6$d)
      ORDER BY c.column_id, c.begin_snapshot",
-    prefix, metadata_schema_paths_cte(ducklake_name, conn)
+    prefix, metadata_schema_paths_cte(ducklake_name, conn),
+    quote_sql(table), quote_sql(schema), as.integer(end_id), as.integer(start_id)
   )
+  # Literals, not bound parameters: see table_filter()
   versions <- tryCatch(
-    DBI::dbGetQuery(conn, sql, params = list(table, schema, end_id, start_id)),
+    DBI::dbGetQuery(conn, sql),
     error = function(e) e
   )
   if (inherits(versions, "error")) {

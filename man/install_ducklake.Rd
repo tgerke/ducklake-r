@@ -8,8 +8,8 @@ install_ducklake(backend = NULL)
 }
 \arguments{
 \item{backend}{Optional character vector of backends to install. The ducklake
-extension is always installed. Pass \code{"postgres"}, \code{"sqlite"}, and/or
-\code{"mysql"} to install the corresponding backend extensions.}
+extension is always installed. Pass \code{"postgres"}, \code{"sqlite"}, \code{"mysql"},
+and/or \code{"quack"} to install the corresponding backend extensions.}
 }
 \value{
 Invisibly, \code{NULL}. Called for its side effect of installing the

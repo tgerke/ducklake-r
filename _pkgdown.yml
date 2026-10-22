@@ -190,3 +190,4 @@ reference:
     - quack_query
     - quack_serve
     - quack_stop
+    - quack_generate_keys

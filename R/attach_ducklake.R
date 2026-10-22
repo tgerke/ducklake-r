@@ -27,7 +27,8 @@
 #'   directory too by default; give `catalog_connection_string` to place it
 #'   elsewhere, which is how a local catalog pairs with remote data.
 #' @param backend Catalog backend: `"duckdb"` (default), `"postgres"`,
-#'   `"sqlite"`, or `"mysql"`.
+#'   `"sqlite"`, `"mysql"`, or `"quack"` (experimental: a DuckDB catalog
+#'   that a Quack server holds open for several clients, see Details).
 #' @param catalog_connection_string Backend-specific connection string:
 #'   \describe{
 #'     \item{`"duckdb"`}{Optional path for the catalog database file.
@@ -37,6 +38,9 @@
 #'     \item{`"postgres"`}{libpq string, e.g. `"dbname=mydb host=localhost"`.}
 #'     \item{`"sqlite"`}{Path to the SQLite file, e.g. `"metadata.sqlite"`.}
 #'     \item{`"mysql"`}{MySQL connection string, e.g. `"db=mydb host=localhost"`.}
+#'     \item{`"quack"`}{The Quack server's address, e.g.
+#'       `"quack:catalog.example.org:9494"`; a bare host is prefixed with
+#'       `quack:`, and the default port is 9494.}
 #'   }
 #' @param read_only Attach in read-only mode (default `FALSE`).
 #' @param override_data_path Override the stored DATA_PATH in the catalog
@@ -104,6 +108,10 @@
 #'   (default `TRUE`, DuckLake's `CREATE_IF_NOT_EXISTS`). Pass `FALSE` when
 #'   you mean to open an existing lake, so a mistyped path or name is an
 #'   error rather than a new, empty lake.
+#' @param quack_token Token of the Quack server that holds the catalog
+#'   (`"quack"` backend only), sent as DuckLake's `META_TOKEN` option. Like
+#'   `meta_encryption_key`, it is interpolated into the `ATTACH` statement
+#'   text. `NULL` lets a Quack secret in the session supply it.
 #' @param metadata_schema Optional schema inside the catalog database that
 #'   holds this lake's metadata tables (DuckLake's `METADATA_SCHEMA`).
 #'   Without it DuckLake uses the backend's default schema: `main` for a
@@ -145,6 +153,17 @@
 #' together belongs on a SQLite or PostgreSQL catalog. The catalog format
 #' migration (`automatic_migration`) is a separate, opt-in step.
 #' `vignette("deployment")` has the full sequence.
+#'
+#' **A catalog served over Quack (experimental).** A DuckDB-file catalog
+#' admits one process at a time. With `backend = "quack"`, that file is
+#' opened by one DuckDB process running a Quack server (see
+#' [quack_serve()] and `vignette("quack-remote-access")`), and every
+#' client attaches the lake through it: the metadata lives on the server,
+#' commits go through it, and the clients read and write the Parquet files
+#' themselves, so `lake_path` must be storage the server and every client
+#' can reach by the same path, such as a mounted share or an object store.
+#' DuckLake marks this catalog experimental. Backups of the catalog are the
+#' server's DuckDB file; [backup_ducklake()] copies the data files only.
 #'
 #' For credential management with PostgreSQL or MySQL, consider DuckDB's
 #' built-in secrets manager instead of embedding credentials in the connection
@@ -226,6 +245,16 @@
 #'   lake_path = "data_files/"
 #' )
 #'
+#' # A DuckDB catalog held open by a Quack server, shared by several clients
+#' # (experimental); the data path is a share every client mounts
+#' attach_ducklake(
+#'   "my_lake",
+#'   backend = "quack",
+#'   catalog_connection_string = "quack:catalog.example.org",
+#'   quack_token = askpass::askpass("Quack token"),
+#'   lake_path = "/shared/lake/data/"
+#' )
+#'
 #' # DuckDB catalog on local disk, Parquet data on S3
 #' create_storage_secret("s3", provider = "credential_chain")
 #' attach_ducklake(
@@ -289,7 +318,7 @@
 #' )
 #' }
 attach_ducklake <- function(ducklake_name, lake_path,
-                             backend = c("duckdb", "postgres", "sqlite", "mysql"),
+                             backend = c("duckdb", "postgres", "sqlite", "mysql", "quack"),
                              catalog_connection_string = NULL,
                              read_only = FALSE,
                              override_data_path = FALSE,
@@ -302,12 +331,20 @@ attach_ducklake <- function(ducklake_name, lake_path,
                              automatic_migration = FALSE,
                              create = TRUE,
                              metadata_schema = NULL,
+                             quack_token = NULL,
                              author = NULL,
                              commit_message = "Create lake") {
   backend <- match.arg(backend)
   check_identifier(ducklake_name)
   author <- resolve_author(author)
   check_optional_string(commit_message, "commit_message")
+  check_optional_string(quack_token, "quack_token")
+  if (!is.null(quack_token) && backend != "quack") {
+    cli::cli_abort(c(
+      "{.arg quack_token} applies to the {.val quack} backend only.",
+      "i" = "It is the token of the Quack server that holds the catalog."
+    ))
+  }
 
   if (!is.null(snapshot_version) && !is.null(snapshot_time)) {
     cli::cli_abort(
@@ -438,7 +475,8 @@ attach_ducklake <- function(ducklake_name, lake_path,
                                   automatic_migration,
                                   create,
                                   metadata_schema,
-                                  ducklake_version = ducklake_version)
+                                  ducklake_version = ducklake_version,
+                                  quack_token = quack_token)
   db_execute(attach_sql)
   db_execute(sprintf("USE %s;", quote_ident(ducklake_name, conn)))
   register_lake(ducklake_name, backend, catalog_connection_string, metadata_schema)
@@ -492,7 +530,8 @@ normalize_lake_path <- function(lake_path) {
 ensure_extensions <- function(backend, encrypted = FALSE, remote = FALSE) {
   load_or_install_extension("ducklake")
 
-  if (encrypted || remote) {
+  # A Quack catalog speaks HTTP, which httpfs provides
+  if (encrypted || remote || backend == "quack") {
     tryCatch(
       load_or_install_extension("httpfs"),
       error = function(e) {
@@ -512,6 +551,7 @@ ensure_extensions <- function(backend, encrypted = FALSE, remote = FALSE) {
     postgres = "postgres",
     sqlite = "sqlite",
     mysql = "mysql",
+    quack = "quack",
     NULL
   )
 
@@ -539,6 +579,7 @@ ensure_extensions <- function(backend, encrypted = FALSE, remote = FALSE) {
 #' @param metadata_schema Optional schema for METADATA_SCHEMA
 #' @param ducklake_version Optional catalog format version for
 #'   DUCKLAKE_VERSION, `"1.0"` or `"1.1"`
+#' @param quack_token Optional token for META_TOKEN (`"quack"` backend)
 #'
 #' @returns A SQL ATTACH statement string
 #' @keywords internal
@@ -553,7 +594,8 @@ build_attach_sql <- function(ducklake_name, lake_path, backend,
                               automatic_migration = FALSE,
                               create = TRUE,
                               metadata_schema = NULL,
-                              ducklake_version = NULL) {
+                              ducklake_version = NULL,
+                              quack_token = NULL) {
   connection_string <- switch(backend,
     duckdb = {
       ducklake_path <- if (!is.null(catalog_connection_string)) {
@@ -565,7 +607,8 @@ build_attach_sql <- function(ducklake_name, lake_path, backend,
     },
     postgres = sprintf("ducklake:postgres:%s", catalog_connection_string),
     sqlite = sprintf("ducklake:sqlite:%s", catalog_connection_string),
-    mysql = sprintf("ducklake:mysql:%s", catalog_connection_string)
+    mysql = sprintf("ducklake:mysql:%s", catalog_connection_string),
+    quack = sprintf("ducklake:%s", build_quack_uri(catalog_connection_string))
   )
   
   options <- character()
@@ -595,6 +638,12 @@ build_attach_sql <- function(ducklake_name, lake_path, backend,
       options,
       sprintf("META_ENCRYPTION_KEY %s", quote_sql(meta_encryption_key))
     )
+  }
+
+  # META_ options are forwarded to the metadata catalog's own ATTACH; for a
+  # Quack catalog that is the server's authentication token
+  if (!is.null(quack_token)) {
+    options <- c(options, sprintf("META_TOKEN %s", quote_sql(quack_token)))
   }
 
   if (!is.null(snapshot_version)) {

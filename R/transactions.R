@@ -365,13 +365,13 @@ set_snapshot_metadata <- function(
 #' the caller decides whether they are a warning or an error.
 #' @noRd
 read_snapshot_metadata <- function(ducklake_name, snapshot_id, conn) {
+  # Literals, not bound parameters: see table_filter()
   DBI::dbGetQuery(
     conn,
     sprintf(
-      "SELECT author, commit_message, commit_extra_info FROM %s.ducklake_snapshot_changes WHERE snapshot_id = ?",
-      metadata_prefix(ducklake_name, conn)
-    ),
-    params = list(as.integer(snapshot_id))
+      "SELECT author, commit_message, commit_extra_info FROM %s.ducklake_snapshot_changes WHERE snapshot_id = %d",
+      metadata_prefix(ducklake_name, conn), as.integer(snapshot_id)
+    )
   )
 }
 
@@ -386,19 +386,30 @@ read_snapshot_metadata <- function(ducklake_name, snapshot_id, conn) {
 #' @noRd
 update_snapshot_metadata <- function(ducklake_name, snapshot_id, values, conn,
                                      condition = NULL) {
-  where <- "snapshot_id = ?"
+  where <- sprintf("snapshot_id = %d", as.integer(snapshot_id))
   if (!is.null(condition)) {
     where <- paste(where, "AND", condition)
   }
+  # Literals, not bound parameters: see table_filter()
+  assignments <- vapply(
+    names(values),
+    function(name) {
+      value <- values[[name]]
+      sprintf(
+        "%s = %s", name,
+        if (is.null(value) || is.na(value)) "NULL" else quote_sql(as.character(value))
+      )
+    },
+    character(1)
+  )
   DBI::dbExecute(
     conn,
     sprintf(
       "UPDATE %s.ducklake_snapshot_changes SET %s WHERE %s",
       metadata_prefix(ducklake_name, conn),
-      paste0(names(values), " = ?", collapse = ", "),
+      paste(assignments, collapse = ", "),
       where
-    ),
-    params = c(unname(values), list(as.integer(snapshot_id)))
+    )
   )
 }
 

@@ -66,13 +66,14 @@ one machine; it is also the one that cannot be shared.
 | One person, one machine | DuckDB file (the default) | Nothing to install or run. One writer at a time: DuckDB locks the file while the lake is attached, and a second session cannot open it. |
 | A team on a shared drive | SQLite | Several sessions write to the same lake. SQLite serializes them and DuckLake retries when it meets a lock. No server to run. |
 | Many users, remote storage | PostgreSQL | Row-level locking for concurrent writers, database roles for access control, `pg_dump` for backups. Needs a server (PostgreSQL 12 or newer). |
+| A team on a shared drive, no PostgreSQL | DuckDB file held open by a Quack server (experimental) | One DuckDB process opens the catalog and serves it; every session attaches through it with `backend = "quack"` and reads and writes the files on the share itself. |
 | Sharing without shared storage | Any of the above, served with Quack | Clients connect to one DuckDB process over the network; only the server touches the catalog and files. |
 | A published, read-only lake | DuckDB file on an HTTPS host | Readers attach the catalog straight from the URL; you update it by replacing the file. |
 
 MySQL works but is not recommended upstream because of limitations in the
 DuckDB MySQL connector, and `attach_ducklake()` warns when you pick it.
 
-The three shapes in code:
+The shapes in code:
 
 ```{r catalogs}
 # One person: catalog and data side by side in one directory
@@ -83,6 +84,16 @@ attach_ducklake(
   "trial",
   backend = "sqlite",
   catalog_connection_string = "/shared/lakes/trial/catalog.sqlite",
+  lake_path = "/shared/lakes/trial/data"
+)
+
+# The same team, with a DuckDB catalog that one process serves over Quack
+# (experimental; vignette("quack-remote-access") shows the server side)
+attach_ducklake(
+  "trial",
+  backend = "quack",
+  catalog_connection_string = "quack:catalog.example.org",
+  quack_token = askpass::askpass("Quack token"),
   lake_path = "/shared/lakes/trial/data"
 )
 

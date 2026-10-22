@@ -156,3 +156,143 @@ test_that("detach_quack removes the catalog and ignores unknown names", {
   expect_no_error(detach_quack("no_such_catalog"))
   expect_no_error(detach_quack())
 })
+
+# --- DuckDB 2.0 options ---
+
+test_that("build_quack_attach_sql renders the client options", {
+  expect_equal(
+    ducklake:::build_quack_attach_sql(
+      "team", "quack:localhost", token = "s3cret",
+      ssl_fingerprint = strrep("ab", 32), client_id = "ducklake_r",
+      heartbeat_timeout = 60
+    ),
+    sprintf(
+      "ATTACH 'quack:localhost' AS team (TYPE quack, TOKEN 's3cret', SSL_FINGERPRINT '%s', CLIENT_ID 'ducklake_r', HEARTBEAT_TIMEOUT 60);",
+      strrep("ab", 32)
+    )
+  )
+  expect_error(
+    ducklake:::build_quack_attach_sql("team", "quack:localhost", heartbeat_timeout = -1),
+    "positive number"
+  )
+})
+
+test_that("build_quack_query_sql renders the client options as named arguments", {
+  expect_equal(
+    ducklake:::build_quack_query_sql(
+      "localhost", "SELECT 1", token = "s3cret", client_id = "ducklake_r",
+      heartbeat_timeout = 30
+    ),
+    "SELECT * FROM quack_query('quack:localhost', 'SELECT 1', token = 's3cret', client_id = 'ducklake_r', heartbeat_timeout = 30);"
+  )
+})
+
+test_that("build_quack_serve_sql renders the server options", {
+  expect_equal(
+    ducklake:::build_quack_serve_sql("quack:localhost", token = "s3cret"),
+    "CALL quack_serve('quack:localhost', token = 's3cret');"
+  )
+  expect_equal(
+    ducklake:::build_quack_serve_sql(
+      "quack:0.0.0.0:9494", secret = "team_token", allow_other_hostname = TRUE,
+      ssl_cert_file = "/keys/server.pem", ssl_key_file = "/keys/private_key.pem"
+    ),
+    "CALL quack_serve('quack:0.0.0.0:9494', secret = 'team_token', allow_other_hostname = true, ssl_cert_file = '/keys/server.pem', ssl_key_file = '/keys/private_key.pem');"
+  )
+  expect_equal(
+    ducklake:::build_quack_serve_sql("localhost", create_secret_if_not_exists = TRUE),
+    "CALL quack_serve('quack:localhost', create_secret_if_not_exists = true);"
+  )
+  expect_error(
+    ducklake:::build_quack_serve_sql("localhost", token = "a", secret = "b"),
+    "not both"
+  )
+  expect_error(
+    ducklake:::build_quack_serve_sql("localhost", ssl_cert_file = "/keys/server.pem"),
+    "go together"
+  )
+})
+
+test_that("build_attach_sql renders a Quack catalog with META_TOKEN", {
+  sql <- build_attach_sql(
+    "lake", "/shared/data", "quack", "catalog.example.org:9494",
+    read_only = FALSE, quack_token = "s3cret"
+  )
+  expect_match(sql, "ATTACH 'ducklake:quack:catalog.example.org:9494' AS lake", fixed = TRUE)
+  expect_match(sql, "META_TOKEN 's3cret'", fixed = TRUE)
+  expect_error(
+    attach_ducklake("lake", lake_path = tempdir(), quack_token = "s3cret"),
+    "quack.*backend only"
+  )
+})
+
+test_that("a DuckLake catalog served over Quack works through attach_ducklake", {
+  skip_on_cran()
+  skip_on_os("windows")
+  skip_if_not_installed("duckdb")
+  skip_if_no_ducklake()
+
+  dir <- tempfile("quack_catalog")
+  dir.create(dir)
+  data <- file.path(dir, "data")
+  dir.create(data)
+  port <- 19500 + sample.int(400, 1)
+  stop_file <- file.path(dir, "stop")
+  on.exit(writeLines("stop", stop_file), add = TRUE)
+
+  # The server is a second R process holding the catalog file open: a
+  # DuckDB-file catalog admits one process, and this is how it is shared
+  server <- file.path(dir, "serve.R")
+  writeLines(c(
+    "args <- commandArgs(TRUE)",
+    "dir <- args[1]; port <- args[2]",
+    "con <- DBI::dbConnect(duckdb::duckdb(), dbdir = file.path(dir, 'catalog.duckdb'))",
+    "DBI::dbExecute(con, 'INSTALL ducklake; LOAD ducklake; INSTALL httpfs; LOAD httpfs; INSTALL quack; LOAD quack')",
+    "DBI::dbGetQuery(con, sprintf(\"CALL quack_serve('quack:localhost:%s', token = 'test_secret')\", port))",
+    "writeLines('ready', file.path(dir, 'ready'))",
+    "deadline <- Sys.time() + 180",
+    "while (!file.exists(file.path(dir, 'stop')) && Sys.time() < deadline) Sys.sleep(0.2)",
+    "DBI::dbDisconnect(con, shutdown = TRUE)"
+  ), server)
+  system2(
+    file.path(R.home("bin"), "Rscript"), c(shQuote(server), shQuote(dir), port),
+    wait = FALSE, stdout = file.path(dir, "server.log"), stderr = file.path(dir, "server.log")
+  )
+  ready <- FALSE
+  for (i in seq_len(150)) {
+    if (file.exists(file.path(dir, "ready"))) {
+      ready <- TRUE
+      break
+    }
+    Sys.sleep(0.2)
+  }
+  skip_if_not(ready, "Could not start a Quack server process")
+
+  suppressMessages(attach_ducklake(
+    "quack_lake", lake_path = data, backend = "quack",
+    catalog_connection_string = sprintf("localhost:%d", port),
+    quack_token = "test_secret", author = "Tester"
+  ))
+  on.exit(try(detach_ducklake("quack_lake"), silent = TRUE), add = TRUE, after = FALSE)
+  expect_equal(get_ducklake_backend("quack_lake"), "quack")
+
+  suppressMessages({
+    create_table(data.frame(id = 1:3, grp = c("a", "b", "a")), "served")
+    rows_insert(get_ducklake_table("served"), data.frame(id = 4L, grp = "b"), by = "id")
+    set_table_comment("served", "over quack")
+  })
+  expect_equal(nrow(dplyr::collect(get_ducklake_table("served"))), 4)
+  expect_equal(get_table_comments("served")$comment, "over quack")
+  snaps <- list_table_snapshots("served")
+  expect_equal(nrow(snaps), 3)
+  # the creation snapshot was labeled through the served catalog
+  all_snaps <- list_table_snapshots()
+  expect_equal(all_snaps$author[all_snaps$snapshot_id == 0], "Tester")
+  expect_equal(nrow(dplyr::collect(get_ducklake_table_version("served", snaps$snapshot_id[[1]]))), 3)
+  expect_equal(get_ducklake_info("quack_lake")$backend, "quack")
+
+  expect_warning(
+    suppressMessages(backup_ducklake("quack_lake", data, file.path(dir, "backup"))),
+    "Quack server"
+  )
+})

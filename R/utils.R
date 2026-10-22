@@ -640,31 +640,35 @@ lake_has_nested_schemas <- function(ducklake_name, conn = get_ducklake_connectio
   nested
 }
 
-#' WHERE fragment and parameters that select one table in a metadata query
+#' WHERE fragment that selects one table in a metadata query
 #'
 #' The query must alias `ducklake_table` as `t` and the schema-path CTE as
 #' `s`, or pass the columns it uses instead. With no schema in the name the
 #' filter matches the table name in every schema; with one it matches the
-#' full schema path.
+#' full schema path. The values are written as literals, not bound
+#' parameters: a statement that touches a catalog served over Quack cannot
+#' bind parameters ("Values were not provided for the following
+#' parameters", confirmed on DuckDB 2.0.0), and the metadata queries all
+#' read such a catalog when the lake is attached that way.
 #'
 #' @param table_name A table name, optionally qualified, or `NULL` for no
 #'   filter.
 #' @param table_col The SQL column holding the object name.
 #' @param schema_col The SQL column holding the schema path.
-#' @returns A list with `sql` (starting with `AND`, or empty) and `params`.
+#' @returns A string starting with `AND`, or empty.
 #' @noRd
 table_filter <- function(table_name, table_col = "t.table_name",
                          schema_col = "s.schema_path") {
   if (is.null(table_name)) {
-    return(list(sql = "", params = list()))
+    return("")
   }
   ref <- resolve_table_ref(table_name)
   if (is.null(ref$schema)) {
-    list(sql = sprintf("AND %s = ?", table_col), params = list(ref$table))
+    sprintf("AND %s = %s", table_col, quote_sql(ref$table))
   } else {
-    list(
-      sql = sprintf("AND %s = ? AND %s = ?", table_col, schema_col),
-      params = list(ref$table, ref$schema)
+    sprintf(
+      "AND %s = %s AND %s = %s",
+      table_col, quote_sql(ref$table), schema_col, quote_sql(ref$schema)
     )
   }
 }
