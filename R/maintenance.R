@@ -121,17 +121,28 @@ expire_snapshots <- function(ducklake_name = NULL,
 #'   `"schema.table"`. When provided, only that table is compacted.
 #' @param schema_name Optional schema name. When provided, only tables in
 #'   that schema are compacted.
-#' @param max_compacted_files Optional cap on the number of compaction
-#'   operations per table in a single call.
+#' @param max_compacted_files Optional cap on the number of file groups
+#'   considered per table in a single call. A file that cannot be combined
+#'   with its neighbors counts too, so a small cap can merge less than it
+#'   suggests.
 #' @param min_file_size Optional minimum file size in bytes; smaller files
 #'   are excluded from merging.
 #' @param max_file_size Optional maximum file size in bytes; files at or
 #'   above this size are excluded. Defaults to the lake's target file size.
+#' @param newer_than,older_than Optional POSIXct or UTC timestamp strings
+#'   that limit the merge to files whose snapshot falls at or after
+#'   `newer_than` and before `older_than`. A merged file counts from the
+#'   first snapshot of the files it was built from. Together they give a
+#'   rolling window, such as the past week minus the latest day.
 #'
 #' @details
 #' Merging does not delete the original small files -- they may still be
 #' referenced by older snapshots. They are scheduled for deletion once no
 #' snapshot references them; run [cleanup_old_files()] to remove them.
+#'
+#' A table whose `auto_compact` option is `FALSE` is left alone, also when
+#' `table_name` names it. Files that have delete files or inlined deletions
+#' are skipped; [rewrite_data_files()] handles those.
 #'
 #' @returns A data frame with one row per compaction operation (columns
 #'   `schema_name`, `table_name`, `files_processed`, `files_created`); an
@@ -160,6 +171,12 @@ expire_snapshots <- function(ducklake_name = NULL,
 #' # Compact one table, only touching files under 10 MB
 #' merge_adjacent_files(table_name = "cars", max_file_size = 10e6)
 #'
+#' # Files from the past week, leaving the latest day for a later run
+#' merge_adjacent_files(
+#'   newer_than = Sys.time() - 7 * 86400,
+#'   older_than = Sys.time() - 86400
+#' )
+#'
 #' detach_ducklake("merge_files_lake", shutdown = TRUE)
 #' unlink(lake_dir, recursive = TRUE)
 merge_adjacent_files <- function(ducklake_name = NULL,
@@ -167,7 +184,9 @@ merge_adjacent_files <- function(ducklake_name = NULL,
                                  schema_name = NULL,
                                  max_compacted_files = NULL,
                                  min_file_size = NULL,
-                                 max_file_size = NULL) {
+                                 max_file_size = NULL,
+                                 newer_than = NULL,
+                                 older_than = NULL) {
   conn <- get_ducklake_connection()
   ducklake_name <- infer_ducklake_name(ducklake_name, conn)
 
@@ -193,6 +212,17 @@ merge_adjacent_files <- function(ducklake_name = NULL,
   }
   if (!is.null(max_file_size)) {
     args <- c(args, sprintf("max_file_size => %.0f", as.numeric(max_file_size)))
+  }
+  # Naive literals are read as UTC, which is how format_timestamp() renders
+  if (!is.null(newer_than)) {
+    args <- c(args, sprintf(
+      "newer_than => TIMESTAMP %s", quote_sql(format_timestamp(newer_than))
+    ))
+  }
+  if (!is.null(older_than)) {
+    args <- c(args, sprintf(
+      "older_than => TIMESTAMP %s", quote_sql(format_timestamp(older_than))
+    ))
   }
 
   result <- DBI::dbGetQuery(
@@ -379,10 +409,16 @@ delete_orphaned_files <- function(ducklake_name = NULL,
 #' @param delete_threshold Optional fraction of deleted rows (between 0 and
 #'   1) above which a file is rewritten. DuckLake's default is 0.95.
 #' @param schema_name Optional schema containing `table_name`.
+#' @param max_compacted_files Optional cap on the number of rewrite
+#'   operations per table in a single call, for working through a table
+#'   with many deleted rows in batches.
 #'
 #' @details
 #' The rewritten originals are scheduled for deletion once no snapshot
-#' references them; run [cleanup_old_files()] to remove them.
+#' references them; run [cleanup_old_files()] to remove them. Inlined
+#' deletions count toward the threshold without being flushed first, and a
+#' table whose `auto_compact` option is `FALSE` is left alone, also when
+#' `table_name` names it.
 #'
 #' @returns A data frame with one row per compaction operation (columns
 #'   `schema_name`, `table_name`, `files_processed`, `files_created`); an
@@ -415,7 +451,8 @@ delete_orphaned_files <- function(ducklake_name = NULL,
 rewrite_data_files <- function(ducklake_name = NULL,
                                table_name = NULL,
                                delete_threshold = NULL,
-                               schema_name = NULL) {
+                               schema_name = NULL,
+                               max_compacted_files = NULL) {
   conn <- get_ducklake_connection()
   ducklake_name <- infer_ducklake_name(ducklake_name, conn)
 
@@ -437,6 +474,11 @@ rewrite_data_files <- function(ducklake_name = NULL,
       cli::cli_abort("{.arg delete_threshold} must be a number between 0 and 1.")
     }
     args <- c(args, sprintf("delete_threshold => %s", delete_threshold))
+  }
+  if (!is.null(max_compacted_files)) {
+    args <- c(args, sprintf(
+      "max_compacted_files => %d", as.integer(max_compacted_files)
+    ))
   }
 
   # The CALL streams its result by re-scanning the table, which DuckLake

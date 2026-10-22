@@ -258,3 +258,49 @@ test_that("backup_ducklake() keeps every lake attached and copies a consistent c
   expect_equal(nrow(dplyr::collect(get_ducklake_table("cars"))), 32)
 })
 
+
+test_that("merge_adjacent_files takes a time window and rewrite_data_files a cap", {
+  skip_if_not_installed("duckdb")
+
+  lake <- create_temp_ducklake()
+  on.exit(cleanup_temp_ducklake(lake), add = TRUE)
+
+  create_table(
+    data.frame(id = 1:40), "window_tbl",
+    options = list(data_inlining_row_limit = 0)
+  )
+  DBI::dbExecute(lake$conn, "INSERT INTO window_tbl SELECT * FROM window_tbl")
+  expect_equal(nrow(list_ducklake_files("window_tbl")), 2)
+
+  # a window that ends before the files were written merges nothing
+  suppressMessages(expect_no_error(
+    early <- merge_adjacent_files(
+      table_name = "window_tbl",
+      newer_than = Sys.time() - 7 * 86400,
+      older_than = Sys.time() - 86400
+    )
+  ))
+  expect_equal(nrow(early), 0)
+  expect_equal(nrow(list_ducklake_files("window_tbl")), 2)
+
+  # one that covers them merges both
+  suppressMessages(
+    merged <- merge_adjacent_files(
+      table_name = "window_tbl",
+      newer_than = Sys.time() - 86400,
+      older_than = Sys.time() + 60
+    )
+  )
+  expect_equal(sum(merged$files_processed), 2)
+  expect_equal(nrow(list_ducklake_files("window_tbl")), 1)
+
+  DBI::dbExecute(lake$conn, "DELETE FROM window_tbl WHERE id <= 30")
+  suppressMessages(
+    rewritten <- rewrite_data_files(
+      table_name = "window_tbl", delete_threshold = 0.5,
+      max_compacted_files = 1
+    )
+  )
+  expect_true(sum(rewritten$files_processed) >= 1)
+  expect_equal(nrow(dplyr::collect(get_ducklake_table("window_tbl"))), 20)
+})

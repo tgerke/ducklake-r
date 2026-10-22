@@ -15,11 +15,11 @@ add_table_column(table_name, column_name, type, default = NULL)
 \code{"DECIMAL(10,2)"}, or \code{"TIMESTAMP WITH TIME ZONE"}.}
 
 \item{default}{Optional default value (an R scalar: character, numeric,
-logical, Date, or POSIXct, the last rendered in UTC). In DuckLake the
-default applies to existing rows as well as future inserts, so the new
-column appears filled everywhere. Without a default, the column reads
-\code{NA} for existing rows. DuckLake accepts constant defaults only;
-an expression such as \code{now()} is not supported.}
+logical, Date, or POSIXct, the last rendered in UTC), written as a
+typed literal. In DuckLake the default applies to existing rows as
+well as future inserts, so the new column appears filled everywhere.
+Without a default, the column reads \code{NA} for existing rows. \verb{ADD COLUMN} takes constant defaults only; for an expression such as
+\code{now()}, add the column, commit, and then call \code{\link[=set_column_default]{set_column_default()}}.}
 }
 \value{
 Invisibly returns \code{NULL}.
@@ -46,12 +46,13 @@ unlink(lake_dir, recursive = TRUE)
 }
 \seealso{
 \code{\link[=drop_table_column]{drop_table_column()}}, \code{\link[=rename_table_column]{rename_table_column()}},
-\code{\link[=set_column_type]{set_column_type()}}, \code{\link[=rename_ducklake_table]{rename_ducklake_table()}}
+\code{\link[=set_column_type]{set_column_type()}}, \code{\link[=set_column_default]{set_column_default()}}, \code{\link[=rename_ducklake_table]{rename_ducklake_table()}}
 
 Other schema evolution:
 \code{\link[=drop_table_column]{drop_table_column()}},
 \code{\link[=rename_ducklake_table]{rename_ducklake_table()}},
 \code{\link[=rename_table_column]{rename_table_column()}},
+\code{\link[=set_column_default]{set_column_default()}},
 \code{\link[=set_column_not_null]{set_column_not_null()}},
 \code{\link[=set_column_type]{set_column_type()}}
 }

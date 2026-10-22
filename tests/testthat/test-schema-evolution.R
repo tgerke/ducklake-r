@@ -185,21 +185,83 @@ test_that("the type guard rejects injection and accepts real types", {
   expect_invisible(check_column_type("INTEGER[]"))
 })
 
-test_that("render_sql_literal covers the DEFAULT value types", {
+test_that("render_sql_literal writes typed literals and passes SQL through", {
   expect_equal(render_sql_literal("new"), "'new'")
   expect_equal(render_sql_literal("it's"), "'it''s'")
   expect_equal(render_sql_literal(1.5), "1.5")
-  expect_equal(render_sql_literal(TRUE), "'true'")
+  expect_equal(render_sql_literal(TRUE), "TRUE")
+  expect_equal(render_sql_literal(FALSE), "FALSE")
   expect_equal(render_sql_literal(NA), "NULL")
   expect_equal(
     render_sql_literal(as.Date("2026-01-15")),
-    "'2026-01-15'"
+    "DATE '2026-01-15'"
   )
   expect_match(
     render_sql_literal(as.POSIXct("2026-01-15 10:00:00", tz = "UTC")),
-    "^'2026-01-15 10:00:00"
+    "^TIMESTAMP '2026-01-15 10:00:00"
   )
+  expect_equal(render_sql_literal(DBI::SQL("now()")), "now()")
   expect_error(render_sql_literal(list(1)), "SQL literal")
+})
+
+test_that("typed literal defaults fill existing rows, and set_column_default changes later ones", {
+  skip_if_not_installed("duckdb")
+  skip_if_not_installed("dplyr")
+
+  lake <- create_temp_ducklake()
+  on.exit(cleanup_temp_ducklake(lake), add = TRUE)
+
+  create_table(data.frame(id = 1:2), "defaults")
+  suppressMessages({
+    add_table_column("defaults", "flag", "BOOLEAN", default = TRUE)
+    add_table_column("defaults", "seen", "DATE", default = as.Date("2026-01-15"))
+    add_table_column(
+      "defaults", "at", "TIMESTAMP",
+      default = as.POSIXct("2026-01-15 10:00:00", tz = "UTC")
+    )
+    add_table_column("defaults", "note", "VARCHAR", default = "none")
+  })
+  rows <- dplyr::collect(get_ducklake_table("defaults"))
+  expect_equal(rows$flag, c(TRUE, TRUE))
+  expect_equal(rows$seen, rep(as.Date("2026-01-15"), 2))
+  expect_equal(
+    as.numeric(rows$at), rep(as.numeric(as.POSIXct("2026-01-15 10:00:00", tz = "UTC")), 2)
+  )
+  expect_equal(rows$note, c("none", "none"))
+
+  # a changed default leaves existing rows alone and governs later inserts
+  suppressMessages(set_column_default("defaults", "note", "later"))
+  suppressMessages(set_column_default("defaults", "flag", FALSE))
+  DBI::dbExecute(lake$conn, "INSERT INTO defaults (id) VALUES (3)")
+  rows <- dplyr::collect(get_ducklake_table("defaults"))
+  expect_equal(rows$note, c("none", "none", "later"))
+  expect_equal(rows$flag, c(TRUE, TRUE, FALSE))
+
+  # an expression default, on a committed column
+  suppressMessages(add_table_column("defaults", "recorded_at", "TIMESTAMP"))
+  suppressMessages(
+    set_column_default("defaults", "recorded_at", DBI::SQL("now()"))
+  )
+  DBI::dbExecute(lake$conn, "INSERT INTO defaults (id) VALUES (4)")
+  rows <- dplyr::collect(get_ducklake_table("defaults"))
+  expect_true(is.na(rows$recorded_at[1]))
+  expect_false(is.na(rows$recorded_at[4]))
+
+  # and dropped again
+  suppressMessages(set_column_default("defaults", "note", NULL))
+  DBI::dbExecute(lake$conn, "INSERT INTO defaults (id) VALUES (5)")
+  rows <- dplyr::collect(get_ducklake_table("defaults"))
+  expect_true(is.na(rows$note[5]))
+
+  # DuckLake refuses an expression default on a column added in the open
+  # transaction; the error names the way out
+  suppressMessages(begin_transaction())
+  suppressMessages(add_table_column("defaults", "in_txn", "TIMESTAMP"))
+  expect_error(
+    set_column_default("defaults", "in_txn", DBI::SQL("now()")),
+    "non-literal"
+  )
+  suppressMessages(rollback_transaction())
 })
 
 test_that("add_table_column renders logical, Date, and timestamp defaults as DuckLake accepts them", {

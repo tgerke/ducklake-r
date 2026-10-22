@@ -96,3 +96,26 @@ test_that("get_table_partitions lists all partitioned tables in the lake", {
   # Filtered listing returns only the requested table
   expect_equal(get_table_partitions("part_a")$column_name, "grp")
 })
+
+test_that("epoch transforms are accepted and round-trip", {
+  skip_if_not_installed("duckdb")
+
+  lake <- create_temp_ducklake()
+  on.exit(cleanup_temp_ducklake(lake), add = TRUE)
+
+  create_table(
+    data.frame(ts = as.POSIXct("2026-01-15 10:00:00", tz = "UTC") + 86400 * 0:3, v = 1:4),
+    "epoch_tbl"
+  )
+  suppressMessages(set_table_partitioning("epoch_tbl", c("epoch_month(ts)", "v")))
+  parts <- get_table_partitions("epoch_tbl")
+  expect_equal(parts$transform, c("epoch_month", "identity"))
+  expect_equal(parts$column_name, c("ts", "v"))
+  expect_equal(
+    ducklake:::partition_expressions(parts), c("epoch_month(ts)", "v")
+  )
+  expect_error(
+    set_table_partitioning("epoch_tbl", "epoch_week(ts)"),
+    "Invalid partition expression"
+  )
+})

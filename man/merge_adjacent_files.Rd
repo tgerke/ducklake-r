@@ -10,7 +10,9 @@ merge_adjacent_files(
   schema_name = NULL,
   max_compacted_files = NULL,
   min_file_size = NULL,
-  max_file_size = NULL
+  max_file_size = NULL,
+  newer_than = NULL,
+  older_than = NULL
 )
 }
 \arguments{
@@ -23,14 +25,22 @@ current database is used.}
 \item{schema_name}{Optional schema name. When provided, only tables in
 that schema are compacted.}
 
-\item{max_compacted_files}{Optional cap on the number of compaction
-operations per table in a single call.}
+\item{max_compacted_files}{Optional cap on the number of file groups
+considered per table in a single call. A file that cannot be combined
+with its neighbors counts too, so a small cap can merge less than it
+suggests.}
 
 \item{min_file_size}{Optional minimum file size in bytes; smaller files
 are excluded from merging.}
 
 \item{max_file_size}{Optional maximum file size in bytes; files at or
 above this size are excluded. Defaults to the lake's target file size.}
+
+\item{newer_than, older_than}{Optional POSIXct or UTC timestamp strings
+that limit the merge to files whose snapshot falls at or after
+\code{newer_than} and before \code{older_than}. A merged file counts from the
+first snapshot of the files it was built from. Together they give a
+rolling window, such as the past week minus the latest day.}
 }
 \value{
 A data frame with one row per compaction operation (columns
@@ -46,6 +56,10 @@ scans fast.
 Merging does not delete the original small files -- they may still be
 referenced by older snapshots. They are scheduled for deletion once no
 snapshot references them; run \code{\link[=cleanup_old_files]{cleanup_old_files()}} to remove them.
+
+A table whose \code{auto_compact} option is \code{FALSE} is left alone, also when
+\code{table_name} names it. Files that have delete files or inlined deletions
+are skipped; \code{\link[=rewrite_data_files]{rewrite_data_files()}} handles those.
 }
 \examples{
 \dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}
@@ -65,6 +79,12 @@ merge_adjacent_files()
 
 # Compact one table, only touching files under 10 MB
 merge_adjacent_files(table_name = "cars", max_file_size = 10e6)
+
+# Files from the past week, leaving the latest day for a later run
+merge_adjacent_files(
+  newer_than = Sys.time() - 7 * 86400,
+  older_than = Sys.time() - 86400
+)
 
 detach_ducklake("merge_files_lake", shutdown = TRUE)
 unlink(lake_dir, recursive = TRUE)

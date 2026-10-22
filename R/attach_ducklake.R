@@ -54,6 +54,8 @@
 #'   lake keeps the setting it was created with. The httpfs extension is
 #'   loaded automatically: on some platforms (notably Windows) DuckDB's
 #'   built-in crypto module is read-only and httpfs provides the writer.
+#'   Parquet data and delete files are encrypted; the Puffin deletion
+#'   vectors of the experimental `write_deletion_vectors` option are not.
 #'   Default `FALSE`.
 #' @param meta_encryption_key Optional key that encrypts the catalog
 #'   database file itself, with AES-256-GCM (`"duckdb"` backend only; the

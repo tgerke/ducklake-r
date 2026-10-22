@@ -10,18 +10,19 @@
 #' @param type SQL type for the new column, e.g. `"INTEGER"`,
 #'   `"DECIMAL(10,2)"`, or `"TIMESTAMP WITH TIME ZONE"`.
 #' @param default Optional default value (an R scalar: character, numeric,
-#'   logical, Date, or POSIXct, the last rendered in UTC). In DuckLake the
-#'   default applies to existing rows as well as future inserts, so the new
-#'   column appears filled everywhere. Without a default, the column reads
-#'   `NA` for existing rows. DuckLake accepts constant defaults only;
-#'   an expression such as `now()` is not supported.
+#'   logical, Date, or POSIXct, the last rendered in UTC), written as a
+#'   typed literal. In DuckLake the default applies to existing rows as
+#'   well as future inserts, so the new column appears filled everywhere.
+#'   Without a default, the column reads `NA` for existing rows. `ADD
+#'   COLUMN` takes constant defaults only; for an expression such as
+#'   `now()`, add the column, commit, and then call [set_column_default()].
 #'
 #' @returns Invisibly returns `NULL`.
 #' @family schema evolution
 #' @export
 #'
 #' @seealso [drop_table_column()], [rename_table_column()],
-#'   [set_column_type()], [rename_ducklake_table()]
+#'   [set_column_type()], [set_column_default()], [rename_ducklake_table()]
 #'
 #' @examplesIf ducklake_extension_available()
 #' lake_dir <- tempfile("addcol_lake_")
@@ -204,16 +205,22 @@ rename_ducklake_table <- function(from, to) {
 #' Change the type of a DuckLake table column
 #'
 #' Changes a column's type in place with `ALTER TABLE ... ALTER COLUMN ...
-#' SET TYPE`. DuckLake permits widening promotions only (for example
-#' `INTEGER` to `BIGINT`, or `FLOAT` to `DOUBLE`): every existing value
-#' must be representable in the new type, so no data can be lost and no
-#' data files need rewriting.
+#' SET TYPE`. DuckLake permits widening promotions only: integers to a
+#' wider integer, `HUGEINT`, `FLOAT`, or `DOUBLE` (the floating-point
+#' promotions are accepted even where precision can be lost), `FLOAT` to
+#' `DOUBLE`, `TIMESTAMP` to `TIMESTAMP WITH TIME ZONE`, and the `"NULL"`
+#' type to any scalar type. No data files need rewriting.
 #'
 #' @param table_name The table to change.
 #' @param column_name Name of the column.
 #' @param type The new (wider) SQL type.
 #'
 #' @details
+#' A column that was all `NA` when a table was written from a query gets
+#' the `"NULL"` type, which holds nothing but `NULL` until promoted; this
+#' is the call that gives it its real type once the first values are
+#' known.
+#'
 #' To *narrow* a type, which DuckLake refuses, take the explicit route:
 #' [add_table_column()] with the smaller type, copy the values over (after
 #' checking they fit), [drop_table_column()] the original, and
@@ -354,6 +361,65 @@ set_column_not_null <- function(table_name, column_name, not_null = TRUE) {
     dl_inform("Column {.val {column_name}} in {.val {table_name}} now requires a value.")
   } else {
     dl_inform("Column {.val {column_name}} in {.val {table_name}} allows NULL again.")
+  }
+
+  invisible(NULL)
+}
+
+#' Set or drop a column's default value
+#'
+#' Changes what later inserts put in a column they leave out, with `ALTER
+#' TABLE ... ALTER COLUMN ... SET DEFAULT` (or `DROP DEFAULT`), a
+#' metadata-only change. Existing rows keep their values; the default in
+#' [add_table_column()] is the one that fills existing rows.
+#'
+#' @param table_name The table to change.
+#' @param column_name Name of the column.
+#' @param default The new default: an R scalar (character, numeric, logical,
+#'   Date, or POSIXct in UTC), written as a typed literal; a [DBI::SQL()]
+#'   string for an expression DuckDB evaluates at insert time, such as
+#'   `DBI::SQL("now()")`; or `NULL` to drop the default.
+#'
+#' @details
+#' An expression default needs a committed column: DuckLake refuses it on
+#' a column added in the open transaction, so add the column, commit, and
+#' then set the default. A constant default has no such limit.
+#'
+#' @returns Invisibly returns `NULL`.
+#' @family schema evolution
+#' @export
+#'
+#' @seealso [add_table_column()], [set_column_not_null()]
+#'
+#' @examplesIf ducklake_extension_available()
+#' create_table(data.frame(id = 1:2, note = c("a", "b")), "events")
+#'
+#' add_table_column("events", "recorded_at", "TIMESTAMP")
+#' set_column_default("events", "recorded_at", DBI::SQL("now()"))
+#' set_column_default("events", "note", "none")
+#' set_column_default("events", "note", NULL)
+#'
+set_column_default <- function(table_name, column_name, default) {
+  conn <- get_ducklake_connection()
+
+  clause <- if (is.null(default)) {
+    "DROP DEFAULT"
+  } else {
+    sprintf("SET DEFAULT %s", render_sql_literal(default))
+  }
+  db_execute_ddl(
+    sprintf(
+      "ALTER TABLE %s ALTER COLUMN %s %s;",
+      table_sql(table_name, conn),
+      quote_column(column_name, conn),
+      clause
+    ),
+    conn = conn
+  )
+  if (is.null(default)) {
+    dl_inform("Column {.val {column_name}} in {.val {table_name}} has no default now.")
+  } else {
+    dl_inform("Column {.val {column_name}} in {.val {table_name}} defaults to {.code {render_sql_literal(default)}} for new rows.")
   }
 
   invisible(NULL)

@@ -69,6 +69,12 @@ created empty from the source's columns, the keys and options go on,
 and the rows are inserted, in one transaction (yours when one is open),
 so the result is one snapshot with the layout in force from the first
 row. Without them, a single \verb{CREATE TABLE ... AS} does the work.
+
+A column that is \code{NA} in every row of a query (\code{mutate(flag = NA)}) has
+no type for DuckDB to infer, and the table stores it with the \code{"NULL"}
+type, which holds nothing but \code{NULL} until \code{\link[=set_column_type]{set_column_type()}} promotes
+it. Give the placeholder a type in the query (\code{NA_character_},
+\code{NA_real_}) when the first values are known.
 }
 \examples{
 \dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}

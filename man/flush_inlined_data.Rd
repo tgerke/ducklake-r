@@ -31,8 +31,9 @@ Flushing writes inlined rows to consolidated Parquet files and cleans up the
 inlined data tables. Time-travel information is preserved: flushed rows that
 had been deleted will produce a partial deletion file with snapshot metadata.
 
-Tables with \code{auto_compact} set to \code{FALSE} are skipped when flushing an
-entire lake or schema. Use an explicit \code{table_name} to flush those tables.
+Tables with \code{auto_compact} set to \code{FALSE} are skipped, also when
+\code{table_name} names one; set the option back to \code{TRUE} to flush such a
+table.
 
 If a table has a sort order defined, the flushed Parquet file will be sorted
 by those keys.

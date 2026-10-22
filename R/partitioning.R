@@ -10,7 +10,13 @@
 #'   \itemize{
 #'     \item a column name, e.g. `"region"` (identity transform)
 #'     \item `"year(col)"`, `"month(col)"`, `"day(col)"`, or `"hour(col)"`
-#'       for timestamp columns
+#'       for date and timestamp columns: the calendar part, so
+#'       `month(col)` runs from 1 to 12 and puts January 2020 and January
+#'       2021 in the same partition
+#'     \item `"epoch_year(col)"`, `"epoch_month(col)"`, `"epoch_day(col)"`,
+#'       or `"epoch_hour(col)"`: whole units since 1970-01-01, so every
+#'       month gets its own partition, which is also what Iceberg writes;
+#'       these need a lake on catalog format 1.1
 #'     \item `"bucket(n, col)"` for hash bucketing into `n` buckets
 #'   }
 #'
@@ -19,7 +25,8 @@
 #' previously written files keep their layout. To re-partition existing
 #' data, set the keys and then rewrite the table with [replace_table()]:
 #' the rewrite carries the keys over to the new table and writes every row
-#' through them.
+#' through them. [create_table()] takes the same `partition_by` for a new
+#' table, so its first load is written through the keys.
 #'
 #' Runs `ALTER TABLE ... SET PARTITIONED BY (...)`. The expressions are
 #' validated against the transforms DuckLake supports before any SQL is
@@ -43,7 +50,9 @@
 #' # Compound key
 #' set_table_partitioning("cars", c("gear", "cyl"))
 #'
-#' # Timestamp columns can be split by year(), month(), day(), or hour()
+#' # Timestamp columns can be split by calendar part (year(), month(), ...)
+#' # or by whole units since 1970 (epoch_month(), ...), which keeps months
+#' # of different years apart
 #'
 #' detach_ducklake("part_lake", shutdown = TRUE)
 #' unlink(lake_dir, recursive = TRUE)
@@ -75,7 +84,7 @@ check_partition_by <- function(partition_by) {
   ident <- "[A-Za-z_][A-Za-z0-9_]*"
   allowed <- c(
     sprintf("^%s$", ident),
-    sprintf("^(year|month|day|hour)\\(\\s*%s\\s*\\)$", ident),
+    sprintf("^(epoch_)?(year|month|day|hour)\\(\\s*%s\\s*\\)$", ident),
     sprintf("^bucket\\(\\s*[0-9]+\\s*,\\s*%s\\s*\\)$", ident)
   )
   ok <- vapply(
@@ -86,7 +95,7 @@ check_partition_by <- function(partition_by) {
   if (!all(ok)) {
     cli::cli_abort(c(
       "Invalid partition expression{?s}: {.val {partition_by[!ok]}}.",
-      "i" = "Supported forms: a column name, {.code year/month/day/hour(col)}, or {.code bucket(n, col)}."
+      "i" = "Supported forms: a column name, {.code year/month/day/hour(col)}, {.code epoch_year/epoch_month/epoch_day/epoch_hour(col)}, or {.code bucket(n, col)}."
     ))
   }
   invisible(partition_by)
