@@ -22,15 +22,20 @@
 #' @noRd
 capture_table_metadata <- function(table_name, ducklake_name = NULL,
                                    conn = get_ducklake_connection()) {
-  ducklake_name <- infer_ducklake_name(ducklake_name, conn)
   parts <- split_table_name(table_name)
+  if (is.null(ducklake_name)) {
+    ducklake_name <- parts$lake
+  }
+  ducklake_name <- infer_ducklake_name(ducklake_name, conn)
   schema <- if (is.null(parts$schema)) "main" else parts$schema
-  scope_entry <- paste(schema, parts$table, sep = ".")
+  # The getters match an unqualified name in every schema; the rewrite
+  # wants this table's own metadata, so the schema is spelled out
+  qualified <- paste(schema, parts$table, sep = ".")
 
   options <- get_ducklake_options(ducklake_name)
   options <- options[
     options$scope == "TABLE" & !is.na(options$scope_entry) &
-      options$scope_entry == scope_entry, ,
+      options$scope_entry == qualified, ,
     drop = FALSE
   ]
   options$value <- option_value_for_set(options$option_name, options$value)
@@ -38,9 +43,9 @@ capture_table_metadata <- function(table_name, ducklake_name = NULL,
   list(
     table_name = table_name,
     ducklake_name = ducklake_name,
-    comments = get_table_comments(table_name, ducklake_name),
-    partitions = get_table_partitions(table_name, ducklake_name),
-    sorting = get_table_sorting(table_name, ducklake_name),
+    comments = get_table_comments(qualified, ducklake_name),
+    partitions = get_table_partitions(qualified, ducklake_name),
+    sorting = get_table_sorting(qualified, ducklake_name),
     pending_keys = pending_table_keys(table_name, ducklake_name, conn),
     options = options
   )
@@ -204,7 +209,7 @@ reapply_table_layout <- function(meta, columns, conn = get_ducklake_connection()
 #' @noRd
 apply_table_layout <- function(table_name, partition_by = NULL, sort_by = NULL,
                                options = NULL, conn = get_ducklake_connection()) {
-  quoted <- quote_ident(table_name, conn)
+  quoted <- table_sql(table_name, conn)
 
   if (length(partition_by) > 0) {
     db_execute(
@@ -271,7 +276,7 @@ reapply_table_comments <- function(meta, columns, already_set = character(),
   if (nrow(comments) == 0) {
     return(invisible(NULL))
   }
-  quoted <- quote_ident(meta$table_name, conn)
+  quoted <- comment_target_sql(meta$table_name, conn)
 
   for (i in seq_len(nrow(comments))) {
     type <- comments$object_type[[i]]
@@ -317,7 +322,7 @@ reapply_table_comments <- function(meta, columns, already_set = character(),
 #' @noRd
 rebuild_table_from <- function(table_name, source_ref, meta, comments,
                                conn = get_ducklake_connection()) {
-  quoted <- quote_ident(table_name, conn)
+  quoted <- table_sql(table_name, conn)
   columns <- names(DBI::dbGetQuery(
     conn, sprintf("SELECT * FROM %s LIMIT 0", source_ref)
   ))
@@ -412,11 +417,12 @@ table_ids_for_name <- function(table, schema, ducklake_name,
     DBI::dbGetQuery(
       conn,
       sprintf(
-        "SELECT DISTINCT t.table_id
+        "WITH RECURSIVE %s
+         SELECT DISTINCT t.table_id
          FROM %s.ducklake_table t
-         JOIN %s.ducklake_schema s ON t.schema_id = s.schema_id
-         WHERE t.table_name = ? AND s.schema_name = ?",
-        prefix, prefix
+         JOIN schema_paths s ON t.schema_id = s.schema_id
+         WHERE t.table_name = ? AND s.schema_path = ?",
+        metadata_schema_paths_cte(ducklake_name, conn), prefix
       ),
       params = list(table, schema)
     )$table_id,

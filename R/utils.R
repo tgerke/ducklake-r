@@ -304,22 +304,42 @@ db_execute_ddl <- function(sql, conn = get_ducklake_connection()) {
   )
 }
 
-#' Split a possibly schema-qualified table name
+#' Split a possibly qualified table name into lake, schema path, and table
 #'
-#' `"cars"` gives `list(schema = NULL, table = "cars")`; `"bronze.cars"`
-#' gives `list(schema = "bronze", table = "cars")`; a three-part name keeps
-#' its last two parts. Nothing is quoted here.
+#' Every dot is a path separator inside one lake: `"cars"` gives
+#' `list(lake = NULL, schema = NULL, table = "cars")`, `"bronze.cars"` the
+#' schema `"bronze"`, and `"sales.europe.orders"` the nested schema path
+#' `"sales.europe"`. A first component naming an attached lake (one in the
+#' registry) is the lake and is stripped from the path, so
+#' `"lake.sales.orders"` resolves in `lake`; a schema that shares an
+#' attached lake's name is reached by qualifying with the lake. Nothing is
+#' quoted here.
 #'
 #' @param table_name A table name, optionally qualified with `.`.
-#' @returns A list with `schema` (`NULL` when absent) and `table`.
+#' @returns A list with `lake` and `schema` (`NULL` when absent) and
+#'   `table`.
 #' @noRd
 split_table_name <- function(table_name) {
-  parts <- strsplit(table_name, ".", fixed = TRUE)[[1]]
-  n <- length(parts)
-  if (n <= 1) {
-    return(list(schema = NULL, table = table_name))
+  if (!is.character(table_name) || length(table_name) != 1 || is.na(table_name)) {
+    cli::cli_abort("{.arg table_name} must be a single string.")
   }
-  list(schema = parts[[n - 1]], table = parts[[n]])
+  parts <- strsplit(table_name, ".", fixed = TRUE)[[1]]
+  if (length(parts) == 0 || any(!nzchar(parts))) {
+    cli::cli_abort(
+      "{.arg table_name} has an empty name component: {.val {table_name}}."
+    )
+  }
+  lake <- NULL
+  if (length(parts) >= 2 && parts[[1]] %in% names(.ducklake_env$lakes)) {
+    lake <- parts[[1]]
+    parts <- parts[-1]
+  }
+  n <- length(parts)
+  list(
+    lake = lake,
+    schema = if (n >= 2) paste(parts[-n], collapse = ".") else NULL,
+    table = parts[[n]]
+  )
 }
 
 #' Quoted prefix of a lake's metadata catalog for SQL text
@@ -421,25 +441,218 @@ resolve_table_ref <- function(table_name, schema_name = NULL) {
     ))
   }
   list(
+    lake = parts$lake,
     schema = if (!is.null(schema_name)) schema_name else parts$schema,
     table = parts$table
   )
 }
 
+#' Render a table or view reference, fully qualified
+#'
+#' `lake.schema.path.table` from the parts `resolve_table_ref()` gives: the
+#' lake named in `table_name`, else `ducklake_name`, else the current
+#' database; `main` when no schema is named. Spelling the lake out keeps a
+#' schema path from being read as an attached catalog of the same name,
+#' which is how DuckDB resolves an unqualified first component.
+#'
+#' @param table_name A table or view name, optionally qualified.
+#' @param conn A DBI connection.
+#' @param ducklake_name The lake, when the caller has resolved it already.
+#' @returns A quoted identifier path.
+#' @noRd
+table_sql <- function(table_name, conn = get_ducklake_connection(),
+                      ducklake_name = NULL) {
+  ref <- resolve_table_ref(table_name)
+  lake <- ref$lake
+  if (is.null(lake)) {
+    lake <- infer_ducklake_name(ducklake_name, conn)
+  }
+  quote_ident(
+    paste(
+      c(lake, if (is.null(ref$schema)) "main" else ref$schema, ref$table),
+      collapse = "."
+    ),
+    conn
+  )
+}
+
+#' Render the target of a COMMENT ON statement
+#'
+#' DuckDB's `COMMENT ON` parser takes at most three qualifiers
+#' (`catalog.schema.name`), so a table in a nested schema cannot be spelled
+#' with its lake. A top-level schema is written `lake.schema.table`; one
+#' level of nesting is written `schema.sub.table` and resolves in the
+#' current database, which must be the lake; anything deeper has no
+#' spelling at all, and `comments_reachable()` says so ahead of time.
+#'
+#' @inheritParams table_sql
+#' @returns A quoted identifier path.
+#' @noRd
+comment_target_sql <- function(table_name, conn = get_ducklake_connection(),
+                               ducklake_name = NULL) {
+  ref <- resolve_table_ref(table_name)
+  lake <- ref$lake
+  if (is.null(lake)) {
+    lake <- infer_ducklake_name(ducklake_name, conn)
+  }
+  schema <- if (is.null(ref$schema)) "main" else ref$schema
+  depth <- schema_depth(schema)
+  if (depth == 1) {
+    return(quote_ident(paste(lake, schema, ref$table, sep = "."), conn))
+  }
+  if (depth > 2) {
+    cli::cli_abort(c(
+      "DuckDB cannot comment on {.val {table_name}}: {.code COMMENT ON} takes at most two schema levels.",
+      "i" = "Schema {.val {schema}} is nested {depth - 1} levels deep. Comments and labels reach tables one level deep, such as {.val sales.europe.orders}."
+    ))
+  }
+  current <- tryCatch(
+    DBI::dbGetQuery(conn, "SELECT current_database() AS db")$db,
+    error = function(e) NA_character_
+  )
+  if (!identical(current, lake)) {
+    cli::cli_abort(c(
+      "Commenting on {.val {table_name}} needs {.val {lake}} to be the current database.",
+      "i" = "{.code COMMENT ON} cannot name the lake of a table in a nested schema. {.fun attach_ducklake} makes a lake current, as does {.code USE {lake}}."
+    ))
+  }
+  quote_ident(paste(schema, ref$table, sep = "."), conn)
+}
+
+#' A table name with its schema spelled out, `main` when none was given
+#'
+#' For the readers that take an unqualified name as that table name in
+#' every schema, when one table is meant. A leading lake name is dropped.
+#' @noRd
+qualify_table_name <- function(table_name) {
+  ref <- resolve_table_ref(table_name)
+  paste(c(if (is.null(ref$schema)) "main" else ref$schema, ref$table), collapse = ".")
+}
+
+#' Can comments (and so labels) be stored on this table at all?
+#'
+#' `FALSE` for a table nested two or more schema levels deep, which
+#' DuckDB's `COMMENT ON` cannot name.
+#' @noRd
+comments_reachable <- function(table_name) {
+  ref <- resolve_table_ref(table_name)
+  is.null(ref$schema) || schema_depth(ref$schema) <= 2
+}
+
+#' Number of components in a dotted schema path
+#' @noRd
+schema_depth <- function(schema) {
+  length(strsplit(schema, ".", fixed = TRUE)[[1]])
+}
+
+#' A recursive CTE giving every schema of a lake with its full path
+#'
+#' Over `duckdb_schemas()`, so it follows a snapshot-pinned attach and an
+#' open transaction and works whatever the catalog's format version. Join
+#' `schema_paths` on `schema_oid`; the path is `schema_path`. The lake name
+#' is interpolated, having passed `check_identifier()`.
+#'
+#' @param ducklake_name The lake.
+#' @returns The text of one CTE, to follow `WITH RECURSIVE`.
+#' @noRd
+catalog_schema_paths_cte <- function(ducklake_name) {
+  sprintf(
+    "schema_paths AS (
+       SELECT oid, schema_name AS schema_path
+       FROM duckdb_schemas()
+       WHERE database_name = %1$s AND parent_schema_oid IS NULL
+       UNION ALL
+       SELECT c.oid, p.schema_path || '.' || c.schema_name
+       FROM duckdb_schemas() c
+       JOIN schema_paths p ON c.parent_schema_oid = p.oid
+       WHERE c.database_name = %1$s
+     )",
+    quote_sql(ducklake_name)
+  )
+}
+
+#' A CTE giving every schema row of a lake's metadata with its full path
+#'
+#' Over `ducklake_schema`, for the queries that read history. Each row
+#' keeps its own `begin_snapshot` and `end_snapshot`, so the validity
+#' filters callers put on `s` still apply. A 1.0 catalog has no
+#' `parent_schema_id` column, and no nested schemas, so there the CTE is a
+#' flat read.
+#'
+#' @param ducklake_name The lake.
+#' @param conn A DBI connection.
+#' @returns The text of one CTE, to follow `WITH RECURSIVE`.
+#' @noRd
+metadata_schema_paths_cte <- function(ducklake_name, conn = get_ducklake_connection()) {
+  prefix <- metadata_prefix(ducklake_name, conn)
+  if (lake_has_nested_schemas(ducklake_name, conn)) {
+    sprintf(
+      "schema_paths AS (
+         SELECT schema_id, schema_name AS schema_path, begin_snapshot, end_snapshot
+         FROM %1$s.ducklake_schema
+         WHERE parent_schema_id IS NULL
+         UNION ALL
+         SELECT c.schema_id, p.schema_path || '.' || c.schema_name,
+                c.begin_snapshot, c.end_snapshot
+         FROM %1$s.ducklake_schema c
+         JOIN schema_paths p ON c.parent_schema_id = p.schema_id
+       )",
+      prefix
+    )
+  } else {
+    sprintf(
+      "schema_paths AS (
+         SELECT schema_id, schema_name AS schema_path, begin_snapshot, end_snapshot
+         FROM %s.ducklake_schema
+       )",
+      prefix
+    )
+  }
+}
+
+#' Does the lake's catalog format have nested schemas (1.1 or later)?
+#'
+#' Read from `options()`, not probed with a statement that could fail,
+#' because a failed statement aborts a caller's open transaction. Cached
+#' in the lake's registry entry, which every attach renews.
+#' @noRd
+lake_has_nested_schemas <- function(ducklake_name, conn = get_ducklake_connection()) {
+  entry <- .ducklake_env$lakes[[ducklake_name]]
+  if (!is.null(entry$nested_schemas)) {
+    return(entry$nested_schemas)
+  }
+  version <- tryCatch(
+    DBI::dbGetQuery(
+      conn,
+      sprintf(
+        "SELECT value FROM %s.options() WHERE option_name = 'version'",
+        quote_ident(ducklake_name, conn)
+      )
+    )$value,
+    error = function(e) character()
+  )
+  nested <- length(version) == 1 && !is.na(version) && version != "1.0"
+  if (!is.null(entry)) {
+    .ducklake_env$lakes[[ducklake_name]]$nested_schemas <- nested
+  }
+  nested
+}
+
 #' WHERE fragment and parameters that select one table in a metadata query
 #'
-#' The query must alias `ducklake_table` as `t` and `ducklake_schema` as
+#' The query must alias `ducklake_table` as `t` and the schema-path CTE as
 #' `s`, or pass the columns it uses instead. With no schema in the name the
-#' filter matches the table name in every schema.
+#' filter matches the table name in every schema; with one it matches the
+#' full schema path.
 #'
 #' @param table_name A table name, optionally qualified, or `NULL` for no
 #'   filter.
 #' @param table_col The SQL column holding the object name.
-#' @param schema_col The SQL column holding the schema name.
+#' @param schema_col The SQL column holding the schema path.
 #' @returns A list with `sql` (starting with `AND`, or empty) and `params`.
 #' @noRd
 table_filter <- function(table_name, table_col = "t.table_name",
-                         schema_col = "s.schema_name") {
+                         schema_col = "s.schema_path") {
   if (is.null(table_name)) {
     return(list(sql = "", params = list()))
   }

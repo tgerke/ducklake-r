@@ -70,6 +70,29 @@
   `author` and `commit_message` then belong to that commit and are refused
   on the restore itself.
 
+* Nested schemas (DuckLake 1.1). Every dot in a table or schema name is a
+  path separator inside one lake: `"sales.europe.orders"` is the table
+  `orders` in the schema `europe` inside `sales`, and `schema_name`
+  arguments take the same dotted paths. `create_schema("sales.europe")`
+  creates `sales` first when it is missing, `drop_schema()` takes a path
+  (`cascade = TRUE` drops the schemas and tables inside), and every
+  listing, lookup, and metadata function reports and filters on the full
+  path, so same-named tables in `main`, `sales`, and `sales.europe` stay
+  apart in `list_ducklake_tables()`, `get_table_comments()`,
+  `get_table_partitions()`, `get_table_sorting()`, `get_table_info()`,
+  `list_table_snapshots()`, the change feed, options, and checks. A first
+  component that names an attached lake is read as the lake and stripped,
+  so `"lake.sales.orders"` still works; a schema whose own name contains a
+  dot is no longer reachable. Table references are now sent to DuckDB
+  fully qualified with the lake, so a schema that shares a name with an
+  attached database cannot shadow it. One limit comes from DuckDB rather
+  than DuckLake: `COMMENT ON` takes at most three qualifiers, so comments
+  and labels reach a table one schema level deep (`sales.europe.orders`)
+  and no deeper; `create_table()` warns and drops the labels of a deeper
+  table, and the comment setters refuse it with a message. A 1.0 catalog
+  has no nested schemas; `create_schema()` says so and points at
+  `automatic_migration`.
+
 # ducklake 0.9.0
 
 * New `view_table_changes()` opens a table's change feed in an interactive

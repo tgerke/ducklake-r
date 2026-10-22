@@ -46,7 +46,7 @@ add_table_column <- function(table_name, column_name, type, default = NULL) {
   db_execute_ddl(
     sprintf(
       "ALTER TABLE %s ADD COLUMN %s %s%s;",
-      quote_ident(table_name, conn),
+      table_sql(table_name, conn),
       quote_column(column_name, conn),
       type,
       default_sql
@@ -95,7 +95,7 @@ drop_table_column <- function(table_name, column_name) {
   db_execute_ddl(
     sprintf(
       "ALTER TABLE %s DROP COLUMN %s;",
-      quote_ident(table_name, conn),
+      table_sql(table_name, conn),
       quote_column(column_name, conn)
     ),
     conn = conn
@@ -139,7 +139,7 @@ rename_table_column <- function(table_name, from, to) {
   db_execute_ddl(
     sprintf(
       "ALTER TABLE %s RENAME COLUMN %s TO %s;",
-      quote_ident(table_name, conn),
+      table_sql(table_name, conn),
       quote_column(from, conn, arg = "from"),
       quote_column(to, conn, arg = "to")
     ),
@@ -188,7 +188,7 @@ rename_ducklake_table <- function(from, to) {
   db_execute_ddl(
     sprintf(
       "ALTER TABLE %s RENAME TO %s;",
-      quote_ident(from, conn),
+      table_sql(from, conn),
       quote_column(to, conn, arg = "to")
     ),
     conn = conn
@@ -244,7 +244,7 @@ set_column_type <- function(table_name, column_name, type) {
 
   sql <- sprintf(
     "ALTER TABLE %s ALTER COLUMN %s SET TYPE %s;",
-    quote_ident(table_name, conn),
+    table_sql(table_name, conn),
     quote_column(column_name, conn),
     type
   )
@@ -344,7 +344,7 @@ set_column_not_null <- function(table_name, column_name, not_null = TRUE) {
   db_execute_ddl(
     sprintf(
       "ALTER TABLE %s ALTER COLUMN %s %s NOT NULL;",
-      quote_ident(table_name, conn),
+      table_sql(table_name, conn),
       quote_column(column_name, conn),
       if (isTRUE(not_null)) "SET" else "DROP"
     ),

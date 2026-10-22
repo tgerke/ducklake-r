@@ -116,7 +116,7 @@ reset_table_sorting <- function(table_name) {
   db_execute(
     sprintf(
       "ALTER TABLE %s RESET SORTED BY;",
-      quote_ident(table_name, conn)
+      table_sql(table_name, conn)
     ),
     conn = conn
   )
@@ -170,18 +170,19 @@ get_table_sorting <- function(table_name = NULL, ducklake_name = NULL) {
 
   # Current (non-superseded) metadata rows have end_snapshot IS NULL
   sql <- sprintf(
-    "SELECT s.schema_name, t.table_name, se.sort_key_index, se.expression,
-            se.sort_direction, se.null_order
+    "WITH RECURSIVE %3$s
+     SELECT s.schema_path AS schema_name, t.table_name, se.sort_key_index,
+            se.expression, se.sort_direction, se.null_order
      FROM %1$s.ducklake_sort_info si
      JOIN %1$s.ducklake_sort_expression se
        ON si.sort_id = se.sort_id AND si.table_id = se.table_id
      JOIN %1$s.ducklake_table t
        ON si.table_id = t.table_id AND t.end_snapshot IS NULL
-     JOIN %1$s.ducklake_schema s
+     JOIN schema_paths s
        ON t.schema_id = s.schema_id AND s.end_snapshot IS NULL
      WHERE si.end_snapshot IS NULL %2$s
-     ORDER BY s.schema_name, t.table_name, se.sort_key_index",
-    prefix, filter$sql
+     ORDER BY s.schema_path, t.table_name, se.sort_key_index",
+    prefix, filter$sql, metadata_schema_paths_cte(ducklake_name, conn)
   )
 
   if (length(filter$params) == 0) {

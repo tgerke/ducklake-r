@@ -173,7 +173,7 @@ check_table_layout <- function(partition_by, sort_by, options) {
 #' @noRd
 create_table_from_source <- function(table_name, source_sql, layout, comments,
                                      conn) {
-  quoted <- quote_ident(table_name, conn)
+  quoted <- table_sql(table_name, conn)
   has_layout <- length(layout) > 0
 
   own_txn <- (has_layout || length(comments) > 0) && !in_transaction(conn)
@@ -278,13 +278,28 @@ register_temp_view <- function(data, table_name, conn) {
 }
 
 #' Store column labels as comments, in the open transaction
+#'
+#' A table nested two or more schema levels deep cannot be commented (see
+#' `comment_target_sql()`); its labels are dropped with a warning rather
+#' than failing the load.
 #' @noRd
 store_column_labels <- function(table_name, column_labels, conn) {
+  if (length(column_labels) == 0) {
+    return(invisible(NULL))
+  }
+  if (!comments_reachable(table_name)) {
+    cli::cli_warn(c(
+      "The {length(column_labels)} column label{?s} of {.val {table_name}} could not be stored.",
+      "i" = "DuckDB's {.code COMMENT ON} cannot name a table nested more than one schema level deep."
+    ))
+    return(invisible(NULL))
+  }
+  target <- comment_target_sql(table_name, conn)
   for (col in names(column_labels)) {
     db_execute(
       sprintf(
         "COMMENT ON COLUMN %s.%s IS %s;",
-        quote_ident(table_name, conn),
+        target,
         quote_column(col, conn),
         quote_sql(column_labels[[col]])
       ),
@@ -350,6 +365,9 @@ source_column_comments <- function(.data, conn) {
   )
   bases <- vapply(bases[!is.na(bases)], table_ref_name, character(1))
   sources <- unique(c(sources, bases[!is.na(bases)]))
+  # Spelled with their schema, since the comment reader takes an
+  # unqualified name as that table name in every schema
+  sources <- unique(vapply(sources, qualify_table_name, character(1)))
 
   comments <- character()
   for (src in sources) {

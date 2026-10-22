@@ -192,7 +192,7 @@ quietly <- function(expr) {
 run_checks <- function(schema_name = "checks", ducklake_name = NULL) {
   conn <- get_ducklake_connection()
   ducklake_name <- infer_ducklake_name(ducklake_name, conn)
-  schema <- quote_column(schema_name, conn, arg = "schema_name")
+  schema_components(schema_name)
 
   # A mistyped schema must not pass a gate as "no checks failed"
   if (!schema_exists(schema_name, ducklake_name, conn)) {
@@ -206,9 +206,14 @@ run_checks <- function(schema_name = "checks", ducklake_name = NULL) {
   # open transaction and follows a snapshot-pinned attach
   views <- DBI::dbGetQuery(
     conn,
-    "SELECT view_name, comment FROM duckdb_views()
-     WHERE database_name = ? AND schema_name = ? AND NOT internal
-     ORDER BY view_name",
+    sprintf(
+      "WITH RECURSIVE %s
+       SELECT v.view_name, v.comment FROM duckdb_views() v
+       JOIN schema_paths sp ON v.schema_oid = sp.oid
+       WHERE v.database_name = ? AND sp.schema_path = ? AND NOT v.internal
+       ORDER BY v.view_name",
+      catalog_schema_paths_cte(ducklake_name)
+    ),
     params = list(ducklake_name, schema_name)
   )
   if (nrow(views) == 0) {
@@ -219,12 +224,16 @@ run_checks <- function(schema_name = "checks", ducklake_name = NULL) {
 
   # One branch per line, so a binder error quotes the view that broke
   branches <- sprintf(
-    "SELECT %d AS i, count(*) AS n_fail FROM %s.%s.%s",
+    "SELECT %d AS i, count(*) AS n_fail FROM %s",
     seq_len(nrow(views)),
-    quote_ident(ducklake_name, conn),
-    schema,
-    vapply(views$view_name, quote_column, character(1), conn = conn,
-           USE.NAMES = FALSE)
+    vapply(
+      views$view_name,
+      function(view) {
+        quote_ident(paste(ducklake_name, schema_name, view, sep = "."), conn)
+      },
+      character(1),
+      USE.NAMES = FALSE
+    )
   )
   counts <- DBI::dbGetQuery(
     conn,

@@ -89,6 +89,9 @@ set_ducklake_option <- function(option,
     ref <- resolve_table_ref(table_name, schema_name)
     table_name <- ref$table
     schema_name <- ref$schema
+    if (!is.null(ref$lake)) {
+      ducklake_name <- ref$lake
+    }
   }
 
   if (!is.character(option) || length(option) != 1 ||
@@ -188,6 +191,9 @@ reset_ducklake_option <- function(option,
     )
   }
   ref <- resolve_table_ref(table_name, schema_name)
+  if (!is.null(ref$lake)) {
+    ducklake_name <- ref$lake
+  }
 
   db_execute(
     sprintf(

@@ -39,7 +39,7 @@
 #' unlink(lake_dir, recursive = TRUE)
 set_table_comment <- function(table_name, comment) {
   conn <- get_ducklake_connection()
-  quoted <- quote_ident(table_name, conn)
+  quoted <- comment_target_sql(table_name, conn)
   object <- if (is_lake_view(table_name, conn)) "view" else "table"
 
   db_execute(
@@ -130,12 +130,13 @@ set_column_comments <- function(table_name, ...) {
     )
   }
 
+  target <- comment_target_sql(table_name, conn)
   statements <- vapply(
     names(comments),
     function(col) {
       sprintf(
         "COMMENT ON COLUMN %s.%s IS %s;",
-        quote_ident(table_name, conn),
+        target,
         quote_column(col, conn),
         render_comment_value(comments[[col]])
       )
@@ -220,27 +221,33 @@ get_table_comments <- function(table_name = NULL, ducklake_name = NULL) {
   conn <- get_ducklake_connection()
   ducklake_name <- infer_ducklake_name(ducklake_name, conn)
 
-  tables <- table_filter(table_name, "table_name", "schema_name")
-  views <- table_filter(table_name, "view_name", "schema_name")
+  tables <- table_filter(table_name, "t.table_name", "sp.schema_path")
+  views <- table_filter(table_name, "v.view_name", "sp.schema_path")
+  columns <- table_filter(table_name, "c.table_name", "sp.schema_path")
 
   # DuckDB's catalog functions, not the ducklake_tag tables: they follow a
   # snapshot-pinned attach and show an open transaction's pending comments,
-  # which a rewrite in that transaction has to capture
+  # which a rewrite in that transaction has to capture. The schema path
+  # comes from the CTE, since the functions give the last component only.
   sql <- sprintf(
-    "SELECT 'table' AS object_type, schema_name, table_name,
-            NULL AS column_name, comment
-     FROM duckdb_tables()
-     WHERE database_name = ? AND NOT internal AND comment IS NOT NULL %1$s
+    "WITH RECURSIVE %4$s
+     SELECT 'table' AS object_type, sp.schema_path AS schema_name,
+            t.table_name, NULL AS column_name, t.comment
+     FROM duckdb_tables() t
+     JOIN schema_paths sp ON t.schema_oid = sp.oid
+     WHERE t.database_name = ? AND NOT t.internal AND t.comment IS NOT NULL %1$s
      UNION ALL
-     SELECT 'view', schema_name, view_name, NULL, comment
-     FROM duckdb_views()
-     WHERE database_name = ? AND NOT internal AND comment IS NOT NULL %2$s
+     SELECT 'view', sp.schema_path, v.view_name, NULL, v.comment
+     FROM duckdb_views() v
+     JOIN schema_paths sp ON v.schema_oid = sp.oid
+     WHERE v.database_name = ? AND NOT v.internal AND v.comment IS NOT NULL %2$s
      UNION ALL
-     SELECT 'column', schema_name, table_name, column_name, comment
-     FROM duckdb_columns()
-     WHERE database_name = ? AND NOT internal AND comment IS NOT NULL %1$s
+     SELECT 'column', sp.schema_path, c.table_name, c.column_name, c.comment
+     FROM duckdb_columns() c
+     JOIN schema_paths sp ON c.schema_oid = sp.oid
+     WHERE c.database_name = ? AND NOT c.internal AND c.comment IS NOT NULL %3$s
      ORDER BY object_type, schema_name, table_name, column_name",
-    tables$sql, views$sql
+    tables$sql, views$sql, columns$sql, catalog_schema_paths_cte(ducklake_name)
   )
 
   DBI::dbGetQuery(
@@ -248,7 +255,7 @@ get_table_comments <- function(table_name = NULL, ducklake_name = NULL) {
     params = c(
       list(ducklake_name), tables$params,
       list(ducklake_name), views$params,
-      list(ducklake_name), tables$params
+      list(ducklake_name), columns$params
     )
   )
 }
@@ -317,7 +324,8 @@ collect.tbl_ducklake <- function(x, ...) {
 #'   [get_table_comments()].
 #' @noRd
 column_comments_asof <- function(table_name, asof, conn) {
-  prefix <- metadata_prefix(infer_ducklake_name(NULL, conn), conn)
+  ducklake_name <- infer_ducklake_name(NULL, conn)
+  prefix <- metadata_prefix(ducklake_name, conn)
   ref <- split_table_name(table_name)
 
   if (!is.null(asof$version)) {
@@ -339,19 +347,20 @@ column_comments_asof <- function(table_name, asof, conn) {
     )
   }
   sql <- sprintf(
-    "WITH pin AS (%2$s)
-     SELECT 'column' AS object_type, s.schema_name, t.table_name,
-            c.column_name, ct.value AS comment
+    "WITH RECURSIVE pin AS (%2$s), %7$s
+     SELECT 'column' AS object_type, s.schema_path AS schema_name,
+            t.table_name, c.column_name, ct.value AS comment
      FROM pin
      JOIN %1$s.ducklake_table t ON %3$s
-     JOIN %1$s.ducklake_schema s ON t.schema_id = s.schema_id AND %4$s
+     JOIN schema_paths s ON t.schema_id = s.schema_id AND %4$s
      JOIN %1$s.ducklake_column c ON c.table_id = t.table_id AND %5$s
      JOIN %1$s.ducklake_column_tag ct
        ON ct.table_id = c.table_id AND ct.column_id = c.column_id AND %6$s
-     WHERE t.table_name = ? AND s.schema_name = ?
+     WHERE t.table_name = ? AND s.schema_path = ?
        AND ct.key = 'comment' AND ct.value IS NOT NULL
      ORDER BY c.column_name",
-    prefix, pin, valid("t"), valid("s"), valid("c"), valid("ct")
+    prefix, pin, valid("t"), valid("s"), valid("c"), valid("ct"),
+    metadata_schema_paths_cte(ducklake_name, conn)
   )
 
   DBI::dbGetQuery(

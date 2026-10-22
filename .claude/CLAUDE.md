@@ -310,8 +310,8 @@
   ("likely" per the 1.0 docs), a SQL surface for tags (then view tags for
   check attributes and a column dictionary), triggers on DuckLake tables,
   data-dict SQL sources (then a catalog-to-`data-dict.yaml` exporter, with
-  `range` from `ducklake_table_column_stats`), and nested schemas
-  (tgerke/ducklake-r#72).
+  `range` from `ducklake_table_column_stats`); nested schemas
+  (tgerke/ducklake-r#72) landed with DuckLake 1.1, see the entry below.
 - **View and tag behavior, confirmed empirically on DuckDB 1.5.5**
   (2026-09-17, extension d8a1881e): `COMMENT ON TABLE` on a view is
   refused ("Cannot use ALTER TABLE on entry ... it is not a table") and
@@ -475,6 +475,51 @@
   BY` there takes ascending keys only (`DESC` is a parser error), so the
   empty create plus `ALTER` sequence the rewrites already use serves all
   three.
+- **Every dot in a name is a schema level inside one lake** (2026-10-22,
+  nested schemas, closes tgerke/ducklake-r#72). `split_table_name()`
+  gives `lake` (a first component that names a registered lake, stripped),
+  `schema` (the dotted path), and `table`; `schema_name` arguments take
+  the same paths; a schema whose own name contains a dot is unreachable.
+  Decided over resolving the first part against attached catalogs the way
+  DuckDB's binder does, because that inherits the shadowing DuckLake's docs
+  warn about (an attached database named `sales` hijacks
+  `sales.europe.orders`, confirmed), and over keeping the old last-two-parts
+  rule, which read `sales.europe.orders` as schema `europe`. `table_sql()`
+  renders every table and view reference fully qualified
+  (`lake.sales.europe.orders`), which DuckDB 2.0 accepts in `SELECT`,
+  `AT`, `INSERT`, `UPDATE`, `DELETE`, `MERGE`, `ALTER TABLE`, `CREATE`/`DROP
+  TABLE`, `CREATE OR REPLACE`/`DROP VIEW` (all confirmed on 2.0.0). The
+  exception is `COMMENT ON TABLE/VIEW/COLUMN`: its parser takes at most
+  three qualifiers (`catalog.schema.name`; "Too many qualifications found"
+  otherwise), so `comment_target_sql()` writes `lake.schema.table` for a
+  top-level schema, `schema.sub.table` without the lake for one level of
+  nesting (resolved in the current database, which must be the lake), and
+  refuses deeper tables; `store_column_labels()` warns and drops labels
+  there instead of failing the load. Worth an upstream issue on
+  duckdb/duckdb. Facts confirmed on DuckDB 2.0.0 with DuckLake 1.1:
+  `CREATE SCHEMA IF NOT EXISTS a.b` fails when `a` is missing, so
+  `create_schema()` creates parents outermost first; `DROP SCHEMA a`
+  refuses when children exist ("entries that depend on it"), and `CASCADE`
+  ends every child's `ducklake_schema` row too; a dropped nested table
+  stays reachable through `AT (VERSION => n)`; `snapshots()` records
+  `tables_created=sales.europe.orders` and `schemas_created=sales.europe`,
+  and `options()` reports `scope_entry` as the full path, so the change
+  targets and the `scope_entry` matching work on paths; `duckdb_tables()`,
+  `duckdb_views()`, `duckdb_columns()` give the last component in
+  `schema_name` plus `schema_oid`, and `duckdb_schemas()` has
+  `parent_schema` and `parent_schema_oid`, so `catalog_schema_paths_cte()`
+  rebuilds paths with a recursive CTE for the listings (works on 1.0
+  catalogs too, where parents are all NULL); `ducklake_schema` has
+  `parent_schema_id` on 1.1 catalogs and not on 1.0 ones, so
+  `metadata_schema_paths_cte()` branches on `lake_has_nested_schemas()`,
+  which reads the format version from `options()` (never a probe statement
+  that could fail inside a caller's transaction) and caches it in the
+  registry entry; `ducklake_table_info()` has `schema_id`, not a name;
+  `ducklake_table_changes()`, `ducklake_list_files()`, `set_option()`,
+  and `ducklake_flush_inlined_data()` take dotted schema paths, while
+  `lake.table_changes('sales.europe.orders', ...)` does not;
+  `get_metadata_table()` bypasses `get_ducklake_table()` because the
+  metadata database name would otherwise be read as a schema path.
 - **`restore_table_version()` joins an open transaction** (2026-10-21,
   reversing the 2026-09-17 refusal). It refused because its own
   `with_transaction()` could not nest and the options needed a post-commit
