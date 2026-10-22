@@ -261,6 +261,9 @@ attach_ducklake <- function(ducklake_name, lake_path,
       "Provide only one of {.arg snapshot_version} and {.arg snapshot_time}."
     )
   }
+  if (!is.null(snapshot_time)) {
+    check_not_future(snapshot_time, "snapshot_time")
+  }
 
   if (!is.null(meta_encryption_key)) {
     if (backend != "duckdb") {

@@ -42,9 +42,9 @@ not name one; the \code{author} argument wins when both are given.
 
 The commit is confirmed with one message naming the snapshot it created,
 with the author and commit message when they were given. The id comes
-from DuckLake's \code{last_committed_snapshot()}, which tracks this
-connection's own commits, so it is right even when other sessions
-commit to the same lake at the same time. A transaction that changed
+from DuckLake's \code{last_committed_snapshot()}, which tracks the commits
+made through this session's attachment of the lake, so it is right even
+when other sessions commit to the same lake at the same time. A transaction that changed
 nothing creates no snapshot, and the message says so, naming the
 snapshot the lake stands at. \code{options(ducklake.verbose = FALSE)}
 silences these confirmations.

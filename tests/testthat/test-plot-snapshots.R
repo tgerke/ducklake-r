@@ -87,7 +87,13 @@ test_that("classify_snapshot_changes maps tokens in priority order", {
     "tables_altered, 2",
     "tables_dropped, 3",
     "flushed_inlined, 1",
-    "compacted, 1",
+    "merge_adjacent, 1",
+    "rewrite_delete, 1",
+    "views_created, main.v",
+    "views_altered, 4",
+    "views_dropped, 4",
+    "scalar_macros_created, main.mm",
+    "table_macros_dropped, 5",
     "something_unrecognized",
     NA
   ))
@@ -102,7 +108,8 @@ test_that("classify_snapshot_changes maps tokens in priority order", {
     c(
       "created", "data change", "data change", "data change",
       "schema change", "schema change", "maintenance", "maintenance",
-      "other", "other"
+      "maintenance", "created", "schema change", "schema change",
+      "created", "schema change", "other", "other"
     )
   )
 })

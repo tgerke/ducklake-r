@@ -40,13 +40,12 @@ This is useful for:
 \item Regulatory compliance and data lineage documentation
 }
 
-The timestamp must be within the range of available snapshots for the table.
-Use \code{list_table_snapshots()} to see available snapshot times.
-
-\strong{Important}: When querying at a snapshot's exact timestamp, you may need to
-add a small time buffer (e.g., +1 second) to ensure the snapshot is found.
-This is because the time-travel query looks for snapshots created at or before
-the specified timestamp.
+The timestamp resolves to the latest snapshot taken at or before it, a
+snapshot's own time included, so the times from
+\code{list_table_snapshots()} can be passed as they are. A timestamp
+before the table's first snapshot is an error, and so is one in the
+future, which DuckLake refuses; ducklake checks for that before the
+query runs.
 }
 \examples{
 \dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}
@@ -61,10 +60,9 @@ rows_insert(
   by = "id"
 )
 
-# Query data at a specific snapshot time
+# Query data as of the first snapshot's own time
 snapshots <- list_table_snapshots("orders")
-# Add 1 second to ensure the snapshot is found
-get_ducklake_table_asof("orders", snapshots$snapshot_time[1] + 1) |>
+get_ducklake_table_asof("orders", snapshots$snapshot_time[1]) |>
   dplyr::summarise(total = sum(amount)) |>
   dplyr::collect()
 

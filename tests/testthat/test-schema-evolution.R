@@ -242,11 +242,11 @@ test_that("a failed DDL statement leaves the connection usable", {
   create_table(data.frame(id = 1:3), "ddl_recovery")
   conn <- get_ducklake_connection()
 
-  # DuckLake rejects this DEFAULT as non-literal and leaves an aborted
-  # transaction behind; the helper rolls it back before re-raising
+  # DuckLake rejects an expression DEFAULT on ADD COLUMN; the helper rolls
+  # back any aborted transaction the failure leaves before re-raising
   expect_error(
     ducklake:::db_execute_ddl(
-      "ALTER TABLE ddl_recovery ADD COLUMN zz BOOLEAN DEFAULT TRUE", conn
+      "ALTER TABLE ddl_recovery ADD COLUMN zz TIMESTAMP DEFAULT now()", conn
     ),
     "non-literal"
   )

@@ -133,8 +133,9 @@ expire_snapshots <- function(ducklake_name = NULL,
 #' referenced by older snapshots. They are scheduled for deletion once no
 #' snapshot references them; run [cleanup_old_files()] to remove them.
 #'
-#' @returns A data frame with one row per output file (columns
-#'   `schema_name`, `table_name`, `files_processed`, `files_created`).
+#' @returns A data frame with one row per compaction operation (columns
+#'   `schema_name`, `table_name`, `files_processed`, `files_created`); an
+#'   operation can write several output files, or none.
 #' @family maintenance
 #' @export
 #'
@@ -203,8 +204,9 @@ merge_adjacent_files <- function(ducklake_name = NULL,
 
   if (nrow(result) > 0) {
     merged <- sum(result$files_processed)
+    created <- sum(result$files_created)
     dl_inform(
-      "Merged {.val {merged}} file{?s} into {.val {nrow(result)}} file{?s}."
+      "Merged {.val {merged}} file{?s} into {.val {created}} file{?s}."
     )
   } else {
     dl_inform("No adjacent files to merge.")
@@ -382,8 +384,9 @@ delete_orphaned_files <- function(ducklake_name = NULL,
 #' The rewritten originals are scheduled for deletion once no snapshot
 #' references them; run [cleanup_old_files()] to remove them.
 #'
-#' @returns A data frame with one row per output file (columns
-#'   `schema_name`, `table_name`, `files_processed`, `files_created`).
+#' @returns A data frame with one row per compaction operation (columns
+#'   `schema_name`, `table_name`, `files_processed`, `files_created`); an
+#'   operation can write several output files, or none.
 #' @family maintenance
 #' @export
 #'
@@ -457,8 +460,9 @@ rewrite_data_files <- function(ducklake_name = NULL,
 
   if (nrow(result) > 0) {
     rewritten <- sum(result$files_processed)
+    created <- sum(result$files_created)
     dl_inform(
-      "Rewrote {.val {rewritten}} file{?s} into {.val {nrow(result)}} file{?s}."
+      "Rewrote {.val {rewritten}} file{?s} into {.val {created}} file{?s}."
     )
   } else {
     dl_inform("No files needed rewriting.")

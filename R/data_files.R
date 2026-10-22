@@ -232,6 +232,9 @@ list_ducklake_files <- function(table_name,
       "Provide only one of {.arg snapshot_version} and {.arg snapshot_time}."
     )
   }
+  if (!is.null(snapshot_time)) {
+    check_not_future(snapshot_time, "snapshot_time")
+  }
   ref <- resolve_table_ref(table_name, schema_name)
   table_name <- ref$table
   schema_name <- ref$schema

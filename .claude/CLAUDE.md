@@ -55,13 +55,60 @@
 - **`set_snapshot_metadata()` fills blanks only** unless `overwrite = TRUE`;
   at-commit metadata is the audited path, and an overwrite is an edit to
   the audit trail.
-- **Minimum duckdb is 1.5.5** (raised from 1.5.2 on 2026-09-07). DuckLake
-  1.0 ships with DuckDB 1.5.2 (the 1.5.1 extension wrote 0.4-format
-  catalogs; `automatic_migration` upgrades them); 1.5.5 is where duckdb-r
-  settled its extension storage policy and API (`duckdb_storage_status()`,
-  `duckdb(home = )`), which `ducklake_extension_available()` uses. The
-  1.5.4.x releases carried a package-library extension cache that upstream
-  withdrew, and are excluded on purpose.
+- **Minimum duckdb is 2.0.0** (raised from 1.5.5 on 2026-10-21, the day
+  DuckDB 2.0.0 and DuckLake 1.1 shipped). The 0.9.0 code already ran on
+  2.0 (7 of 1,257 expectations failed, from two upstream changes), but the
+  1.1 features the package wraps next need the 2.0 extension, and a dual
+  floor would put a version branch in every rewrite path; 1.5 users stay
+  on ducklake 0.9.0. The research behind the pass, with every 1.0-era fact
+  in this file rechecked on 2.0, is
+  `.claude/research/2026-10-21-duckdb-2.0-ducklake-1.1.md`; entries below
+  labeled 1.5.5 are rewritten as the PRs that act on them land. Earlier
+  floors: 1.5.2 shipped DuckLake 1.0, and 1.5.5 is where duckdb-r settled
+  its extension storage API (`duckdb_storage_status()`, `duckdb(home = )`),
+  which `ducklake_extension_available()` still uses. duckdb 2.0.0 was a
+  GitHub tag only on 2026-10-21, so CI takes duckdb from
+  `https://duckdb.r-universe.dev` (`extra-repositories` on `setup-r`) until
+  CRAN has it, and a CRAN release of ducklake waits for that too.
+- **A DuckDB 2.0 write to a DuckDB-file catalog locks 1.5 clients out**
+  (confirmed 2026-10-21). DuckDB 2.0 rewrites the catalog file at storage
+  version 69 on its first write, whatever the catalog's DuckLake format
+  version; 1.5.5 then fails with "cannot initialize database with storage
+  version 7 - which is lower than what the database itself uses (69)".
+  `DUCKLAKE_VERSION '1.0'` pins the format, not the storage version, and
+  `META_STORAGE_VERSION` is refused ("Unexpected duplicate option
+  storage_version") because DuckLake sets it itself. A writable 2.0 attach
+  that only read left the file readable. A SQLite catalog went through the
+  same steps and stayed readable on 1.5.5; PostgreSQL was not tested. New
+  2.0 lakes are 1.1 catalogs; a 1.0 catalog stays 1.0 until attached with
+  `AUTOMATIC_MIGRATION`, which cannot be undone.
+- **A future time-travel timestamp is refused in R** (2026-10-21). DuckLake
+  1.1 rejects `AT (TIMESTAMP => future)`, `SNAPSHOT_TIME`, the change-feed
+  bounds, and `ducklake_list_files(snapshot_time = )` with "Cannot time
+  travel to a future timestamp", and through dbplyr that arrives as "Can't
+  query fields" when the lazy table is first touched. `check_not_future()`
+  runs first in `get_ducklake_table_asof()`, `restore_table_version()`,
+  `get_table_changes()`, `list_ducklake_files()`, and `attach_ducklake()`;
+  a character timestamp is read as UTC, an unparseable one is left to
+  DuckLake. A snapshot's own time is inclusive (`AT (TIMESTAMP => its
+  time)` reads it; `Sys.time()` works because it is past by the time the
+  query runs), so docs and tests no longer add a second. That needed
+  `format_timestamp()` to round to the microsecond: R's `%OS6` truncates
+  the binary fraction, so about half of all snapshot times rendered one
+  microsecond early and "does not exist at timestamp" followed; `+ 1`
+  had hidden it.
+- **`snapshots()` change keys** (read from the extension source,
+  2026-10-21; the same on the 1.0 and 1.1 branches): `tables_created`,
+  `tables_inserted_into`, `tables_deleted_from`, `tables_altered`,
+  `tables_dropped`, `schemas_created`, `schemas_dropped`, `views_created`,
+  `views_altered`, `views_dropped`, `scalar_macros_created`,
+  `scalar_macros_dropped`, `table_macros_created`,
+  `table_macros_dropped`, `inlined_insert`, `inlined_delete`,
+  `flushed_inlined`, `merge_adjacent`, `rewrite_delete`, and
+  `compacted_table` (1.1 only, for catalogs written by older versions).
+  `plot_snapshots()` had looked for `compacted`, which no version writes.
+  Under 1.1 a compaction result is one row per operation and
+  `files_created` can be more than 1, or 0.
 - **`CHECKPOINT` expires and deletes nothing without a policy**
   (`expire_older_than`, `delete_older_than`); verified 2026-09-04.
 - **Schema-qualified names go through `dbplyr::tbl_sql()` with a quoted
@@ -101,14 +148,15 @@
   after `COMMIT` and prints `Committed snapshot N (author): message`, or
   says nothing changed when the id did not move, naming the snapshot the
   lake stands at. The id comes from DuckLake's
-  `last_committed_snapshot()`, which is connection state: NA until the
-  connection commits a change to the lake, then the id of its latest
-  writing commit, unmoved by empty commits, rollbacks, and other
-  connections' commits (confirmed on DuckDB 1.5.5, extension d8a1881e,
-  with the DuckDB and SQLite catalogs). An extension without the function
-  falls back to `current_snapshot()`, the lake's newest snapshot, which
-  under concurrent writers can be a neighbor's; the 2026-09-06 note that
-  no better query existed was wrong. `begin_transaction()` reads the
+  `last_committed_snapshot()`, which is attachment state shared by the
+  connections of one DuckDB instance (corrected 2026-10-21: the earlier
+  note called it connection state, but a second connection's commit moved
+  the first connection's value on 1.5.5 and 2.0 alike, and the 1.1 docs
+  say so): NA until a change is committed through the attachment, then
+  the id of the latest such commit, unmoved by empty commits, rollbacks,
+  and commits from other processes. The 2.0.0 floor dropped the fallback
+  to `current_snapshot()` for an extension without the function; the
+  2026-09-06 note that no better query existed was wrong. `begin_transaction()` reads the
   stash before `BEGIN`: DuckDB starts the transaction on a catalog at the
   first statement that touches it, and on a SQLite catalog that
   transaction holds the file's shared lock until it ends, so a neighbor's

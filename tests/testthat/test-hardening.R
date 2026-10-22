@@ -2,19 +2,6 @@
 # attach, restore_table_version, update_table guardrails, multi-lake backend
 # state, metadata tables, and rows_* S3 dispatch.
 
-test_that("duckdb_version_at_least handles normal, prefixed, and dev versions", {
-  expect_true(duckdb_version_at_least("v1.5.4", "1.5.1"))
-  expect_true(duckdb_version_at_least("1.5.1", "1.5.1"))
-  expect_false(duckdb_version_at_least("v1.4.4", "1.5.1"))
-  # Multi-digit components compare numerically, not lexically
-  expect_true(duckdb_version_at_least("v1.10.0", "1.5.1"))
-  expect_false(duckdb_version_at_least("v0.13.0", "1.3.0"))
-  # Dev suffixes are tolerated
-  expect_true(duckdb_version_at_least("v1.5.4-dev123", "1.5.1"))
-  # Garbage is FALSE, not an error
-  expect_false(duckdb_version_at_least("not-a-version", "1.5.1"))
-})
-
 test_that("check_identifier accepts plain names and rejects injection attempts", {
   expect_invisible(check_identifier("my_lake"))
   expect_invisible(check_identifier("_x9"))

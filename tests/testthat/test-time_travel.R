@@ -18,9 +18,8 @@ test_that("get_ducklake_table_asof formats POSIXct timestamps", {
   snapshots <- list_table_snapshots("asof_test1")
   expect_gt(nrow(snapshots), 0)
 
-  # Query at a time after the snapshot - this should reliably find the snapshot
-  snapshot_time <- snapshots$snapshot_time[nrow(snapshots)]
-  query_time <- snapshot_time + 1  # Query 1 second after the snapshot time
+  # A snapshot's own time resolves to that snapshot
+  query_time <- snapshots$snapshot_time[nrow(snapshots)]
 
   # Query at that timestamp - should get the snapshot
   result <- get_ducklake_table_asof("asof_test1", query_time)
@@ -43,9 +42,9 @@ test_that("get_ducklake_table_asof returns lazy table", {
   test_data <- data.frame(id = 1:5, name = letters[1:5], stringsAsFactors = FALSE)
   create_table(test_data, "asof_test3")
 
-  # Get snapshot and query after it to ensure it's available
+  # Query at the latest snapshot's own time
   snapshots <- list_table_snapshots("asof_test3")
-  ts <- snapshots$snapshot_time[nrow(snapshots)] + 1
+  ts <- snapshots$snapshot_time[nrow(snapshots)]
 
   # Query at timestamp
   result <- get_ducklake_table_asof("asof_test3", ts)
@@ -155,8 +154,8 @@ test_that("naive local POSIXct timestamps resolve as the correct instant", {
   # Sys.time() carries no tzone attribute; before the UTC fix it was
   # rendered in local time but read by DuckLake as UTC, shifting the
   # queried instant by the UTC offset (hours in the past for tz < UTC,
-  # "no snapshot found" here)
-  asof_now <- get_ducklake_table_asof("utc_asof", Sys.time() + 5) |>
+  # "no snapshot found" here; hours ahead for tz > UTC, a future time)
+  asof_now <- get_ducklake_table_asof("utc_asof", Sys.time()) |>
     dplyr::collect()
   expect_equal(nrow(asof_now), 3)
 
@@ -185,7 +184,7 @@ test_that("time-travel readers are DuckLake tables that restore labels", {
   expect_equal(attr(by_version, "ducklake_table_name"), "tt_labels")
   expect_equal(attr(dplyr::collect(by_version)$v, "label"), "Value")
 
-  as_of <- get_ducklake_table_asof("tt_labels", snapshots$snapshot_time[[1]] + 1)
+  as_of <- get_ducklake_table_asof("tt_labels", snapshots$snapshot_time[[1]])
   expect_s3_class(as_of, "tbl_ducklake")
   expect_equal(attr(dplyr::collect(as_of)$v, "label"), "Value")
 })
@@ -245,7 +244,7 @@ test_that("an as-of read restores the labels in force at that time", {
 
   # a snapshot's own time resolves to that snapshot, for the rows and the labels
   at_change <- max(list_table_snapshots("tt_asof_time")$snapshot_time)
-  new <- dplyr::collect(get_ducklake_table_asof("tt_asof_time", at_change + 1))
+  new <- dplyr::collect(get_ducklake_table_asof("tt_asof_time", at_change))
   expect_equal(attr(new$amount, "label"), "amount v2")
 })
 
@@ -337,4 +336,72 @@ test_that("list_table_snapshots matches id-only snapshots and survives a rewrite
   expect_equal(nrow(list_table_snapshots("snap_ids")), 3)
   expect_equal(nrow(list_table_snapshots("snap_other")), 1)
   expect_equal(nrow(list_table_snapshots("no_such_table")), 0)
+})
+
+test_that("a future timestamp is refused before the query runs", {
+  skip_if_not_installed("duckdb")
+  skip_if_not_installed("dplyr")
+
+  lake <- create_temp_ducklake()
+  on.exit(cleanup_temp_ducklake(lake), add = TRUE)
+
+  create_table(data.frame(id = 1:2), "future_tt")
+  later <- Sys.time() + 3600
+
+  # DuckLake refuses time travel into the future, and through dbplyr that
+  # surfaced as "Can't query fields" on first use; the check in R names
+  # the argument instead
+  expect_error(get_ducklake_table_asof("future_tt", later), "in the future")
+  expect_error(
+    restore_table_version("future_tt", timestamp = later),
+    "in the future"
+  )
+  expect_error(
+    get_table_changes("future_tt", Sys.time() - 3600, later),
+    "end.*in the future"
+  )
+  expect_error(
+    list_ducklake_files("future_tt", snapshot_time = later),
+    "in the future"
+  )
+  # character input is read as UTC, as DuckLake reads the literal
+  expect_error(
+    get_ducklake_table_asof(
+      "future_tt", format(later, "%Y-%m-%d %H:%M:%S", tz = "UTC")
+    ),
+    "in the future"
+  )
+
+  # Now itself is fine: it is in the past by the time the query runs
+  expect_equal(
+    nrow(dplyr::collect(get_ducklake_table_asof("future_tt", Sys.time()))),
+    2
+  )
+})
+
+test_that("format_timestamp renders POSIXct to the nearest microsecond in UTC", {
+  # R's %OS6 truncates the binary fraction (27.9475 prints as 27.947499),
+  # which put a snapshot's own time a microsecond before the snapshot
+  x <- as.POSIXct("2026-10-21 23:21:27.9475", tz = "UTC")
+  expect_equal(ducklake:::format_timestamp(x), "2026-10-21 23:21:27.947500")
+
+  # microseconds round-trip across the second
+  base <- as.numeric(as.POSIXct("2026-10-21 23:21:27", tz = "UTC"))
+  micros <- c(1, 499999, 500000, 999999)
+  rendered <- vapply(
+    micros,
+    function(i) {
+      ducklake:::format_timestamp(
+        as.POSIXct(base + i / 1e6, origin = "1970-01-01", tz = "UTC")
+      )
+    },
+    character(1)
+  )
+  expect_equal(rendered, sprintf("2026-10-21 23:21:27.%06d", micros))
+
+  # local-time input renders as the same instant in UTC
+  local <- as.POSIXct("2026-10-21 19:21:27", tz = "America/New_York")
+  expect_equal(ducklake:::format_timestamp(local), "2026-10-21 23:21:27.000000")
+  expect_equal(ducklake:::format_timestamp(as.POSIXct(NA)), NA_character_)
+  expect_equal(ducklake:::format_timestamp("2026-01-01 00:00:00"), "2026-01-01 00:00:00")
 })

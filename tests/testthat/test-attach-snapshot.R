@@ -27,6 +27,17 @@ test_that("attach_ducklake rejects both pinning arguments at once", {
   )
 })
 
+test_that("attach_ducklake refuses a snapshot_time in the future", {
+  expect_error(
+    attach_ducklake(
+      "pinned_future",
+      lake_path = tempdir(),
+      snapshot_time = Sys.time() + 3600
+    ),
+    "in the future"
+  )
+})
+
 test_that("a snapshot-pinned attach sees the lake as of that snapshot", {
   skip_if_not_installed("duckdb")
   skip_if_not_installed("dplyr")

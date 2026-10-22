@@ -23,9 +23,9 @@ Depends:
 Imports:
     cli,
     DBI,
-    dbplyr (>= 2.5.0),
+    dbplyr (>= 2.6.0),
     dplyr,
-    duckdb (>= 1.5.5)
+    duckdb (>= 2.0.0)
 Suggests:
     askpass,
     fs,

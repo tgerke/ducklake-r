@@ -26,8 +26,9 @@ current database is used.}
 \item{schema_name}{Optional schema containing \code{table_name}.}
 }
 \value{
-A data frame with one row per output file (columns
-\code{schema_name}, \code{table_name}, \code{files_processed}, \code{files_created}).
+A data frame with one row per compaction operation (columns
+\code{schema_name}, \code{table_name}, \code{files_processed}, \code{files_created}); an
+operation can write several output files, or none.
 }
 \description{
 Rewrites Parquet files whose rows have mostly been deleted. Deletes in

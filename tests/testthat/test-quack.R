@@ -62,16 +62,6 @@ test_that("quote_sql escapes embedded single quotes", {
   expect_equal(ducklake:::quote_sql("O'Brien"), "'O''Brien'")
 })
 
-# --- Version gate ---
-
-test_that("quack_version_supported compares against 1.5.3", {
-  expect_equal(ducklake:::quack_version_supported("v1.5.2"), FALSE)
-  expect_equal(ducklake:::quack_version_supported("v1.5.3"), TRUE)
-  expect_equal(ducklake:::quack_version_supported("1.6.0"), TRUE)
-  expect_equal(ducklake:::quack_version_supported("v1.10.0"), TRUE)
-  expect_equal(ducklake:::quack_version_supported("not-a-version"), FALSE)
-})
-
 # --- Input validation (runs before the engine is touched) ---
 
 test_that("attach_quack requires a uri", {
@@ -82,18 +72,12 @@ test_that("quack_query requires a single query string", {
   expect_snapshot(error = TRUE, quack_query("quack:localhost", c("a", "b")))
 })
 
-# --- Live round trip (needs a DuckDB >= 1.5.3 engine; skipped otherwise) ---
+# --- Live round trip ---
 
 test_that("quack_serve and quack_query complete a live round trip", {
   skip_on_cran()
   skip_if_not_installed("duckdb")
   skip_if_not_installed("dplyr")
-
-  engine <- DBI::dbGetQuery(get_ducklake_connection(), "SELECT version() AS v")$v
-  skip_if_not(
-    ducklake:::quack_version_supported(engine),
-    "DuckDB engine is older than 1.5.3"
-  )
 
   temp_dir <- tempfile("quack_live")
   dir.create(temp_dir, showWarnings = FALSE, recursive = TRUE)
@@ -140,7 +124,6 @@ test_that("quack_serve and quack_query complete a live round trip", {
 test_that("install_quack installs and optionally loads the extension", {
   executed <- character()
   local_mocked_bindings(
-    check_quack_version = function(...) invisible(TRUE),
     db_execute = function(sql, ...) {
       executed <<- c(executed, sql)
       invisible(NULL)
