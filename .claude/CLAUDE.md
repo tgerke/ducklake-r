@@ -651,3 +651,33 @@
   its own expression engine without joins, subqueries, windows, or
   references to other tables, `draft` generating types and observed
   ranges), and want re-checking when it moves.
+- **`create_table(replace = TRUE)` is the idempotent write; the
+  `make_layer()` factory of tgerke/ducklake-r#81 was declined**
+  (2026-10-22). The gap behind the issue was a pipeline script that fails
+  on its second run ("already exists") until its verb is switched to
+  `replace_table()` by hand. `replace` mirrors `create_view(replace = )`:
+  a missing table takes the plain create path, an existing one takes the
+  `replace_table()` rewrite (`rewrite_table()`, shared by both verbs),
+  with an explicit `partition_by` or `sort_by` replacing the carried keys
+  and `options` merged per option (`reapply_table_layout(layout = )`);
+  the schema must exist, and a view of the name is refused before any
+  statement runs. `lake_object_type()` answers table, view, or nothing
+  from `duckdb_tables()` and `duckdb_views()` on the full schema path, so
+  it sees objects created in the open transaction and may bind parameters.
+  `replace_table()` now refuses a missing table with a hint: it had
+  created one silently through `DROP TABLE IF EXISTS` + `CREATE`
+  (confirmed on 2.0.0), so a mistyped name spawned a new table while the
+  real one went stale. The guard sits in `replace_table()`, not in
+  `rebuild_table_from()`, because `restore_table_version()` relies on
+  that sequence to bring a dropped table back (confirmed on 2.0.0, pinned
+  by a test). The factory was declined because it names tables from
+  unquoted R symbols (`bronze(mtcars)` reads `bronze.mtcars`,
+  `bronze(mtcars, "msg")` writes the R object), decides read or write by
+  `missing(commit_message)`, assigns into the caller's workspace through
+  an inline `<-`, cannot run inside a caller's `with_transaction()` (its
+  own `BEGIN` aborts the outer one), duplicates `ducklake.author`, and
+  reopens the schema-versus-layer naming; the package uses no
+  non-standard evaluation anywhere. Nested schemas make a layer a path
+  (`study1.bronze`), which the issue's two-part name split could not
+  express; a project-local factory over `create_table(replace = TRUE)`
+  and string names is the suggested alternative.

@@ -32,7 +32,8 @@ attach_ducklake("loading_lake", lake_path = vignette_temp_dir)
 
 `create_table()` is the one entry point for data that is not in the lake
 yet. It accepts a data frame, a path to a file, a URL, or a lazy table, and
-in every case the result is a new table and a new snapshot. The recipes
+in every case the result is a new table and a new snapshot, or with
+`replace = TRUE` a rewritten table and a new snapshot. The recipes
 below start with the everyday cases and end with the migration paths:
 registering Parquet files that already exist, and copying whole databases
 in from DuckDB or Iceberg.
@@ -132,6 +133,22 @@ with_transaction(
 
 This is the shape of a medallion pipeline: each layer is a query on the
 layer before it, written straight into the lake.
+
+A pipeline script runs more than once. With `replace = TRUE` the same call
+creates the table on the first run and rewrites it on every later one,
+carrying over the comments, keys, and options the table has picked up
+since, so a layer is one call whether or not it exists yet:
+
+```{r rerun}
+with_transaction(
+  get_ducklake_table("cars") |>
+    filter(cyl == 4) |>
+    select(mpg, cyl, hp, wt, qsec) |>
+    create_table("small_cars", replace = TRUE),
+  author = "Data Analyst",
+  commit_message = "Four-cylinder subset, with qsec"
+)
+```
 
 ## Put tables in schemas
 

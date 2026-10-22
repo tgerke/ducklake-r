@@ -2,7 +2,8 @@
 #'
 #' DuckLake stores comments, partition keys, sort order, and table-scoped
 #' options against a table id, and a rewrite that goes through `DROP` +
-#' `CREATE` ([replace_table()], [restore_table_version()]) assigns a new id.
+#' `CREATE` ([replace_table()], `create_table(replace = TRUE)`,
+#' [restore_table_version()]) assigns a new id.
 #' Capture before the rewrite and put the pieces back with
 #' `reapply_table_layout()` and `reapply_table_comments()`. A table with
 #' none of these captures empty pieces and reapplies nothing.
@@ -149,9 +150,14 @@ option_value_for_set <- function(option_name, value) {
 #' @param meta The list from `capture_table_metadata()`.
 #' @param columns Column names of the new table.
 #' @param conn A DBI connection.
+#' @param layout The list from `check_table_layout()`, for
+#'   `create_table(replace = TRUE)`: a `partition_by` or `sort_by` given
+#'   there replaces the captured keys, unfiltered, and each option in its
+#'   `options` replaces the captured value of that option.
 #' @returns Invisibly, `NULL`.
 #' @noRd
-reapply_table_layout <- function(meta, columns, conn = get_ducklake_connection()) {
+reapply_table_layout <- function(meta, columns, conn = get_ducklake_connection(),
+                                 layout = list()) {
   pending <- meta$pending_keys
 
   # Keys changed in the open transaction win over the committed ones
@@ -181,6 +187,18 @@ reapply_table_layout <- function(meta, columns, conn = get_ducklake_connection()
   # options() reports every value as text; numbers and booleans go back bare
   options <- lapply(meta$options$value, typed_option_value)
   names(options) <- meta$options$option_name
+
+  # An explicit piece replaces the captured one as given: a key on a column
+  # the table lacks fails here as it would on a plain create
+  if (!is.null(layout$partition_by)) {
+    partition_by <- layout$partition_by
+  }
+  if (!is.null(layout$sort_by)) {
+    sort_by <- layout$sort_by
+  }
+  if (!is.null(layout$options)) {
+    options[names(layout$options)] <- layout$options
+  }
 
   apply_table_layout(
     meta$table_name,
@@ -318,10 +336,12 @@ reapply_table_comments <- function(meta, columns, already_set = character(),
 #'   first (labels from a data frame, or comments inherited from source
 #'   tables); captured comments fill the remaining columns.
 #' @param conn A DBI connection.
+#' @param layout Explicit layout pieces, passed to `reapply_table_layout()`.
 #' @returns Invisibly, the column names of the rebuilt table.
 #' @noRd
 rebuild_table_from <- function(table_name, source_ref, meta, comments,
-                               conn = get_ducklake_connection()) {
+                               conn = get_ducklake_connection(),
+                               layout = list()) {
   quoted <- table_sql(table_name, conn)
   columns <- names(DBI::dbGetQuery(
     conn, sprintf("SELECT * FROM %s LIMIT 0", source_ref)
@@ -332,7 +352,7 @@ rebuild_table_from <- function(table_name, source_ref, meta, comments,
     sprintf("CREATE TABLE %s AS SELECT * FROM %s LIMIT 0;", quoted, source_ref),
     conn = conn
   )
-  reapply_table_layout(meta, columns, conn)
+  reapply_table_layout(meta, columns, conn, layout = layout)
   db_execute(
     sprintf("INSERT INTO %s SELECT * FROM %s;", quoted, source_ref),
     conn = conn

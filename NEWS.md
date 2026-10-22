@@ -54,6 +54,20 @@
   sends even three rows to a Parquet file. Setting keys on an existing
   table still affects only the writes that follow.
 
+* `create_table()` gains `replace`. With `replace = TRUE` a missing table
+  is created as before and an existing one is rewritten the way
+  `replace_table()` rewrites it, in one transaction, with its comments,
+  partition keys, sort order, and table options carried over; a
+  `partition_by` or `sort_by` given in the call replaces the carried keys,
+  and each option named in `options` replaces the carried value of that
+  option. A pipeline script that runs again is then one call per table.
+  The schema still has to exist, and a view of the name is refused.
+  `replace_table()` now refuses a table that does not exist and points at
+  `create_table(replace = TRUE)`; it used to create the table silently, so
+  a mistyped name spawned a new table while the real one went stale. It
+  also refuses a view by name before any statement runs, and takes a file
+  path or URL as `create_table()` does.
+
 * Table-scoped options are set with `ALTER TABLE ... SET`, which DuckLake
   accepts on a table created in the open transaction where its
   `set_option()` is refused. So `set_ducklake_option(table_name = )` works

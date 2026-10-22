@@ -35,6 +35,17 @@
 #'   are written and so govern the first load too: an inlining limit of
 #'   `0` here sends even a handful of rows to a Parquet file instead of the
 #'   catalog.
+#' @param replace What to do when a table of this name already exists. With
+#'   the default `FALSE`, the name is refused. With `TRUE`, the existing
+#'   table is replaced: dropped and recreated from the source the way
+#'   [replace_table()] does it, in one transaction (yours when one is
+#'   open), with its comments, partition keys, sort order, and table
+#'   options carried over. A `partition_by` or `sort_by` given here replaces
+#'   the carried keys, and each option named in `options` replaces the
+#'   carried value of that option. A missing table is created exactly as
+#'   with the default, so one call serves a script on its first run and on
+#'   every later one. The schema must exist either way, and a view of the
+#'   name is refused.
 #'
 #' @details
 #' With any of `partition_by`, `sort_by`, or `options`, the table is
@@ -42,6 +53,13 @@
 #' and the rows are inserted, in one transaction (yours when one is open),
 #' so the result is one snapshot with the layout in force from the first
 #' row. Without them, a single `CREATE TABLE ... AS` does the work.
+#'
+#' With `replace = TRUE` on a table that exists, the same empty-create,
+#' keys, insert sequence runs after a `DROP`, so the table gets a new id as
+#' it does from [replace_table()] and earlier snapshots stay reachable by
+#' name through time travel. `labels` applies to both outcomes; with
+#' `labels = FALSE` the existing table's own column comments still carry
+#' over.
 #'
 #' A column that is `NA` in every row of a query (`mutate(flag = NA)`) has
 #' no type for DuckDB to infer, and the table stores it with the `"NULL"`
@@ -61,6 +79,9 @@
 #'
 #' # From data.frame
 #' create_table(mtcars, "cars")
+#'
+#' # A script that runs again: created the first time, replaced after
+#' create_table(mtcars, "cars", replace = TRUE)
 #'
 #' # From a local file
 #' csv_path <- tempfile(fileext = ".csv")
@@ -92,9 +113,30 @@
 #' unlink(lake_dir, recursive = TRUE)
 create_table <- function(data_source, table_name, labels = TRUE,
                          partition_by = NULL, sort_by = NULL,
-                         options = NULL) {
+                         options = NULL, replace = FALSE) {
   layout <- check_table_layout(partition_by, sort_by, options)
   conn <- get_ducklake_connection()
+
+  if (isTRUE(replace)) {
+    # The lookup runs before any statement, so a caller's open transaction
+    # is never aborted by a CREATE or DROP that DuckDB refuses
+    existing <- lake_object_type(table_name, conn)
+    if (identical(existing, "view")) {
+      cli::cli_abort(c(
+        "{.val {table_name}} is a view, not a table.",
+        "i" = "Store a pipeline as a view with {.fun create_view}, or drop the view with {.fun drop_view} to make room for a table."
+      ))
+    }
+    if (identical(existing, "table")) {
+      stored <- rewrite_table(data_source, table_name, labels, layout, conn = conn)
+      if (length(stored) > 0) {
+        dl_inform(
+          "Stored {length(stored)} column label{?s} as column comment{?s}."
+        )
+      }
+      return(invisible(NULL))
+    }
+  }
 
   if (inherits(data_source, "tbl_lazy")) {
     if (same_connection(data_source, conn)) {

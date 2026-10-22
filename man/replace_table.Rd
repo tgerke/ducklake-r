@@ -7,9 +7,13 @@
 replace_table(.data, table_name, .quiet = TRUE)
 }
 \arguments{
-\item{.data}{A dplyr query object (tbl_lazy) with transformations}
+\item{.data}{The new contents: a dplyr pipeline (a lazy table), a data
+frame, or a file path or URL, anything \code{\link[=create_table]{create_table()}} loads.}
 
-\item{table_name}{Table name to replace}
+\item{table_name}{The table to replace. It must exist: a name that
+matches nothing, or that names a view, is refused. For a call that
+creates the table when it is missing and replaces it otherwise, see
+\code{\link[=create_table]{create_table()}} with \code{replace = TRUE}.}
 
 \item{.quiet}{Logical, whether to suppress messages (default TRUE)}
 }
@@ -25,9 +29,9 @@ new versioned snapshot. A dplyr pipeline on the package's connection
 runs inside DuckDB: its result is materialized in DuckDB's temporary
 storage (the query may read the table being replaced), the table is
 dropped and recreated from it, and the metadata DuckLake keeps against
-the table is put back. No rows pass through R. A data frame, or a lazy
-table on another connection, is loaded the way \code{\link[=create_table]{create_table()}} loads
-it.
+the table is put back. No rows pass through R. A data frame, a lazy
+table on another connection, or a file is loaded the way
+\code{\link[=create_table]{create_table()}} loads it.
 
 The drop and create run atomically: when no transaction is open,
 \code{replace_table()} wraps them in one of its own, so a failed create never
@@ -63,6 +67,9 @@ or filters most of the table
 
 \strong{When to reach elsewhere:}
 \itemize{
+\item \strong{A script that must also work on its first run} - \code{\link[=create_table]{create_table()}}
+with \code{replace = TRUE} creates the table when it is missing and
+rewrites it as this function does otherwise
 \item \strong{Schema-only changes} - \code{\link[=add_table_column]{add_table_column()}}, \code{\link[=drop_table_column]{drop_table_column()}},
 \code{\link[=rename_table_column]{rename_table_column()}}, and \code{\link[=set_column_type]{set_column_type()}} alter the table in
 place; nothing is collected or rewritten
