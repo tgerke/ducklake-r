@@ -72,20 +72,42 @@
 #' @param snapshot_time Optional POSIXct or UTC timestamp string. Attaches
 #'   the lake pinned to its state at that moment. Mutually exclusive with
 #'   `snapshot_version`.
-#' @param automatic_migration If `TRUE`, let DuckLake upgrade a catalog
-#'   written in an earlier format version to the one the installed
-#'   extension uses (the `AUTOMATIC_MIGRATION` option). Needed once for a
-#'   lake created with DuckDB 1.5.1, whose extension wrote the 0.4 format,
-#'   after upgrading to 1.5.2 or later. The upgrade is permanent, so take a
-#'   backup first. Default `FALSE`, in which case a mismatch is an error.
+#' @param ducklake_version Optional DuckLake catalog format version,
+#'   `"1.0"` or `"1.1"` (DuckLake's `DUCKLAKE_VERSION` option). When `NULL`,
+#'   the default, a new lake is created in the newest format, 1.1 with
+#'   duckdb 2.0, and an existing lake opens in the format it has. Pass
+#'   `"1.0"` to create a lake that duckdb 1.5 clients can still open, for a
+#'   team on a SQLite or PostgreSQL catalog that is not upgrading together;
+#'   a DuckDB-file catalog gives no such compatibility, see Details. A 1.0
+#'   lake does without the 1.1 features (nested schemas, comments on view
+#'   columns, and the `"NULL"` column type among them). Requesting `"1.1"`
+#'   for an existing 1.0 lake is an error unless `automatic_migration =
+#'   TRUE` migrates it, and a 1.1 lake cannot be taken back to 1.0.
+#' @param automatic_migration If `TRUE`, let DuckLake migrate a catalog in
+#'   the 1.0 format to 1.1 when the lake is attached (the
+#'   `AUTOMATIC_MIGRATION` option). A lake created with duckdb 1.5 is a 1.0
+#'   catalog, which duckdb 2.0 reads and writes as it is; the 1.1 features
+#'   need the migration. The migration is permanent (DuckLake refuses
+#'   to downgrade a catalog), and after it no duckdb 1.5 client can open
+#'   the lake, whatever the catalog backend. So move every client of the
+#'   lake to duckdb 2.0 first, take a backup with [backup_ducklake()], and
+#'   attach once with this option from a writable session that may alter
+#'   the catalog's tables (on PostgreSQL, the owner of the metadata
+#'   tables); later attaches need nothing. A catalog from before 1.0
+#'   (DuckDB 1.5.1 wrote 0.4) cannot be opened at all, not even read-only,
+#'   until it is migrated. Default `FALSE`, in which case a lake opens in
+#'   the format it has and a `ducklake_version` newer than that format is
+#'   an error.
 #' @param create Create the lake when none exists at the catalog location
 #'   (default `TRUE`, DuckLake's `CREATE_IF_NOT_EXISTS`). Pass `FALSE` when
 #'   you mean to open an existing lake, so a mistyped path or name is an
 #'   error rather than a new, empty lake.
 #' @param metadata_schema Optional schema inside the catalog database that
-#'   holds this lake's metadata tables (DuckLake's `METADATA_SCHEMA`,
-#'   default `main`). Lets several lakes share one PostgreSQL database,
-#'   each in its own schema.
+#'   holds this lake's metadata tables (DuckLake's `METADATA_SCHEMA`).
+#'   Without it DuckLake uses the backend's default schema: `main` for a
+#'   DuckDB or SQLite catalog, usually `public` for PostgreSQL. Lets several
+#'   lakes share one PostgreSQL database, each in its own schema. A SQLite
+#'   catalog has no schemas and refuses the option.
 #' @param author Author to record on snapshot 0, the creation snapshot, when
 #'   this call creates the lake. Defaults to the `ducklake.author` option
 #'   when it is set (see `?ducklake`), otherwise none. Not written for a
@@ -108,6 +130,19 @@
 #' a PostgreSQL or MySQL catalog, whether the lake already existed is read
 #' from the catalog after the attach (one snapshot, id 0, no metadata), so
 #' a lake another client created and never wrote to is labeled too.
+#'
+#' **Upgrading duckdb:** The first write from duckdb 2.0 to a lake whose
+#' catalog is a DuckDB file rewrites that file in a storage format duckdb
+#' 1.5 cannot open, whatever the lake's catalog format version, and no
+#' attach option prevents it: a lake created on duckdb 2.0 with
+#' `ducklake_version = "1.0"` is just as unreadable on 1.5 when its catalog
+#' is a DuckDB file. SQLite and PostgreSQL catalogs are not affected. So
+#' before the first duckdb 2.0 session writes to a DuckDB-file lake that
+#' other machines open, take a backup with [backup_ducklake()] and move
+#' every client of the lake to 2.0 together; a team that cannot upgrade
+#' together belongs on a SQLite or PostgreSQL catalog. The catalog format
+#' migration (`automatic_migration`) is a separate, opt-in step.
+#' `vignette("deployment")` has the full sequence.
 #'
 #' For credential management with PostgreSQL or MySQL, consider DuckDB's
 #' built-in secrets manager instead of embedding credentials in the connection
@@ -220,9 +255,24 @@
 #' # A frozen view of the lake as of snapshot 12, e.g. to reproduce a report
 #' attach_ducklake("lake_v12", lake_path = "path/to/lake", snapshot_version = 12)
 #'
-#' # A lake created with DuckDB 1.5.1 (catalog format 0.4), opened after
-#' # upgrading: migrate it once, then attach as usual
+#' # A lake made with duckdb 1.5 is a 1.0 catalog and opens as it is. Once
+#' # every client is on duckdb 2.0: back it up, then attach once with
+#' # automatic_migration to move it to 1.1; later attaches need nothing
+#' attach_ducklake("old_lake", lake_path = "path/to/lake")
+#' backup_ducklake("old_lake", lake_path = "path/to/lake", backup_path = "path/to/backups")
+#' detach_ducklake("old_lake")
 #' attach_ducklake("old_lake", lake_path = "path/to/lake", automatic_migration = TRUE)
+#' get_ducklake_info("old_lake")$format_version
+#'
+#' # A new lake that duckdb 1.5 clients can still open: a 1.0 catalog in
+#' # SQLite (a DuckDB-file catalog written by 2.0 would lock them out)
+#' attach_ducklake(
+#'   "shared_lake",
+#'   backend = "sqlite",
+#'   catalog_connection_string = "/shared/lakes/shared_lake/catalog.sqlite",
+#'   lake_path = "/shared/lakes/shared_lake/data",
+#'   ducklake_version = "1.0"
+#' )
 #'
 #' # Open an existing lake, and error if it is not there
 #' attach_ducklake("prod_lake", lake_path = "/lakes/prod", create = FALSE)
@@ -246,6 +296,7 @@ attach_ducklake <- function(ducklake_name, lake_path,
                              meta_encryption_key = NULL,
                              snapshot_version = NULL,
                              snapshot_time = NULL,
+                             ducklake_version = NULL,
                              automatic_migration = FALSE,
                              create = TRUE,
                              metadata_schema = NULL,
@@ -384,7 +435,8 @@ attach_ducklake <- function(ducklake_name, lake_path,
                                   snapshot_time,
                                   automatic_migration,
                                   create,
-                                  metadata_schema)
+                                  metadata_schema,
+                                  ducklake_version = ducklake_version)
   db_execute(attach_sql)
   db_execute(sprintf("USE %s;", quote_ident(ducklake_name, conn)))
   register_lake(ducklake_name, backend, catalog_connection_string, metadata_schema)
@@ -483,6 +535,8 @@ ensure_extensions <- function(backend, encrypted = FALSE, remote = FALSE) {
 #' @param automatic_migration Whether to add AUTOMATIC_MIGRATION
 #' @param create Whether to allow creating the lake (CREATE_IF_NOT_EXISTS)
 #' @param metadata_schema Optional schema for METADATA_SCHEMA
+#' @param ducklake_version Optional catalog format version for
+#'   DUCKLAKE_VERSION, `"1.0"` or `"1.1"`
 #'
 #' @returns A SQL ATTACH statement string
 #' @keywords internal
@@ -496,7 +550,8 @@ build_attach_sql <- function(ducklake_name, lake_path, backend,
                               snapshot_time = NULL,
                               automatic_migration = FALSE,
                               create = TRUE,
-                              metadata_schema = NULL) {
+                              metadata_schema = NULL,
+                              ducklake_version = NULL) {
   connection_string <- switch(backend,
     duckdb = {
       ducklake_path <- if (!is.null(catalog_connection_string)) {
@@ -551,6 +606,20 @@ build_attach_sql <- function(ducklake_name, lake_path, backend,
     options <- c(
       options,
       sprintf("SNAPSHOT_TIME %s", quote_sql(format_timestamp(snapshot_time)))
+    )
+  }
+
+  if (!is.null(ducklake_version)) {
+    if (!is.character(ducklake_version) || length(ducklake_version) != 1 ||
+        is.na(ducklake_version) || !ducklake_version %in% c("1.0", "1.1")) {
+      cli::cli_abort(c(
+        "{.arg ducklake_version} must be the string {.val 1.0} or {.val 1.1}.",
+        "x" = "Got {.val {ducklake_version}}."
+      ))
+    }
+    options <- c(
+      options,
+      sprintf("DUCKLAKE_VERSION %s", quote_sql(ducklake_version))
     )
   }
 

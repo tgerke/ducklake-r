@@ -18,7 +18,8 @@ build_attach_sql(
   snapshot_time = NULL,
   automatic_migration = FALSE,
   create = TRUE,
-  metadata_schema = NULL
+  metadata_schema = NULL,
+  ducklake_version = NULL
 )
 }
 \arguments{
@@ -50,6 +51,9 @@ the duckdb backend, an optional path for the catalog file}
 \item{create}{Whether to allow creating the lake (CREATE_IF_NOT_EXISTS)}
 
 \item{metadata_schema}{Optional schema for METADATA_SCHEMA}
+
+\item{ducklake_version}{Optional catalog format version for
+DUCKLAKE_VERSION, \code{"1.0"} or \code{"1.1"}}
 }
 \value{
 A SQL ATTACH statement string

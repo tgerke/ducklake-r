@@ -82,6 +82,37 @@
   same steps and stayed readable on 1.5.5; PostgreSQL was not tested. New
   2.0 lakes are 1.1 catalogs; a 1.0 catalog stays 1.0 until attached with
   `AUTOMATIC_MIGRATION`, which cannot be undone.
+- **Catalog format versions, confirmed on DuckDB 2.0.0 with extension
+  417a9117f5** (2026-10-21, pinned in `test-catalog-version.R`).
+  `ducklake_options()` reports `version` (`1.0` or `1.1`, scope GLOBAL),
+  which `get_ducklake_info()$format_version` returns. `DUCKLAKE_VERSION
+  '1.0'` creates a 1.0 catalog; DuckLake validates the option itself
+  ("ducklake_version must be '1.0' or '1.1'"), and `build_attach_sql()`
+  checks it first. A 1.0 lake opens as it is with no option;
+  `DUCKLAKE_VERSION '1.1'` on it without `AUTOMATIC_MIGRATION` fails with
+  "catalog version mismatch ... set AUTOMATIC_MIGRATION to TRUE". The
+  migration runs during ATTACH (it renames inlined-data metadata columns,
+  so a `READ_ONLY` attach fails on the ALTER), writes no snapshot, is a
+  no-op on a 1.1 lake, and `DUCKLAKE_VERSION '1.0'` afterwards fails with
+  "Cannot downgrade a DuckLake catalog". SQLite catalogs behave the same.
+  DuckDB's global `ducklake_default_version` setting supplies the version
+  when the option is absent, for existing catalogs too, and set to `'1.0'`
+  it keeps `AUTOMATIC_MIGRATION` from migrating; the package does not
+  touch it. 1.1 reserves column names starting with `_ducklake_`, and a
+  migration that meets one in an inlined table stops until the column is
+  renamed and the inlined data flushed on a 1.0 attach.
+- **`migrate_ducklake()` was considered and declined** (2026-10-21). The
+  registry carries what a re-attach needs (backend, connection string,
+  metadata schema), but the wrapper would have to refuse the deployments
+  where the backup matters most: `backup_ducklake()` copies no catalog for
+  PostgreSQL or MySQL and refuses remote data paths, an encrypted DuckDB
+  catalog needs `meta_encryption_key` carried through `...` or the lake is
+  left detached, and per-connection settings such as
+  `data_inlining_row_limit` would be dropped silently. The three-call
+  sequence (backup, detach, attach with `automatic_migration = TRUE`)
+  works on every deployment and is documented in `vignette("deployment")`
+  and `attach_ducklake()`, with `get_ducklake_info()$format_version` as
+  the check before and after.
 - **A future time-travel timestamp is refused in R** (2026-10-21). DuckLake
   1.1 rejects `AT (TIMESTAMP => future)`, `SNAPSHOT_TIME`, the change-feed
   bounds, and `ducklake_list_files(snapshot_time = )` with "Cannot time

@@ -68,7 +68,9 @@ ducklake requires the [duckdb](https://r.duckdb.org) R package version
 Lakes made with earlier versions open as they are. One caution for a team
 that shares a lake whose catalog is a DuckDB file: the first write from
 duckdb 2.0 puts that file in a storage format duckdb 1.5 cannot open, so
-upgrade every client of such a lake together.
+upgrade every client of such a lake together. The Upgrading section of
+[Choosing a Deployment](https://tgerke.github.io/ducklake-r/articles/deployment.html)
+covers that, and the separate, opt-in migration of a lake's catalog format.
 
 DuckLake itself ships as a DuckDB extension. `attach_ducklake()` downloads
 it the first time it is needed and says where it put it, so there is no

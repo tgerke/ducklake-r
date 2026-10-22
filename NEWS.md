@@ -11,6 +11,18 @@
   such a lake moves to 2.0 together. SQLite and PostgreSQL catalogs are not
   affected.
 
+* `attach_ducklake()` gains `ducklake_version`, DuckLake's
+  `DUCKLAKE_VERSION` option: `"1.0"` or `"1.1"`. New lakes are 1.1
+  catalogs; `"1.0"` creates one that duckdb 1.5 clients can still open, for
+  a team on a SQLite or PostgreSQL catalog that is not upgrading together.
+  `automatic_migration` now moves a 1.0 catalog to 1.1, a permanent step
+  that shuts out every 1.5 client, and its documentation says so, with the
+  backup first; the `metadata_schema` documentation gives the backend's
+  default schema in place of `main`. `get_ducklake_info()$format_version`
+  tells a 1.0 lake from a 1.1 one, and the Upgrading section of
+  `vignette("deployment")` has both sequences: the duckdb upgrade, with the
+  DuckDB-file caution above, and the format migration.
+
 * A time-travel timestamp in the future is refused before the query runs.
   DuckLake 1.1 rejects it, and through dbplyr the refusal surfaced as
   "Can't query fields" when the lazy table was first used.
