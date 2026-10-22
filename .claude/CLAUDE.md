@@ -600,8 +600,10 @@
   (duckdb-r prepares all statements; the CLI does not and works), a
   forwarded `DISCONNECT` fails too, and other connections on the same
   instance are fine. The parameter-binding failure above happens in the
-  CLI's SQL `PREPARE` as well, so it is engine or extension behaviour
-  with no upstream report found. Neither wants a duckdb-r issue.
+  CLI's SQL `PREPARE` as well and is quack-extension behaviour, filed as
+  duckdb/duckdb-quack#323 (open since 2026-10-04: remote pushdown ships
+  the `$1`/`?` placeholders without their values). Neither wants a
+  duckdb-r issue.
   `quack_serve()` on 2.0 never leaves a server open: with no `token` it
   uses the default Quack secret or generates a random token and returns
   it (`listen_uri`, `listen_url`, `auth_token`); `secret = name`,
