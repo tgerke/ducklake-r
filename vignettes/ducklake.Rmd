@@ -162,12 +162,13 @@ writes. `create_table()` in the section above is one such function, which
 is why it needed nothing more. Which one to end with depends on what you
 want:
 
-| You want to                        | End the pipeline with |
-|------------------------------------|-----------------------|
-| Bring rows into R                  | `collect()`           |
-| Make a new table from the result   | `create_table()`      |
-| Change rows of this table in place | `ducklake_exec()`     |
-| Rewrite this table from the result | `replace_table()`     |
+| You want to                               | End the pipeline with          |
+|-------------------------------------------|--------------------------------|
+| Bring rows into R                         | `collect()`                    |
+| Make a new table from the result          | `create_table()`               |
+| Make the table, or remake it if it exists | `create_table(replace = TRUE)` |
+| Change rows of this table in place        | `ducklake_exec()`              |
+| Rewrite this table from the result        | `replace_table()`              |
 
 `ducklake_exec()` turns `mutate()` into the new values and `filter()` into
 which rows receive them. `with_transaction()` is a separate matter: it

@@ -69,6 +69,7 @@ the stored data. Everything else in this table **writes**.
 | Conditional updates, or deletes driven by a staging table | `merge_into()` |
 | Change the schema, not the data | `add_table_column()` and the schema evolution family |
 | Bulk transformations that touch most rows | `replace_table()` |
+| Rebuild a table from a script that may also have to create it | `create_table(replace = TRUE)` |
 
 ### For incremental changes: the `rows_*` functions
 
@@ -180,6 +181,10 @@ with_transaction(
 through R): the right tool for a bulk rewrite, wasteful for touching three
 rows in a million-row table, and unnecessary for pure schema changes now
 that the in-place functions above exist.
+
+A script that runs more than once can end its pipeline in
+`create_table(replace = TRUE)` instead: the first run creates the table,
+and later runs rewrite it the same way, metadata included.
 
 ### Group related changes with `with_transaction()`
 

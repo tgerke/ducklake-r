@@ -10,7 +10,8 @@ create_table(
   labels = TRUE,
   partition_by = NULL,
   sort_by = NULL,
-  options = NULL
+  options = NULL,
+  replace = FALSE
 )
 }
 \arguments{
@@ -55,6 +56,18 @@ this order.}
 are written and so govern the first load too: an inlining limit of
 \code{0} here sends even a handful of rows to a Parquet file instead of the
 catalog.}
+
+\item{replace}{What to do when a table of this name already exists. With
+the default \code{FALSE}, the name is refused. With \code{TRUE}, the existing
+table is replaced: dropped and recreated from the source the way
+\code{\link[=replace_table]{replace_table()}} does it, in one transaction (yours when one is
+open), with its comments, partition keys, sort order, and table
+options carried over. A \code{partition_by} or \code{sort_by} given here replaces
+the carried keys, and each option named in \code{options} replaces the
+carried value of that option. A missing table is created exactly as
+with the default, so one call serves a script on its first run and on
+every later one. The schema must exist either way, and a view of the
+name is refused.}
 }
 \value{
 Invisibly, \code{NULL}. Called for its side effect of creating the
@@ -70,6 +83,13 @@ and the rows are inserted, in one transaction (yours when one is open),
 so the result is one snapshot with the layout in force from the first
 row. Without them, a single \verb{CREATE TABLE ... AS} does the work.
 
+With \code{replace = TRUE} on a table that exists, the same empty-create,
+keys, insert sequence runs after a \code{DROP}, so the table gets a new id as
+it does from \code{\link[=replace_table]{replace_table()}} and earlier snapshots stay reachable by
+name through time travel. \code{labels} applies to both outcomes; with
+\code{labels = FALSE} the existing table's own column comments still carry
+over.
+
 A column that is \code{NA} in every row of a query (\code{mutate(flag = NA)}) has
 no type for DuckDB to infer, and the table stores it with the \code{"NULL"}
 type, which holds nothing but \code{NULL} until \code{\link[=set_column_type]{set_column_type()}} promotes
@@ -84,6 +104,9 @@ attach_ducklake("create_lake", lake_path = lake_dir)
 
 # From data.frame
 create_table(mtcars, "cars")
+
+# A script that runs again: created the first time, replaced after
+create_table(mtcars, "cars", replace = TRUE)
 
 # From a local file
 csv_path <- tempfile(fileext = ".csv")

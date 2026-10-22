@@ -68,3 +68,13 @@ cleanup_temp_ducklake <- function(test_lake) {
     unlink(test_lake$temp_dir, recursive = TRUE)
   }
 }
+
+#' The table-scoped options of one table, as `name = value` text
+#'
+#' @param lake Output from create_temp_ducklake()
+#' @param table_name A table in the lake's `main` schema
+table_options_of <- function(lake, table_name) {
+  opts <- get_ducklake_options(lake$ducklake_name)
+  opts <- opts[opts$scope == "TABLE" & opts$scope_entry %in% paste0("main.", table_name), ]
+  stats::setNames(opts$value, opts$option_name)[order(opts$option_name)]
+}

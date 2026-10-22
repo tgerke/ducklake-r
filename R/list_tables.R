@@ -51,3 +51,50 @@ list_ducklake_tables <- function(ducklake_name = NULL) {
     params = list(ducklake_name, ducklake_name)
   )
 }
+
+#' What a name refers to in the lake: a table, a view, or nothing
+#'
+#' One query over DuckDB's catalog functions, which see objects created or
+#' dropped earlier in the open transaction and follow a snapshot-pinned
+#' attach. The name is resolved as every table reference is: a leading lake
+#' name is stripped and the remaining dots are the schema path, so the
+#' match is on the full path and a same-named table in another schema does
+#' not count.
+#'
+#' @param table_name A name, optionally qualified as `"schema.table"`.
+#' @param conn A DBI connection.
+#' @returns `"table"`, `"view"`, or `NA_character_`.
+#' @noRd
+lake_object_type <- function(table_name, conn) {
+  parts <- split_table_name(table_name)
+  ducklake_name <- if (is.null(parts$lake)) {
+    infer_ducklake_name(NULL, conn)
+  } else {
+    parts$lake
+  }
+  schema <- if (is.null(parts$schema)) "main" else parts$schema
+
+  found <- DBI::dbGetQuery(
+    conn,
+    sprintf(
+      "WITH RECURSIVE %s
+       SELECT 'table' AS type
+       FROM duckdb_tables() t
+       JOIN schema_paths sp ON t.schema_oid = sp.oid
+       WHERE t.database_name = ? AND sp.schema_path = ? AND t.table_name = ?
+         AND NOT t.internal
+       UNION ALL
+       SELECT 'view' AS type
+       FROM duckdb_views() v
+       JOIN schema_paths sp ON v.schema_oid = sp.oid
+       WHERE v.database_name = ? AND sp.schema_path = ? AND v.view_name = ?
+         AND NOT v.internal",
+      catalog_schema_paths_cte(ducklake_name)
+    ),
+    params = list(
+      ducklake_name, schema, parts$table,
+      ducklake_name, schema, parts$table
+    )
+  )
+  if (nrow(found) == 0) NA_character_ else found$type[[1]]
+}
