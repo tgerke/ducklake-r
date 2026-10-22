@@ -50,7 +50,15 @@
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">build_quack_attach_sql</span><span class="op">(</span><span class="va">quack_name</span>, <span class="va">uri</span>, token <span class="op">=</span> <span class="cn">NULL</span>, disable_ssl <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">build_quack_attach_sql</span><span class="op">(</span></span>
+<span>  <span class="va">quack_name</span>,</span>
+<span>  <span class="va">uri</span>,</span>
+<span>  token <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  disable_ssl <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  ssl_fingerprint <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  client_id <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  heartbeat_timeout <span class="op">=</span> <span class="cn">NULL</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -71,6 +79,12 @@
 
 <dt id="arg-disable-ssl">disable_ssl<a class="anchor" aria-label="anchor" href="#arg-disable-ssl"></a></dt>
 <dd><p>Whether to add the <code>DISABLE_SSL</code> option.</p></dd>
+
+
+<dt id="arg-ssl-fingerprint-client-id-heartbeat-timeout">ssl_fingerprint, client_id, heartbeat_timeout<a class="anchor" aria-label="anchor" href="#arg-ssl-fingerprint-client-id-heartbeat-timeout"></a></dt>
+<dd><p>Optional client
+options, rendered as <code>SSL_FINGERPRINT</code>, <code>CLIENT_ID</code>, and
+<code>HEARTBEAT_TIMEOUT</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">

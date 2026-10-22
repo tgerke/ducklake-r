@@ -56,7 +56,15 @@ and can be queried with <code><a href="get_ducklake_table.html">get_ducklake_tab
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">attach_quack</span><span class="op">(</span><span class="va">quack_name</span>, <span class="va">uri</span>, token <span class="op">=</span> <span class="cn">NULL</span>, disable_ssl <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">attach_quack</span><span class="op">(</span></span>
+<span>  <span class="va">quack_name</span>,</span>
+<span>  <span class="va">uri</span>,</span>
+<span>  token <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  disable_ssl <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  ssl_fingerprint <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  client_id <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  heartbeat_timeout <span class="op">=</span> <span class="cn">NULL</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -80,8 +88,25 @@ is taken from a Quack secret (see <code>CREATE SECRET</code>) if one exists.</p>
 
 
 <dt id="arg-disable-ssl">disable_ssl<a class="anchor" aria-label="anchor" href="#arg-disable-ssl"></a></dt>
-<dd><p>Connect over plain HTTP instead of HTTPS (default <code>FALSE</code>).
-Only appropriate on a trusted network.</p></dd>
+<dd><p>Connect over plain HTTP instead of HTTPS (default <code>FALSE</code>,
+which leaves the choice to DuckDB: plain HTTP for a local server, HTTPS
+otherwise). Only appropriate on a trusted network.</p></dd>
+
+
+<dt id="arg-ssl-fingerprint">ssl_fingerprint<a class="anchor" aria-label="anchor" href="#arg-ssl-fingerprint"></a></dt>
+<dd><p>Optional SHA-256 fingerprint (64 hex digits) of the
+server's certificate, for a server with a self-signed certificate; the
+value <code><a href="quack_generate_keys.html">quack_generate_keys()</a></code> returns on the server side.</p></dd>
+
+
+<dt id="arg-client-id">client_id<a class="anchor" aria-label="anchor" href="#arg-client-id"></a></dt>
+<dd><p>Optional identifier the server records for this client
+(at least 4 characters), shown by its <code>quack_active_connections()</code>.</p></dd>
+
+
+<dt id="arg-heartbeat-timeout">heartbeat_timeout<a class="anchor" aria-label="anchor" href="#arg-heartbeat-timeout"></a></dt>
+<dd><p>Optional heartbeat lease, in seconds, requested
+from the server.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -94,7 +119,14 @@ remote catalog to the package's DuckDB connection.</p>
     <p>A DuckLake served over Quack lives in its own catalog on the server rather
 than in the default database, so its tables are not exposed under
 <code>quack_name</code>. Query a served DuckLake with <code><a href="quack_query.html">quack_query()</a></code>, naming the lake's
-catalog, for example <code>quack_query(uri, "SELECT * FROM trial.adsl")</code>.</p>
+catalog, for example <code>quack_query(uri, "SELECT * FROM trial.adsl")</code>. To
+work with a lake whose catalog a Quack server holds open, attach it with
+<code>attach_ducklake(backend = "quack")</code> instead.</p>
+<p>DuckDB 2.0's <code>CONNECT</code> statement, which points a whole session at a
+server, is not used here and should not be run on the package's
+connection: on the duckdb R client it leaves the connection unable to
+prepare any further statement
+(<a href="https://github.com/duckdb/duckdb/issues/27269" class="external-link">https://github.com/duckdb/duckdb/issues/27269</a>).</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
@@ -102,6 +134,7 @@ catalog, for example <code>quack_query(uri, "SELECT * FROM trial.adsl")</code>.<
 <p>Other quack:
 <code><a href="detach_quack.html">detach_quack()</a></code>,
 <code><a href="install_quack.html">install_quack()</a></code>,
+<code><a href="quack_generate_keys.html">quack_generate_keys()</a></code>,
 <code><a href="quack_query.html">quack_query()</a></code>,
 <code><a href="quack_serve.html">quack_serve()</a></code>,
 <code><a href="quack_stop.html">quack_stop()</a></code></p></div>

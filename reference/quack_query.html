@@ -56,7 +56,15 @@ so it is a quick way to pull a result without changing the session state.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">quack_query</span><span class="op">(</span><span class="va">uri</span>, <span class="va">query</span>, token <span class="op">=</span> <span class="cn">NULL</span>, disable_ssl <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">quack_query</span><span class="op">(</span></span>
+<span>  <span class="va">uri</span>,</span>
+<span>  <span class="va">query</span>,</span>
+<span>  token <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  disable_ssl <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  ssl_fingerprint <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  client_id <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  heartbeat_timeout <span class="op">=</span> <span class="cn">NULL</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -77,7 +85,25 @@ secret is used if one exists.</p></dd>
 
 
 <dt id="arg-disable-ssl">disable_ssl<a class="anchor" aria-label="anchor" href="#arg-disable-ssl"></a></dt>
-<dd><p>Connect over plain HTTP instead of HTTPS (default <code>FALSE</code>).</p></dd>
+<dd><p>Connect over plain HTTP instead of HTTPS (default <code>FALSE</code>,
+which leaves the choice to DuckDB: plain HTTP for a local server, HTTPS
+otherwise).</p></dd>
+
+
+<dt id="arg-ssl-fingerprint">ssl_fingerprint<a class="anchor" aria-label="anchor" href="#arg-ssl-fingerprint"></a></dt>
+<dd><p>Optional SHA-256 fingerprint (64 hex digits) of the
+server's certificate, for a server with a self-signed certificate; the
+value <code><a href="quack_generate_keys.html">quack_generate_keys()</a></code> returns on the server side.</p></dd>
+
+
+<dt id="arg-client-id">client_id<a class="anchor" aria-label="anchor" href="#arg-client-id"></a></dt>
+<dd><p>Optional identifier the server records for this client
+(at least 4 characters), shown by its <code>quack_active_connections()</code>.</p></dd>
+
+
+<dt id="arg-heartbeat-timeout">heartbeat_timeout<a class="anchor" aria-label="anchor" href="#arg-heartbeat-timeout"></a></dt>
+<dd><p>Optional heartbeat lease, in seconds, requested
+from the server.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -91,6 +117,7 @@ secret is used if one exists.</p></dd>
 <code><a href="attach_quack.html">attach_quack()</a></code>,
 <code><a href="detach_quack.html">detach_quack()</a></code>,
 <code><a href="install_quack.html">install_quack()</a></code>,
+<code><a href="quack_generate_keys.html">quack_generate_keys()</a></code>,
 <code><a href="quack_serve.html">quack_serve()</a></code>,
 <code><a href="quack_stop.html">quack_stop()</a></code></p></div>
     </div>

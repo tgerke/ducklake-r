@@ -49,6 +49,7 @@ also the one that cannot be shared.
 | One person, one machine | DuckDB file (the default) | Nothing to install or run. One writer at a time: DuckDB locks the file while the lake is attached, and a second session cannot open it. |
 | A team on a shared drive | SQLite | Several sessions write to the same lake. SQLite serializes them and DuckLake retries when it meets a lock. No server to run. |
 | Many users, remote storage | PostgreSQL | Row-level locking for concurrent writers, database roles for access control, `pg_dump` for backups. Needs a server (PostgreSQL 12 or newer). |
+| A team on a shared drive, no PostgreSQL | DuckDB file held open by a Quack server (experimental) | One DuckDB process opens the catalog and serves it; every session attaches through it with `backend = "quack"` and reads and writes the files on the share itself. |
 | Sharing without shared storage | Any of the above, served with Quack | Clients connect to one DuckDB process over the network; only the server touches the catalog and files. |
 | A published, read-only lake | DuckDB file on an HTTPS host | Readers attach the catalog straight from the URL; you update it by replacing the file. |
 
@@ -57,7 +58,7 @@ the DuckDB MySQL connector, and
 [`attach_ducklake()`](https://tgerke.github.io/ducklake-r/reference/attach_ducklake.md)
 warns when you pick it.
 
-The three shapes in code:
+The shapes in code:
 
 ``` r
 
@@ -69,6 +70,16 @@ attach_ducklake(
   "trial",
   backend = "sqlite",
   catalog_connection_string = "/shared/lakes/trial/catalog.sqlite",
+  lake_path = "/shared/lakes/trial/data"
+)
+
+# The same team, with a DuckDB catalog that one process serves over Quack
+# (experimental; vignette("quack-remote-access") shows the server side)
+attach_ducklake(
+  "trial",
+  backend = "quack",
+  catalog_connection_string = "quack:catalog.example.org",
+  quack_token = askpass::askpass("Quack token"),
   lake_path = "/shared/lakes/trial/data"
 )
 
@@ -219,18 +230,85 @@ more attempts
 
 ## Upgrading
 
-Two things change under a lake over time. Upgrading the duckdb R package
-brings a new DuckDB engine, and the DuckLake extension is downloaded
-again for it on first use. And a lake created with an older extension
-may carry an older catalog format: DuckDB 1.5.1 wrote DuckLake 0.4,
-while 1.5.2 and later write 1.0. Attaching such a lake stops with a
-version mismatch until it is migrated, which is a one-time, permanent
-change, so take a backup first:
+Two things change under a lake over time, and they are separate steps:
+the duckdb R package, and the DuckLake catalog format.
+
+### The duckdb package
+
+Upgrading the duckdb R package to 2.0 brings a new DuckDB engine, and
+the DuckLake extension is downloaded again for it on first use. Lakes
+made with duckdb 1.5 open as they are. The exception is a lake whose
+catalog is a DuckDB file. That catalog is a DuckDB database, so it
+follows the engine’s storage format, and the first write from duckdb 2.0
+rewrites the file in a format duckdb 1.5 cannot open. A 1.5 session then
+fails to attach with:
+
+    cannot initialize database with storage version 7 - which is lower than
+    what the database itself uses (69)
+
+No attach option prevents it, and the catalog’s own format version makes
+no difference: a lake created on 2.0 with `ducklake_version = "1.0"` is
+just as unreadable. SQLite and PostgreSQL catalogs are not affected. So
+for a DuckDB-file lake that more than one machine opens, take a backup
+and move every client to 2.0 together:
 
 ``` r
 
 backup_ducklake("trial", lake_path = "~/lakes/trial", backup_path = "~/lakes/backups")
+```
+
+A team that cannot upgrade together belongs on a SQLite or PostgreSQL
+catalog, where a 1.0 lake stays open to both releases.
+
+### The catalog format
+
+DuckLake has a format version of its own, kept in the catalog. duckdb
+1.5 wrote 1.0; duckdb 2.0 creates new lakes as 1.1 and opens a 1.0 lake
+as it is, reading and writing it without changing it.
+[`get_ducklake_info()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_info.md)
+says which one a lake is in:
+
+``` r
+
+get_ducklake_info("trial")$format_version
+```
+
+Moving a lake to 1.1 is an opt-in step, and the newer DuckLake features
+(nested schemas, comments on view columns, and the `"NULL"` column type
+among them) need it. The migration is permanent, since DuckLake refuses
+to downgrade a catalog, and after it no duckdb 1.5 client can open the
+lake, on any backend. That sets the order: move every client to duckdb
+2.0 first, back the lake up, then attach once with
+`automatic_migration = TRUE` from a session that may alter the catalog’s
+tables (on PostgreSQL, the owner of the metadata tables). The format
+version reads `"1.0"` before and `"1.1"` after, and later attaches need
+no option:
+
+``` r
+
+backup_ducklake("trial", lake_path = "~/lakes/trial", backup_path = "~/lakes/backups")
+detach_ducklake("trial")
 attach_ducklake("trial", lake_path = "~/lakes/trial", automatic_migration = TRUE)
+get_ducklake_info("trial")$format_version
+```
+
+[`backup_ducklake()`](https://tgerke.github.io/ducklake-r/reference/backup_ducklake.md)
+copies a DuckDB or SQLite catalog; back a PostgreSQL catalog up with
+`pg_dump` first. A lake from before 1.0 (DuckDB 1.5.1 wrote 0.4) cannot
+be opened at all, not even read-only, until it is migrated the same way.
+
+A team that still has duckdb 1.5 clients on a SQLite or PostgreSQL
+catalog can keep creating lakes they all share, as 1.0 catalogs:
+
+``` r
+
+attach_ducklake(
+  "trial",
+  backend = "sqlite",
+  catalog_connection_string = "/shared/lakes/trial/catalog.sqlite",
+  lake_path = "/shared/lakes/trial/data",
+  ducklake_version = "1.0"
+)
 ```
 
 ## Where to next

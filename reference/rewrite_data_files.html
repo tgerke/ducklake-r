@@ -60,7 +60,8 @@ slow reads down until they are rewritten without the dead rows.</p>
 <span>  ducklake_name <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  table_name <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  delete_threshold <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  schema_name <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  schema_name <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  max_compacted_files <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -86,6 +87,12 @@ current database is used.</p></dd>
 <dt id="arg-schema-name">schema_name<a class="anchor" aria-label="anchor" href="#arg-schema-name"></a></dt>
 <dd><p>Optional schema containing <code>table_name</code>.</p></dd>
 
+
+<dt id="arg-max-compacted-files">max_compacted_files<a class="anchor" aria-label="anchor" href="#arg-max-compacted-files"></a></dt>
+<dd><p>Optional cap on the number of rewrite
+operations per table in a single call, for working through a table
+with many deleted rows in batches.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -96,7 +103,10 @@ operation can write several output files, or none.</p>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>The rewritten originals are scheduled for deletion once no snapshot
-references them; run <code><a href="cleanup_old_files.html">cleanup_old_files()</a></code> to remove them.</p>
+references them; run <code><a href="cleanup_old_files.html">cleanup_old_files()</a></code> to remove them. Inlined
+deletions count toward the threshold without being flushed first, and a
+table whose <code>auto_compact</code> option is <code>FALSE</code> is left alone, also when
+<code>table_name</code> names it.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

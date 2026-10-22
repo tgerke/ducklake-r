@@ -62,7 +62,7 @@ The lake can be detached with <code><a href="detach_ducklake.html">detach_duckla
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">attach_ducklake</span><span class="op">(</span></span>
 <span>  <span class="va">ducklake_name</span>,</span>
 <span>  <span class="va">lake_path</span>,</span>
-<span>  backend <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"duckdb"</span>, <span class="st">"postgres"</span>, <span class="st">"sqlite"</span>, <span class="st">"mysql"</span><span class="op">)</span>,</span>
+<span>  backend <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"duckdb"</span>, <span class="st">"postgres"</span>, <span class="st">"sqlite"</span>, <span class="st">"mysql"</span>, <span class="st">"quack"</span><span class="op">)</span>,</span>
 <span>  catalog_connection_string <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  read_only <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  override_data_path <span class="op">=</span> <span class="cn">FALSE</span>,</span>
@@ -71,9 +71,11 @@ The lake can be detached with <code><a href="detach_ducklake.html">detach_duckla
 <span>  meta_encryption_key <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  snapshot_version <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  snapshot_time <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  ducklake_version <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  automatic_migration <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  create <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  metadata_schema <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  quack_token <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  author <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  commit_message <span class="op">=</span> <span class="st">"Create lake"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -98,7 +100,8 @@ elsewhere, which is how a local catalog pairs with remote data.</p></dd>
 
 <dt id="arg-backend">backend<a class="anchor" aria-label="anchor" href="#arg-backend"></a></dt>
 <dd><p>Catalog backend: <code>"duckdb"</code> (default), <code>"postgres"</code>,
-<code>"sqlite"</code>, or <code>"mysql"</code>.</p></dd>
+<code>"sqlite"</code>, <code>"mysql"</code>, or <code>"quack"</code> (experimental: a DuckDB catalog
+that a Quack server holds open for several clients, see Details).</p></dd>
 
 
 <dt id="arg-catalog-connection-string">catalog_connection_string<a class="anchor" aria-label="anchor" href="#arg-catalog-connection-string"></a></dt>
@@ -116,6 +119,11 @@ storage.</p></dd>
 
 <dt><code>"mysql"</code></dt>
 <dd><p>MySQL connection string, e.g. <code>"db=mydb host=localhost"</code>.</p></dd>
+
+<dt><code>"quack"</code></dt>
+<dd><p>The Quack server's address, e.g.
+<code>"quack:catalog.example.org:9494"</code>; a bare host is prefixed with
+<code>quack:</code>, and the default port is 9494.</p></dd>
 
 
 </dl></dd>
@@ -147,6 +155,8 @@ accordingly. Only applies when the lake is first created; an existing
 lake keeps the setting it was created with. The httpfs extension is
 loaded automatically: on some platforms (notably Windows) DuckDB's
 built-in crypto module is read-only and httpfs provides the writer.
+Parquet data and delete files are encrypted; the Puffin deletion
+vectors of the experimental <code>write_deletion_vectors</code> option are not.
 Default <code>FALSE</code>.</p></dd>
 
 
@@ -176,13 +186,35 @@ the lake pinned to its state at that moment. Mutually exclusive with
 <code>snapshot_version</code>.</p></dd>
 
 
+<dt id="arg-ducklake-version">ducklake_version<a class="anchor" aria-label="anchor" href="#arg-ducklake-version"></a></dt>
+<dd><p>Optional DuckLake catalog format version,
+<code>"1.0"</code> or <code>"1.1"</code> (DuckLake's <code>DUCKLAKE_VERSION</code> option). When <code>NULL</code>,
+the default, a new lake is created in the newest format, 1.1 with
+duckdb 2.0, and an existing lake opens in the format it has. Pass
+<code>"1.0"</code> to create a lake that duckdb 1.5 clients can still open, for a
+team on a SQLite or PostgreSQL catalog that is not upgrading together;
+a DuckDB-file catalog gives no such compatibility, see Details. A 1.0
+lake does without the 1.1 features (nested schemas, comments on view
+columns, and the <code>"NULL"</code> column type among them). Requesting <code>"1.1"</code>
+for an existing 1.0 lake is an error unless <code>automatic_migration = TRUE</code> migrates it, and a 1.1 lake cannot be taken back to 1.0.</p></dd>
+
+
 <dt id="arg-automatic-migration">automatic_migration<a class="anchor" aria-label="anchor" href="#arg-automatic-migration"></a></dt>
-<dd><p>If <code>TRUE</code>, let DuckLake upgrade a catalog
-written in an earlier format version to the one the installed
-extension uses (the <code>AUTOMATIC_MIGRATION</code> option). Needed once for a
-lake created with DuckDB 1.5.1, whose extension wrote the 0.4 format,
-after upgrading to 1.5.2 or later. The upgrade is permanent, so take a
-backup first. Default <code>FALSE</code>, in which case a mismatch is an error.</p></dd>
+<dd><p>If <code>TRUE</code>, let DuckLake migrate a catalog in
+the 1.0 format to 1.1 when the lake is attached (the
+<code>AUTOMATIC_MIGRATION</code> option). A lake created with duckdb 1.5 is a 1.0
+catalog, which duckdb 2.0 reads and writes as it is; the 1.1 features
+need the migration. The migration is permanent (DuckLake refuses
+to downgrade a catalog), and after it no duckdb 1.5 client can open
+the lake, whatever the catalog backend. So move every client of the
+lake to duckdb 2.0 first, take a backup with <code><a href="backup_ducklake.html">backup_ducklake()</a></code>, and
+attach once with this option from a writable session that may alter
+the catalog's tables (on PostgreSQL, the owner of the metadata
+tables); later attaches need nothing. A catalog from before 1.0
+(DuckDB 1.5.1 wrote 0.4) cannot be opened at all, not even read-only,
+until it is migrated. Default <code>FALSE</code>, in which case a lake opens in
+the format it has and a <code>ducklake_version</code> newer than that format is
+an error.</p></dd>
 
 
 <dt id="arg-create">create<a class="anchor" aria-label="anchor" href="#arg-create"></a></dt>
@@ -194,9 +226,18 @@ error rather than a new, empty lake.</p></dd>
 
 <dt id="arg-metadata-schema">metadata_schema<a class="anchor" aria-label="anchor" href="#arg-metadata-schema"></a></dt>
 <dd><p>Optional schema inside the catalog database that
-holds this lake's metadata tables (DuckLake's <code>METADATA_SCHEMA</code>,
-default <code>main</code>). Lets several lakes share one PostgreSQL database,
-each in its own schema.</p></dd>
+holds this lake's metadata tables (DuckLake's <code>METADATA_SCHEMA</code>).
+Without it DuckLake uses the backend's default schema: <code>main</code> for a
+DuckDB or SQLite catalog, usually <code>public</code> for PostgreSQL. Lets several
+lakes share one PostgreSQL database, each in its own schema. A SQLite
+catalog has no schemas and refuses the option.</p></dd>
+
+
+<dt id="arg-quack-token">quack_token<a class="anchor" aria-label="anchor" href="#arg-quack-token"></a></dt>
+<dd><p>Token of the Quack server that holds the catalog
+(<code>"quack"</code> backend only), sent as DuckLake's <code>META_TOKEN</code> option. Like
+<code>meta_encryption_key</code>, it is interpolated into the <code>ATTACH</code> statement
+text. <code>NULL</code> lets a Quack secret in the session supply it.</p></dd>
 
 
 <dt id="arg-author">author<a class="anchor" aria-label="anchor" href="#arg-author"></a></dt>
@@ -245,6 +286,28 @@ write is silent, and a failure to write is a warning, not an error. For
 a PostgreSQL or MySQL catalog, whether the lake already existed is read
 from the catalog after the attach (one snapshot, id 0, no metadata), so
 a lake another client created and never wrote to is labeled too.</p>
+<p><strong>Upgrading duckdb:</strong> The first write from duckdb 2.0 to a lake whose
+catalog is a DuckDB file rewrites that file in a storage format duckdb
+1.5 cannot open, whatever the lake's catalog format version, and no
+attach option prevents it: a lake created on duckdb 2.0 with
+<code>ducklake_version = "1.0"</code> is just as unreadable on 1.5 when its catalog
+is a DuckDB file. SQLite and PostgreSQL catalogs are not affected. So
+before the first duckdb 2.0 session writes to a DuckDB-file lake that
+other machines open, take a backup with <code><a href="backup_ducklake.html">backup_ducklake()</a></code> and move
+every client of the lake to 2.0 together; a team that cannot upgrade
+together belongs on a SQLite or PostgreSQL catalog. The catalog format
+migration (<code>automatic_migration</code>) is a separate, opt-in step.
+<code><a href="../articles/deployment.html">vignette("deployment")</a></code> has the full sequence.</p>
+<p><strong>A catalog served over Quack (experimental).</strong> A DuckDB-file catalog
+admits one process at a time. With <code>backend = "quack"</code>, that file is
+opened by one DuckDB process running a Quack server (see
+<code><a href="quack_serve.html">quack_serve()</a></code> and <code><a href="../articles/quack-remote-access.html">vignette("quack-remote-access")</a></code>), and every
+client attaches the lake through it: the metadata lives on the server,
+commits go through it, and the clients read and write the Parquet files
+themselves, so <code>lake_path</code> must be storage the server and every client
+can reach by the same path, such as a mounted share or an object store.
+DuckLake marks this catalog experimental. Backups of the catalog are the
+server's DuckDB file; <code><a href="backup_ducklake.html">backup_ducklake()</a></code> copies the data files only.</p>
 <p>For credential management with PostgreSQL or MySQL, consider DuckDB's
 built-in secrets manager instead of embedding credentials in the connection
 string:</p>
@@ -330,6 +393,16 @@ See <a href="https://github.com/duckdb/duckdb/issues/7892" class="external-link"
 <span class="r-in"><span>  lake_path <span class="op">=</span> <span class="st">"data_files/"</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># A DuckDB catalog held open by a Quack server, shared by several clients</span></span></span>
+<span class="r-in"><span><span class="co"># (experimental); the data path is a share every client mounts</span></span></span>
+<span class="r-in"><span><span class="fu">attach_ducklake</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="st">"my_lake"</span>,</span></span>
+<span class="r-in"><span>  backend <span class="op">=</span> <span class="st">"quack"</span>,</span></span>
+<span class="r-in"><span>  catalog_connection_string <span class="op">=</span> <span class="st">"quack:catalog.example.org"</span>,</span></span>
+<span class="r-in"><span>  quack_token <span class="op">=</span> <span class="fu">askpass</span><span class="fu">::</span><span class="fu"><a href="https://r-lib.r-universe.dev/askpass/reference/askpass.html" class="external-link">askpass</a></span><span class="op">(</span><span class="st">"Quack token"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  lake_path <span class="op">=</span> <span class="st">"/shared/lake/data/"</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># DuckDB catalog on local disk, Parquet data on S3</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="create_storage_secret.html">create_storage_secret</a></span><span class="op">(</span><span class="st">"s3"</span>, provider <span class="op">=</span> <span class="st">"credential_chain"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">attach_ducklake</span><span class="op">(</span></span></span>
@@ -361,9 +434,24 @@ See <a href="https://github.com/duckdb/duckdb/issues/7892" class="external-link"
 <span class="r-in"><span><span class="co"># A frozen view of the lake as of snapshot 12, e.g. to reproduce a report</span></span></span>
 <span class="r-in"><span><span class="fu">attach_ducklake</span><span class="op">(</span><span class="st">"lake_v12"</span>, lake_path <span class="op">=</span> <span class="st">"path/to/lake"</span>, snapshot_version <span class="op">=</span> <span class="fl">12</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># A lake created with DuckDB 1.5.1 (catalog format 0.4), opened after</span></span></span>
-<span class="r-in"><span><span class="co"># upgrading: migrate it once, then attach as usual</span></span></span>
+<span class="r-in"><span><span class="co"># A lake made with duckdb 1.5 is a 1.0 catalog and opens as it is. Once</span></span></span>
+<span class="r-in"><span><span class="co"># every client is on duckdb 2.0: back it up, then attach once with</span></span></span>
+<span class="r-in"><span><span class="co"># automatic_migration to move it to 1.1; later attaches need nothing</span></span></span>
+<span class="r-in"><span><span class="fu">attach_ducklake</span><span class="op">(</span><span class="st">"old_lake"</span>, lake_path <span class="op">=</span> <span class="st">"path/to/lake"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="backup_ducklake.html">backup_ducklake</a></span><span class="op">(</span><span class="st">"old_lake"</span>, lake_path <span class="op">=</span> <span class="st">"path/to/lake"</span>, backup_path <span class="op">=</span> <span class="st">"path/to/backups"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="detach_ducklake.html">detach_ducklake</a></span><span class="op">(</span><span class="st">"old_lake"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">attach_ducklake</span><span class="op">(</span><span class="st">"old_lake"</span>, lake_path <span class="op">=</span> <span class="st">"path/to/lake"</span>, automatic_migration <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="get_ducklake_info.html">get_ducklake_info</a></span><span class="op">(</span><span class="st">"old_lake"</span><span class="op">)</span><span class="op">$</span><span class="va">format_version</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># A new lake that duckdb 1.5 clients can still open: a 1.0 catalog in</span></span></span>
+<span class="r-in"><span><span class="co"># SQLite (a DuckDB-file catalog written by 2.0 would lock them out)</span></span></span>
+<span class="r-in"><span><span class="fu">attach_ducklake</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="st">"shared_lake"</span>,</span></span>
+<span class="r-in"><span>  backend <span class="op">=</span> <span class="st">"sqlite"</span>,</span></span>
+<span class="r-in"><span>  catalog_connection_string <span class="op">=</span> <span class="st">"/shared/lakes/shared_lake/catalog.sqlite"</span>,</span></span>
+<span class="r-in"><span>  lake_path <span class="op">=</span> <span class="st">"/shared/lakes/shared_lake/data"</span>,</span></span>
+<span class="r-in"><span>  ducklake_version <span class="op">=</span> <span class="st">"1.0"</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Open an existing lake, and error if it is not there</span></span></span>
 <span class="r-in"><span><span class="fu">attach_ducklake</span><span class="op">(</span><span class="st">"prod_lake"</span>, lake_path <span class="op">=</span> <span class="st">"/lakes/prod"</span>, create <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>

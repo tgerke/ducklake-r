@@ -2,9 +2,11 @@
 
 Changes a column's type in place with
 `ALTER TABLE ... ALTER COLUMN ... SET TYPE`. DuckLake permits widening
-promotions only (for example `INTEGER` to `BIGINT`, or `FLOAT` to
-`DOUBLE`): every existing value must be representable in the new type,
-so no data can be lost and no data files need rewriting.
+promotions only: integers to a wider integer, `HUGEINT`, `FLOAT`, or
+`DOUBLE` (the floating-point promotions are accepted even where
+precision can be lost), `FLOAT` to `DOUBLE`, `TIMESTAMP` to
+`TIMESTAMP WITH TIME ZONE`, and the `"NULL"` type to any scalar type. No
+data files need rewriting.
 
 ## Usage
 
@@ -32,6 +34,10 @@ Invisibly returns `NULL`.
 
 ## Details
 
+A column that was all `NA` when a table was written from a query gets
+the `"NULL"` type, which holds nothing but `NULL` until promoted; this
+is the call that gives it its real type once the first values are known.
+
 To *narrow* a type, which DuckLake refuses, take the explicit route:
 [`add_table_column()`](https://tgerke.github.io/ducklake-r/reference/add_table_column.md)
 with the smaller type, copy the values over (after checking they fit),
@@ -51,6 +57,7 @@ Other schema evolution:
 [`drop_table_column()`](https://tgerke.github.io/ducklake-r/reference/drop_table_column.md),
 [`rename_ducklake_table()`](https://tgerke.github.io/ducklake-r/reference/rename_ducklake_table.md),
 [`rename_table_column()`](https://tgerke.github.io/ducklake-r/reference/rename_table_column.md),
+[`set_column_default()`](https://tgerke.github.io/ducklake-r/reference/set_column_default.md),
 [`set_column_not_null()`](https://tgerke.github.io/ducklake-r/reference/set_column_not_null.md)
 
 ## Examples

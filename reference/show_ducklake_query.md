@@ -56,7 +56,7 @@ get_ducklake_table("cars") |>
   dplyr::mutate(gear = 5) |>
   show_ducklake_query()
 #> -- DuckLake SQL preview
-#> UPDATE cars SET gear = 5.0;
+#> UPDATE sql_lake.main.cars SET gear = 5.0;
 
 detach_ducklake("sql_lake", shutdown = TRUE)
 unlink(lake_dir, recursive = TRUE)

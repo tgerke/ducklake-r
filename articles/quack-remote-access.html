@@ -91,8 +91,8 @@ a deliverable goes out. The usual answer is to copy files around (a CSV
 here, an XPT there) and hope everyone is looking at the same
 version.</p>
 <p><a href="https://duckdb.org/quack/" class="external-link">Quack</a> offers a different
-answer. It is a protocol, shipped as a core DuckDB extension in DuckDB
-1.5.3, that lets one DuckDB instance act as a server while other DuckDB
+answer. It is a protocol, a core DuckDB extension stable since DuckDB
+2.0, that lets one DuckDB instance act as a server while other DuckDB
 instances connect to it as clients. A DuckLake held by the server can
 then be read and updated by other R sessions over the network, with the
 same snapshots and time travel you get locally. Several people can write
@@ -193,7 +193,12 @@ are then reached as <code>name.table</code>:</p>
 <p>A served DuckLake is a separate catalog on the server, not part of
 its default database, so its tables are not exposed this way. Reach a
 served DuckLake with <code><a href="../reference/quack_query.html">quack_query()</a></code> and the lake’s catalog
-name, as in the previous section.</p>
+name, as in the previous section, or attach the lake itself through its
+served catalog as the section after next shows.</p>
+<p>DuckDB 2.0 also has a <code>CONNECT</code> statement that points a
+whole session at a server. Leave it alone on the package’s connection:
+on the duckdb R client it breaks every statement that follows, with no
+way back short of a new connection (<a href="https://github.com/duckdb/duckdb/issues/27269" class="external-link">duckdb/duckdb#27269</a>).</p>
 </div>
 </div>
 <div class="section level2">
@@ -231,40 +236,90 @@ machines, listen on a host name or address they can route to.</p>
 <h3 id="a-note-on-access">A note on access<a class="anchor" aria-label="anchor" href="#a-note-on-access"></a>
 </h3>
 <p>A token is the only thing standing between your data and anyone who
-can reach the server. Pick a strong one. If you start a server without a
-token, <code><a href="../reference/quack_serve.html">quack_serve()</a></code> warns you, because an open server lets
-any client that can reach it read and write the lake. On an untrusted
-network, put the server behind TLS or a reverse proxy rather than
-exposing it directly. The DuckDB <a href="https://duckdb.org/docs/current/quack/overview" class="external-link">Quack
+can reach the server. Pick a strong one. A server is never open: when
+you start one without a token, DuckDB generates a random one and
+<code><a href="../reference/quack_serve.html">quack_serve()</a></code> returns it in <code>auth_token</code>, and
+<code>create_secret_if_not_exists = TRUE</code> keeps a generated token
+in a secret so later servers reuse it. On an untrusted network, serve
+HTTPS with the certificate and key <code><a href="../reference/quack_generate_keys.html">quack_generate_keys()</a></code>
+writes and hand clients the fingerprint it reports as
+<code>ssl_fingerprint</code>, or put the server behind a TLS-terminating
+reverse proxy. The DuckDB <a href="https://duckdb.org/docs/current/quack/overview" class="external-link">Quack
 documentation</a> covers these deployment options.</p>
 </div>
+</div>
+<div class="section level2">
+<h2 id="serving-the-catalog-instead-of-the-tables">Serving the catalog instead of the tables<a class="anchor" aria-label="anchor" href="#serving-the-catalog-instead-of-the-tables"></a>
+</h2>
+<p>The server above serves a lake’s tables: clients query them, and only
+the server touches the files. DuckLake 1.1 adds a second arrangement,
+experimental for now, where a Quack server holds a lake’s
+<em>catalog</em> open and every client attaches the lake through it. The
+catalog is a plain DuckDB file, which on its own admits one process at a
+time; served, it takes any number of sessions, each of them a full
+client of the lake that reads and writes the Parquet files itself. That
+makes the arrangement a fit for a team on a shared drive that would
+rather not run PostgreSQL.</p>
+<p>The server is a DuckDB process that opens the catalog file and serves
+it. Any DuckDB client will do; from R:</p>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">con</span> <span class="op">&lt;-</span> <span class="fu">DBI</span><span class="fu">::</span><span class="fu"><a href="https://dbi.r-dbi.org/reference/dbConnect.html" class="external-link">dbConnect</a></span><span class="op">(</span><span class="fu">duckdb</span><span class="fu">::</span><span class="fu"><a href="https://r.duckdb.org/reference/duckdb.html" class="external-link">duckdb</a></span><span class="op">(</span><span class="op">)</span>, dbdir <span class="op">=</span> <span class="st">"/shared/lakes/trial/catalog.duckdb"</span><span class="op">)</span></span>
+<span><span class="fu">DBI</span><span class="fu">::</span><span class="fu"><a href="https://dbi.r-dbi.org/reference/dbExecute.html" class="external-link">dbExecute</a></span><span class="op">(</span><span class="va">con</span>, <span class="st">"INSTALL ducklake; LOAD ducklake; INSTALL httpfs; LOAD httpfs; INSTALL quack; LOAD quack"</span><span class="op">)</span></span>
+<span><span class="fu">DBI</span><span class="fu">::</span><span class="fu"><a href="https://dbi.r-dbi.org/reference/dbGetQuery.html" class="external-link">dbGetQuery</a></span><span class="op">(</span><span class="va">con</span>, <span class="st">"CALL quack_serve('quack:catalog.example.org', token = 'super_secret', allow_other_hostname = true)"</span><span class="op">)</span></span></code></pre></div>
+<p>Each client attaches the lake with <code>backend = "quack"</code>,
+the server’s address as the catalog connection string, and the data path
+as every client reaches it:</p>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/attach_ducklake.html">attach_ducklake</a></span><span class="op">(</span></span>
+<span>  <span class="st">"trial"</span>,</span>
+<span>  backend <span class="op">=</span> <span class="st">"quack"</span>,</span>
+<span>  catalog_connection_string <span class="op">=</span> <span class="st">"quack:catalog.example.org"</span>,</span>
+<span>  quack_token <span class="op">=</span> <span class="st">"super_secret"</span>,</span>
+<span>  lake_path <span class="op">=</span> <span class="st">"/shared/lakes/trial/data"</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="../reference/with_transaction.html">with_transaction</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="../reference/create_table.html">create_table</a></span><span class="op">(</span><span class="va">mtcars</span>, <span class="st">"vehicles"</span><span class="op">)</span>,</span>
+<span>  author <span class="op">=</span> <span class="st">"You"</span>,</span>
+<span>  commit_message <span class="op">=</span> <span class="st">"Seed the shared lake"</span></span>
+<span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"vehicles"</span><span class="op">)</span></span></code></pre></div>
+<p>From here on nothing is different: snapshots, time travel, comments,
+and the maintenance functions all go through the served catalog, and
+commits run on the server. Back up the catalog by stopping the server
+and copying its file; <code><a href="../reference/backup_ducklake.html">backup_ducklake()</a></code> copies the data
+files only.</p>
 </div>
 <div class="section level2">
 <h2 id="quack-or-a-shared-catalog">Quack or a shared catalog?<a class="anchor" aria-label="anchor" href="#quack-or-a-shared-catalog"></a>
 </h2>
 <p>ducklake already supports PostgreSQL and SQLite catalogs for
 concurrent access (see <code><a href="../reference/attach_ducklake.html">?attach_ducklake</a></code> and the package
-NEWS). Quack covers a similar need from a different angle, and the right
-choice depends on where your data lives and who can reach it.</p>
+NEWS). Quack covers a similar need from two angles, and the right choice
+depends on where your data lives and who can reach it.</p>
 <table class="table">
 <colgroup>
-<col width="33%">
-<col width="33%">
-<col width="33%">
+<col width="25%">
+<col width="25%">
+<col width="25%">
+<col width="25%">
 </colgroup>
 <thead><tr class="header">
 <th></th>
 <th>Shared catalog (PostgreSQL or SQLite)</th>
-<th>Quack</th>
+<th>Catalog served over Quack</th>
+<th>Tables served over Quack</th>
 </tr></thead>
 <tbody>
 <tr class="odd">
 <td>What clients connect to</td>
 <td>The catalog database and the Parquet storage directly</td>
+<td>One DuckDB server for the catalog, the Parquet storage directly</td>
 <td>One DuckDB server</td>
 </tr>
 <tr class="even">
 <td>Storage access each client needs</td>
+<td>Read and write access to the same data path</td>
 <td>Read and write access to the same data path</td>
 <td>None; only the server touches the files</td>
 </tr>
@@ -272,17 +327,20 @@ choice depends on where your data lives and who can reach it.</p>
 <td>Extra service to run</td>
 <td>A PostgreSQL server (SQLite needs none)</td>
 <td>A DuckDB server process</td>
+<td>A DuckDB server process</td>
 </tr>
 <tr class="even">
 <td>Good fit when</td>
 <td>Everyone can mount the same shared storage</td>
+<td>Everyone can mount the storage and nobody wants to run
+PostgreSQL</td>
 <td>The data sits on one machine and you want to share access to it</td>
 </tr>
 </tbody>
 </table>
-<p>A common pattern is to use both: a PostgreSQL catalog so the lake
-itself supports many writers, and a Quack server in front so analysts
-who cannot mount the storage can still connect.</p>
+<p>A common pattern is to use two of them: a PostgreSQL catalog so the
+lake itself supports many writers, and a Quack server in front so
+analysts who cannot mount the storage can still connect.</p>
 </div>
 <div class="section level2">
 <h2 id="caveats">Caveats<a class="anchor" aria-label="anchor" href="#caveats"></a>

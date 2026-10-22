@@ -18,7 +18,7 @@ create_schema(schema_name, if_not_exists = TRUE, ducklake_name = NULL)
 
 - schema_name:
 
-  Name of the schema.
+  Name of the schema, or a dotted path for a nested one.
 
 - if_not_exists:
 
@@ -33,6 +33,22 @@ create_schema(schema_name, if_not_exists = TRUE, ducklake_name = NULL)
 ## Value
 
 Invisibly, `NULL`.
+
+## Details
+
+Schemas nest (DuckLake 1.1): `"sales.europe"` is the schema `europe`
+inside `sales`, and its tables are named `"sales.europe.orders"`. Every
+dot in a name is a level, so the parents are created first when they are
+missing, and a table, schema, or `schema_name` argument anywhere in the
+package takes the same dotted path. A first component that names an
+attached lake is read as the lake (`"lake.sales.orders"`). One limit is
+DuckDB's rather than DuckLake's: `COMMENT ON` takes at most three
+qualifiers, so comments and variable labels reach a table one level deep
+and no deeper;
+[`create_table()`](https://tgerke.github.io/ducklake-r/reference/create_table.md)
+warns and drops the labels of a deeper table. A lake on catalog format
+1.0 has no nested schemas; see
+`attach_ducklake(automatic_migration = )`.
 
 ## See also
 

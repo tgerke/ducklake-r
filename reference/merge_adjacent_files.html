@@ -62,7 +62,9 @@ scans fast.</p>
 <span>  schema_name <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  max_compacted_files <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  min_file_size <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  max_file_size <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  max_file_size <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  newer_than <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  older_than <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -86,8 +88,10 @@ that schema are compacted.</p></dd>
 
 
 <dt id="arg-max-compacted-files">max_compacted_files<a class="anchor" aria-label="anchor" href="#arg-max-compacted-files"></a></dt>
-<dd><p>Optional cap on the number of compaction
-operations per table in a single call.</p></dd>
+<dd><p>Optional cap on the number of file groups
+considered per table in a single call. A file that cannot be combined
+with its neighbors counts too, so a small cap can merge less than it
+suggests.</p></dd>
 
 
 <dt id="arg-min-file-size">min_file_size<a class="anchor" aria-label="anchor" href="#arg-min-file-size"></a></dt>
@@ -98,6 +102,14 @@ are excluded from merging.</p></dd>
 <dt id="arg-max-file-size">max_file_size<a class="anchor" aria-label="anchor" href="#arg-max-file-size"></a></dt>
 <dd><p>Optional maximum file size in bytes; files at or
 above this size are excluded. Defaults to the lake's target file size.</p></dd>
+
+
+<dt id="arg-newer-than-older-than">newer_than, older_than<a class="anchor" aria-label="anchor" href="#arg-newer-than-older-than"></a></dt>
+<dd><p>Optional POSIXct or UTC timestamp strings
+that limit the merge to files whose snapshot falls at or after
+<code>newer_than</code> and before <code>older_than</code>. A merged file counts from the
+first snapshot of the files it was built from. Together they give a
+rolling window, such as the past week minus the latest day.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -111,6 +123,9 @@ operation can write several output files, or none.</p>
     <p>Merging does not delete the original small files – they may still be
 referenced by older snapshots. They are scheduled for deletion once no
 snapshot references them; run <code><a href="cleanup_old_files.html">cleanup_old_files()</a></code> to remove them.</p>
+<p>A table whose <code>auto_compact</code> option is <code>FALSE</code> is left alone, also when
+<code>table_name</code> names it. Files that have delete files or inlined deletions
+are skipped; <code><a href="rewrite_data_files.html">rewrite_data_files()</a></code> handles those.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
@@ -150,6 +165,15 @@ snapshot references them; run <code><a href="cleanup_old_files.html">cleanup_old
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Compact one table, only touching files under 10 MB</span></span></span>
 <span class="r-in"><span><span class="fu">merge_adjacent_files</span><span class="op">(</span>table_name <span class="op">=</span> <span class="st">"cars"</span>, max_file_size <span class="op">=</span> <span class="fl">10e6</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> No adjacent files to merge.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] schema_name     table_name      files_processed files_created  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;0 rows&gt; (or 0-length row.names)</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Files from the past week, leaving the latest day for a later run</span></span></span>
+<span class="r-in"><span><span class="fu">merge_adjacent_files</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  newer_than <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.time.html" class="external-link">Sys.time</a></span><span class="op">(</span><span class="op">)</span> <span class="op">-</span> <span class="fl">7</span> <span class="op">*</span> <span class="fl">86400</span>,</span></span>
+<span class="r-in"><span>  older_than <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.time.html" class="external-link">Sys.time</a></span><span class="op">(</span><span class="op">)</span> <span class="op">-</span> <span class="fl">86400</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> No adjacent files to merge.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] schema_name     table_name      files_processed files_created  </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;0 rows&gt; (or 0-length row.names)</span>

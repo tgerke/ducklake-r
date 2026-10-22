@@ -71,7 +71,13 @@ speed up filtered reads on large tables considerably.</p>
 <dd><p>Character vector of partition expressions. Each entry
 must be one of:</p><ul><li><p>a column name, e.g. <code>"region"</code> (identity transform)</p></li>
 <li><p><code>"year(col)"</code>, <code>"month(col)"</code>, <code>"day(col)"</code>, or <code>"hour(col)"</code>
-for timestamp columns</p></li>
+for date and timestamp columns: the calendar part, so
+<code>month(col)</code> runs from 1 to 12 and puts January 2020 and January
+2021 in the same partition</p></li>
+<li><p><code>"epoch_year(col)"</code>, <code>"epoch_month(col)"</code>, <code>"epoch_day(col)"</code>,
+or <code>"epoch_hour(col)"</code>: whole units since 1970-01-01, so every
+month gets its own partition, which is also what Iceberg writes;
+these need a lake on catalog format 1.1</p></li>
 <li><p><code>"bucket(n, col)"</code> for hash bucketing into <code>n</code> buckets</p></li>
 </ul></dd>
 
@@ -86,7 +92,8 @@ for timestamp columns</p></li>
 previously written files keep their layout. To re-partition existing
 data, set the keys and then rewrite the table with <code><a href="replace_table.html">replace_table()</a></code>:
 the rewrite carries the keys over to the new table and writes every row
-through them.</p>
+through them. <code><a href="create_table.html">create_table()</a></code> takes the same <code>partition_by</code> for a new
+table, so its first load is written through the keys.</p>
 <p>Runs <code>ALTER TABLE ... SET PARTITIONED BY (...)</code>. The expressions are
 validated against the transforms DuckLake supports before any SQL is
 built.</p>
@@ -116,7 +123,9 @@ built.</p>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Table <span style="color: #0000BB;">"cars"</span> is now partitioned by <span style="color: #0000BB;">"gear"</span> and <span style="color: #0000BB;">"cyl"</span>.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Only newly written data is partitioned; existing files keep their layout.</span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Timestamp columns can be split by year(), month(), day(), or hour()</span></span></span>
+<span class="r-in"><span><span class="co"># Timestamp columns can be split by calendar part (year(), month(), ...)</span></span></span>
+<span class="r-in"><span><span class="co"># or by whole units since 1970 (epoch_month(), ...), which keeps months</span></span></span>
+<span class="r-in"><span><span class="co"># of different years apart</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="fu"><a href="detach_ducklake.html">detach_ducklake</a></span><span class="op">(</span><span class="st">"part_lake"</span>, shutdown <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/unlink.html" class="external-link">unlink</a></span><span class="op">(</span><span class="va">lake_dir</span>, recursive <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>

@@ -27,6 +27,7 @@ Options left at their defaults are not listed.
 [`set_ducklake_option()`](https://tgerke.github.io/ducklake-r/reference/set_ducklake_option.md)
 
 Other options:
+[`reset_ducklake_option()`](https://tgerke.github.io/ducklake-r/reference/reset_ducklake_option.md),
 [`set_ducklake_option()`](https://tgerke.github.io/ducklake-r/reference/set_ducklake_option.md)
 
 ## Examples
@@ -53,7 +54,7 @@ get_ducklake_options()
 #> 5                                                                          DuckLake format version
 #>                                       value  scope scope_entry
 #> 1                         DuckDB d54cbbe3df GLOBAL        <NA>
-#> 2 /tmp/RtmpRLrDax/getopt_lake_2a4a34ab0741/ GLOBAL        <NA>
+#> 2 /tmp/RtmpUkUxaF/getopt_lake_1ad2673ca0c7/ GLOBAL        <NA>
 #> 3                                     false GLOBAL        <NA>
 #> 4                                      zstd GLOBAL        <NA>
 #> 5                                       1.1 GLOBAL        <NA>

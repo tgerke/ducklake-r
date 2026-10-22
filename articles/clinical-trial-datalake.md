@@ -638,7 +638,8 @@ as data:
 ``` r
 
 lineage_upstream(teae_lineage, "results.teae_summary.pct_subjects")
-#> [1] "gold.adae.USUBJID" "gold.adsl.USUBJID"
+#> [1] "clinical_trial_lake.gold.adae.USUBJID"
+#> [2] "clinical_trial_lake.gold.adsl.USUBJID"
 ```
 
 The admiral layers are not in the picture, and cannot be: admiral runs
@@ -810,15 +811,15 @@ and message each one was given, from the lake’s creation on:
 list_table_snapshots() |>
   select(snapshot_id, snapshot_time, author, commit_message)
 #>   snapshot_id       snapshot_time                 author
-#> 1           0 2026-10-22 16:14:36           Data Manager
-#> 2           1 2026-10-22 16:14:36           Data Manager
-#> 3           2 2026-10-22 16:14:36           Data Manager
-#> 4           3 2026-10-22 16:14:37           Data Manager
-#> 5           4 2026-10-22 16:14:39 Statistical Programmer
-#> 6           5 2026-10-22 16:14:39 Statistical Programmer
-#> 7           6 2026-10-22 16:14:40           Statistician
-#> 8           7 2026-10-22 16:14:40 Statistical Programmer
-#> 9           8 2026-10-22 16:14:41           Data Manager
+#> 1           0 2026-10-22 16:38:32           Data Manager
+#> 2           1 2026-10-22 16:38:32           Data Manager
+#> 3           2 2026-10-22 16:38:32           Data Manager
+#> 4           3 2026-10-22 16:38:34           Data Manager
+#> 5           4 2026-10-22 16:38:36 Statistical Programmer
+#> 6           5 2026-10-22 16:38:38 Statistical Programmer
+#> 7           6 2026-10-22 16:38:38           Statistician
+#> 8           7 2026-10-22 16:38:39 Statistical Programmer
+#> 9           8 2026-10-22 16:38:40           Data Manager
 #>                                      commit_message
 #> 1                                       Create lake
 #> 2                          Create the lake's layers

@@ -93,8 +93,8 @@ none.</p></dd>
 making them permanent in the database.</p>
 <p>If <code>author</code>, <code>commit_message</code>, or <code>commit_extra_info</code> are provided,
 they will be set using <code>CALL ducklake.set_commit_message()</code> within the
-transaction before the <code>COMMIT</code> statement, as required by the DuckLake
-v1.0 specification. An author set once for the session with
+transaction before the <code>COMMIT</code> statement, which is where DuckLake
+takes commit metadata. An author set once for the session with
 <code>options(ducklake.author = "...")</code> is recorded on every commit that does
 not name one; the <code>author</code> argument wins when both are given.</p>
 <p>The commit is confirmed with one message naming the snapshot it created,

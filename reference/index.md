@@ -75,6 +75,8 @@ Change a table’s shape in place, preserving history
   : Change the type of a DuckLake table column
 - [`set_column_not_null()`](https://tgerke.github.io/ducklake-r/reference/set_column_not_null.md)
   : Require or allow NULL values in a column
+- [`set_column_default()`](https://tgerke.github.io/ducklake-r/reference/set_column_default.md)
+  : Set or drop a column's default value
 - [`rename_ducklake_table()`](https://tgerke.github.io/ducklake-r/reference/rename_ducklake_table.md)
   : Rename a DuckLake table
 
@@ -188,6 +190,8 @@ Lake, schema, and table configuration
 
 - [`set_ducklake_option()`](https://tgerke.github.io/ducklake-r/reference/set_ducklake_option.md)
   : Set a DuckLake option
+- [`reset_ducklake_option()`](https://tgerke.github.io/ducklake-r/reference/reset_ducklake_option.md)
+  : Remove a table's override of a DuckLake option
 - [`get_ducklake_options()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_options.md)
   : List the options set on a DuckLake
 
@@ -230,3 +234,5 @@ Connect to and serve DuckLake over the Quack protocol
   : Serve the current session over Quack
 - [`quack_stop()`](https://tgerke.github.io/ducklake-r/reference/quack_stop.md)
   : Stop a Quack server
+- [`quack_generate_keys()`](https://tgerke.github.io/ducklake-r/reference/quack_generate_keys.md)
+  : Generate a self-signed certificate for a Quack server

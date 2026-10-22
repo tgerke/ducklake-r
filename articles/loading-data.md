@@ -77,7 +77,7 @@ with_transaction(
 
 get_ducklake_table("iris_sample") |> head(3)
 #> # A query:  ?? x 5
-#> # Database: DuckDB 2.0.0 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpZi1Uzw/ducklake/ducklake47426f63a8f9.duckdb]
+#> # Database: DuckDB 2.0.0 [unknown@Linux 7.0.0-1017-azure:R 4.6.1//tmp/RtmpLOQ0ES/ducklake/ducklake387b3535857d.duckdb]
 #>   Sepal.Length Sepal.Width Petal.Length Petal.Width Species
 #>          <dbl>       <dbl>        <dbl>       <dbl> <chr>  
 #> 1          5.1         3.5          1.4         0.2 setosa 
@@ -160,7 +160,7 @@ with_transaction({
 get_ducklake_table("staging.cars_raw") |>
   count(cyl)
 #> # A query:  ?? x 2
-#> # Database: DuckDB 2.0.0 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpZi1Uzw/ducklake/ducklake47426f63a8f9.duckdb]
+#> # Database: DuckDB 2.0.0 [unknown@Linux 7.0.0-1017-azure:R 4.6.1//tmp/RtmpLOQ0ES/ducklake/ducklake387b3535857d.duckdb]
 #>     cyl     n
 #>   <dbl> <dbl>
 #> 1     4    11
@@ -175,6 +175,30 @@ list_ducklake_tables()
 #> 4        main    iris_sample table
 #> 5        main     small_cars table
 #> 6     staging       cars_raw table
+```
+
+Schemas nest, one level per dot: `create_schema("staging.imports")`
+makes `imports` inside `staging` (and `staging` itself when it is
+missing), and the tables inside are named `"staging.imports.cars_raw"`.
+Every listing reports the full path, so a `cars_raw` in `staging` and
+one in `staging.imports` stay apart. Comments and variable labels reach
+a table one level deep and no deeper, a limit of DuckDB’s `COMMENT ON`
+statement rather than of DuckLake.
+
+``` r
+
+create_schema("staging.imports")
+#> Created schema "staging.imports".
+create_table(mtcars, "staging.imports.cars_raw")
+list_ducklake_tables()
+#>       schema_name     table_name  type
+#> 1            main           cars table
+#> 2            main efficient_cars table
+#> 3            main        flowers table
+#> 4            main    iris_sample table
+#> 5            main     small_cars table
+#> 6         staging       cars_raw table
+#> 7 staging.imports       cars_raw table
 ```
 
 ## Register Parquet files in place

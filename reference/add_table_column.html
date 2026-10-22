@@ -81,11 +81,11 @@ and earlier snapshots still show the old schema. Compare
 
 <dt id="arg-default">default<a class="anchor" aria-label="anchor" href="#arg-default"></a></dt>
 <dd><p>Optional default value (an R scalar: character, numeric,
-logical, Date, or POSIXct, the last rendered in UTC). In DuckLake the
-default applies to existing rows as well as future inserts, so the new
-column appears filled everywhere. Without a default, the column reads
-<code>NA</code> for existing rows. DuckLake accepts constant defaults only;
-an expression such as <code>now()</code> is not supported.</p></dd>
+logical, Date, or POSIXct, the last rendered in UTC), written as a
+typed literal. In DuckLake the default applies to existing rows as
+well as future inserts, so the new column appears filled everywhere.
+Without a default, the column reads <code>NA</code> for existing rows. <code>ADD COLUMN</code> takes constant defaults only; for an expression such as
+<code>now()</code>, add the column, commit, and then call <code><a href="set_column_default.html">set_column_default()</a></code>.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -95,11 +95,12 @@ an expression such as <code>now()</code> is not supported.</p></dd>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
     <div class="dont-index"><p><code><a href="drop_table_column.html">drop_table_column()</a></code>, <code><a href="rename_table_column.html">rename_table_column()</a></code>,
-<code><a href="set_column_type.html">set_column_type()</a></code>, <code><a href="rename_ducklake_table.html">rename_ducklake_table()</a></code></p>
+<code><a href="set_column_type.html">set_column_type()</a></code>, <code><a href="set_column_default.html">set_column_default()</a></code>, <code><a href="rename_ducklake_table.html">rename_ducklake_table()</a></code></p>
 <p>Other schema evolution:
 <code><a href="drop_table_column.html">drop_table_column()</a></code>,
 <code><a href="rename_ducklake_table.html">rename_ducklake_table()</a></code>,
 <code><a href="rename_table_column.html">rename_table_column()</a></code>,
+<code><a href="set_column_default.html">set_column_default()</a></code>,
 <code><a href="set_column_not_null.html">set_column_not_null()</a></code>,
 <code><a href="set_column_type.html">set_column_type()</a></code></p></div>
     </div>

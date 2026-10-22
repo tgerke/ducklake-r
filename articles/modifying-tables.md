@@ -39,9 +39,9 @@ snapshot**. Whether you use
 [`replace_table()`](https://tgerke.github.io/ducklake-r/reference/replace_table.md),
 or raw SQL, DuckLake records what changed and you can time-travel back
 to any earlier state. (Earlier versions of this vignette said the
-`rows_*` functions skip versioning. That is not true in DuckLake v1.0.)
-The choice between the styles is about *what kind of change* you are
-making, not about whether it is audited.
+`rows_*` functions skip versioning; they do not.) The choice between the
+styles is about *what kind of change* you are making, not about whether
+it is audited.
 
 One distinction matters before anything else: dplyr joins **read**.
 [`left_join()`](https://dplyr.tidyverse.org/reference/mutate-joins.html)
@@ -315,11 +315,11 @@ with_transaction({
 # The full history: every change is versioned, wrapped or not
 list_table_snapshots("fleet")
 #>   snapshot_id       snapshot_time schema_version
-#> 1           2 2026-10-22 16:15:01              2
-#> 2           3 2026-10-22 16:15:01              2
-#> 3           4 2026-10-22 16:15:01              2
-#> 4           5 2026-10-22 16:15:02              2
-#> 5           6 2026-10-22 16:15:02              2
+#> 1           2 2026-10-22 16:39:15              2
+#> 2           3 2026-10-22 16:39:15              2
+#> 3           4 2026-10-22 16:39:16              2
+#> 4           5 2026-10-22 16:39:16              2
+#> 5           6 2026-10-22 16:39:16              2
 #>                                         changes        author
 #> 1 tables_created, inlined_insert, main.fleet, 2 Fleet Manager
 #> 2                             inlined_insert, 2          <NA>
@@ -429,8 +429,8 @@ with_transaction(
 # Check version history - should show the new snapshot
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-10-22 16:15:01              1
-#> 2           9 2026-10-22 16:15:02              3
+#> 1           1 2026-10-22 16:39:15              1
+#> 2           9 2026-10-22 16:39:17              3
 #>                                                                 changes
 #> 1                    tables_created, tables_inserted_into, main.cars, 1
 #> 2 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 3
@@ -478,7 +478,7 @@ get_ducklake_table("cars") |>
   filter(hp > 200) |>
   select(hp, cyl, hp_per_cyl, high_performance)
 #> # A query:  ?? x 4
-#> # Database: DuckDB 2.0.0 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpblyArW/ducklake/ducklake481e13cc1ad2.duckdb]
+#> # Database: DuckDB 2.0.0 [unknown@Linux 7.0.0-1017-azure:R 4.6.1//tmp/RtmpsEDVsQ/ducklake/ducklake39562bc213eb.duckdb]
 #>      hp   cyl hp_per_cyl high_performance
 #>   <dbl> <dbl>      <dbl> <chr>           
 #> 1   245     8       30.6 Y               
@@ -502,7 +502,7 @@ get_ducklake_table("cars") |>
   mutate(hp_per_cyl = round(hp_per_cyl, 1)) |>
   show_ducklake_query()
 #> -- DuckLake SQL preview
-#> UPDATE cars SET hp_per_cyl = ROUND_EVEN(hp_per_cyl, CAST(ROUND(1.0, 0) AS INTEGER));
+#> UPDATE modifying_tables_lake.main.cars SET hp_per_cyl = ROUND_EVEN(hp_per_cyl, CAST(ROUND(1.0, 0) AS INTEGER));
 ```
 
 ### Reshaping the schema in place
@@ -557,7 +557,7 @@ with_transaction(
 # Show the filtered table
 get_ducklake_table("cars")
 #> # A query:  ?? x 12
-#> # Database: DuckDB 2.0.0 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpblyArW/ducklake/ducklake481e13cc1ad2.duckdb]
+#> # Database: DuckDB 2.0.0 [unknown@Linux 7.0.0-1017-azure:R 4.6.1//tmp/RtmpsEDVsQ/ducklake/ducklake39562bc213eb.duckdb]
 #>      mpg   cyl  disp    hp  drat    wt  qsec    vs    am  gear  carb
 #>    <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>
 #>  1  18.7     8  360    175  3.15  3.44  17.0     0     0     3     2
@@ -579,12 +579,12 @@ get_ducklake_table("cars")
 # View version history - old versions still accessible via time travel
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-10-22 16:15:01              1
-#> 2           9 2026-10-22 16:15:02              3
-#> 3          10 2026-10-22 16:15:02              4
-#> 4          11 2026-10-22 16:15:03              5
-#> 5          12 2026-10-22 16:15:03              6
-#> 6          14 2026-10-22 16:15:03              8
+#> 1           1 2026-10-22 16:39:15              1
+#> 2           9 2026-10-22 16:39:17              3
+#> 3          10 2026-10-22 16:39:17              4
+#> 4          11 2026-10-22 16:39:18              5
+#> 5          12 2026-10-22 16:39:18              6
+#> 6          14 2026-10-22 16:39:18              8
 #>                                                                 changes
 #> 1                    tables_created, tables_inserted_into, main.cars, 1
 #> 2 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 3
@@ -612,12 +612,12 @@ current <- get_ducklake_table("cars") |> collect()
 snapshots <- list_table_snapshots("cars")
 snapshots
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-10-22 16:15:01              1
-#> 2           9 2026-10-22 16:15:02              3
-#> 3          10 2026-10-22 16:15:02              4
-#> 4          11 2026-10-22 16:15:03              5
-#> 5          12 2026-10-22 16:15:03              6
-#> 6          14 2026-10-22 16:15:03              8
+#> 1           1 2026-10-22 16:39:15              1
+#> 2           9 2026-10-22 16:39:17              3
+#> 3          10 2026-10-22 16:39:17              4
+#> 4          11 2026-10-22 16:39:18              5
+#> 5          12 2026-10-22 16:39:18              6
+#> 6          14 2026-10-22 16:39:18              8
 #>                                                                 changes
 #> 1                    tables_created, tables_inserted_into, main.cars, 1
 #> 2 tables_created, tables_dropped, tables_inserted_into, main.cars, 1, 3

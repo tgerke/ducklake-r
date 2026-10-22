@@ -11,7 +11,8 @@ rewrite_data_files(
   ducklake_name = NULL,
   table_name = NULL,
   delete_threshold = NULL,
-  schema_name = NULL
+  schema_name = NULL,
+  max_compacted_files = NULL
 )
 ```
 
@@ -37,6 +38,11 @@ rewrite_data_files(
 
   Optional schema containing `table_name`.
 
+- max_compacted_files:
+
+  Optional cap on the number of rewrite operations per table in a single
+  call, for working through a table with many deleted rows in batches.
+
 ## Value
 
 A data frame with one row per compaction operation (columns
@@ -48,7 +54,9 @@ operation can write several output files, or none.
 The rewritten originals are scheduled for deletion once no snapshot
 references them; run
 [`cleanup_old_files()`](https://tgerke.github.io/ducklake-r/reference/cleanup_old_files.md)
-to remove them.
+to remove them. Inlined deletions count toward the threshold without
+being flushed first, and a table whose `auto_compact` option is `FALSE`
+is left alone, also when `table_name` names it.
 
 ## See also
 

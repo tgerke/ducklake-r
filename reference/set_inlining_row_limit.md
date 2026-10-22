@@ -55,8 +55,8 @@ The limit can be set at three levels (highest priority first):
 
 3.  **Global (DuckDB setting)** – applies to all DuckLake connections
 
-Data inlining is enabled by default in DuckLake v1.0 with a threshold of
-10 rows. Any insert or delete affecting fewer rows than the limit is
+Data inlining is enabled by default in DuckLake with a threshold of 10
+rows. Any insert or delete affecting fewer rows than the limit is
 written to an inlined table inside the catalog instead of creating a
 Parquet file.
 

@@ -23,7 +23,14 @@ set_table_partitioning(table_name, partition_by)
   - a column name, e.g. `"region"` (identity transform)
 
   - `"year(col)"`, `"month(col)"`, `"day(col)"`, or `"hour(col)"` for
-    timestamp columns
+    date and timestamp columns: the calendar part, so `month(col)` runs
+    from 1 to 12 and puts January 2020 and January 2021 in the same
+    partition
+
+  - `"epoch_year(col)"`, `"epoch_month(col)"`, `"epoch_day(col)"`, or
+    `"epoch_hour(col)"`: whole units since 1970-01-01, so every month
+    gets its own partition, which is also what Iceberg writes; these
+    need a lake on catalog format 1.1
 
   - `"bucket(n, col)"` for hash bucketing into `n` buckets
 
@@ -39,6 +46,9 @@ data, set the keys and then rewrite the table with
 [`replace_table()`](https://tgerke.github.io/ducklake-r/reference/replace_table.md):
 the rewrite carries the keys over to the new table and writes every row
 through them.
+[`create_table()`](https://tgerke.github.io/ducklake-r/reference/create_table.md)
+takes the same `partition_by` for a new table, so its first load is
+written through the keys.
 
 Runs `ALTER TABLE ... SET PARTITIONED BY (...)`. The expressions are
 validated against the transforms DuckLake supports before any SQL is
@@ -71,7 +81,9 @@ set_table_partitioning("cars", c("gear", "cyl"))
 #> Table "cars" is now partitioned by "gear" and "cyl".
 #> ℹ Only newly written data is partitioned; existing files keep their layout.
 
-# Timestamp columns can be split by year(), month(), day(), or hour()
+# Timestamp columns can be split by calendar part (year(), month(), ...)
+# or by whole units since 1970 (epoch_month(), ...), which keeps months
+# of different years apart
 
 detach_ducklake("part_lake", shutdown = TRUE)
 unlink(lake_dir, recursive = TRUE)

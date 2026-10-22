@@ -19,8 +19,9 @@ install_ducklake(backend = NULL)
 - backend:
 
   Optional character vector of backends to install. The ducklake
-  extension is always installed. Pass `"postgres"`, `"sqlite"`, and/or
-  `"mysql"` to install the corresponding backend extensions.
+  extension is always installed. Pass `"postgres"`, `"sqlite"`,
+  `"mysql"`, and/or `"quack"` to install the corresponding backend
+  extensions.
 
 ## Value
 

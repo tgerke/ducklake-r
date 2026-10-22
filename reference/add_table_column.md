@@ -30,11 +30,13 @@ add_table_column(table_name, column_name, type, default = NULL)
 - default:
 
   Optional default value (an R scalar: character, numeric, logical,
-  Date, or POSIXct, the last rendered in UTC). In DuckLake the default
-  applies to existing rows as well as future inserts, so the new column
-  appears filled everywhere. Without a default, the column reads `NA`
-  for existing rows. DuckLake accepts constant defaults only; an
-  expression such as `now()` is not supported.
+  Date, or POSIXct, the last rendered in UTC), written as a typed
+  literal. In DuckLake the default applies to existing rows as well as
+  future inserts, so the new column appears filled everywhere. Without a
+  default, the column reads `NA` for existing rows. `ADD COLUMN` takes
+  constant defaults only; for an expression such as `now()`, add the
+  column, commit, and then call
+  [`set_column_default()`](https://tgerke.github.io/ducklake-r/reference/set_column_default.md).
 
 ## Value
 
@@ -45,12 +47,14 @@ Invisibly returns `NULL`.
 [`drop_table_column()`](https://tgerke.github.io/ducklake-r/reference/drop_table_column.md),
 [`rename_table_column()`](https://tgerke.github.io/ducklake-r/reference/rename_table_column.md),
 [`set_column_type()`](https://tgerke.github.io/ducklake-r/reference/set_column_type.md),
+[`set_column_default()`](https://tgerke.github.io/ducklake-r/reference/set_column_default.md),
 [`rename_ducklake_table()`](https://tgerke.github.io/ducklake-r/reference/rename_ducklake_table.md)
 
 Other schema evolution:
 [`drop_table_column()`](https://tgerke.github.io/ducklake-r/reference/drop_table_column.md),
 [`rename_ducklake_table()`](https://tgerke.github.io/ducklake-r/reference/rename_ducklake_table.md),
 [`rename_table_column()`](https://tgerke.github.io/ducklake-r/reference/rename_table_column.md),
+[`set_column_default()`](https://tgerke.github.io/ducklake-r/reference/set_column_default.md),
 [`set_column_not_null()`](https://tgerke.github.io/ducklake-r/reference/set_column_not_null.md),
 [`set_column_type()`](https://tgerke.github.io/ducklake-r/reference/set_column_type.md)
 

@@ -1,10 +1,10 @@
 # Data Inlining
 
-Data inlining is one of the flagship features of DuckLake v1.0. When
-writing small changesets, DuckLake stores the data directly in the
-catalog database instead of creating individual Parquet files. This
-eliminates the “small files problem” that plagues traditional data lake
-formats during streaming and frequent-update workloads.
+Data inlining is one of DuckLake’s flagship features. When writing small
+changesets, DuckLake stores the data directly in the catalog database
+instead of creating individual Parquet files. This eliminates the “small
+files problem” that plagues traditional data lake formats during
+streaming and frequent-update workloads.
 
 Inlining is **enabled by default** with a row threshold of 10. No
 configuration is required to benefit from it.
@@ -292,11 +292,11 @@ inlined insert or delete creates a snapshot, just like a regular write:
 snapshots <- list_table_snapshots("readings")
 snapshots
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-10-22 16:14:51              1
-#> 2           2 2026-10-22 16:14:51              2
-#> 3           3 2026-10-22 16:14:51              2
-#> 4           5 2026-10-22 16:14:52              3
-#> 5           6 2026-10-22 16:14:52              3
+#> 1           1 2026-10-22 16:38:56              1
+#> 2           2 2026-10-22 16:38:57              2
+#> 3           3 2026-10-22 16:38:57              2
+#> 4           5 2026-10-22 16:38:58              3
+#> 5           6 2026-10-22 16:38:59              3
 #>                                                   changes      author
 #> 1        tables_created, inlined_insert, main.readings, 1 Sensor Team
 #> 2 tables_altered, inlined_insert, inlined_delete, 1, 1, 1 Sensor Team

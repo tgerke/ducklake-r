@@ -102,7 +102,7 @@ current database is used.</p></dd>
     <p>The limit can be set at three levels (highest priority first):</p><ol><li><p><strong>Table-level</strong> – persisted in the DuckLake metadata for a specific table</p></li>
 <li><p><strong>Schema-level</strong> – persisted for all tables in a schema</p></li>
 <li><p><strong>Global (DuckDB setting)</strong> – applies to all DuckLake connections</p></li>
-</ol><p>Data inlining is enabled by default in DuckLake v1.0 with a threshold of 10
+</ol><p>Data inlining is enabled by default in DuckLake with a threshold of 10
 rows. Any insert or delete affecting fewer rows than the limit is written to
 an inlined table inside the catalog instead of creating a Parquet file.</p>
 <p>For streaming or high-frequency-insert workloads, increase the limit (e.g.,

@@ -63,7 +63,11 @@ in the background of the DuckDB instance, so the R session stays usable.</p>
 <span>  uri <span class="op">=</span> <span class="st">"quack:localhost"</span>,</span>
 <span>  token <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  allow_other_hostname <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  disable_ssl <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span>  disable_ssl <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  secret <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  create_secret_if_not_exists <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  ssl_cert_file <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  ssl_key_file <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -77,31 +81,58 @@ port is 9494.</p></dd>
 
 
 <dt id="arg-token">token<a class="anchor" aria-label="anchor" href="#arg-token"></a></dt>
-<dd><p>Authentication token that clients must supply. If <code>NULL</code>, the
-server accepts any client that can reach it, and a warning is issued.</p></dd>
+<dd><p>Authentication token that clients must supply (at least 4
+characters). If <code>NULL</code>, the server takes the token of the session's
+default Quack secret when there is one (see <code>secret</code> and
+<code>create_secret_if_not_exists</code>), and otherwise generates a random token,
+which the returned data frame carries in <code>auth_token</code>. A server is never
+open: clients always present a token.</p></dd>
 
 
 <dt id="arg-allow-other-hostname">allow_other_hostname<a class="anchor" aria-label="anchor" href="#arg-allow-other-hostname"></a></dt>
 <dd><p>Accept connections addressed to a hostname other
-than the one in <code>uri</code> (default <code>FALSE</code>).</p></dd>
+than the one in <code>uri</code> (default <code>FALSE</code>). A server reachable from other
+machines belongs behind a TLS-terminating reverse proxy.</p></dd>
 
 
 <dt id="arg-disable-ssl">disable_ssl<a class="anchor" aria-label="anchor" href="#arg-disable-ssl"></a></dt>
-<dd><p>Serve over plain HTTP instead of HTTPS (default <code>FALSE</code>).
-Only appropriate on a trusted network.</p></dd>
+<dd><p>Serve over plain HTTP instead of HTTPS (default <code>FALSE</code>,
+which leaves the choice to DuckDB: plain HTTP for a local address, HTTPS
+otherwise). Only appropriate on a trusted network.</p></dd>
+
+
+<dt id="arg-secret">secret<a class="anchor" aria-label="anchor" href="#arg-secret"></a></dt>
+<dd><p>Optional name of an existing Quack secret whose token the
+server uses.</p></dd>
+
+
+<dt id="arg-create-secret-if-not-exists">create_secret_if_not_exists<a class="anchor" aria-label="anchor" href="#arg-create-secret-if-not-exists"></a></dt>
+<dd><p>When no <code>token</code> is given and no default
+Quack secret exists, store the generated token in a persistent default
+secret, so later servers (and clients in this session) reuse it (default
+<code>FALSE</code>).</p></dd>
+
+
+<dt id="arg-ssl-cert-file-ssl-key-file">ssl_cert_file, ssl_key_file<a class="anchor" aria-label="anchor" href="#arg-ssl-cert-file-ssl-key-file"></a></dt>
+<dd><p>Optional certificate and private key
+files for serving over HTTPS, such as the pair <code><a href="quack_generate_keys.html">quack_generate_keys()</a></code>
+writes. Without them DuckDB generates a self-signed certificate when it
+serves HTTPS.</p></dd>
 
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>The server <code>uri</code>, invisibly.</p>
+    <p>Invisibly, a data frame with one row: <code>listen_uri</code>, <code>listen_url</code>,
+and <code>auth_token</code>, the token clients must present.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="quack_stop.html">quack_stop()</a></code>, <code><a href="attach_quack.html">attach_quack()</a></code></p>
+    <div class="dont-index"><p><code><a href="quack_stop.html">quack_stop()</a></code>, <code><a href="attach_quack.html">attach_quack()</a></code>, <code><a href="quack_generate_keys.html">quack_generate_keys()</a></code></p>
 <p>Other quack:
 <code><a href="attach_quack.html">attach_quack()</a></code>,
 <code><a href="detach_quack.html">detach_quack()</a></code>,
 <code><a href="install_quack.html">install_quack()</a></code>,
+<code><a href="quack_generate_keys.html">quack_generate_keys()</a></code>,
 <code><a href="quack_query.html">quack_query()</a></code>,
 <code><a href="quack_stop.html">quack_stop()</a></code></p></div>
     </div>
@@ -113,6 +144,10 @@ Only appropriate on a trusted network.</p></dd>
 <span class="r-in"><span><span class="fu">quack_serve</span><span class="op">(</span>token <span class="op">=</span> <span class="st">"super_secret"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="co"># ... colleagues connect with attach_quack() ...</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="quack_stop.html">quack_stop</a></span><span class="op">(</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Let DuckDB pick the token and keep it in a secret for later servers</span></span></span>
+<span class="r-in"><span><span class="va">server</span> <span class="op">&lt;-</span> <span class="fu">quack_serve</span><span class="op">(</span>create_secret_if_not_exists <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">server</span><span class="op">$</span><span class="va">auth_token</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 </code></pre></div>
     </div>

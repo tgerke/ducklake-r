@@ -89,8 +89,9 @@ data for tables in that schema.</p></dd>
     <p>Flushing writes inlined rows to consolidated Parquet files and cleans up the
 inlined data tables. Time-travel information is preserved: flushed rows that
 had been deleted will produce a partial deletion file with snapshot metadata.</p>
-<p>Tables with <code>auto_compact</code> set to <code>FALSE</code> are skipped when flushing an
-entire lake or schema. Use an explicit <code>table_name</code> to flush those tables.</p>
+<p>Tables with <code>auto_compact</code> set to <code>FALSE</code> are skipped, also when
+<code>table_name</code> names one; set the option back to <code>TRUE</code> to flush such a
+table.</p>
 <p>If a table has a sort order defined, the flushed Parquet file will be sorted
 by those keys.</p>
     </div>

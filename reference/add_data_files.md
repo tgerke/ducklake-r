@@ -30,7 +30,12 @@ add_data_files(
 
 - files:
 
-  Character vector of Parquet file paths or URIs.
+  Character vector of Parquet file paths or URIs. DuckLake 1.1 reads
+  files other tools wrote more widely than 1.0 did: `FLOAT16` columns
+  into `FLOAT`, nanosecond and time-zone-aware timestamps and times,
+  top-level `VARIANT`, and native Parquet `GEOMETRY`; values of
+  Hive-partitioned directories count as partition values; and `NOT NULL`
+  constraints are checked on import.
 
 - schema_name:
 

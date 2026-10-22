@@ -27,6 +27,7 @@ Other quack:
 [`attach_quack()`](https://tgerke.github.io/ducklake-r/reference/attach_quack.md),
 [`detach_quack()`](https://tgerke.github.io/ducklake-r/reference/detach_quack.md),
 [`install_quack()`](https://tgerke.github.io/ducklake-r/reference/install_quack.md),
+[`quack_generate_keys()`](https://tgerke.github.io/ducklake-r/reference/quack_generate_keys.md),
 [`quack_query()`](https://tgerke.github.io/ducklake-r/reference/quack_query.md),
 [`quack_serve()`](https://tgerke.github.io/ducklake-r/reference/quack_serve.md)
 

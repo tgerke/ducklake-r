@@ -13,7 +13,9 @@ merge_adjacent_files(
   schema_name = NULL,
   max_compacted_files = NULL,
   min_file_size = NULL,
-  max_file_size = NULL
+  max_file_size = NULL,
+  newer_than = NULL,
+  older_than = NULL
 )
 ```
 
@@ -36,8 +38,9 @@ merge_adjacent_files(
 
 - max_compacted_files:
 
-  Optional cap on the number of compaction operations per table in a
-  single call.
+  Optional cap on the number of file groups considered per table in a
+  single call. A file that cannot be combined with its neighbors counts
+  too, so a small cap can merge less than it suggests.
 
 - min_file_size:
 
@@ -48,6 +51,14 @@ merge_adjacent_files(
 
   Optional maximum file size in bytes; files at or above this size are
   excluded. Defaults to the lake's target file size.
+
+- newer_than, older_than:
+
+  Optional POSIXct or UTC timestamp strings that limit the merge to
+  files whose snapshot falls at or after `newer_than` and before
+  `older_than`. A merged file counts from the first snapshot of the
+  files it was built from. Together they give a rolling window, such as
+  the past week minus the latest day.
 
 ## Value
 
@@ -62,6 +73,12 @@ referenced by older snapshots. They are scheduled for deletion once no
 snapshot references them; run
 [`cleanup_old_files()`](https://tgerke.github.io/ducklake-r/reference/cleanup_old_files.md)
 to remove them.
+
+A table whose `auto_compact` option is `FALSE` is left alone, also when
+`table_name` names it. Files that have delete files or inlined deletions
+are skipped;
+[`rewrite_data_files()`](https://tgerke.github.io/ducklake-r/reference/rewrite_data_files.md)
+handles those.
 
 ## See also
 
@@ -103,6 +120,15 @@ merge_adjacent_files()
 
 # Compact one table, only touching files under 10 MB
 merge_adjacent_files(table_name = "cars", max_file_size = 10e6)
+#> No adjacent files to merge.
+#> [1] schema_name     table_name      files_processed files_created  
+#> <0 rows> (or 0-length row.names)
+
+# Files from the past week, leaving the latest day for a later run
+merge_adjacent_files(
+  newer_than = Sys.time() - 7 * 86400,
+  older_than = Sys.time() - 86400
+)
 #> No adjacent files to merge.
 #> [1] schema_name     table_name      files_processed files_created  
 #> <0 rows> (or 0-length row.names)

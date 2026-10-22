@@ -148,12 +148,19 @@ control, <code>pg_dump</code> for backups. Needs a server (PostgreSQL 12
 or newer).</td>
 </tr>
 <tr class="even">
+<td>A team on a shared drive, no PostgreSQL</td>
+<td>DuckDB file held open by a Quack server (experimental)</td>
+<td>One DuckDB process opens the catalog and serves it; every session
+attaches through it with <code>backend = "quack"</code> and reads and
+writes the files on the share itself.</td>
+</tr>
+<tr class="odd">
 <td>Sharing without shared storage</td>
 <td>Any of the above, served with Quack</td>
 <td>Clients connect to one DuckDB process over the network; only the
 server touches the catalog and files.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>A published, read-only lake</td>
 <td>DuckDB file on an HTTPS host</td>
 <td>Readers attach the catalog straight from the URL; you update it by
@@ -164,7 +171,7 @@ replacing the file.</td>
 <p>MySQL works but is not recommended upstream because of limitations in
 the DuckDB MySQL connector, and <code><a href="../reference/attach_ducklake.html">attach_ducklake()</a></code> warns
 when you pick it.</p>
-<p>The three shapes in code:</p>
+<p>The shapes in code:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># One person: catalog and data side by side in one directory</span></span>
 <span><span class="fu"><a href="../reference/attach_ducklake.html">attach_ducklake</a></span><span class="op">(</span><span class="st">"trial"</span>, lake_path <span class="op">=</span> <span class="st">"~/lakes/trial"</span><span class="op">)</span></span>
@@ -174,6 +181,16 @@ when you pick it.</p>
 <span>  <span class="st">"trial"</span>,</span>
 <span>  backend <span class="op">=</span> <span class="st">"sqlite"</span>,</span>
 <span>  catalog_connection_string <span class="op">=</span> <span class="st">"/shared/lakes/trial/catalog.sqlite"</span>,</span>
+<span>  lake_path <span class="op">=</span> <span class="st">"/shared/lakes/trial/data"</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># The same team, with a DuckDB catalog that one process serves over Quack</span></span>
+<span><span class="co"># (experimental; vignette("quack-remote-access") shows the server side)</span></span>
+<span><span class="fu"><a href="../reference/attach_ducklake.html">attach_ducklake</a></span><span class="op">(</span></span>
+<span>  <span class="st">"trial"</span>,</span>
+<span>  backend <span class="op">=</span> <span class="st">"quack"</span>,</span>
+<span>  catalog_connection_string <span class="op">=</span> <span class="st">"quack:catalog.example.org"</span>,</span>
+<span>  quack_token <span class="op">=</span> <span class="fu">askpass</span><span class="fu">::</span><span class="fu"><a href="https://r-lib.r-universe.dev/askpass/reference/askpass.html" class="external-link">askpass</a></span><span class="op">(</span><span class="st">"Quack token"</span><span class="op">)</span>,</span>
 <span>  lake_path <span class="op">=</span> <span class="st">"/shared/lakes/trial/data"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
@@ -341,16 +358,70 @@ transactions short, and if a busy catalog produces conflict errors, give
 <div class="section level2">
 <h2 id="upgrading">Upgrading<a class="anchor" aria-label="anchor" href="#upgrading"></a>
 </h2>
-<p>Two things change under a lake over time. Upgrading the duckdb R
-package brings a new DuckDB engine, and the DuckLake extension is
-downloaded again for it on first use. And a lake created with an older
-extension may carry an older catalog format: DuckDB 1.5.1 wrote DuckLake
-0.4, while 1.5.2 and later write 1.0. Attaching such a lake stops with a
-version mismatch until it is migrated, which is a one-time, permanent
-change, so take a backup first:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<p>Two things change under a lake over time, and they are separate
+steps: the duckdb R package, and the DuckLake catalog format.</p>
+<div class="section level3">
+<h3 id="the-duckdb-package">The duckdb package<a class="anchor" aria-label="anchor" href="#the-duckdb-package"></a>
+</h3>
+<p>Upgrading the duckdb R package to 2.0 brings a new DuckDB engine, and
+the DuckLake extension is downloaded again for it on first use. Lakes
+made with duckdb 1.5 open as they are. The exception is a lake whose
+catalog is a DuckDB file. That catalog is a DuckDB database, so it
+follows the engine’s storage format, and the first write from duckdb 2.0
+rewrites the file in a format duckdb 1.5 cannot open. A 1.5 session then
+fails to attach with:</p>
+<pre><code>cannot initialize database with storage version 7 - which is lower than
+what the database itself uses (69)</code></pre>
+<p>No attach option prevents it, and the catalog’s own format version
+makes no difference: a lake created on 2.0 with
+<code>ducklake_version = "1.0"</code> is just as unreadable. SQLite and
+PostgreSQL catalogs are not affected. So for a DuckDB-file lake that
+more than one machine opens, take a backup and move every client to 2.0
+together:</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/backup_ducklake.html">backup_ducklake</a></span><span class="op">(</span><span class="st">"trial"</span>, lake_path <span class="op">=</span> <span class="st">"~/lakes/trial"</span>, backup_path <span class="op">=</span> <span class="st">"~/lakes/backups"</span><span class="op">)</span></span></code></pre></div>
+<p>A team that cannot upgrade together belongs on a SQLite or PostgreSQL
+catalog, where a 1.0 lake stays open to both releases.</p>
+</div>
+<div class="section level3">
+<h3 id="the-catalog-format">The catalog format<a class="anchor" aria-label="anchor" href="#the-catalog-format"></a>
+</h3>
+<p>DuckLake has a format version of its own, kept in the catalog. duckdb
+1.5 wrote 1.0; duckdb 2.0 creates new lakes as 1.1 and opens a 1.0 lake
+as it is, reading and writing it without changing it.
+<code><a href="../reference/get_ducklake_info.html">get_ducklake_info()</a></code> says which one a lake is in:</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/get_ducklake_info.html">get_ducklake_info</a></span><span class="op">(</span><span class="st">"trial"</span><span class="op">)</span><span class="op">$</span><span class="va">format_version</span></span></code></pre></div>
+<p>Moving a lake to 1.1 is an opt-in step, and the newer DuckLake
+features (nested schemas, comments on view columns, and the
+<code>"NULL"</code> column type among them) need it. The migration is
+permanent, since DuckLake refuses to downgrade a catalog, and after it
+no duckdb 1.5 client can open the lake, on any backend. That sets the
+order: move every client to duckdb 2.0 first, back the lake up, then
+attach once with <code>automatic_migration = TRUE</code> from a session
+that may alter the catalog’s tables (on PostgreSQL, the owner of the
+metadata tables). The format version reads <code>"1.0"</code> before and
+<code>"1.1"</code> after, and later attaches need no option:</p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/backup_ducklake.html">backup_ducklake</a></span><span class="op">(</span><span class="st">"trial"</span>, lake_path <span class="op">=</span> <span class="st">"~/lakes/trial"</span>, backup_path <span class="op">=</span> <span class="st">"~/lakes/backups"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/attach_ducklake.html">attach_ducklake</a></span><span class="op">(</span><span class="st">"trial"</span>, lake_path <span class="op">=</span> <span class="st">"~/lakes/trial"</span>, automatic_migration <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="../reference/detach_ducklake.html">detach_ducklake</a></span><span class="op">(</span><span class="st">"trial"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/attach_ducklake.html">attach_ducklake</a></span><span class="op">(</span><span class="st">"trial"</span>, lake_path <span class="op">=</span> <span class="st">"~/lakes/trial"</span>, automatic_migration <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/get_ducklake_info.html">get_ducklake_info</a></span><span class="op">(</span><span class="st">"trial"</span><span class="op">)</span><span class="op">$</span><span class="va">format_version</span></span></code></pre></div>
+<p><code><a href="../reference/backup_ducklake.html">backup_ducklake()</a></code> copies a DuckDB or SQLite catalog;
+back a PostgreSQL catalog up with <code>pg_dump</code> first. A lake
+from before 1.0 (DuckDB 1.5.1 wrote 0.4) cannot be opened at all, not
+even read-only, until it is migrated the same way.</p>
+<p>A team that still has duckdb 1.5 clients on a SQLite or PostgreSQL
+catalog can keep creating lakes they all share, as 1.0 catalogs:</p>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/attach_ducklake.html">attach_ducklake</a></span><span class="op">(</span></span>
+<span>  <span class="st">"trial"</span>,</span>
+<span>  backend <span class="op">=</span> <span class="st">"sqlite"</span>,</span>
+<span>  catalog_connection_string <span class="op">=</span> <span class="st">"/shared/lakes/trial/catalog.sqlite"</span>,</span>
+<span>  lake_path <span class="op">=</span> <span class="st">"/shared/lakes/trial/data"</span>,</span>
+<span>  ducklake_version <span class="op">=</span> <span class="st">"1.0"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+</div>
 </div>
 <div class="section level2">
 <h2 id="where-to-next">Where to next<a class="anchor" aria-label="anchor" href="#where-to-next"></a>

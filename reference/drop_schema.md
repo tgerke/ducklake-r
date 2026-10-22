@@ -1,9 +1,9 @@
 # Drop a schema from a DuckLake
 
 Removes a schema with `DROP SCHEMA`. By default the schema must be
-empty; `cascade = TRUE` drops its tables and views with it. Like every
-change, the drop is a snapshot, so the tables stay reachable through
-time travel.
+empty; `cascade = TRUE` drops its tables and views, and the schemas
+nested inside it, with it. Like every change, the drop is a snapshot, so
+the tables stay reachable through time travel.
 
 ## Usage
 
@@ -15,11 +15,12 @@ drop_schema(schema_name, cascade = FALSE, ducklake_name = NULL)
 
 - schema_name:
 
-  Name of the schema.
+  Name of the schema, or the dotted path of a nested one.
 
 - cascade:
 
-  Also drop the tables and views in the schema (default `FALSE`).
+  Also drop the tables, views, and nested schemas in the schema (default
+  `FALSE`).
 
 - ducklake_name:
 

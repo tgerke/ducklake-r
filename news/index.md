@@ -14,6 +14,21 @@
   every client of such a lake moves to 2.0 together. SQLite and
   PostgreSQL catalogs are not affected.
 
+- [`attach_ducklake()`](https://tgerke.github.io/ducklake-r/reference/attach_ducklake.md)
+  gains `ducklake_version`, DuckLake’s `DUCKLAKE_VERSION` option:
+  `"1.0"` or `"1.1"`. New lakes are 1.1 catalogs; `"1.0"` creates one
+  that duckdb 1.5 clients can still open, for a team on a SQLite or
+  PostgreSQL catalog that is not upgrading together.
+  `automatic_migration` now moves a 1.0 catalog to 1.1, a permanent step
+  that shuts out every 1.5 client, and its documentation says so, with
+  the backup first; the `metadata_schema` documentation gives the
+  backend’s default schema in place of `main`.
+  `get_ducklake_info()$format_version` tells a 1.0 lake from a 1.1 one,
+  and the Upgrading section of
+  [`vignette("deployment")`](https://tgerke.github.io/ducklake-r/articles/deployment.md)
+  has both sequences: the duckdb upgrade, with the DuckDB-file caution
+  above, and the format migration.
+
 - A time-travel timestamp in the future is refused before the query
   runs. DuckLake 1.1 rejects it, and through dbplyr the refusal surfaced
   as “Can’t query fields” when the lazy table was first used.
@@ -42,6 +57,142 @@
   report the number of files written from the `files_created` column.
   Under DuckLake 1.1 each result row is one compaction operation, which
   can write several files or none, so the row count no longer matches.
+
+- [`create_table()`](https://tgerke.github.io/ducklake-r/reference/create_table.md)
+  gains `partition_by`, `sort_by`, and `options`, which take what
+  [`set_table_partitioning()`](https://tgerke.github.io/ducklake-r/reference/set_table_partitioning.md),
+  [`set_table_sorting()`](https://tgerke.github.io/ducklake-r/reference/set_table_sorting.md),
+  and
+  [`set_ducklake_option()`](https://tgerke.github.io/ducklake-r/reference/set_ducklake_option.md)
+  take. The table is created empty from the source’s columns, the keys
+  and options go on, and the rows follow, in one transaction, so the
+  first load is already partitioned, sorted, and governed by the
+  options: `options = list(data_inlining_row_limit = 0)` sends even
+  three rows to a Parquet file. Setting keys on an existing table still
+  affects only the writes that follow.
+
+- Table-scoped options are set with `ALTER TABLE ... SET`, which
+  DuckLake accepts on a table created in the open transaction where its
+  `set_option()` is refused. So `set_ducklake_option(table_name = )`
+  works inside the transaction that creates the table, and
+  [`replace_table()`](https://tgerke.github.io/ducklake-r/reference/replace_table.md)
+  and
+  [`restore_table_version()`](https://tgerke.github.io/ducklake-r/reference/restore_table_version.md)
+  carry a table’s options over inside the rewrite transaction: a rewrite
+  is one snapshot again, the follow-up snapshot that re-set the options
+  is gone, and so is the warning a rewrite inside your own transaction
+  used to raise. New
+  [`reset_ducklake_option()`](https://tgerke.github.io/ducklake-r/reference/reset_ducklake_option.md)
+  removes a table’s override with `ALTER TABLE ... RESET`, the one scope
+  DuckLake can reset.
+
+- [`restore_table_version()`](https://tgerke.github.io/ducklake-r/reference/restore_table_version.md)
+  joins an open transaction instead of refusing it, so a restore and
+  further changes can commit as one snapshot. `author` and
+  `commit_message` then belong to that commit and are refused on the
+  restore itself.
+
+- Nested schemas (DuckLake 1.1). Every dot in a table or schema name is
+  a path separator inside one lake: `"sales.europe.orders"` is the table
+  `orders` in the schema `europe` inside `sales`, and `schema_name`
+  arguments take the same dotted paths. `create_schema("sales.europe")`
+  creates `sales` first when it is missing,
+  [`drop_schema()`](https://tgerke.github.io/ducklake-r/reference/drop_schema.md)
+  takes a path (`cascade = TRUE` drops the schemas and tables inside),
+  and every listing, lookup, and metadata function reports and filters
+  on the full path, so same-named tables in `main`, `sales`, and
+  `sales.europe` stay apart in
+  [`list_ducklake_tables()`](https://tgerke.github.io/ducklake-r/reference/list_ducklake_tables.md),
+  [`get_table_comments()`](https://tgerke.github.io/ducklake-r/reference/get_table_comments.md),
+  [`get_table_partitions()`](https://tgerke.github.io/ducklake-r/reference/get_table_partitions.md),
+  [`get_table_sorting()`](https://tgerke.github.io/ducklake-r/reference/get_table_sorting.md),
+  [`get_table_info()`](https://tgerke.github.io/ducklake-r/reference/get_table_info.md),
+  [`list_table_snapshots()`](https://tgerke.github.io/ducklake-r/reference/list_table_snapshots.md),
+  the change feed, options, and checks. A first component that names an
+  attached lake is read as the lake and stripped, so
+  `"lake.sales.orders"` still works; a schema whose own name contains a
+  dot is no longer reachable. Table references are now sent to DuckDB
+  fully qualified with the lake, so a schema that shares a name with an
+  attached database cannot shadow it. One limit comes from DuckDB rather
+  than DuckLake: `COMMENT ON` takes at most three qualifiers, so
+  comments and labels reach a table one schema level deep
+  (`sales.europe.orders`) and no deeper;
+  [`create_table()`](https://tgerke.github.io/ducklake-r/reference/create_table.md)
+  warns and drops the labels of a deeper table, and the comment setters
+  refuse it with a message. A 1.0 catalog has no nested schemas;
+  [`create_schema()`](https://tgerke.github.io/ducklake-r/reference/create_schema.md)
+  says so and points at `automatic_migration`.
+
+- New
+  [`set_column_default()`](https://tgerke.github.io/ducklake-r/reference/set_column_default.md)
+  sets or drops what later inserts put in a column, including an
+  expression DuckDB evaluates at insert time, such as
+  `DBI::SQL("now()")`, on a committed column.
+  [`add_table_column()`](https://tgerke.github.io/ducklake-r/reference/add_table_column.md)
+  writes its `default` as a typed literal now (`TRUE`, `DATE '...'`,
+  `TIMESTAMP '...'`) rather than a quoted string, which DuckLake 1.1
+  accepts; the value still fills existing rows.
+
+- [`set_table_partitioning()`](https://tgerke.github.io/ducklake-r/reference/set_table_partitioning.md)
+  and `create_table(partition_by = )` accept the epoch transforms
+  `epoch_year()`, `epoch_month()`, `epoch_day()`, and `epoch_hour()`,
+  whole units since 1970 that keep January 2020 and January 2021 in
+  different partitions where `month()` does not, and that match what
+  Iceberg writes. They need a lake on catalog format 1.1.
+
+- [`merge_adjacent_files()`](https://tgerke.github.io/ducklake-r/reference/merge_adjacent_files.md)
+  gains `newer_than` and `older_than`, a window over the files’ snapshot
+  times, and
+  [`rewrite_data_files()`](https://tgerke.github.io/ducklake-r/reference/rewrite_data_files.md)
+  gains `max_compacted_files`, a cap on rewrites per table per call.
+
+- [`create_view()`](https://tgerke.github.io/ducklake-r/reference/create_view.md)
+  carries a view’s column comments across a replace, as it already did
+  the view’s own comment. DuckLake 1.1 stores comments on view columns
+  and drops them with the replaced entry.
+
+- Documentation for DuckLake 1.1: `auto_compact = FALSE` now keeps a
+  table out of every maintenance call, named or not; the table-only
+  `skip_stats_columns` option;
+  [`set_column_type()`](https://tgerke.github.io/ducklake-r/reference/set_column_type.md)’s
+  wider promotions and the `"NULL"` type an all-`NA` query column gets;
+  the broader Parquet types
+  [`add_data_files()`](https://tgerke.github.io/ducklake-r/reference/add_data_files.md)
+  imports; and the unencrypted Puffin deletion vectors on an encrypted
+  lake.
+
+- [`attach_ducklake()`](https://tgerke.github.io/ducklake-r/reference/attach_ducklake.md)
+  gains `backend = "quack"` (experimental, as DuckLake marks it): a
+  DuckDB-file catalog that one process holds open and serves with Quack,
+  so any number of sessions attach the lake through it, each reading and
+  writing the Parquet files on shared storage itself. The server’s
+  address is the `catalog_connection_string` and `quack_token` carries
+  its token (DuckLake’s `META_TOKEN`). Every package function works
+  unchanged through the served catalog;
+  [`backup_ducklake()`](https://tgerke.github.io/ducklake-r/reference/backup_ducklake.md)
+  copies the data files only.
+  [`vignette("quack-remote-access")`](https://tgerke.github.io/ducklake-r/articles/quack-remote-access.md)
+  has the server script and the comparison with a PostgreSQL or SQLite
+  catalog. One change underneath: the package’s queries on the metadata
+  tables write their values as SQL literals instead of bound parameters,
+  because a statement that touches a catalog served over Quack cannot
+  bind them.
+
+- Quack is stable in DuckDB 2.0, and the wrappers follow it.
+  [`quack_serve()`](https://tgerke.github.io/ducklake-r/reference/quack_serve.md)
+  gains `secret`, `create_secret_if_not_exists`, `ssl_cert_file`, and
+  `ssl_key_file`, and returns the server’s listen URI, URL, and token
+  invisibly: DuckDB generates a token when none is given, so a server is
+  never open and the old warning about one is gone.
+  [`attach_quack()`](https://tgerke.github.io/ducklake-r/reference/attach_quack.md)
+  and
+  [`quack_query()`](https://tgerke.github.io/ducklake-r/reference/quack_query.md)
+  gain `ssl_fingerprint`, `client_id`, and `heartbeat_timeout`. New
+  [`quack_generate_keys()`](https://tgerke.github.io/ducklake-r/reference/quack_generate_keys.md)
+  writes a self-signed certificate and key for HTTPS and reports the
+  fingerprint clients pin. DuckDB 2.0’s `CONNECT` statement is not
+  wrapped: on the duckdb R client it leaves the connection unable to
+  prepare any further statement.
 
 ## ducklake 0.9.0
 

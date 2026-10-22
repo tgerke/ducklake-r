@@ -5,7 +5,14 @@ Create a DuckLake table
 ## Usage
 
 ``` r
-create_table(data_source, table_name, labels = TRUE)
+create_table(
+  data_source,
+  table_name,
+  labels = TRUE,
+  partition_by = NULL,
+  sort_by = NULL,
+  options = NULL
+)
 ```
 
 ## Arguments
@@ -45,10 +52,53 @@ create_table(data_source, table_name, labels = TRUE)
   and every other client of the lake can read them too. Set to `FALSE`
   to skip.
 
+- partition_by:
+
+  Optional character vector of partition expressions, as for
+  [`set_table_partitioning()`](https://tgerke.github.io/ducklake-r/reference/set_table_partitioning.md):
+  column names, `year(col)` and the other calendar transforms, or
+  `bucket(n, col)`. The keys go on before the rows, so the first load is
+  already partitioned, where
+  [`set_table_partitioning()`](https://tgerke.github.io/ducklake-r/reference/set_table_partitioning.md)
+  on an existing table affects only later writes.
+
+- sort_by:
+
+  Optional character vector of sort expressions, as for
+  [`set_table_sorting()`](https://tgerke.github.io/ducklake-r/reference/set_table_sorting.md):
+  a column name, optionally followed by `ASC` or `DESC` and
+  `NULLS FIRST` or `NULLS LAST`. The first load is written in this
+  order.
+
+- options:
+
+  Optional named list of table-scoped options, as for
+  [`set_ducklake_option()`](https://tgerke.github.io/ducklake-r/reference/set_ducklake_option.md),
+  for example
+  `list(parquet_compression = "zstd", data_inlining_row_limit = 0)`.
+  They are set before the rows are written and so govern the first load
+  too: an inlining limit of `0` here sends even a handful of rows to a
+  Parquet file instead of the catalog.
+
 ## Value
 
 Invisibly, `NULL`. Called for its side effect of creating the table in
 the lake.
+
+## Details
+
+With any of `partition_by`, `sort_by`, or `options`, the table is
+created empty from the source's columns, the keys and options go on, and
+the rows are inserted, in one transaction (yours when one is open), so
+the result is one snapshot with the layout in force from the first row.
+Without them, a single `CREATE TABLE ... AS` does the work.
+
+A column that is `NA` in every row of a query (`mutate(flag = NA)`) has
+no type for DuckDB to infer, and the table stores it with the `"NULL"`
+type, which holds nothing but `NULL` until
+[`set_column_type()`](https://tgerke.github.io/ducklake-r/reference/set_column_type.md)
+promotes it. Give the placeholder a type in the query (`NA_character_`,
+`NA_real_`) when the first values are known.
 
 ## See also
 
@@ -85,6 +135,16 @@ create_table(csv_path, "cars_from_csv")
 get_ducklake_table("cars") |>
   dplyr::filter(cyl > 4) |>
   create_table("big_cars")
+
+# Partitioned, sorted, and compressed from the first load
+create_table(
+  mtcars, "cars_by_cyl",
+  partition_by = "cyl", sort_by = "mpg DESC",
+  options = list(parquet_compression = "zstd")
+)
+get_table_partitions("cars_by_cyl")
+#>   schema_name  table_name partition_key_index column_name transform
+#> 1        main cars_by_cyl                   0         cyl  identity
 
 # From a URL -- needs network access and the httpfs extension
 if (FALSE) { # \dontrun{

@@ -65,23 +65,20 @@ temporary DuckDB table, then drops and recreates `t` from it inside a
 transaction. Because the restore creates a new snapshot, it is itself
 reversible with another `restore_table_version()` call.
 
-The restore commits for itself, with its own author and message, so it
-cannot join a transaction that is already open and says so before it
-touches anything. To restore to a version and change it in one snapshot,
-pipe
-[`get_ducklake_table_version()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_table_version.md)
-into
-[`replace_table()`](https://tgerke.github.io/ducklake-r/reference/replace_table.md)
-inside
-[`with_transaction()`](https://tgerke.github.io/ducklake-r/reference/with_transaction.md).
+When no transaction is open, the restore commits for itself, with its
+own author and message. Inside a transaction you opened it joins that
+transaction instead, so a restore and further changes can commit as one
+snapshot; `author` and `commit_message` then belong to your commit
+([`commit_transaction()`](https://tgerke.github.io/ducklake-r/reference/commit_transaction.md)
+or
+[`with_transaction()`](https://tgerke.github.io/ducklake-r/reference/with_transaction.md))
+and are refused here.
 
 The restored table gets a new table id, and DuckLake keeps comments,
 partition keys, sort order, and table-scoped options against the id, so
-they are captured beforehand and put back: comments and keys for the
-columns the restored version still has, inside the restore transaction;
-table-scoped options right after it commits, as a small follow-up
-snapshot, since DuckLake cannot set options on a table created in the
-open transaction.
+they are captured beforehand and put back inside the restore
+transaction: comments and keys for the columns the restored version
+still has, and the table-scoped options as they were.
 
 ## See also
 

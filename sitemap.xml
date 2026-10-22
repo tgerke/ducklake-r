@@ -76,6 +76,7 @@
 <url><loc>https://tgerke.github.io/ducklake-r/reference/plot_table_changes.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/plot_table_files.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/prep_rows_y.html</loc></url>
+<url><loc>https://tgerke.github.io/ducklake-r/reference/quack_generate_keys.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/quack_query.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/quack_serve.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/quack_stop.html</loc></url>
@@ -83,6 +84,7 @@
 <url><loc>https://tgerke.github.io/ducklake-r/reference/rename_ducklake_table.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/rename_table_column.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/replace_table.html</loc></url>
+<url><loc>https://tgerke.github.io/ducklake-r/reference/reset_ducklake_option.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/reset_table_partitioning.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/reset_table_sorting.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/restore_table_version.html</loc></url>
@@ -94,6 +96,7 @@
 <url><loc>https://tgerke.github.io/ducklake-r/reference/rows_upsert.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/run_checks.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/set_column_comments.html</loc></url>
+<url><loc>https://tgerke.github.io/ducklake-r/reference/set_column_default.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/set_column_not_null.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/set_column_type.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/set_ducklake_connection.html</loc></url>

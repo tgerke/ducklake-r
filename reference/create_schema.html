@@ -73,7 +73,8 @@ path-based access control on object storage keys on.</p>
 
 
 <dl><dt id="arg-schema-name">schema_name<a class="anchor" aria-label="anchor" href="#arg-schema-name"></a></dt>
-<dd><p>Name of the schema.</p></dd>
+<dd><p>Name of the schema, or a dotted path for a nested
+one.</p></dd>
 
 
 <dt id="arg-if-not-exists">if_not_exists<a class="anchor" aria-label="anchor" href="#arg-if-not-exists"></a></dt>
@@ -89,6 +90,20 @@ nothing (default <code>TRUE</code>) rather than error.</p></dd>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>Invisibly, <code>NULL</code>.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>Schemas nest (DuckLake 1.1): <code>"sales.europe"</code> is the schema <code>europe</code>
+inside <code>sales</code>, and its tables are named <code>"sales.europe.orders"</code>. Every
+dot in a name is a level, so the parents are created first when they
+are missing, and a table, schema, or <code>schema_name</code> argument anywhere in
+the package takes the same dotted path. A first component that names an
+attached lake is read as the lake (<code>"lake.sales.orders"</code>). One limit is
+DuckDB's rather than DuckLake's: <code>COMMENT ON</code> takes at most three
+qualifiers, so comments and variable labels reach a table one level deep
+and no deeper; <code><a href="create_table.html">create_table()</a></code> warns and drops the labels of a deeper
+table. A lake on catalog format 1.0 has no nested schemas; see
+<code>attach_ducklake(automatic_migration = )</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

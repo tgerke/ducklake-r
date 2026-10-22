@@ -19,7 +19,9 @@ build_attach_sql(
   snapshot_time = NULL,
   automatic_migration = FALSE,
   create = TRUE,
-  metadata_schema = NULL
+  metadata_schema = NULL,
+  ducklake_version = NULL,
+  quack_token = NULL
 )
 ```
 
@@ -81,6 +83,15 @@ build_attach_sql(
 - metadata_schema:
 
   Optional schema for METADATA_SCHEMA
+
+- ducklake_version:
+
+  Optional catalog format version for DUCKLAKE_VERSION, `"1.0"` or
+  `"1.1"`
+
+- quack_token:
+
+  Optional token for META_TOKEN (`"quack"` backend)
 
 ## Value
 

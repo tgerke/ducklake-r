@@ -51,7 +51,7 @@ get_ducklake_table("cars") |>
   select(mpg, cyl, hp, wt) |>
   head()
 #> # A query:  ?? x 4
-#> # Database: DuckDB 2.0.0 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpeWDJvI/ducklake/ducklake4ab925a8d455.duckdb]
+#> # Database: DuckDB 2.0.0 [unknown@Linux 7.0.0-1017-azure:R 4.6.1//tmp/RtmpOBAYaI/ducklake/ducklake3befcc50e59.duckdb]
 #>     mpg   cyl    hp    wt
 #>   <dbl> <dbl> <dbl> <dbl>
 #> 1  21       6   110  2.62
@@ -104,7 +104,7 @@ get_ducklake_table("cars") |>
   select(mpg, cyl) |>
   head()
 #> # A query:  ?? x 2
-#> # Database: DuckDB 2.0.0 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpeWDJvI/ducklake/ducklake4ab925a8d455.duckdb]
+#> # Database: DuckDB 2.0.0 [unknown@Linux 7.0.0-1017-azure:R 4.6.1//tmp/RtmpOBAYaI/ducklake/ducklake3befcc50e59.duckdb]
 #>     mpg   cyl
 #>   <dbl> <dbl>
 #> 1  21       6
@@ -153,7 +153,7 @@ get_ducklake_table("cars") |>
   select(mpg, cyl, efficiency) |>
   head()
 #> # A query:  ?? x 3
-#> # Database: DuckDB 2.0.0 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpeWDJvI/ducklake/ducklake4ab925a8d455.duckdb]
+#> # Database: DuckDB 2.0.0 [unknown@Linux 7.0.0-1017-azure:R 4.6.1//tmp/RtmpOBAYaI/ducklake/ducklake3befcc50e59.duckdb]
 #>     mpg   cyl efficiency
 #>   <dbl> <dbl> <chr>     
 #> 1  21       6 medium    
@@ -168,9 +168,9 @@ get_ducklake_table("cars_summary") |>
 #> # A tibble: 3 × 4
 #>     cyl avg_mpg avg_hp count
 #>   <dbl>   <dbl>  <dbl> <dbl>
-#> 1     4    28.0   82.6    11
-#> 2     6    19.7  122.      7
-#> 3     8    15.1  209.     14
+#> 1     6    19.7  122.      7
+#> 2     8    15.1  209.     14
+#> 3     4    28.0   82.6    11
 ```
 
 ### Automatic Rollback on Error
@@ -209,9 +209,9 @@ get_ducklake_table("cars") |>
 # View all versioned changes
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-10-22 16:15:16              1
-#> 2           2 2026-10-22 16:15:16              1
-#> 3           3 2026-10-22 16:15:17              2
+#> 1           1 2026-10-22 16:39:41              1
+#> 2           2 2026-10-22 16:39:42              1
+#> 3           3 2026-10-22 16:39:42              2
 #>                                                                                                       changes
 #> 1                                                          tables_created, tables_inserted_into, main.cars, 1
 #> 2                                                             tables_inserted_into, tables_deleted_from, 1, 1
@@ -266,7 +266,7 @@ get_ducklake_table("cars") |>
   select(wt, weight_kg) |>
   head()
 #> # A query:  ?? x 2
-#> # Database: DuckDB 2.0.0 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpeWDJvI/ducklake/ducklake4ab925a8d455.duckdb]
+#> # Database: DuckDB 2.0.0 [unknown@Linux 7.0.0-1017-azure:R 4.6.1//tmp/RtmpOBAYaI/ducklake/ducklake3befcc50e59.duckdb]
 #>      wt weight_kg
 #>   <dbl>     <dbl>
 #> 1  2.32     1052.
@@ -320,10 +320,10 @@ rollback_transaction()
 # View all versioned changes
 list_table_snapshots("cars")
 #>   snapshot_id       snapshot_time schema_version
-#> 1           1 2026-10-22 16:15:16              1
-#> 2           2 2026-10-22 16:15:16              1
-#> 3           3 2026-10-22 16:15:17              2
-#> 4           4 2026-10-22 16:15:17              3
+#> 1           1 2026-10-22 16:39:41              1
+#> 2           2 2026-10-22 16:39:42              1
+#> 3           3 2026-10-22 16:39:42              2
+#> 4           4 2026-10-22 16:39:43              3
 #>                                                                                                       changes
 #> 1                                                          tables_created, tables_inserted_into, main.cars, 1
 #> 2                                                             tables_inserted_into, tables_deleted_from, 1, 1
@@ -346,9 +346,8 @@ and/or `commit_extra_info` to
 [`commit_transaction()`](https://tgerke.github.io/ducklake-r/reference/commit_transaction.md)
 or
 [`with_transaction()`](https://tgerke.github.io/ducklake-r/reference/with_transaction.md).
-This uses the DuckLake v1.0 `set_commit_message()` API to record
-metadata as part of the transaction itself, before the commit is
-finalized.
+This uses DuckLake’s `set_commit_message()` to record metadata as part
+of the transaction itself, before the commit is finalized.
 
 ``` r
 
@@ -374,7 +373,7 @@ get_ducklake_table("cars") |>
   select(hp, cyl, hp_per_liter) |>
   head()
 #> # A query:  ?? x 3
-#> # Database: DuckDB 2.0.0 [unknown@Linux 6.17.0-1022-azure:R 4.6.1//tmp/RtmpeWDJvI/ducklake/ducklake4ab925a8d455.duckdb]
+#> # Database: DuckDB 2.0.0 [unknown@Linux 7.0.0-1017-azure:R 4.6.1//tmp/RtmpOBAYaI/ducklake/ducklake3befcc50e59.duckdb]
 #>      hp   cyl hp_per_liter
 #>   <dbl> <dbl>        <dbl>
 #> 1   110     6         36.7
@@ -461,11 +460,11 @@ list_table_snapshots("cars") |>
   select(snapshot_id, snapshot_time, author, commit_message) |>
   tail(5)
 #>   snapshot_id       snapshot_time           author
-#> 2           2 2026-10-22 16:15:16        Data Team
-#> 3           3 2026-10-22 16:15:17        Data Team
-#> 4           4 2026-10-22 16:15:17        Data Team
-#> 5           5 2026-10-22 16:15:17 Performance Team
-#> 6           6 2026-10-22 16:15:18 Performance Team
+#> 2           2 2026-10-22 16:39:42        Data Team
+#> 3           3 2026-10-22 16:39:42        Data Team
+#> 4           4 2026-10-22 16:39:43        Data Team
+#> 5           5 2026-10-22 16:39:44 Performance Team
+#> 6           6 2026-10-22 16:39:44 Performance Team
 #>                                   commit_message
 #> 2 Apply the revised 4-cylinder efficiency factor
 #> 3       Add efficiency ratings and summary table
@@ -534,7 +533,7 @@ set_ducklake_retry(max_retries = 20, wait_ms = 250, backoff = 2)
   Start a manual transaction
 - **`commit_transaction(author, commit_message, commit_extra_info)`**:
   Apply changes from a manual transaction, with optional metadata set at
-  commit time via the DuckLake v1.0 API
+  commit time through DuckLake’s `set_commit_message()`
 - **[`rollback_transaction()`](https://tgerke.github.io/ducklake-r/reference/rollback_transaction.md)**:
   Discard changes from a manual transaction
 - **[`set_snapshot_metadata()`](https://tgerke.github.io/ducklake-r/reference/set_snapshot_metadata.md)**:

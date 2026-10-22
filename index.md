@@ -57,7 +57,11 @@ ducklake requires the [duckdb](https://r.duckdb.org) R package version
 Lakes made with earlier versions open as they are. One caution for a
 team that shares a lake whose catalog is a DuckDB file: the first write
 from duckdb 2.0 puts that file in a storage format duckdb 1.5 cannot
-open, so upgrade every client of such a lake together.
+open, so upgrade every client of such a lake together. The Upgrading
+section of [Choosing a
+Deployment](https://tgerke.github.io/ducklake-r/articles/deployment.html)
+covers that, and the separate, opt-in migration of a lake’s catalog
+format.
 
 DuckLake itself ships as a DuckDB extension.
 [`attach_ducklake()`](https://tgerke.github.io/ducklake-r/reference/attach_ducklake.md)
@@ -411,8 +415,10 @@ detailed vignettes:
   snapshots as it needs without frequent compaction
 - **Multi-backend catalogs**: Use DuckDB (default), PostgreSQL, SQLite,
   or MySQL as the catalog database. A PostgreSQL or SQLite catalog lets
-  several clients use the lake at once ([DuckLake 1.0
-  spec](https://ducklake.select/docs/stable/specification/introduction))
+  several clients use the lake at once ([DuckLake
+  specification](https://ducklake.select/docs/stable/specification/introduction)),
+  and a DuckDB catalog served over Quack does too (`backend = "quack"`,
+  experimental)
 - **Remote access over Quack**: Serve a DuckLake to other R sessions
   over the network and let several people read and write it at once,
   using DuckDB’s Quack protocol
@@ -441,8 +447,10 @@ detailed vignettes:
   datasets. Partitioning
   ([`set_table_partitioning()`](https://tgerke.github.io/ducklake-r/reference/set_table_partitioning.md))
   and sorted tables
-  ([`set_table_sorting()`](https://tgerke.github.io/ducklake-r/reference/set_table_sorting.md))
-  prune files on large tables
+  ([`set_table_sorting()`](https://tgerke.github.io/ducklake-r/reference/set_table_sorting.md)),
+  which
+  [`create_table()`](https://tgerke.github.io/ducklake-r/reference/create_table.md)
+  can also set before a table’s first load, prune files on large tables
 - **Migrate Parquet in place**:
   [`add_data_files()`](https://tgerke.github.io/ducklake-r/reference/add_data_files.md)
   registers existing Parquet files with the lake without copying or
@@ -453,7 +461,10 @@ detailed vignettes:
 - **Tunable**:
   [`set_ducklake_option()`](https://tgerke.github.io/ducklake-r/reference/set_ducklake_option.md)
   adjusts DuckLake’s persisted settings (compression, file sizes,
-  commit-message policy) at lake, schema, or table scope
+  commit-message policy) at lake, schema, or table scope,
+  [`reset_ducklake_option()`](https://tgerke.github.io/ducklake-r/reference/reset_ducklake_option.md)
+  removes a table’s override, and `create_table(options = )` sets them
+  before the first load
 - **Maintenance and backups**: One call to
   [`checkpoint_ducklake()`](https://tgerke.github.io/ducklake-r/reference/checkpoint_ducklake.md)
   flushes inlined data, merges small files, rewrites heavily deleted
@@ -467,6 +478,7 @@ detailed vignettes:
   [`drop_table_column()`](https://tgerke.github.io/ducklake-r/reference/drop_table_column.md),
   [`rename_table_column()`](https://tgerke.github.io/ducklake-r/reference/rename_table_column.md),
   [`set_column_type()`](https://tgerke.github.io/ducklake-r/reference/set_column_type.md),
+  [`set_column_default()`](https://tgerke.github.io/ducklake-r/reference/set_column_default.md),
   and
   [`rename_ducklake_table()`](https://tgerke.github.io/ducklake-r/reference/rename_ducklake_table.md)
   change a table’s shape as metadata-only operations. No data is
@@ -501,8 +513,8 @@ detailed vignettes:
 - **Schemas**:
   [`create_schema()`](https://tgerke.github.io/ducklake-r/reference/create_schema.md)
   organizes a lake into medallion layers (bronze, silver, gold),
-  studies, or any other grouping, and every function accepts
-  `"schema.table"`
+  studies, or any other grouping; schemas nest
+  (`"sales.europe.orders"`), and every function accepts a dotted path
 - **Tidyverse interface**: Familiar dplyr syntax for data manipulation
 - **In-database writes**:
   [`create_table()`](https://tgerke.github.io/ducklake-r/reference/create_table.md)
