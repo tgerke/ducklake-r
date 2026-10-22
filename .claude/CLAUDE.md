@@ -23,13 +23,21 @@
   update/delete action per MERGE statement (`merge_into()` falls back to
   MERGE + DELETE in one transaction), no MERGE RETURNING, `ALTER COLUMN
   SET TYPE` allows widening promotions only, and `ADD COLUMN ... DEFAULT`
-  backfills existing rows.
+  backfills existing rows. Rechecked on DuckDB 2.0.0 with DuckLake 1.1
+  (2026-10-21): still one action per MERGE, and `RETURNING` is refused on
+  a lake table for `INSERT`, `UPDATE`, and `DELETE` as well (so
+  data-modifying CTEs that return rows do not work there); triggers and
+  `CHECK` constraints are refused on lake tables; the widening set grew
+  (integers to `HUGEINT`/`FLOAT`/`DOUBLE`, `TIMESTAMP` to `TIMESTAMPTZ`,
+  `"NULL"` to any scalar type).
 - ATTACH behavior confirmed empirically (2026-08-27): `META_`-prefixed
   ATTACH options are forwarded to the catalog database, so
   `META_ENCRYPTION_KEY` encrypts a duckdb-format catalog
   (`meta_encryption_key` in `attach_ducklake()`). ATTACH cannot take bound
   parameters -- DuckLake re-serializes forwarded options into an internal
   second ATTACH -- so option values interpolate via `quote_sql()`.
+  `META_TOKEN` authenticates a catalog served over Quack the same way
+  (2026-10-22).
 
 ## Decisions from the September 2026 review
 
@@ -151,7 +159,8 @@
   `rows_*()` cannot write to.
 - **Windows (`windows_amd64_mingw`, what duckdb-r uses)**: `sqlite_scanner`,
   `httpfs`, `quack`, and `ducklake` exist; `postgres`, `mysql`, `aws`, and
-  `azure` do not (checked 2026-09-04 for v1.5.1 and v1.5.5).
+  `azure` do not (checked 2026-09-04 for v1.5.1 and v1.5.5, and
+  2026-10-21 for v2.0.0: unchanged).
 - **Extension persistence** (duckdb-r 1.5.5, confirmed 2026-09-07): every
   new `duckdb()` driver resolves one home root, `home` argument →
   `duckdb.home` option → `DUCKDB_R_HOME` → existing `~/.duckdb` →
@@ -225,7 +234,8 @@
   elements in FDA's 2024 Q&A (Q12-Q14) and cites ICH E6(R3) section 4.2.2.
 - **Snapshot 0 is labeled at attach time, by one conditional UPDATE**
   (2026-09-11). DuckLake writes snapshot 0 itself during ATTACH and
-  ignores `set_commit_message()` around it (confirmed on DuckDB 1.5.5:
+  ignores `set_commit_message()` around it (confirmed on DuckDB 1.5.5 and
+  again on 2.0.0:
   `BEGIN; ATTACH ...; CALL lake.set_commit_message(...); COMMIT` leaves it
   NULL), and no ATTACH option or setting supplies a default author. So
   `attach_ducklake()` runs one UPDATE on `ducklake_snapshot_changes`
@@ -281,7 +291,12 @@
   images; the feed is read with the schema as of the end snapshot; exact
   timestamp bounds are inclusive at both ends. An attribute on the lazy
   feed survives dbplyr verbs because they assign into `x$lazy_query` on
-  the same object.
+  the same object. The 1.1 docs add, not probed here: a row updated and
+  then deleted in one transaction is reported as a deletion of its
+  committed version, a row inserted and deleted in one transaction is not
+  reported, and a data column named `rowid`, `snapshot_id`, or
+  `change_type` is renamed (`rowid_1`) so the change columns stay
+  reachable.
 - **Validation rules are views, not catalog tags and not a rules table**
   (2026-09-17). A check is a view in a schema of its own that returns the
   rows breaking a rule; the view's comment is the label and
@@ -302,9 +317,10 @@
   schema so a mistyped name cannot pass a gate, reads labels from
   `duckdb_views()` instead of the metadata tables, and puts one `UNION ALL`
   branch per line so a binder error quotes the broken view. Waiting was
-  considered and declined: DuckDB 2.0 triggers (stable projected for late
-  October 2026) are not announced for DuckLake tables and would call the
-  check views if they arrive, and nothing upstream signals a tag surface
+  considered and declined: DuckDB 2.0 triggers shipped on 2026-10-21 and
+  are refused on DuckLake tables ("Triggers are not supported for this
+  table type"), as are `CHECK` constraints, both confirmed on 2.0.0, and
+  nothing upstream signals a tag surface
   (not on the April 2026 roadmap; duckdb/duckdb#10981 and
   duckdb/ducklake#357 unanswered). Watch items: DuckLake CHECK constraints
   ("likely" per the 1.0 docs), a SQL surface for tags (then view tags for
@@ -316,7 +332,8 @@
   (2026-09-17, extension d8a1881e): `COMMENT ON TABLE` on a view is
   refused ("Cannot use ALTER TABLE on entry ... it is not a table") and
   leaves no aborted transaction in autocommit, `COMMENT ON VIEW` works, and
-  `COMMENT ON COLUMN` on a view is refused; `set_table_comment()` looks the
+  `COMMENT ON COLUMN` on a view is refused on a 1.0 catalog and accepted
+  on a 1.1 one (see the column defaults entry); `set_table_comment()` looks the
   name up in `duckdb_views()` first because a failed statement aborts a
   caller's open transaction. `CREATE VIEW` plus `COMMENT ON VIEW` in one
   transaction is one snapshot. `CREATE OR REPLACE VIEW` assigns a new view
@@ -409,7 +426,8 @@
   filtered query matched `get_table_comments()` on a snapshot-pinned attach
   at every snapshot of a history with a relabel, a cleared label, a column
   rename, a `replace_table()`, and a table rename. A timestamp becomes a
-  snapshot id inside the same query with `CAST(? AS TIMESTAMPTZ)`, the cast
+  snapshot id inside the same query with `CAST('...' AS TIMESTAMPTZ)` (a
+  bound parameter until 2026-10-22; see the Quack entry), the cast
   DuckLake applies to the literal, so rows and labels stay on one snapshot;
   this was checked without the icu extension (naive literals read as UTC)
   and not under icu with a non-UTC session time zone. A failed lookup
@@ -435,7 +453,8 @@
   `set_table_partitioning()`, `reset_table_partitioning()`,
   `set_table_sorting()`, and `reset_table_sorting()` note what they did in
   `.ducklake_env$pending_keys` while a transaction is open, and
-  `reapply_table_keys()` prefers the note (an empty one is a reset).
+  `reapply_table_layout()` (`reapply_table_keys()` until 2026-10-21)
+  prefers the note (an empty one is a reset).
   Entries carry `current_transaction_id()`, which is constant inside a
   transaction and not reused, so an entry from a finished transaction can
   never match and no commit or rollback hook is needed. Known limits: a raw
@@ -573,7 +592,16 @@
   DuckDB 2.0's `CONNECT qk` breaks the duckdb R client: every statement
   after it, `USE memory` included, fails with "INTERNAL Error: PREPARE
   succeeded but the prepared statement was not registered", so `CONNECT`
-  is not wrapped and the docs say not to run it; worth a duckdb-r issue.
+  is not wrapped and the docs say not to run it. That is engine bug
+  duckdb/duckdb#27269 (open since 2026-10-14, confirmed 2026-10-22 on
+  duckdb-r 2.0.0 and the 2.0.0 CLI): under a CONNECT binding
+  `ClientContext::PrepareInternal` forwards the statement to the remote
+  and registers nothing locally, so every client that prepares fails
+  (duckdb-r prepares all statements; the CLI does not and works), a
+  forwarded `DISCONNECT` fails too, and other connections on the same
+  instance are fine. The parameter-binding failure above happens in the
+  CLI's SQL `PREPARE` as well, so it is engine or extension behaviour
+  with no upstream report found. Neither wants a duckdb-r issue.
   `quack_serve()` on 2.0 never leaves a server open: with no `token` it
   uses the default Quack secret or generates a random token and returns
   it (`listen_uri`, `listen_url`, `auth_token`); `secret = name`,

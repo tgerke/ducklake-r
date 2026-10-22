@@ -2,17 +2,25 @@
 
 ## R CMD check results
 
-0 errors | 0 warnings | 1 note
-
-* This is a new release, so the "New submission" note is expected.
-* The same note lists "backends", "inlining", and "lakehouse" as possibly
-  misspelled in DESCRIPTION. All three are spelled as intended: "lakehouse"
-  is the term DuckLake uses for its own format, and the other two are the
-  standard spellings for catalog backends and for inlining small writes.
+0 errors | 0 warnings | 0 notes
 
 Checked both with the extension present (all examples, tests, and vignettes
 execute) and with it absent (everything gates itself off and the check is
 still clean), since the latter is what the check farm will see.
+
+## This release
+
+ducklake 1.0.0 requires duckdb >= 2.0.0, the release that ships DuckLake 1.1.
+The package wraps features that exist only in that extension version (nested
+schemas, table layout set in DDL, column defaults, catalog format migration),
+and DuckDB 2.0 rewrites a DuckDB-file catalog in a storage format that DuckDB
+1.5 cannot read, so a lower floor would leave users one write away from a lake
+their other clients cannot open. The earlier release keeps working on duckdb
+1.5.
+
+One test starts a second R process as a Quack server and attaches a lake
+through it. It is skipped on CRAN and on Windows, is gated on the extension
+like the rest, and runs in the GitHub Actions matrix on macOS and Linux.
 
 ## Test environments
 

@@ -78,8 +78,8 @@ begin_transaction <- function(conn = NULL) {
 #'
 #' If \code{author}, \code{commit_message}, or \code{commit_extra_info} are provided,
 #' they will be set using \code{CALL ducklake.set_commit_message()} within the
-#' transaction before the \code{COMMIT} statement, as required by the DuckLake
-#' v1.0 specification. An author set once for the session with
+#' transaction before the \code{COMMIT} statement, which is where DuckLake
+#' takes commit metadata. An author set once for the session with
 #' `options(ducklake.author = "...")` is recorded on every commit that does
 #' not name one; the `author` argument wins when both are given.
 #'
@@ -123,7 +123,7 @@ commit_transaction <- function(
   }
   author <- resolve_author(author)
 
-  # In DuckLake v1.0, commit metadata must be set within the transaction
+  # DuckLake takes commit metadata inside the transaction
   # using CALL set_commit_message() before COMMIT
   if (
     !is.null(author) || !is.null(commit_message) || !is.null(commit_extra_info)

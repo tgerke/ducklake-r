@@ -229,7 +229,7 @@ list_table_snapshots("cars")
 
 DuckLake supports two ways to attach metadata (author, commit message, and optional extra info) to a snapshot.
 
-**At commit time (recommended)**: Pass `author`, `commit_message`, and/or `commit_extra_info` to `commit_transaction()` or `with_transaction()`. This uses the DuckLake v1.0 `set_commit_message()` API to record metadata as part of the transaction itself, before the commit is finalized.
+**At commit time (recommended)**: Pass `author`, `commit_message`, and/or `commit_extra_info` to `commit_transaction()` or `with_transaction()`. This uses DuckLake's `set_commit_message()` to record metadata as part of the transaction itself, before the commit is finalized.
 
 ```{r metadata-at-commit}
 # Metadata set at commit time (preferred approach)
@@ -325,7 +325,7 @@ set_ducklake_retry(max_retries = 20, wait_ms = 250, backoff = 2)
 
 - **`with_transaction(expr, author, commit_message, commit_extra_info)`**: Modern, automatic transaction handling (recommended)
 - **`begin_transaction()`**: Start a manual transaction
-- **`commit_transaction(author, commit_message, commit_extra_info)`**: Apply changes from a manual transaction, with optional metadata set at commit time via the DuckLake v1.0 API
+- **`commit_transaction(author, commit_message, commit_extra_info)`**: Apply changes from a manual transaction, with optional metadata set at commit time through DuckLake's `set_commit_message()`
 - **`rollback_transaction()`**: Discard changes from a manual transaction
 - **`set_snapshot_metadata()`**: Fill in metadata a snapshot was committed without, the most recent one unless `snapshot_id` says otherwise (`overwrite = TRUE` to replace a value)
 

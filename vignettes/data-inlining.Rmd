@@ -23,7 +23,7 @@ dir.create(vignette_temp_dir, showWarnings = FALSE, recursive = TRUE)
 knitr::opts_knit$set(root.dir = vignette_temp_dir)
 ```
 
-Data inlining is one of the flagship features of DuckLake v1.0.
+Data inlining is one of DuckLake's flagship features.
 When writing small changesets, DuckLake stores the data directly in the catalog
 database instead of creating individual Parquet files. This eliminates the
 "small files problem" that plagues traditional data lake formats during

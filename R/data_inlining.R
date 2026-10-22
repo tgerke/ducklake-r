@@ -24,7 +24,7 @@
 #'   current database is used.
 #'
 #' @details
-#' Data inlining is enabled by default in DuckLake v1.0 with a threshold of 10
+#' Data inlining is enabled by default in DuckLake with a threshold of 10
 #' rows. Any insert or delete affecting fewer rows than the limit is written to
 #' an inlined table inside the catalog instead of creating a Parquet file.
 #'

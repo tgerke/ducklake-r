@@ -388,8 +388,10 @@ detailed vignettes:
   snapshots as it needs without frequent compaction
 - **Multi-backend catalogs**: Use DuckDB (default), PostgreSQL, SQLite,
   or MySQL as the catalog database. A PostgreSQL or SQLite catalog lets
-  several clients use the lake at once ([DuckLake 1.0
-  spec](https://ducklake.select/docs/stable/specification/introduction))
+  several clients use the lake at once ([DuckLake
+  specification](https://ducklake.select/docs/stable/specification/introduction)),
+  and a DuckDB catalog served over Quack does too (`backend = "quack"`,
+  experimental)
 - **Remote access over Quack**: Serve a DuckLake to other R sessions
   over the network and let several people read and write it at once,
   using DuckDB’s Quack protocol
@@ -410,14 +412,17 @@ detailed vignettes:
 - **Performance-oriented**: Uses Parquet columnar storage with
   statistics for filter pushdown, enabling fast queries on large
   datasets. Partitioning (`set_table_partitioning()`) and sorted tables
-  (`set_table_sorting()`) prune files on large tables
+  (`set_table_sorting()`), which `create_table()` can also set before a
+  table’s first load, prune files on large tables
 - **Migrate Parquet in place**: `add_data_files()` registers existing
   Parquet files with the lake without copying or rewriting them
 - **Cloud storage**: Keep data files on S3, GCS, R2, or Azure, with
   `create_storage_secret()` handling the credentials
 - **Tunable**: `set_ducklake_option()` adjusts DuckLake’s persisted
   settings (compression, file sizes, commit-message policy) at lake,
-  schema, or table scope
+  schema, or table scope, `reset_ducklake_option()` removes a table’s
+  override, and `create_table(options = )` sets them before the first
+  load
 - **Maintenance and backups**: One call to `checkpoint_ducklake()`
   flushes inlined data, merges small files, rewrites heavily deleted
   ones, and, when the lake has a retention policy, expires old snapshots
@@ -426,9 +431,9 @@ detailed vignettes:
   files and of a file-based catalog
 - **Schema evolution in place**: `add_table_column()`,
   `drop_table_column()`, `rename_table_column()`, `set_column_type()`,
-  and `rename_ducklake_table()` change a table’s shape as metadata-only
-  operations. No data is rewritten, and every earlier schema stays
-  reachable through time travel
+  `set_column_default()`, and `rename_ducklake_table()` change a table’s
+  shape as metadata-only operations. No data is rewritten, and every
+  earlier schema stays reachable through time travel
 - **Variable labels survive the lake**: `create_table()` stores
   haven/labelled column labels as catalog comments and `collect()`
   restores them, so gtsummary and gt keep displaying them;
@@ -445,8 +450,8 @@ detailed vignettes:
   `with_transaction()` they see pending writes, so a load that fails a
   check can be rolled back before it commits
 - **Schemas**: `create_schema()` organizes a lake into medallion layers
-  (bronze, silver, gold), studies, or any other grouping, and every
-  function accepts `"schema.table"`
+  (bronze, silver, gold), studies, or any other grouping; schemas nest
+  (`"sales.europe.orders"`), and every function accepts a dotted path
 - **Tidyverse interface**: Familiar dplyr syntax for data manipulation
 - **In-database writes**: `create_table()` and `replace_table()` run
   dplyr pipelines inside DuckDB and write the result straight into the

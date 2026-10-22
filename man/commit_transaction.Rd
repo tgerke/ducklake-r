@@ -35,8 +35,8 @@ making them permanent in the database.
 
 If \code{author}, \code{commit_message}, or \code{commit_extra_info} are provided,
 they will be set using \code{CALL ducklake.set_commit_message()} within the
-transaction before the \code{COMMIT} statement, as required by the DuckLake
-v1.0 specification. An author set once for the session with
+transaction before the \code{COMMIT} statement, which is where DuckLake
+takes commit metadata. An author set once for the session with
 \code{options(ducklake.author = "...")} is recorded on every commit that does
 not name one; the \code{author} argument wins when both are given.
 
