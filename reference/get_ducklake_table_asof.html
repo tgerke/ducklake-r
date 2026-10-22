@@ -92,12 +92,12 @@ as it existed at a specific timestamp. This uses the syntax:
 <li><p>Recovering accidentally deleted or modified data</p></li>
 <li><p>Comparing data states across different time points</p></li>
 <li><p>Regulatory compliance and data lineage documentation</p></li>
-</ul><p>The timestamp must be within the range of available snapshots for the table.
-Use <code><a href="list_table_snapshots.html">list_table_snapshots()</a></code> to see available snapshot times.</p>
-<p><strong>Important</strong>: When querying at a snapshot's exact timestamp, you may need to
-add a small time buffer (e.g., +1 second) to ensure the snapshot is found.
-This is because the time-travel query looks for snapshots created at or before
-the specified timestamp.</p>
+</ul><p>The timestamp resolves to the latest snapshot taken at or before it, a
+snapshot's own time included, so the times from
+<code><a href="list_table_snapshots.html">list_table_snapshots()</a></code> can be passed as they are. A timestamp
+before the table's first snapshot is an error, and so is one in the
+future, which DuckLake refuses; ducklake checks for that before the
+query runs.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
@@ -124,16 +124,15 @@ the specified timestamp.</p>
 <span class="r-in"><span>  by <span class="op">=</span> <span class="st">"id"</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Query data at a specific snapshot time</span></span></span>
+<span class="r-in"><span><span class="co"># Query data as of the first snapshot's own time</span></span></span>
 <span class="r-in"><span><span class="va">snapshots</span> <span class="op">&lt;-</span> <span class="fu"><a href="list_table_snapshots.html">list_table_snapshots</a></span><span class="op">(</span><span class="st">"orders"</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="co"># Add 1 second to ensure the snapshot is found</span></span></span>
-<span class="r-in"><span><span class="fu">get_ducklake_table_asof</span><span class="op">(</span><span class="st">"orders"</span>, <span class="va">snapshots</span><span class="op">$</span><span class="va">snapshot_time</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span> <span class="op">+</span> <span class="fl">1</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
+<span class="r-in"><span><span class="fu">get_ducklake_table_asof</span><span class="op">(</span><span class="st">"orders"</span>, <span class="va">snapshots</span><span class="op">$</span><span class="va">snapshot_time</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
 <span class="r-in"><span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/summarise.html" class="external-link">summarise</a></span><span class="op">(</span>total <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">amount</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
 <span class="r-in"><span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/compute.html" class="external-link">collect</a></span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 1 × 1</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   total</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span>   100</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span>    60</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="fu"><a href="detach_ducklake.html">detach_ducklake</a></span><span class="op">(</span><span class="st">"asof_lake"</span>, shutdown <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/unlink.html" class="external-link">unlink</a></span><span class="op">(</span><span class="va">lake_dir</span>, recursive <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>

@@ -39,8 +39,9 @@ rewrite_data_files(
 
 ## Value
 
-A data frame with one row per output file (columns `schema_name`,
-`table_name`, `files_processed`, `files_created`).
+A data frame with one row per compaction operation (columns
+`schema_name`, `table_name`, `files_processed`, `files_created`); an
+operation can write several output files, or none.
 
 ## Details
 

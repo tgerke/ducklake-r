@@ -28,7 +28,6 @@
 <url><loc>https://tgerke.github.io/ducklake-r/reference/build_attach_sql.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/build_quack_attach_sql.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/build_quack_uri.html</loc></url>
-<url><loc>https://tgerke.github.io/ducklake-r/reference/check_quack_version.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/checkpoint_ducklake.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/cleanup_old_files.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/collect.tbl_ducklake.html</loc></url>
@@ -80,7 +79,6 @@
 <url><loc>https://tgerke.github.io/ducklake-r/reference/quack_query.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/quack_serve.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/quack_stop.html</loc></url>
-<url><loc>https://tgerke.github.io/ducklake-r/reference/quack_version_supported.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/quote_sql.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/rename_ducklake_table.html</loc></url>
 <url><loc>https://tgerke.github.io/ducklake-r/reference/rename_table_column.html</loc></url>

@@ -70,9 +70,9 @@ try(rows_insert(get_ducklake_table("sites"), data.frame(id = 4L), by = "id"))
 #> VALUES (4) ) AS values_table ) AS "...y" WHERE NOT EXISTS ( SELECT 1 FROM sites
 #>   WHERE (sites.id = "...y".id) )
 #> Caused by error in `duckdb_result()`:
-#> ! Invalid Error: Constraint Error: NOT NULL constraint failed: sites.code
+#> ! Constraint Error: NOT NULL constraint failed: sites.code
 #> ℹ Context: rapi_execute
-#> ℹ Error type: INVALID
+#> ℹ Error type: CONSTRAINT
 
 set_column_not_null("sites", "code", not_null = FALSE)
 #> Column "code" in "sites" allows NULL again.

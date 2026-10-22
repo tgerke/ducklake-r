@@ -42,7 +42,7 @@ Other connection management:
 conn <- get_ducklake_connection()
 DBI::dbGetQuery(conn, "SELECT version()")
 #>   "version"()
-#> 1      v1.5.5
+#> 1      v2.0.0
 
 detach_ducklake(shutdown = TRUE)
 ```

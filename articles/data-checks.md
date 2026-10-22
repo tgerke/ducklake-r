@@ -58,9 +58,9 @@ try(
   )
 )
 #> Error in duckdb_result(connection = conn, stmt_lst = stmt_lst, arrow = arrow) : 
-#>   Invalid Error: Constraint Error: NOT NULL constraint failed: cars.mpg
+#>   Constraint Error: NOT NULL constraint failed: cars.mpg
 #> ℹ Context: rapi_execute
-#> ℹ Error type: INVALID
+#> ℹ Error type: CONSTRAINT
 ```
 
 ## Rules as views

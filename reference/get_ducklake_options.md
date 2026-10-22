@@ -51,12 +51,12 @@ get_ducklake_options()
 #> 3                                 Whether or not to encrypt Parquet files written to the data path
 #> 4 Compression algorithm for Parquet files (uncompressed, snappy, gzip, zstd, brotli, lz4, lz4_raw)
 #> 5                                                                          DuckLake format version
-#>                                      value  scope scope_entry
-#> 1                        DuckDB d8cdaa33fd GLOBAL        <NA>
-#> 2 /tmp/RtmpRpiQmQ/getopt_lake_18d57efee63/ GLOBAL        <NA>
-#> 3                                    false GLOBAL        <NA>
-#> 4                                     zstd GLOBAL        <NA>
-#> 5                                      1.0 GLOBAL        <NA>
+#>                                       value  scope scope_entry
+#> 1                         DuckDB d54cbbe3df GLOBAL        <NA>
+#> 2 /tmp/RtmpRLrDax/getopt_lake_2a4a34ab0741/ GLOBAL        <NA>
+#> 3                                     false GLOBAL        <NA>
+#> 4                                      zstd GLOBAL        <NA>
+#> 5                                       1.1 GLOBAL        <NA>
 
 detach_ducklake("getopt_lake", shutdown = TRUE)
 unlink(lake_dir, recursive = TRUE)

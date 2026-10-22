@@ -102,8 +102,9 @@ above this size are excluded. Defaults to the lake's target file size.</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A data frame with one row per output file (columns
-<code>schema_name</code>, <code>table_name</code>, <code>files_processed</code>, <code>files_created</code>).</p>
+    <p>A data frame with one row per compaction operation (columns
+<code>schema_name</code>, <code>table_name</code>, <code>files_processed</code>, <code>files_created</code>); an
+operation can write several output files, or none.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>

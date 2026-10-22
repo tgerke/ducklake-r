@@ -1203,3 +1203,33 @@ function renderSVG(el, x, width, height) {
 
   el.innerHTML = html;
 }
+
+// Hands the browser-free helpers to the Node unit tests in srcjs/tests.
+// Browsers define no `module`, so this never runs in the widget.
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    FIT_VIEW_OPTIONS: FIT_VIEW_OPTIONS,
+    DARK_NODE_PALETTES: DARK_NODE_PALETTES,
+    THEME_COLORS: THEME_COLORS,
+    SVG_NODE_W: SVG_NODE_W,
+    SVG_HEADER_H: SVG_HEADER_H,
+    SVG_ROW_H: SVG_ROW_H,
+    computeLaneFractions: computeLaneFractions,
+    buildAdjacency: buildAdjacency,
+    walkCone: walkCone,
+    computeCone: computeCone,
+    themeNodeColors: themeNodeColors,
+    darkEdgeColor: darkEdgeColor,
+    themeEdge: themeEdge,
+    hoverCard: hoverCard,
+    legendPanel: legendPanel,
+    exportPng: exportPng,
+    watchContainerSize: watchContainerSize,
+    escapeHtml: escapeHtml,
+    svgColumnsOf: svgColumnsOf,
+    svgNodeHeight: svgNodeHeight,
+    svgAnchorY: svgAnchorY,
+    svgTruncate: svgTruncate,
+    renderSVG: renderSVG
+  };
+}

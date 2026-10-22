@@ -2,6 +2,47 @@
 
 ## ducklake (development version)
 
+- ducklake requires duckdb 2.0.0 (DuckDB 2.0 with DuckLake 1.1) and
+  dbplyr 2.6.0. The DuckDB 1.5.2 and 1.5.3 version checks in
+  [`install_ducklake()`](https://tgerke.github.io/ducklake-r/reference/install_ducklake.md)
+  and the Quack functions are gone, since the package floor now covers
+  them. Lakes created with earlier versions open as they are; migrating
+  a catalog to the 1.1 format stays a separate, opt-in step. One caution
+  before a team upgrades: the first write from duckdb 2.0 to a lake
+  whose catalog is a DuckDB file puts that file in a storage format
+  duckdb 1.5 cannot open, whatever the catalog’s format version, so
+  every client of such a lake moves to 2.0 together. SQLite and
+  PostgreSQL catalogs are not affected.
+
+- A time-travel timestamp in the future is refused before the query
+  runs. DuckLake 1.1 rejects it, and through dbplyr the refusal surfaced
+  as “Can’t query fields” when the lazy table was first used.
+  [`get_ducklake_table_asof()`](https://tgerke.github.io/ducklake-r/reference/get_ducklake_table_asof.md),
+  [`restore_table_version()`](https://tgerke.github.io/ducklake-r/reference/restore_table_version.md),
+  [`get_table_changes()`](https://tgerke.github.io/ducklake-r/reference/get_table_changes.md)
+  with timestamp bounds,
+  [`list_ducklake_files()`](https://tgerke.github.io/ducklake-r/reference/list_ducklake_files.md),
+  and `attach_ducklake(snapshot_time = )` now name the argument instead.
+  The documentation no longer suggests adding a second to a snapshot’s
+  time: a snapshot’s own time reads that snapshot. That holds now
+  because POSIXct timestamps are rendered to the nearest microsecond;
+  R’s `%OS6` format truncates the binary fraction, which put the literal
+  a microsecond before the snapshot it was read from about half the
+  time.
+
+- [`plot_snapshots()`](https://tgerke.github.io/ducklake-r/reference/plot_snapshots.md)
+  colors compaction snapshots as maintenance. DuckLake records them as
+  `merge_adjacent` and `rewrite_delete`, which the classifier did not
+  know, so they showed as “other”; view and macro changes now count as
+  created or schema changes as well.
+
+- [`merge_adjacent_files()`](https://tgerke.github.io/ducklake-r/reference/merge_adjacent_files.md)
+  and
+  [`rewrite_data_files()`](https://tgerke.github.io/ducklake-r/reference/rewrite_data_files.md)
+  report the number of files written from the `files_created` column.
+  Under DuckLake 1.1 each result row is one compaction operation, which
+  can write several files or none, so the row count no longer matches.
+
 ## ducklake 0.9.0
 
 - New

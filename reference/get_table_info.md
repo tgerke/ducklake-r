@@ -79,16 +79,16 @@ create_table(mtcars, "cars")
 # File statistics for every table in the lake
 get_table_info()
 #>   table_name schema_id table_id                           table_uuid file_count
-#> 1       cars         0        1 01a0b152-c6c8-74e9-9858-8654fcf7b722          1
+#> 1       cars         0        1 01a16464-47e6-7aab-a683-383f3b6b6f28          1
 #>   file_size_bytes delete_file_count delete_file_size_bytes schema_name
-#> 1            2911                 0                      0        main
+#> 1            3057                 0                      0        main
 
 # Just one table
 get_table_info("cars")
 #>   table_name schema_id table_id                           table_uuid file_count
-#> 1       cars         0        1 01a0b152-c6c8-74e9-9858-8654fcf7b722          1
+#> 1       cars         0        1 01a16464-47e6-7aab-a683-383f3b6b6f28          1
 #>   file_size_bytes delete_file_count delete_file_size_bytes schema_name
-#> 1            2911                 0                      0        main
+#> 1            3057                 0                      0        main
 
 detach_ducklake("info_lake", shutdown = TRUE)
 unlink(lake_dir, recursive = TRUE)
