@@ -4,15 +4,15 @@
 #' options against a table id, and a rewrite that goes through `DROP` +
 #' `CREATE` ([replace_table()], [restore_table_version()]) assigns a new id.
 #' Capture before the rewrite and put the pieces back with
-#' `reapply_table_keys()`, `reapply_table_comments()`, and
-#' `reapply_table_options()`. A table with none of these captures empty
-#' pieces and reapplies nothing.
+#' `reapply_table_layout()` and `reapply_table_comments()`. A table with
+#' none of these captures empty pieces and reapplies nothing.
 #'
-#' Two DuckLake rules shape the reapply helpers. `ALTER TABLE ... SET
+#' Two DuckLake rules shape the reapply helper. `ALTER TABLE ... SET
 #' PARTITIONED BY / SORTED BY` is refused on a table holding inlined data
 #' written in the open transaction, so keys go on the empty table before its
 #' rows are inserted. And `set_option()` is refused for any table created in
-#' the open transaction, so options are re-set after the commit.
+#' the open transaction, so options go on with `ALTER TABLE ... SET`, which
+#' is not.
 #'
 #' @param table_name The table, optionally schema-qualified.
 #' @param ducklake_name Lake name, or `NULL` for the current database.
@@ -131,20 +131,22 @@ option_value_for_set <- function(option_name, value) {
   value
 }
 
-#' Put captured partition and sort keys on a freshly created, still empty table
+#' Put captured keys and table options on a freshly created, still empty table
 #'
 #' Keys on columns the new table no longer has are dropped. Expression sort
 #' keys (set with raw SQL) are attempted as they are; if DuckLake rejects
 #' one the error surfaces and the open transaction rolls back, which beats
-#' silently losing the key.
+#' silently losing the key. Options go on through `ALTER TABLE ... SET`,
+#' which DuckLake accepts on a table created in the open transaction where
+#' `set_option()` is refused, so the rewrite and its options are one
+#' snapshot.
 #'
 #' @param meta The list from `capture_table_metadata()`.
 #' @param columns Column names of the new table.
 #' @param conn A DBI connection.
 #' @returns Invisibly, `NULL`.
 #' @noRd
-reapply_table_keys <- function(meta, columns, conn = get_ducklake_connection()) {
-  quoted <- quote_ident(meta$table_name, conn)
+reapply_table_layout <- function(meta, columns, conn = get_ducklake_connection()) {
   pending <- meta$pending_keys
 
   # Keys changed in the open transaction win over the committed ones
@@ -158,15 +160,6 @@ reapply_table_keys <- function(meta, columns, conn = get_ducklake_connection()) 
     partitions <- partitions[partitions$column_name %in% columns, , drop = FALSE]
     partition_by <- partition_expressions(partitions)
   }
-  if (length(partition_by) > 0) {
-    db_execute(
-      sprintf(
-        "ALTER TABLE %s SET PARTITIONED BY (%s);",
-        quoted, paste(partition_by, collapse = ", ")
-      ),
-      conn = conn
-    )
-  }
 
   if (!is.null(pending$sorting)) {
     sort_by <- pending$sorting
@@ -179,6 +172,51 @@ reapply_table_keys <- function(meta, columns, conn = get_ducklake_connection()) 
     }
     sort_by <- sort_expressions(sorting)
   }
+
+  # options() reports every value as text; numbers and booleans go back bare
+  options <- lapply(meta$options$value, typed_option_value)
+  names(options) <- meta$options$option_name
+
+  apply_table_layout(
+    meta$table_name,
+    partition_by = partition_by,
+    sort_by = sort_by,
+    options = options,
+    conn = conn
+  )
+}
+
+#' Issue the ALTER statements that put keys and options on a table
+#'
+#' One place for the three statements, used by the setters, by
+#' [create_table()] for a new table, and by the rewrites for a rebuilt
+#' one. Keys set here are noted as pending for the open transaction (see
+#' `stash_pending_keys()`). An empty piece is skipped, so a reset is the
+#' setter's own statement.
+#'
+#' @param table_name The table, optionally schema-qualified.
+#' @param partition_by,sort_by Character vectors of expressions, already
+#'   validated.
+#' @param options A named list of option values, rendered by
+#'   `render_option_assignments()`.
+#' @param conn A DBI connection.
+#' @returns Invisibly, `NULL`.
+#' @noRd
+apply_table_layout <- function(table_name, partition_by = NULL, sort_by = NULL,
+                               options = NULL, conn = get_ducklake_connection()) {
+  quoted <- quote_ident(table_name, conn)
+
+  if (length(partition_by) > 0) {
+    db_execute(
+      sprintf(
+        "ALTER TABLE %s SET PARTITIONED BY (%s);",
+        quoted, paste(partition_by, collapse = ", ")
+      ),
+      conn = conn
+    )
+    stash_pending_keys(table_name, "partitions", partition_by, conn)
+  }
+
   if (length(sort_by) > 0) {
     db_execute(
       sprintf(
@@ -187,9 +225,33 @@ reapply_table_keys <- function(meta, columns, conn = get_ducklake_connection()) 
       ),
       conn = conn
     )
+    stash_pending_keys(table_name, "sorting", sort_by, conn)
+  }
+
+  if (length(options) > 0) {
+    db_execute(
+      sprintf("ALTER TABLE %s SET (%s);", quoted, render_option_assignments(options)),
+      conn = conn
+    )
   }
 
   invisible(NULL)
+}
+
+#' An option value as reported by `options()`, typed for rendering
+#'
+#' `true`/`false` and bare integers come back as logical and numeric so
+#' `render_option_value()` writes them without quotes; anything else stays
+#' a string.
+#' @noRd
+typed_option_value <- function(value) {
+  if (grepl("^(true|false)$", value)) {
+    value == "true"
+  } else if (grepl("^[0-9]+$", value)) {
+    as.numeric(value)
+  } else {
+    value
+  }
 }
 
 #' Put captured comments back on the new table
@@ -199,7 +261,7 @@ reapply_table_keys <- function(meta, columns, conn = get_ducklake_connection()) 
 #' precedence); the table comment is set again as captured. What the
 #' rewrite has already commented is passed in rather than read back.
 #'
-#' @inheritParams reapply_table_keys
+#' @inheritParams reapply_table_layout
 #' @param already_set Column names commented earlier in this rewrite.
 #' @returns Invisibly, `NULL`.
 #' @noRd
@@ -237,69 +299,12 @@ reapply_table_comments <- function(meta, columns, already_set = character(),
   invisible(NULL)
 }
 
-#' Re-set captured table-scoped options after the rewrite is committed
-#'
-#' DuckLake refuses `set_option()` on a table created in the open
-#' transaction, so this runs after the commit, in a transaction of its own
-#' (one snapshot). Inside a transaction the caller opened it cannot run at
-#' all: the options are listed in a warning instead.
-#'
-#' @param meta The list from `capture_table_metadata()`.
-#' @param conn A DBI connection.
-#' @returns Invisibly, `NULL`.
-#' @noRd
-reapply_table_options <- function(meta, conn = get_ducklake_connection()) {
-  opts <- meta$options
-  if (nrow(opts) == 0) {
-    return(invisible(NULL))
-  }
-  if (in_transaction(conn)) {
-    calls <- sprintf(
-      'set_ducklake_option("%s", "%s", table_name = "%s")',
-      opts$option_name, opts$value, meta$table_name
-    )
-    # qty() first: with two values after the {?s}, cli cannot pick the
-    # quantity and errors, which would roll the caller's transaction back
-    cli::cli_warn(c(
-      "{cli::qty(nrow(opts))}Table-scoped option{?s} {.val {opts$option_name}} could not be carried over to the rewritten table {.val {meta$table_name}} inside the open transaction.",
-      "i" = "DuckLake cannot set options on a table created in the same transaction. After committing, run:",
-      stats::setNames(calls, rep(" ", length(calls)))
-    ))
-    return(invisible(NULL))
-  }
-
-  parts <- split_table_name(meta$table_name)
-  DBI::dbExecute(conn, "BEGIN TRANSACTION;")
-  committed <- FALSE
-  on.exit(
-    if (!committed) {
-      tryCatch(DBI::dbExecute(conn, "ROLLBACK;"), error = function(e) NULL)
-    },
-    add = TRUE
-  )
-  for (i in seq_len(nrow(opts))) {
-    db_execute(
-      sprintf(
-        "CALL %s.set_option(%s, %s%s);",
-        meta$ducklake_name,
-        quote_sql(opts$option_name[[i]]),
-        quote_sql(opts$value[[i]]),
-        option_scope_args(parts$table, parts$schema)
-      ),
-      conn = conn
-    )
-  }
-  DBI::dbExecute(conn, "COMMIT;")
-  committed <- TRUE
-  invisible(NULL)
-}
-
 #' Rebuild a table from a copy of its new contents, inside the open transaction
 #'
 #' The sequence DuckLake accepts in one transaction: drop, create empty
-#' with the copy's schema, put the partition and sort keys on, insert, then
-#' comment. `source_ref` is a quoted reference to the copy (a registered
-#' data-frame view or a temporary table).
+#' with the copy's schema, put the partition and sort keys and the table
+#' options on, insert, then comment. `source_ref` is a quoted reference to
+#' the copy (a registered data-frame view or a temporary table).
 #'
 #' @param table_name The table to rebuild.
 #' @param source_ref Quoted SQL reference to the new contents.
@@ -322,7 +327,7 @@ rebuild_table_from <- function(table_name, source_ref, meta, comments,
     sprintf("CREATE TABLE %s AS SELECT * FROM %s LIMIT 0;", quoted, source_ref),
     conn = conn
   )
-  reapply_table_keys(meta, columns, conn)
+  reapply_table_layout(meta, columns, conn)
   db_execute(
     sprintf("INSERT INTO %s SELECT * FROM %s;", quoted, source_ref),
     conn = conn

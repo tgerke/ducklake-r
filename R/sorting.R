@@ -49,7 +49,22 @@
 #' unlink(lake_dir, recursive = TRUE)
 set_table_sorting <- function(table_name, sort_by) {
   conn <- get_ducklake_connection()
+  check_sort_by(sort_by)
 
+  apply_table_layout(table_name, sort_by = sort_by, conn = conn)
+  dl_inform(c(
+    "Table {.val {table_name}} is now sorted by {.val {sort_by}}.",
+    "i" = "Only newly written data is sorted; existing files keep their layout until compaction."
+  ))
+
+  invisible(NULL)
+}
+
+#' Validate sort expressions before they reach SQL
+#'
+#' Shared by [set_table_sorting()] and [create_table()].
+#' @noRd
+check_sort_by <- function(sort_by) {
   if (!is.character(sort_by) || length(sort_by) == 0 || anyNA(sort_by)) {
     cli::cli_abort(
       "{.arg sort_by} must be a character vector of sort expressions."
@@ -68,22 +83,7 @@ set_table_sorting <- function(table_name, sort_by) {
       "i" = "Supported form: a column name, optionally followed by {.code ASC}/{.code DESC} and {.code NULLS FIRST}/{.code NULLS LAST}."
     ))
   }
-
-  db_execute(
-    sprintf(
-      "ALTER TABLE %s SET SORTED BY (%s);",
-      quote_ident(table_name, conn),
-      paste(sort_by, collapse = ", ")
-    ),
-    conn = conn
-  )
-  stash_pending_keys(table_name, "sorting", sort_by, conn)
-  dl_inform(c(
-    "Table {.val {table_name}} is now sorted by {.val {sort_by}}.",
-    "i" = "Only newly written data is sorted; existing files keep their layout until compaction."
-  ))
-
-  invisible(NULL)
+  invisible(sort_by)
 }
 
 #' Remove the sort order from a table

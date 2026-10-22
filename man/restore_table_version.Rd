@@ -48,19 +48,17 @@ temporary DuckDB table, then drops and recreates \code{t} from it inside
 a transaction. Because the restore creates a new snapshot, it is itself
 reversible with another \code{restore_table_version()} call.
 
-The restore commits for itself, with its own author and message, so it
-cannot join a transaction that is already open and says so before it
-touches anything. To restore to a version and change it in one snapshot,
-pipe \code{\link[=get_ducklake_table_version]{get_ducklake_table_version()}} into \code{\link[=replace_table]{replace_table()}} inside
-\code{\link[=with_transaction]{with_transaction()}}.
+When no transaction is open, the restore commits for itself, with its
+own author and message. Inside a transaction you opened it joins that
+transaction instead, so a restore and further changes can commit as one
+snapshot; \code{author} and \code{commit_message} then belong to your commit
+(\code{\link[=commit_transaction]{commit_transaction()}} or \code{\link[=with_transaction]{with_transaction()}}) and are refused here.
 
 The restored table gets a new table id, and DuckLake keeps comments,
 partition keys, sort order, and table-scoped options against the id, so
-they are captured beforehand and put back: comments and keys for the
-columns the restored version still has, inside the restore transaction;
-table-scoped options right after it commits, as a small follow-up
-snapshot, since DuckLake cannot set options on a table created in the
-open transaction.
+they are captured beforehand and put back inside the restore
+transaction: comments and keys for the columns the restored version
+still has, and the table-scoped options as they were.
 }
 \examples{
 \dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}

@@ -4,7 +4,14 @@
 \alias{create_table}
 \title{Create a DuckLake table}
 \usage{
-create_table(data_source, table_name, labels = TRUE)
+create_table(
+  data_source,
+  table_name,
+  labels = TRUE,
+  partition_by = NULL,
+  sort_by = NULL,
+  options = NULL
+)
 }
 \arguments{
 \item{data_source}{Raw data source. Can be:
@@ -30,6 +37,24 @@ the query reads, so labels follow the data through a pipeline (a
 renamed or derived column starts without one). Collecting the table
 later restores the labels (see \code{\link[=get_table_comments]{get_table_comments()}}), and every
 other client of the lake can read them too. Set to \code{FALSE} to skip.}
+
+\item{partition_by}{Optional character vector of partition expressions,
+as for \code{\link[=set_table_partitioning]{set_table_partitioning()}}: column names, \code{year(col)} and the
+other calendar transforms, or \code{bucket(n, col)}. The keys go on before
+the rows, so the first load is already partitioned, where
+\code{\link[=set_table_partitioning]{set_table_partitioning()}} on an existing table affects only later
+writes.}
+
+\item{sort_by}{Optional character vector of sort expressions, as for
+\code{\link[=set_table_sorting]{set_table_sorting()}}: a column name, optionally followed by \code{ASC} or
+\code{DESC} and \verb{NULLS FIRST} or \verb{NULLS LAST}. The first load is written in
+this order.}
+
+\item{options}{Optional named list of table-scoped options, as for
+\code{\link[=set_ducklake_option]{set_ducklake_option()}}, for example \code{list(parquet_compression = "zstd", data_inlining_row_limit = 0)}. They are set before the rows
+are written and so govern the first load too: an inlining limit of
+\code{0} here sends even a handful of rows to a Parquet file instead of the
+catalog.}
 }
 \value{
 Invisibly, \code{NULL}. Called for its side effect of creating the
@@ -37,6 +62,13 @@ table in the lake.
 }
 \description{
 Create a DuckLake table
+}
+\details{
+With any of \code{partition_by}, \code{sort_by}, or \code{options}, the table is
+created empty from the source's columns, the keys and options go on,
+and the rows are inserted, in one transaction (yours when one is open),
+so the result is one snapshot with the layout in force from the first
+row. Without them, a single \verb{CREATE TABLE ... AS} does the work.
 }
 \examples{
 \dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}
@@ -57,6 +89,14 @@ create_table(csv_path, "cars_from_csv")
 get_ducklake_table("cars") |>
   dplyr::filter(cyl > 4) |>
   create_table("big_cars")
+
+# Partitioned, sorted, and compressed from the first load
+create_table(
+  mtcars, "cars_by_cyl",
+  partition_by = "cyl", sort_by = "mpg DESC",
+  options = list(parquet_compression = "zstd")
+)
+get_table_partitions("cars_by_cyl")
 
 # From a URL -- needs network access and the httpfs extension
 \dontrun{

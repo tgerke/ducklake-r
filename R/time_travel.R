@@ -267,19 +267,17 @@ list_table_snapshots <- function(table_name = NULL, ducklake_name = NULL, conn =
 #' a transaction. Because the restore creates a new snapshot, it is itself
 #' reversible with another \code{restore_table_version()} call.
 #'
-#' The restore commits for itself, with its own author and message, so it
-#' cannot join a transaction that is already open and says so before it
-#' touches anything. To restore to a version and change it in one snapshot,
-#' pipe [get_ducklake_table_version()] into [replace_table()] inside
-#' [with_transaction()].
+#' When no transaction is open, the restore commits for itself, with its
+#' own author and message. Inside a transaction you opened it joins that
+#' transaction instead, so a restore and further changes can commit as one
+#' snapshot; `author` and `commit_message` then belong to your commit
+#' ([commit_transaction()] or [with_transaction()]) and are refused here.
 #'
 #' The restored table gets a new table id, and DuckLake keeps comments,
 #' partition keys, sort order, and table-scoped options against the id, so
-#' they are captured beforehand and put back: comments and keys for the
-#' columns the restored version still has, inside the restore transaction;
-#' table-scoped options right after it commits, as a small follow-up
-#' snapshot, since DuckLake cannot set options on a table created in the
-#' open transaction.
+#' they are captured beforehand and put back inside the restore
+#' transaction: comments and keys for the columns the restored version
+#' still has, and the table-scoped options as they were.
 #'
 #' @seealso [get_ducklake_table_version()], [get_ducklake_table_asof()],
 #'   [list_table_snapshots()]
@@ -325,12 +323,13 @@ restore_table_version <- function(table_name, version = NULL, timestamp = NULL,
   if (!is.null(version) && !is.null(timestamp)) {
     cli::cli_abort("Cannot provide both {.arg version} and {.arg timestamp}.")
   }
-  # Its own BEGIN would fail there, and the error handler's rollback would
-  # then take the caller's uncommitted work with it
-  if (in_transaction(conn)) {
+  # Inside a caller's transaction the restore joins it, and the metadata
+  # goes on the caller's commit
+  own_txn <- !in_transaction(conn)
+  if (!own_txn && (!is.null(author) || !is.null(commit_message))) {
     cli::cli_abort(c(
-      "{.fun restore_table_version} cannot run inside an open transaction.",
-      "i" = "It commits the restore as a snapshot of its own. Commit or roll back first."
+      "{.arg author} and {.arg commit_message} cannot be set inside an open transaction.",
+      "i" = "The restore joins that transaction; pass them to {.fun commit_transaction} or {.fun with_transaction} instead."
     ))
   }
 
@@ -348,7 +347,7 @@ restore_table_version <- function(table_name, version = NULL, timestamp = NULL,
 
   quoted_table <- quote_ident(table_name, conn)
 
-  if (is.null(commit_message)) {
+  if (own_txn && is.null(commit_message)) {
     commit_message <- sprintf("Restored %s to %s", table_name, restore_point)
   }
 
@@ -357,9 +356,7 @@ restore_table_version <- function(table_name, version = NULL, timestamp = NULL,
   meta <- capture_table_metadata(table_name, conn = conn)
 
   # Materialize the old version outside the lake first: once the table is
-  # dropped inside the transaction, time travel can no longer resolve it,
-  # and CREATE OR REPLACE followed by INSERT in one transaction loses the
-  # inserted rows in DuckLake 1.0
+  # dropped inside the transaction, time travel can no longer resolve it
   temp_name <- paste0("__ducklake_restore_", gsub("[^a-zA-Z0-9]", "_", table_name))
   temp_table <- quote_ident(paste("temp", "main", temp_name, sep = "."), conn)
   db_execute(sprintf("DROP TABLE IF EXISTS %s;", temp_table), conn = conn)
@@ -380,13 +377,16 @@ restore_table_version <- function(table_name, version = NULL, timestamp = NULL,
       conn = conn
     )
 
-    with_transaction(
-      rebuild_table_from(table_name, temp_table, meta, character(), conn),
-      author = author,
-      commit_message = commit_message,
-      conn = conn
-    )
-    reapply_table_options(meta, conn)
+    if (own_txn) {
+      with_transaction(
+        rebuild_table_from(table_name, temp_table, meta, character(), conn),
+        author = author,
+        commit_message = commit_message,
+        conn = conn
+      )
+    } else {
+      rebuild_table_from(table_name, temp_table, meta, character(), conn)
+    }
     invisible(TRUE)
   }, error = function(e) {
     cli::cli_abort(c(

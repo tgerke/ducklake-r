@@ -23,7 +23,9 @@ for the full list.}
 numbers as numeric literals, and everything else as a quoted string.}
 
 \item{table_name}{Optional table name to scope the option to one table,
-optionally qualified as \code{"schema.table"}.}
+optionally qualified as \code{"schema.table"}. A table-scoped option is set
+with \verb{ALTER TABLE ... SET}, which works on a table created in the open
+transaction too; \code{\link[=reset_ducklake_option]{reset_ducklake_option()}} removes it again.}
 
 \item{schema_name}{Optional schema name to scope the option to one schema
 (or, together with \code{table_name}, to qualify the table).}
@@ -41,7 +43,9 @@ survive detach/attach cycles and apply to every client of the lake.
 }
 \details{
 Table-scoped settings override schema-scoped ones, which override the
-lake-wide default. Runs \verb{CALL <lake>.set_option(...)}.
+lake-wide default. Lake and schema scope run \verb{CALL <lake>.set_option(...)}; table scope runs \verb{ALTER TABLE ... SET (...)},
+which persists the same setting. \code{\link[=create_table]{create_table()}} takes the same options
+for a new table, so they govern its first load.
 
 The options DuckLake 1.0 persists, with their defaults:\tabular{lll}{
    Option \tab Default \tab What it controls \cr
@@ -91,9 +95,11 @@ unlink(lake_dir, recursive = TRUE)
 \dontshow{\}) # examplesIf}
 }
 \seealso{
-\code{\link[=get_ducklake_options]{get_ducklake_options()}}, \code{\link[=set_inlining_row_limit]{set_inlining_row_limit()}}
+\code{\link[=get_ducklake_options]{get_ducklake_options()}}, \code{\link[=reset_ducklake_option]{reset_ducklake_option()}},
+\code{\link[=set_inlining_row_limit]{set_inlining_row_limit()}}
 
 Other options:
-\code{\link[=get_ducklake_options]{get_ducklake_options()}}
+\code{\link[=get_ducklake_options]{get_ducklake_options()}},
+\code{\link[=reset_ducklake_option]{reset_ducklake_option()}}
 }
 \concept{options}

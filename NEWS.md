@@ -45,6 +45,31 @@
   result row is one compaction operation, which can write several files or
   none, so the row count no longer matches.
 
+* `create_table()` gains `partition_by`, `sort_by`, and `options`, which
+  take what `set_table_partitioning()`, `set_table_sorting()`, and
+  `set_ducklake_option()` take. The table is created empty from the
+  source's columns, the keys and options go on, and the rows follow, in
+  one transaction, so the first load is already partitioned, sorted, and
+  governed by the options: `options = list(data_inlining_row_limit = 0)`
+  sends even three rows to a Parquet file. Setting keys on an existing
+  table still affects only the writes that follow.
+
+* Table-scoped options are set with `ALTER TABLE ... SET`, which DuckLake
+  accepts on a table created in the open transaction where its
+  `set_option()` is refused. So `set_ducklake_option(table_name = )` works
+  inside the transaction that creates the table, and `replace_table()` and
+  `restore_table_version()` carry a table's options over inside the
+  rewrite transaction: a rewrite is one snapshot again, the follow-up
+  snapshot that re-set the options is gone, and so is the warning a
+  rewrite inside your own transaction used to raise. New
+  `reset_ducklake_option()` removes a table's override with `ALTER TABLE
+  ... RESET`, the one scope DuckLake can reset.
+
+* `restore_table_version()` joins an open transaction instead of refusing
+  it, so a restore and further changes can commit as one snapshot.
+  `author` and `commit_message` then belong to that commit and are refused
+  on the restore itself.
+
 # ducklake 0.9.0
 
 * New `view_table_changes()` opens a table's change feed in an interactive

@@ -41,14 +41,17 @@
   (2026-09-04): `ALTER TABLE ... SET PARTITIONED BY / SORTED BY` is refused
   on a table holding inlined rows written in the open transaction, so keys
   go on the empty table before the rows are inserted; `set_option()` is
-  refused for a table created in the open transaction, so table options
-  are re-set after the commit; `CREATE OR REPLACE TABLE` followed by
-  `INSERT` in one transaction commits an empty table, so rewrites use
-  `DROP` + `CREATE`; a `DEFAULT` accepts plain constants only (no `TRUE`,
-  `DATE '...'`, casts); some failed DDL leaves an aborted transaction even
-  in autocommit mode, which `db_execute_ddl()` rolls back; DuckDB temp
-  tables are transactional, so the rollback handler must run before the
-  temp-table cleanup.
+  refused for a table created in the open transaction (still so on 2.0,
+  where `ALTER TABLE ... SET (...)` is accepted instead, see the DDL
+  options entry below); `CREATE OR REPLACE TABLE` followed by
+  `INSERT` in one transaction commits an empty table (fixed in 1.1; the
+  rewrites keep `DROP` + `CREATE` anyway); a `DEFAULT` accepts plain
+  constants only (on 2.0 `ADD COLUMN` takes typed literals and casts and
+  still refuses `now()`); some failed DDL leaves an aborted transaction
+  even in autocommit mode, which `db_execute_ddl()` rolls back (the tested
+  case no longer does on 2.0; the helper stays); DuckDB temp tables are
+  transactional, so the rollback handler must run before the temp-table
+  cleanup.
 - **`replace_table()` and `restore_table_version()` change the table id**
   (DuckLake has no in-place replace); every piece of metadata DuckLake
   keys to the id is captured first and put back.
@@ -444,23 +447,42 @@
   plus `INSERT` to keep the table id (changes the snapshot and change-feed
   semantics of a replace). The two readers still return present-day keys on
   a snapshot-pinned attach; writes are refused there, so it was left alone.
-- **Table options a rewrite carries over are put in `set_option()` form**
-  (2026-09-17). Confirmed on DuckDB 1.5.5: `ducklake_options()` reports
-  `target_file_size` and `parquet_row_group_size_bytes` as a bare number of
-  bytes and `parquet_version` as `V2`, and `set_option()` refuses both
-  forms (it accepts `'8388608 bytes'`, and `2`); the other table options
-  round-trip as reported. `option_value_for_set()` adjusts the three in
-  `capture_table_metadata()`, so the post-commit reapply and the warning's
-  suggested calls both use values that work. That warning, raised when a
-  rewrite runs inside a caller's transaction, used to error with "Multiple
-  quantities for pluralization" (`{?s}` ahead of two interpolated values)
-  and roll the transaction back; `cli::qty()` now comes first.
-- **`restore_table_version()` refuses an open transaction** (2026-09-17).
-  It commits for itself through `with_transaction()`. Inside a caller's
-  transaction the nested `BEGIN` failed and the handler's rollback took
-  the caller's pending work with it, so it aborts up front instead. The
-  one-snapshot alternative, confirmed: `get_ducklake_table_version()` piped
-  into `replace_table()` inside `with_transaction()`.
+- **Table options go through `ALTER TABLE ... SET` / `RESET`** (2026-10-21,
+  replacing the 2026-09-17 post-commit reapply). Confirmed on DuckDB 2.0.0
+  with DuckLake 1.1: `ALTER TABLE t SET (opt = value)` persists the same
+  row as `set_option(table_name =>)` and is accepted on a table created in
+  the open transaction, also one holding transaction-local inlined rows,
+  where `set_option()` says "Settings cannot be set for transaction-local
+  tables"; `ALTER TABLE t RESET (opt)` removes the row, is a no-op when
+  the option is not set, and works on a transaction-local table too;
+  `set_option(name, NULL)` is refused at every scope ("option can't be
+  null"), so a lake-wide or schema option cannot be reset, only set
+  again; an option set between an empty `CREATE TABLE ... AS ... LIMIT 0`
+  and the first `INSERT` governs that insert (`data_inlining_row_limit =
+  0` wrote a file for three rows); `ALTER TABLE SET` on a view is refused
+  without an aborted transaction. So `apply_table_layout()` issues the
+  keys and the options for the setters, for `create_table()`'s new
+  `partition_by`/`sort_by`/`options`, and for the rewrites, and
+  `reapply_table_options()` is gone with its follow-up snapshot and its
+  in-transaction warning. The value forms still matter: `ducklake_options()`
+  reports `target_file_size` and `parquet_row_group_size_bytes` as a bare
+  number of bytes and `parquet_version` as `V2`, and `ALTER TABLE SET`
+  refuses both as `set_option()` did ("Unknown unit for memory"), so
+  `option_value_for_set()` stays, and `typed_option_value()` turns the
+  reported `true`/`false` and bare integers back into logical and numeric
+  so they render without quotes. `create_table()` does not use `CREATE TABLE ... PARTITIONED BY /
+  SORTED BY / WITH` (DuckLake 1.1 syntax, works on 1.0 catalogs): `SORTED
+  BY` there takes ascending keys only (`DESC` is a parser error), so the
+  empty create plus `ALTER` sequence the rewrites already use serves all
+  three.
+- **`restore_table_version()` joins an open transaction** (2026-10-21,
+  reversing the 2026-09-17 refusal). It refused because its own
+  `with_transaction()` could not nest and the options needed a post-commit
+  snapshot; with options set inside the rewrite, it now runs
+  `rebuild_table_from()` directly inside a caller's transaction and
+  refuses `author`/`commit_message` there (they belong to the caller's
+  commit). Outside a transaction it still commits for itself with the
+  default "Restored t to ..." message.
 - **`create_check()` takes the rule as it is said** (2026-09-17). A check
   view holds the failure query, so writing one by hand means negating the
   rule, and a rule that forbids something ("dose is not 0") turns into

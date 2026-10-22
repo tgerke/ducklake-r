@@ -12,7 +12,9 @@
 #' @param value The value to set. Logicals are rendered as `true`/`false`,
 #'   numbers as numeric literals, and everything else as a quoted string.
 #' @param table_name Optional table name to scope the option to one table,
-#'   optionally qualified as `"schema.table"`.
+#'   optionally qualified as `"schema.table"`. A table-scoped option is set
+#'   with `ALTER TABLE ... SET`, which works on a table created in the open
+#'   transaction too; [reset_ducklake_option()] removes it again.
 #' @param schema_name Optional schema name to scope the option to one schema
 #'   (or, together with `table_name`, to qualify the table).
 #' @param ducklake_name Optional name of the attached DuckLake catalog. If
@@ -20,7 +22,10 @@
 #'
 #' @details
 #' Table-scoped settings override schema-scoped ones, which override the
-#' lake-wide default. Runs `CALL <lake>.set_option(...)`.
+#' lake-wide default. Lake and schema scope run `CALL
+#' <lake>.set_option(...)`; table scope runs `ALTER TABLE ... SET (...)`,
+#' which persists the same setting. [create_table()] takes the same options
+#' for a new table, so they govern its first load.
 #'
 #' The options DuckLake 1.0 persists, with their defaults:
 #'
@@ -53,7 +58,8 @@
 #' @family options
 #' @export
 #'
-#' @seealso [get_ducklake_options()], [set_inlining_row_limit()]
+#' @seealso [get_ducklake_options()], [reset_ducklake_option()],
+#'   [set_inlining_row_limit()]
 #'
 #' @examplesIf ducklake_extension_available()
 #' lake_dir <- tempfile("setopt_lake_")
@@ -92,14 +98,29 @@ set_ducklake_option <- function(option,
     )
   }
 
-  call_sql <- sprintf(
-    "CALL %s.set_option(%s, %s%s);",
-    ducklake_name,
-    quote_sql(option),
-    render_option_value(value),
-    option_scope_args(table_name, schema_name)
-  )
-  db_execute(call_sql, conn = conn)
+  if (!is.null(table_name)) {
+    # ALTER TABLE ... SET persists the same row as set_option(table_name =>)
+    # and, unlike it, is accepted on a table created in the open transaction
+    db_execute(
+      sprintf(
+        "ALTER TABLE %s SET (%s);",
+        quote_ident(qualified_table(ducklake_name, schema_name, table_name), conn),
+        render_option_assignments(stats::setNames(list(value), option))
+      ),
+      conn = conn
+    )
+  } else {
+    db_execute(
+      sprintf(
+        "CALL %s.set_option(%s, %s%s);",
+        ducklake_name,
+        quote_sql(option),
+        render_option_value(value),
+        option_scope_args(NULL, schema_name)
+      ),
+      conn = conn
+    )
+  }
 
   scope <- if (!is.null(table_name)) {
     "table {.val {table_name}}"
@@ -111,6 +132,72 @@ set_ducklake_option <- function(option,
   dl_inform(paste0(
     "Option {.val {option}} set to {.val {value}} for ", scope, "."
   ))
+
+  invisible(NULL)
+}
+
+#' Remove a table's override of a DuckLake option
+#'
+#' Drops the table-scoped value set with [set_ducklake_option()] or
+#' [create_table()], so the schema or lake-wide setting, or DuckLake's
+#' default, applies to the table again. Runs `ALTER TABLE ... RESET`, the
+#' one reset DuckLake offers: a lake-wide or schema option is changed by
+#' setting it again. Resetting an option the table does not override does
+#' nothing. Like the setter, this works on a table created in the open
+#' transaction.
+#'
+#' @param option Name of the option, as for [set_ducklake_option()].
+#' @param table_name The table, optionally qualified as `"schema.table"`.
+#' @param schema_name Optional schema name that qualifies `table_name`.
+#' @param ducklake_name Optional name of the attached DuckLake catalog. If
+#'   `NULL`, the current database is used.
+#'
+#' @returns Invisibly returns `NULL`.
+#' @family options
+#' @export
+#'
+#' @seealso [set_ducklake_option()], [get_ducklake_options()]
+#'
+#' @examplesIf ducklake_extension_available()
+#' lake_dir <- tempfile("resetopt_lake_")
+#' dir.create(lake_dir)
+#' attach_ducklake("resetopt_lake", lake_path = lake_dir)
+#' create_table(mtcars, "cars", options = list(parquet_compression = "zstd"))
+#'
+#' # Back to the lake-wide codec
+#' reset_ducklake_option("parquet_compression", table_name = "cars")
+#'
+#' detach_ducklake("resetopt_lake", shutdown = TRUE)
+#' unlink(lake_dir, recursive = TRUE)
+reset_ducklake_option <- function(option,
+                                  table_name,
+                                  schema_name = NULL,
+                                  ducklake_name = NULL) {
+  conn <- get_ducklake_connection()
+  ducklake_name <- infer_ducklake_name(ducklake_name, conn)
+  if (missing(table_name) || is.null(table_name)) {
+    cli::cli_abort(c(
+      "{.arg table_name} is required.",
+      "i" = "DuckLake resets table-scoped options only; a lake-wide or schema option is changed by setting it again with {.fun set_ducklake_option}."
+    ))
+  }
+  if (!is.character(option) || length(option) != 1 ||
+      !grepl("^[a-z][a-z0-9_]*$", option)) {
+    cli::cli_abort(
+      "{.arg option} must be a single option name in snake_case."
+    )
+  }
+  ref <- resolve_table_ref(table_name, schema_name)
+
+  db_execute(
+    sprintf(
+      "ALTER TABLE %s RESET (%s);",
+      quote_ident(qualified_table(ducklake_name, ref$schema, ref$table), conn),
+      option
+    ),
+    conn = conn
+  )
+  dl_inform("Option {.val {option}} reset for table {.val {table_name}}.")
 
   invisible(NULL)
 }
@@ -165,6 +252,49 @@ render_option_value <- function(value) {
   } else {
     quote_sql(as.character(value))
   }
+}
+
+#' Render a named list of options as `ALTER TABLE ... SET` assignments
+#'
+#' Validates the names (snake_case) and each value (through
+#' `render_option_value()`), so [create_table()] can check its `options`
+#' before anything is created.
+#'
+#' @param options A named list of option values.
+#' @returns A string such as `parquet_compression = 'zstd', auto_compact = false`.
+#' @noRd
+render_option_assignments <- function(options) {
+  if (!is.list(options) || length(options) == 0 || is.null(names(options)) ||
+      any(is.na(names(options)) | !nzchar(names(options)))) {
+    cli::cli_abort(
+      "{.arg options} must be a named list of option values, such as {.code list(parquet_compression = \"zstd\")}."
+    )
+  }
+  bad <- !grepl("^[a-z][a-z0-9_]*$", names(options))
+  if (any(bad)) {
+    cli::cli_abort(
+      "Option name{?s} must be in snake_case: {.val {names(options)[bad]}}."
+    )
+  }
+  values <- vapply(options, render_option_value, character(1))
+  paste(sprintf("%s = %s", names(options), values), collapse = ", ")
+}
+
+#' The lake.schema.table path of a table, for an ALTER statement
+#'
+#' `ALTER TABLE` names its table rather than taking the lake as an
+#' argument, so the path is spelled out in full; DuckLake's default schema
+#' is `main` on every backend.
+#' @noRd
+qualified_table <- function(ducklake_name, schema_name, table_name) {
+  paste(
+    c(
+      ducklake_name,
+      if (is.null(schema_name)) "main" else schema_name,
+      table_name
+    ),
+    collapse = "."
+  )
 }
 
 #' Render optional schema/table scoping for set_option()

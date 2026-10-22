@@ -19,6 +19,29 @@
 #'   renamed or derived column starts without one). Collecting the table
 #'   later restores the labels (see [get_table_comments()]), and every
 #'   other client of the lake can read them too. Set to `FALSE` to skip.
+#' @param partition_by Optional character vector of partition expressions,
+#'   as for [set_table_partitioning()]: column names, `year(col)` and the
+#'   other calendar transforms, or `bucket(n, col)`. The keys go on before
+#'   the rows, so the first load is already partitioned, where
+#'   [set_table_partitioning()] on an existing table affects only later
+#'   writes.
+#' @param sort_by Optional character vector of sort expressions, as for
+#'   [set_table_sorting()]: a column name, optionally followed by `ASC` or
+#'   `DESC` and `NULLS FIRST` or `NULLS LAST`. The first load is written in
+#'   this order.
+#' @param options Optional named list of table-scoped options, as for
+#'   [set_ducklake_option()], for example `list(parquet_compression =
+#'   "zstd", data_inlining_row_limit = 0)`. They are set before the rows
+#'   are written and so govern the first load too: an inlining limit of
+#'   `0` here sends even a handful of rows to a Parquet file instead of the
+#'   catalog.
+#'
+#' @details
+#' With any of `partition_by`, `sort_by`, or `options`, the table is
+#' created empty from the source's columns, the keys and options go on,
+#' and the rows are inserted, in one transaction (yours when one is open),
+#' so the result is one snapshot with the layout in force from the first
+#' row. Without them, a single `CREATE TABLE ... AS` does the work.
 #'
 #' @returns Invisibly, `NULL`. Called for its side effect of creating the
 #'   table in the lake.
@@ -44,6 +67,14 @@
 #'   dplyr::filter(cyl > 4) |>
 #'   create_table("big_cars")
 #'
+#' # Partitioned, sorted, and compressed from the first load
+#' create_table(
+#'   mtcars, "cars_by_cyl",
+#'   partition_by = "cyl", sort_by = "mpg DESC",
+#'   options = list(parquet_compression = "zstd")
+#' )
+#' get_table_partitions("cars_by_cyl")
+#'
 #' # From a URL -- needs network access and the httpfs extension
 #' \dontrun{
 #' create_table("https://example.com/data.csv", "remote_table")
@@ -53,11 +84,15 @@
 #'
 #' detach_ducklake("create_lake", shutdown = TRUE)
 #' unlink(lake_dir, recursive = TRUE)
-create_table <- function(data_source, table_name, labels = TRUE) {
+create_table <- function(data_source, table_name, labels = TRUE,
+                         partition_by = NULL, sort_by = NULL,
+                         options = NULL) {
+  layout <- check_table_layout(partition_by, sort_by, options)
+  conn <- get_ducklake_connection()
+
   if (inherits(data_source, "tbl_lazy")) {
-    conn <- get_ducklake_connection()
     if (same_connection(data_source, conn)) {
-      return(create_table_from_query(data_source, table_name, labels, conn))
+      return(create_table_from_query(data_source, table_name, labels, layout, conn))
     }
     # A lazy table on another connection has to come through R
     data_source <- dplyr::collect(data_source)
@@ -66,70 +101,120 @@ create_table <- function(data_source, table_name, labels = TRUE) {
   # Handle data.frame or tibble
   if (is.data.frame(data_source)) {
     prepared <- prepare_data_frame(data_source, labels)
-    data_source <- prepared$data
-    column_labels <- prepared$labels
 
     # Register the data.frame as a temporary view in DuckDB; unregister on
     # exit so a failed CREATE doesn't leave the view behind on the shared
     # connection
-    conn <- get_ducklake_connection()
-    temp_view_name <- register_temp_view(data_source, table_name, conn)
+    temp_view_name <- register_temp_view(prepared$data, table_name, conn)
     on.exit(
       duckdb::duckdb_unregister(get_ducklake_connection(), temp_view_name),
       add = TRUE
     )
-
-    # When labels ride along, the CREATE and the COMMENT statements must
-    # land as one snapshot: open a transaction of our own unless the
-    # caller already has one
-    own_txn <- length(column_labels) > 0 && !in_transaction(conn)
-    committed <- FALSE
-    if (own_txn) {
-      DBI::dbExecute(conn, "BEGIN TRANSACTION;")
-      on.exit(
-        if (!committed) {
-          tryCatch(DBI::dbExecute(conn, "ROLLBACK;"), error = function(e) NULL)
-        },
-        add = TRUE
-      )
-    }
-
-    # Create the table from the temporary view
-    db_execute(sprintf(
-      "CREATE TABLE %s AS SELECT * FROM %s;",
-      quote_ident(table_name), quote_ident(temp_view_name)
-    ))
-
-    store_column_labels(table_name, column_labels, conn)
-
-    if (own_txn) {
-      DBI::dbExecute(conn, "COMMIT;")
-      committed <- TRUE
-    }
-    if (length(column_labels) > 0) {
-      dl_inform(
-        "Stored {length(column_labels)} column label{?s} as column comment{?s}."
-      )
-    }
-
+    create_table_from_source(
+      table_name,
+      sprintf("SELECT * FROM %s", quote_ident(temp_view_name, conn)),
+      layout, prepared$labels, conn
+    )
     return(invisible(NULL))
   }
-  
+
   # If data_source is a URL, ensure httpfs extension is installed and loaded
   if (is.character(data_source) && grepl("^https?://", data_source)) {
     load_or_install_extension("httpfs")
   }
-  
+
   # Handle file paths and URLs
   if (is.character(data_source)) {
-    db_execute(sprintf(
-      "CREATE TABLE %s AS FROM %s;",
-      quote_ident(table_name), quote_sql(data_source)
-    ))
+    create_table_from_source(
+      table_name,
+      sprintf("SELECT * FROM %s", quote_sql(data_source)),
+      layout, character(), conn
+    )
   } else {
     cli::cli_abort("{.arg data_source} must be a character string (file path or URL) or a data.frame.")
   }
-  
+
+  invisible(NULL)
+}
+
+#' Validate create_table()'s layout arguments before anything is created
+#'
+#' @returns A list holding the pieces that were given, empty when none.
+#' @noRd
+check_table_layout <- function(partition_by, sort_by, options) {
+  layout <- list()
+  if (!is.null(partition_by)) {
+    layout$partition_by <- check_partition_by(partition_by)
+  }
+  if (!is.null(sort_by)) {
+    layout$sort_by <- check_sort_by(sort_by)
+  }
+  if (!is.null(options)) {
+    render_option_assignments(options)
+    layout$options <- options
+  }
+  layout
+}
+
+#' Create a table from a SELECT, with its layout and labels, as one snapshot
+#'
+#' Without a layout this is one `CREATE TABLE ... AS`. With one, the
+#' sequence DuckLake accepts in a transaction: create the table empty from
+#' the source's columns, put the keys and options on, insert the rows.
+#' Either way the labels follow in the same transaction, which is the
+#' caller's when one is open and this function's own otherwise.
+#'
+#' @param table_name Name of the new table.
+#' @param source_sql A `SELECT` producing the rows.
+#' @param layout The list from `check_table_layout()`.
+#' @param comments Named character vector of column comments to store.
+#' @param conn The package connection.
+#' @returns Invisibly, `NULL`.
+#' @noRd
+create_table_from_source <- function(table_name, source_sql, layout, comments,
+                                     conn) {
+  quoted <- quote_ident(table_name, conn)
+  has_layout <- length(layout) > 0
+
+  own_txn <- (has_layout || length(comments) > 0) && !in_transaction(conn)
+  committed <- FALSE
+  if (own_txn) {
+    DBI::dbExecute(conn, "BEGIN TRANSACTION;")
+    on.exit(
+      if (!committed) {
+        tryCatch(DBI::dbExecute(conn, "ROLLBACK;"), error = function(e) NULL)
+      },
+      add = TRUE
+    )
+  }
+
+  if (has_layout) {
+    # Keys and options go on the empty table so the first load already
+    # lands partitioned, sorted, and inlined (or not) as asked
+    db_execute(sprintf("CREATE TABLE %s AS %s LIMIT 0;", quoted, source_sql), conn = conn)
+    apply_table_layout(
+      table_name,
+      partition_by = layout$partition_by,
+      sort_by = layout$sort_by,
+      options = layout$options,
+      conn = conn
+    )
+    db_execute(sprintf("INSERT INTO %s %s;", quoted, source_sql), conn = conn)
+  } else {
+    db_execute(sprintf("CREATE TABLE %s AS %s;", quoted, source_sql), conn = conn)
+  }
+  store_column_labels(table_name, comments, conn)
+
+  if (own_txn) {
+    DBI::dbExecute(conn, "COMMIT;")
+    committed <- TRUE
+  }
+  if (length(comments) > 0) {
+    dl_inform(
+      "Stored {length(comments)} column label{?s} as column comment{?s}."
+    )
+  }
+
   invisible(NULL)
 }
 
@@ -225,46 +310,22 @@ same_connection <- function(tbl, conn) {
 #' @param .data A lazy table on `conn`.
 #' @param table_name Name of the new table.
 #' @param labels Whether to carry source column comments over.
+#' @param layout The list from `check_table_layout()`.
 #' @param conn The package connection.
 #' @returns Invisibly, `NULL`.
 #' @noRd
-create_table_from_query <- function(.data, table_name, labels, conn) {
+create_table_from_query <- function(.data, table_name, labels, layout, conn) {
   column_comments <- if (isTRUE(labels)) {
     source_column_comments(.data, conn)
   } else {
     character()
   }
-  sql <- dbplyr::sql_render(.data, conn)
-
-  own_txn <- length(column_comments) > 0 && !in_transaction(conn)
-  committed <- FALSE
-  if (own_txn) {
-    DBI::dbExecute(conn, "BEGIN TRANSACTION;")
-    on.exit(
-      if (!committed) {
-        tryCatch(DBI::dbExecute(conn, "ROLLBACK;"), error = function(e) NULL)
-      },
-      add = TRUE
-    )
-  }
-
-  db_execute(
-    sprintf("CREATE TABLE %s AS\n%s;", quote_ident(table_name, conn), sql),
-    conn = conn
+  # A subquery, so the layout path can append LIMIT 0 to any rendered SQL
+  source_sql <- sprintf(
+    "SELECT * FROM (\n%s\n) AS ducklake_source",
+    dbplyr::sql_render(.data, conn)
   )
-  store_column_labels(table_name, column_comments, conn)
-
-  if (own_txn) {
-    DBI::dbExecute(conn, "COMMIT;")
-    committed <- TRUE
-  }
-  if (length(column_comments) > 0) {
-    dl_inform(
-      "Stored {length(column_comments)} column label{?s} as column comment{?s}."
-    )
-  }
-
-  invisible(NULL)
+  create_table_from_source(table_name, source_sql, layout, column_comments, conn)
 }
 
 #' Column comments a query's output columns inherit from the tables it reads

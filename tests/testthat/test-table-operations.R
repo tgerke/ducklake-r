@@ -416,7 +416,7 @@ test_that("pending keys are noted only inside a transaction and follow every rew
   expect_equal(get_table_sorting("test_replace_txn_edges")$expression, "id")
 })
 
-test_that("replace_table inside a transaction warns about table options it cannot carry over", {
+test_that("replace_table inside a transaction carries table options over as one snapshot", {
   skip_if_not_installed("duckdb")
   skip_if_not_installed("dplyr")
 
@@ -428,16 +428,26 @@ test_that("replace_table inside a transaction warns about table options it canno
     set_ducklake_option("parquet_compression", "zstd", table_name = "test_replace_txn_opts")
     set_ducklake_option("parquet_version", 2, table_name = "test_replace_txn_opts")
   })
+  table_options <- function() {
+    opts <- get_ducklake_options(lake$ducklake_name)
+    opts <- opts[opts$scope == "TABLE" & opts$scope_entry %in% "main.test_replace_txn_opts", ]
+    stats::setNames(opts$value, opts$option_name)[order(opts$option_name)]
+  }
+  before <- table_options()
+  s0 <- max(list_table_snapshots("test_replace_txn_opts")$snapshot_id)
 
-  # DuckLake refuses set_option() on a table created in the open transaction,
-  # so the rewrite commits and names what is left to do
-  expect_warning(
+  # ALTER TABLE ... SET works on the table the transaction created, where
+  # set_option() is refused, so nothing is left for after the commit
+  expect_no_warning(
     suppressMessages(with_transaction(
       get_ducklake_table("test_replace_txn_opts") |>
         dplyr::mutate(id = id * 10L) |>
         replace_table("test_replace_txn_opts")
-    )),
-    "could not be carried over"
+    ))
+  )
+  expect_equal(table_options(), before)
+  expect_equal(
+    max(list_table_snapshots("test_replace_txn_opts")$snapshot_id), s0 + 1
   )
   expect_equal(
     sort(dplyr::pull(get_ducklake_table("test_replace_txn_opts"), id)), c(10, 20)
@@ -482,7 +492,7 @@ test_that("replace_table and restore_table_version carry size and version option
   )
 })
 
-test_that("restore_table_version refuses an open transaction and leaves it alone", {
+test_that("restore_table_version joins an open transaction", {
   skip_if_not_installed("duckdb")
   skip_if_not_installed("dplyr")
 
@@ -494,20 +504,30 @@ test_that("restore_table_version refuses an open transaction and leaves it alone
   suppressMessages(
     rows_insert(get_ducklake_table("test_restore_in_txn"), data.frame(id = 3L), by = "id")
   )
+  s_before <- max(list_table_snapshots("test_restore_in_txn")$snapshot_id)
 
   suppressMessages(begin_transaction())
+  # the metadata belongs to the caller's commit
+  expect_error(
+    restore_table_version("test_restore_in_txn", version = v1, author = "x"),
+    "open transaction"
+  )
+  expect_true(ducklake:::in_transaction(lake$conn))
+  expect_true(restore_table_version("test_restore_in_txn", version = v1))
   suppressMessages(
     rows_insert(get_ducklake_table("test_restore_in_txn"), data.frame(id = 4L), by = "id")
   )
-  expect_error(
-    restore_table_version("test_restore_in_txn", version = v1),
-    "open transaction"
-  )
-  # the caller's pending insert is still there to commit
-  expect_true(ducklake:::in_transaction(lake$conn))
-  suppressMessages(commit_transaction())
+  suppressMessages(commit_transaction(commit_message = "restore and add"))
+
+  # the restore and the insert landed as one snapshot
   expect_equal(
-    sort(dplyr::pull(get_ducklake_table("test_restore_in_txn"), id)), 1:4
+    sort(dplyr::pull(get_ducklake_table("test_restore_in_txn"), id)), c(1L, 2L, 4L)
+  )
+  snaps <- list_table_snapshots("test_restore_in_txn")
+  expect_equal(max(snaps$snapshot_id), s_before + 1)
+  expect_equal(
+    snaps$commit_message[snaps$snapshot_id == max(snaps$snapshot_id)],
+    "restore and add"
   )
 })
 
