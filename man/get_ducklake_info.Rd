@@ -14,14 +14,18 @@ get_ducklake_info(ducklake_name = NULL)
 A one-row data frame with \code{ducklake_name}, \code{backend},
 \code{catalog} (the catalog file or connection string), \code{data_path},
 \code{format_version}, \code{extension_version}, \code{encrypted}, and
-\code{current_snapshot}.
+\code{current_snapshot}. \code{format_version} is \code{"1.1"} for a lake created
+with duckdb 2.0 and \code{"1.0"} for one created with duckdb 1.5, or with
+\code{ducklake_version = "1.0"}, that has not been migrated; see
+\code{\link[=attach_ducklake]{attach_ducklake()}} for what the difference means and how a lake moves
+from one to the other.
 }
 \description{
 One row of facts about a lake: which catalog backend it uses and where
-the catalog and data live, the DuckLake format version the catalog was
-written in, the extension version reading it, whether its Parquet files
-are encrypted, and the current snapshot id. Handy at the top of a report
-or a pipeline log, and the first thing to look at when a lake behaves
+the catalog and data live, the DuckLake format version the catalog is
+in, the extension version reading it, whether its Parquet files are
+encrypted, and the current snapshot id. Handy at the top of a report or
+a pipeline log, and the first thing to look at when a lake behaves
 unexpectedly.
 }
 \examples{

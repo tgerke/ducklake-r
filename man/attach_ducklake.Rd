@@ -16,6 +16,7 @@ attach_ducklake(
   meta_encryption_key = NULL,
   snapshot_version = NULL,
   snapshot_time = NULL,
+  ducklake_version = NULL,
   automatic_migration = FALSE,
   create = TRUE,
   metadata_schema = NULL,
@@ -88,12 +89,32 @@ are rejected. Mutually exclusive with \code{snapshot_time}.}
 the lake pinned to its state at that moment. Mutually exclusive with
 \code{snapshot_version}.}
 
-\item{automatic_migration}{If \code{TRUE}, let DuckLake upgrade a catalog
-written in an earlier format version to the one the installed
-extension uses (the \code{AUTOMATIC_MIGRATION} option). Needed once for a
-lake created with DuckDB 1.5.1, whose extension wrote the 0.4 format,
-after upgrading to 1.5.2 or later. The upgrade is permanent, so take a
-backup first. Default \code{FALSE}, in which case a mismatch is an error.}
+\item{ducklake_version}{Optional DuckLake catalog format version,
+\code{"1.0"} or \code{"1.1"} (DuckLake's \code{DUCKLAKE_VERSION} option). When \code{NULL},
+the default, a new lake is created in the newest format, 1.1 with
+duckdb 2.0, and an existing lake opens in the format it has. Pass
+\code{"1.0"} to create a lake that duckdb 1.5 clients can still open, for a
+team on a SQLite or PostgreSQL catalog that is not upgrading together;
+a DuckDB-file catalog gives no such compatibility, see Details. A 1.0
+lake does without the 1.1 features (nested schemas, comments on view
+columns, and the \code{"NULL"} column type among them). Requesting \code{"1.1"}
+for an existing 1.0 lake is an error unless \code{automatic_migration = TRUE} migrates it, and a 1.1 lake cannot be taken back to 1.0.}
+
+\item{automatic_migration}{If \code{TRUE}, let DuckLake migrate a catalog in
+the 1.0 format to 1.1 when the lake is attached (the
+\code{AUTOMATIC_MIGRATION} option). A lake created with duckdb 1.5 is a 1.0
+catalog, which duckdb 2.0 reads and writes as it is; the 1.1 features
+need the migration. The migration is permanent (DuckLake refuses
+to downgrade a catalog), and after it no duckdb 1.5 client can open
+the lake, whatever the catalog backend. So move every client of the
+lake to duckdb 2.0 first, take a backup with \code{\link[=backup_ducklake]{backup_ducklake()}}, and
+attach once with this option from a writable session that may alter
+the catalog's tables (on PostgreSQL, the owner of the metadata
+tables); later attaches need nothing. A catalog from before 1.0
+(DuckDB 1.5.1 wrote 0.4) cannot be opened at all, not even read-only,
+until it is migrated. Default \code{FALSE}, in which case a lake opens in
+the format it has and a \code{ducklake_version} newer than that format is
+an error.}
 
 \item{create}{Create the lake when none exists at the catalog location
 (default \code{TRUE}, DuckLake's \code{CREATE_IF_NOT_EXISTS}). Pass \code{FALSE} when
@@ -101,9 +122,11 @@ you mean to open an existing lake, so a mistyped path or name is an
 error rather than a new, empty lake.}
 
 \item{metadata_schema}{Optional schema inside the catalog database that
-holds this lake's metadata tables (DuckLake's \code{METADATA_SCHEMA},
-default \code{main}). Lets several lakes share one PostgreSQL database,
-each in its own schema.}
+holds this lake's metadata tables (DuckLake's \code{METADATA_SCHEMA}).
+Without it DuckLake uses the backend's default schema: \code{main} for a
+DuckDB or SQLite catalog, usually \code{public} for PostgreSQL. Lets several
+lakes share one PostgreSQL database, each in its own schema. A SQLite
+catalog has no schemas and refuses the option.}
 
 \item{author}{Author to record on snapshot 0, the creation snapshot, when
 this call creates the lake. Defaults to the \code{ducklake.author} option
@@ -153,6 +176,19 @@ write is silent, and a failure to write is a warning, not an error. For
 a PostgreSQL or MySQL catalog, whether the lake already existed is read
 from the catalog after the attach (one snapshot, id 0, no metadata), so
 a lake another client created and never wrote to is labeled too.
+
+\strong{Upgrading duckdb:} The first write from duckdb 2.0 to a lake whose
+catalog is a DuckDB file rewrites that file in a storage format duckdb
+1.5 cannot open, whatever the lake's catalog format version, and no
+attach option prevents it: a lake created on duckdb 2.0 with
+\code{ducklake_version = "1.0"} is just as unreadable on 1.5 when its catalog
+is a DuckDB file. SQLite and PostgreSQL catalogs are not affected. So
+before the first duckdb 2.0 session writes to a DuckDB-file lake that
+other machines open, take a backup with \code{\link[=backup_ducklake]{backup_ducklake()}} and move
+every client of the lake to 2.0 together; a team that cannot upgrade
+together belongs on a SQLite or PostgreSQL catalog. The catalog format
+migration (\code{automatic_migration}) is a separate, opt-in step.
+\code{vignette("deployment")} has the full sequence.
 
 For credential management with PostgreSQL or MySQL, consider DuckDB's
 built-in secrets manager instead of embedding credentials in the connection
@@ -258,9 +294,24 @@ attach_ducklake(
 # A frozen view of the lake as of snapshot 12, e.g. to reproduce a report
 attach_ducklake("lake_v12", lake_path = "path/to/lake", snapshot_version = 12)
 
-# A lake created with DuckDB 1.5.1 (catalog format 0.4), opened after
-# upgrading: migrate it once, then attach as usual
+# A lake made with duckdb 1.5 is a 1.0 catalog and opens as it is. Once
+# every client is on duckdb 2.0: back it up, then attach once with
+# automatic_migration to move it to 1.1; later attaches need nothing
+attach_ducklake("old_lake", lake_path = "path/to/lake")
+backup_ducklake("old_lake", lake_path = "path/to/lake", backup_path = "path/to/backups")
+detach_ducklake("old_lake")
 attach_ducklake("old_lake", lake_path = "path/to/lake", automatic_migration = TRUE)
+get_ducklake_info("old_lake")$format_version
+
+# A new lake that duckdb 1.5 clients can still open: a 1.0 catalog in
+# SQLite (a DuckDB-file catalog written by 2.0 would lock them out)
+attach_ducklake(
+  "shared_lake",
+  backend = "sqlite",
+  catalog_connection_string = "/shared/lakes/shared_lake/catalog.sqlite",
+  lake_path = "/shared/lakes/shared_lake/data",
+  ducklake_version = "1.0"
+)
 
 # Open an existing lake, and error if it is not there
 attach_ducklake("prod_lake", lake_path = "/lakes/prod", create = FALSE)

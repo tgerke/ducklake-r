@@ -1,10 +1,10 @@
 #' Describe an attached DuckLake
 #'
 #' One row of facts about a lake: which catalog backend it uses and where
-#' the catalog and data live, the DuckLake format version the catalog was
-#' written in, the extension version reading it, whether its Parquet files
-#' are encrypted, and the current snapshot id. Handy at the top of a report
-#' or a pipeline log, and the first thing to look at when a lake behaves
+#' the catalog and data live, the DuckLake format version the catalog is
+#' in, the extension version reading it, whether its Parquet files are
+#' encrypted, and the current snapshot id. Handy at the top of a report or
+#' a pipeline log, and the first thing to look at when a lake behaves
 #' unexpectedly.
 #'
 #' @param ducklake_name Optional name of the attached DuckLake catalog. If
@@ -13,7 +13,11 @@
 #' @returns A one-row data frame with `ducklake_name`, `backend`,
 #'   `catalog` (the catalog file or connection string), `data_path`,
 #'   `format_version`, `extension_version`, `encrypted`, and
-#'   `current_snapshot`.
+#'   `current_snapshot`. `format_version` is `"1.1"` for a lake created
+#'   with duckdb 2.0 and `"1.0"` for one created with duckdb 1.5, or with
+#'   `ducklake_version = "1.0"`, that has not been migrated; see
+#'   [attach_ducklake()] for what the difference means and how a lake moves
+#'   from one to the other.
 #' @family connection management
 #' @export
 #'

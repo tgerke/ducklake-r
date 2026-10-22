@@ -13,7 +13,7 @@ test_that("get_ducklake_info() describes the attached lake", {
   expect_equal(info$backend, "duckdb")
   expect_true(file.exists(info$catalog))
   expect_true(startsWith(normalizePath(info$data_path), normalizePath(lake$lake_path)))
-  expect_true(nzchar(info$format_version))
+  expect_equal(info$format_version, "1.1")
   expect_true(nzchar(info$extension_version))
   expect_false(info$encrypted)
   expect_equal(info$current_snapshot, max(list_table_snapshots()$snapshot_id))
