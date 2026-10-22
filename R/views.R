@@ -67,7 +67,7 @@ create_view <- function(.data, view_name, replace = TRUE) {
   }
 
   conn <- dbplyr::remote_con(.data)
-  quoted <- quote_ident(view_name, conn)
+  quoted <- table_sql(view_name, conn)
   create_sql <- sprintf(
     "CREATE %sVIEW %s AS\n%s;",
     if (isTRUE(replace)) "OR REPLACE " else "",
@@ -96,7 +96,10 @@ create_view <- function(.data, view_name, replace = TRUE) {
     db_execute(create_sql, conn = conn)
     if (length(comment) == 1 && !is.na(comment)) {
       db_execute(
-        sprintf("COMMENT ON VIEW %s IS %s;", quoted, quote_sql(comment)),
+        sprintf(
+          "COMMENT ON VIEW %s IS %s;",
+          comment_target_sql(view_name, conn), quote_sql(comment)
+        ),
         conn = conn
       )
     }
@@ -122,12 +125,22 @@ create_view <- function(.data, view_name, replace = TRUE) {
 #' @noRd
 find_lake_view <- function(view_name, conn) {
   parts <- split_table_name(view_name)
+  ducklake_name <- if (is.null(parts$lake)) {
+    infer_ducklake_name(NULL, conn)
+  } else {
+    parts$lake
+  }
   DBI::dbGetQuery(
     conn,
-    "SELECT comment FROM duckdb_views()
-     WHERE database_name = ? AND schema_name = ? AND view_name = ?",
+    sprintf(
+      "WITH RECURSIVE %s
+       SELECT v.comment FROM duckdb_views() v
+       JOIN schema_paths sp ON v.schema_oid = sp.oid
+       WHERE v.database_name = ? AND sp.schema_path = ? AND v.view_name = ?",
+      catalog_schema_paths_cte(ducklake_name)
+    ),
     params = list(
-      infer_ducklake_name(NULL, conn),
+      ducklake_name,
       if (is.null(parts$schema)) "main" else parts$schema,
       parts$table
     )
@@ -165,7 +178,7 @@ drop_view <- function(view_name) {
   conn <- get_ducklake_connection()
 
   db_execute(
-    sprintf("DROP VIEW %s;", quote_ident(view_name, conn)),
+    sprintf("DROP VIEW %s;", table_sql(view_name, conn)),
     conn = conn
   )
   dl_inform("Dropped view {.val {view_name}}.")

@@ -154,6 +154,20 @@ get_ducklake_table("staging.cars_raw") |>
 list_ducklake_tables()
 ```
 
+Schemas nest, one level per dot: `create_schema("staging.imports")` makes
+`imports` inside `staging` (and `staging` itself when it is missing), and
+the tables inside are named `"staging.imports.cars_raw"`. Every listing
+reports the full path, so a `cars_raw` in `staging` and one in
+`staging.imports` stay apart. Comments and variable labels reach a table
+one level deep and no deeper, a limit of DuckDB's `COMMENT ON` statement
+rather than of DuckLake.
+
+```{r nested-schemas}
+create_schema("staging.imports")
+create_table(mtcars, "staging.imports.cars_raw")
+list_ducklake_tables()
+```
+
 ## Register Parquet files in place
 
 If your data is already in Parquet, `add_data_files()` records the files in

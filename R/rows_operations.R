@@ -371,7 +371,7 @@ rows_upsert.tbl_ducklake <- function(x, y, by = NULL, ...,
   clauses <- c(clauses, "WHEN NOT MATCHED THEN INSERT BY NAME")
 
   sql <- build_merge_sql(
-    target_sql = quote_ident(target, conn),
+    target_sql = table_sql(target, conn),
     source_sql = dbplyr::sql_render(y, conn, lvl = 1),
     on_sql = merge_on_sql(by, conn, "dl_target", "dl_target_source"),
     clauses = clauses,

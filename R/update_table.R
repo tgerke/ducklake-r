@@ -107,7 +107,7 @@ build_in_place_sql <- function(.data, table_name, .quiet = FALSE) {
   con <- dbplyr::remote_con(.data)
   qry <- dbplyr::sql_build(.data)
   target <- bare_table_name(table_name)
-  quoted_table <- quote_ident(table_name, con)
+  quoted_table <- table_sql(table_name, con)
 
   refuse_self_insert <- function() {
     cli::cli_abort(

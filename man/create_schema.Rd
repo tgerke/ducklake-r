@@ -7,7 +7,8 @@
 create_schema(schema_name, if_not_exists = TRUE, ducklake_name = NULL)
 }
 \arguments{
-\item{schema_name}{Name of the schema.}
+\item{schema_name}{Name of the schema, or a dotted path for a nested
+one.}
 
 \item{if_not_exists}{When the schema already exists, say so and do
 nothing (default \code{TRUE}) rather than error.}
@@ -25,6 +26,19 @@ function that takes a table name accepts \code{"schema.table"}, and
 \code{\link[=list_ducklake_tables]{list_ducklake_tables()}} shows each table's schema. DuckLake writes a
 schema's data files under a directory of their own, which is what
 path-based access control on object storage keys on.
+}
+\details{
+Schemas nest (DuckLake 1.1): \code{"sales.europe"} is the schema \code{europe}
+inside \code{sales}, and its tables are named \code{"sales.europe.orders"}. Every
+dot in a name is a level, so the parents are created first when they
+are missing, and a table, schema, or \code{schema_name} argument anywhere in
+the package takes the same dotted path. A first component that names an
+attached lake is read as the lake (\code{"lake.sales.orders"}). One limit is
+DuckDB's rather than DuckLake's: \verb{COMMENT ON} takes at most three
+qualifiers, so comments and variable labels reach a table one level deep
+and no deeper; \code{\link[=create_table]{create_table()}} warns and drops the labels of a deeper
+table. A lake on catalog format 1.0 has no nested schemas; see
+\code{attach_ducklake(automatic_migration = )}.
 }
 \examples{
 \dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}

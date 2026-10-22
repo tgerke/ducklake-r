@@ -7,10 +7,11 @@
 drop_schema(schema_name, cascade = FALSE, ducklake_name = NULL)
 }
 \arguments{
-\item{schema_name}{Name of the schema.}
+\item{schema_name}{Name of the schema, or the dotted path of a nested
+one.}
 
-\item{cascade}{Also drop the tables and views in the schema (default
-\code{FALSE}).}
+\item{cascade}{Also drop the tables, views, and nested schemas in the
+schema (default \code{FALSE}).}
 
 \item{ducklake_name}{Optional name of the attached DuckLake catalog. If
 \code{NULL}, the current database is used.}
@@ -20,9 +21,9 @@ Invisibly, \code{NULL}.
 }
 \description{
 Removes a schema with \verb{DROP SCHEMA}. By default the schema must be
-empty; \code{cascade = TRUE} drops its tables and views with it. Like every
-change, the drop is a snapshot, so the tables stay reachable through
-time travel.
+empty; \code{cascade = TRUE} drops its tables and views, and the schemas
+nested inside it, with it. Like every change, the drop is a snapshot,
+so the tables stay reachable through time travel.
 }
 \examples{
 \dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}

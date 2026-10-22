@@ -31,15 +31,23 @@ list_ducklake_tables <- function(ducklake_name = NULL) {
 
   # duckdb_tables()/duckdb_views() see whatever the attached catalog
   # exposes, so this works unchanged on every catalog backend and respects
-  # a snapshot-pinned attach
+  # a snapshot-pinned attach; the full schema path comes from the CTE
   DBI::dbGetQuery(
     conn,
-    "SELECT schema_name, table_name, 'table' AS type
-     FROM duckdb_tables() WHERE database_name = ? AND NOT internal
-     UNION ALL
-     SELECT schema_name, view_name AS table_name, 'view' AS type
-     FROM duckdb_views() WHERE database_name = ? AND NOT internal
-     ORDER BY schema_name, type, table_name",
+    sprintf(
+      "WITH RECURSIVE %s
+       SELECT sp.schema_path AS schema_name, t.table_name, 'table' AS type
+       FROM duckdb_tables() t
+       JOIN schema_paths sp ON t.schema_oid = sp.oid
+       WHERE t.database_name = ? AND NOT t.internal
+       UNION ALL
+       SELECT sp.schema_path, v.view_name AS table_name, 'view' AS type
+       FROM duckdb_views() v
+       JOIN schema_paths sp ON v.schema_oid = sp.oid
+       WHERE v.database_name = ? AND NOT v.internal
+       ORDER BY schema_name, type, table_name",
+      catalog_schema_paths_cte(ducklake_name)
+    ),
     params = list(ducklake_name, ducklake_name)
   )
 }

@@ -270,11 +270,12 @@ ducklake_table_id_names <- function(ducklake_name, conn) {
     DBI::dbGetQuery(
       conn,
       sprintf(
-        "SELECT t.table_id, s.schema_name || '.' || t.table_name AS table_name
+        "WITH RECURSIVE %s
+         SELECT t.table_id, s.schema_path || '.' || t.table_name AS table_name
          FROM %s.ducklake_table t
-         JOIN %s.ducklake_schema s ON t.schema_id = s.schema_id
+         JOIN schema_paths s ON t.schema_id = s.schema_id
          ORDER BY t.begin_snapshot, s.begin_snapshot",
-        prefix, prefix
+        metadata_schema_paths_cte(ducklake_name, conn), prefix
       )
     ),
     error = function(e) data.frame(table_id = numeric(0), table_name = character(0))

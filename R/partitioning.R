@@ -122,7 +122,7 @@ reset_table_partitioning <- function(table_name) {
   db_execute(
     sprintf(
       "ALTER TABLE %s RESET PARTITIONED BY;",
-      quote_ident(table_name, conn)
+      table_sql(table_name, conn)
     ),
     conn = conn
   )
@@ -176,21 +176,22 @@ get_table_partitions <- function(table_name = NULL, ducklake_name = NULL) {
 
   # Current (non-superseded) metadata rows have end_snapshot IS NULL
   sql <- sprintf(
-    "SELECT s.schema_name, t.table_name, pc.partition_key_index,
+    "WITH RECURSIVE %3$s
+     SELECT s.schema_path AS schema_name, t.table_name, pc.partition_key_index,
             c.column_name, pc.transform
      FROM %1$s.ducklake_partition_info pi
      JOIN %1$s.ducklake_partition_column pc
        ON pi.partition_id = pc.partition_id AND pi.table_id = pc.table_id
      JOIN %1$s.ducklake_table t
        ON pi.table_id = t.table_id AND t.end_snapshot IS NULL
-     JOIN %1$s.ducklake_schema s
+     JOIN schema_paths s
        ON t.schema_id = s.schema_id AND s.end_snapshot IS NULL
      JOIN %1$s.ducklake_column c
        ON pc.column_id = c.column_id AND pc.table_id = c.table_id
        AND c.end_snapshot IS NULL
      WHERE pi.end_snapshot IS NULL %2$s
-     ORDER BY s.schema_name, t.table_name, pc.partition_key_index",
-    prefix, filter$sql
+     ORDER BY s.schema_path, t.table_name, pc.partition_key_index",
+    prefix, filter$sql, metadata_schema_paths_cte(ducklake_name, conn)
   )
 
   if (length(filter$params) == 0) {

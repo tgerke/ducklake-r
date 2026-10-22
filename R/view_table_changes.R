@@ -532,20 +532,21 @@ format_bound <- function(x) {
 schema_history <- function(table, schema, ducklake_name, conn, start_id, end_id) {
   prefix <- metadata_prefix(ducklake_name, conn)
   sql <- sprintf(
-    "SELECT c.column_id, c.begin_snapshot, c.end_snapshot, c.column_order,
+    "WITH RECURSIVE %2$s
+     SELECT c.column_id, c.begin_snapshot, c.end_snapshot, c.column_order,
             c.column_name, c.column_type, c.nulls_allowed, c.default_value,
             t.begin_snapshot AS table_begin
      FROM %1$s.ducklake_column c
      JOIN %1$s.ducklake_table t
        ON c.table_id = t.table_id AND t.end_snapshot IS NULL
-     JOIN %1$s.ducklake_schema s
+     JOIN schema_paths s
        ON t.schema_id = s.schema_id AND s.end_snapshot IS NULL
-     WHERE t.table_name = ? AND s.schema_name = ?
+     WHERE t.table_name = ? AND s.schema_path = ?
        AND c.parent_column IS NULL
        AND c.begin_snapshot <= ?
        AND (c.end_snapshot IS NULL OR c.end_snapshot >= ?)
      ORDER BY c.column_id, c.begin_snapshot",
-    prefix
+    prefix, metadata_schema_paths_cte(ducklake_name, conn)
   )
   versions <- tryCatch(
     DBI::dbGetQuery(conn, sql, params = list(table, schema, end_id, start_id)),

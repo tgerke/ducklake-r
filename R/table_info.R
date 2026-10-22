@@ -54,11 +54,12 @@ get_table_info <- function(table_name = NULL, ducklake_name = NULL, conn = NULL)
   result <- DBI::dbGetQuery(
     conn,
     sprintf(
-      "SELECT ti.*, s.schema_name
+      "WITH RECURSIVE %s
+       SELECT ti.*, s.schema_path AS schema_name
        FROM ducklake_table_info(%s) ti
-       LEFT JOIN %s.ducklake_schema s
+       LEFT JOIN schema_paths s
          ON ti.schema_id = s.schema_id AND s.end_snapshot IS NULL",
-      quote_sql(ducklake_name), metadata_prefix(ducklake_name, conn)
+      metadata_schema_paths_cte(ducklake_name, conn), quote_sql(ducklake_name)
     )
   )
 

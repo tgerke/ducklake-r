@@ -232,7 +232,7 @@ merge_into <- function(target, source, by,
     clauses <- c(clauses, "WHEN NOT MATCHED BY SOURCE THEN DELETE")
   }
 
-  target_sql <- quote_ident(target_name, conn)
+  target_sql <- table_sql(target_name, conn)
   source_sql <- dbplyr::sql_render(source_tbl, conn, lvl = 1)
 
   statements <- character(0)

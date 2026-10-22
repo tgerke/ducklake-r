@@ -33,18 +33,25 @@
 get_ducklake_table <- function(tbl_name) {
   conn <- get_ducklake_connection()
   if (grepl(".", tbl_name, fixed = TRUE)) {
-    # The duckdb driver's tbl() method turns a dotted name it cannot find
-    # as a literal table name into raw SQL, which reads fine but has no
-    # table identity for rows_*() to write to. Hand dbplyr the quoted path.
-    tbl <- dbplyr::tbl_sql(
-      "duckdb_connection",
-      src = dbplyr::src_dbi(conn),
-      from = I(quote_ident(tbl_name, conn))
-    )
+    tbl <- lazy_table_at(table_sql(tbl_name, conn), conn)
   } else {
     tbl <- dplyr::tbl(conn, tbl_name)
   }
   as_ducklake_tbl(tbl, tbl_name)
+}
+
+#' A lazy table over a quoted identifier path
+#'
+#' The duckdb driver's `tbl()` method turns a dotted name it cannot find as
+#' a literal table name into raw SQL, which reads fine but has no table
+#' identity for `rows_*()` to write to. Hand dbplyr the quoted path instead.
+#' @noRd
+lazy_table_at <- function(quoted, conn) {
+  dbplyr::tbl_sql(
+    "duckdb_connection",
+    src = dbplyr::src_dbi(conn),
+    from = I(quoted)
+  )
 }
 
 #' Mark a lazy table as a DuckLake table
@@ -108,9 +115,9 @@ as_ducklake_tbl <- function(tbl, table_name, asof = NULL) {
 #' detach_ducklake("meta_lake", shutdown = TRUE)
 #' unlink(lake_dir, recursive = TRUE)
 get_metadata_table <- function(tbl_name, ducklake_name = NULL) {
+  conn <- get_ducklake_connection()
   # If ducklake_name not provided, try to infer from current database
   if (is.null(ducklake_name)) {
-    conn <- get_ducklake_connection()
     tryCatch({
       current_db <- DBI::dbGetQuery(conn, "SELECT current_database() as db")$db
       if (!is.null(current_db) && current_db != "") {
@@ -134,5 +141,10 @@ get_metadata_table <- function(tbl_name, ducklake_name = NULL) {
   } else {
     paste(metadata_db, "main", tbl_name, sep = ".")
   }
-  return(get_ducklake_table(metadata_tbl_name))
+  # Not through get_ducklake_table(): the metadata database is not a lake,
+  # so its name must not be read as a schema path inside one
+  as_ducklake_tbl(
+    lazy_table_at(quote_ident(metadata_tbl_name, conn), conn),
+    metadata_tbl_name
+  )
 }

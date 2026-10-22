@@ -66,19 +66,9 @@ get_ducklake_table_asof <- function(table_name, timestamp, conn = NULL) {
   check_not_future(timestamp)
   timestamp_str <- format_timestamp(timestamp)
 
-  # Add schema prefix if not already present.
-  # DuckDB and SQLite use the main. schema; PostgreSQL and MySQL do not.
-  qualified <- table_name
-  if (!grepl("\\.", table_name)) {
-    backend <- get_ducklake_backend()
-    if (!(backend %in% c("postgres", "mysql"))) {
-      qualified <- paste0("main.", table_name)
-    }
-  }
-
   # Use DuckLake's AT (TIMESTAMP => ...) syntax for time travel
   query <- sprintf("SELECT * FROM %s AT (TIMESTAMP => %s)",
-                   quote_ident(qualified, conn), quote_sql(timestamp_str))
+                   table_sql(table_name, conn), quote_sql(timestamp_str))
 
   as_ducklake_tbl(
     dplyr::tbl(conn, dplyr::sql(query)), table_name,
@@ -140,20 +130,10 @@ get_ducklake_table_version <- function(table_name, version, conn = NULL) {
     conn <- get_ducklake_connection()
   }
 
-  # Add schema prefix if not already present.
-  # DuckDB and SQLite use the main. schema; PostgreSQL and MySQL do not.
-  qualified <- table_name
-  if (!grepl("\\.", table_name)) {
-    backend <- get_ducklake_backend()
-    if (!(backend %in% c("postgres", "mysql"))) {
-      qualified <- paste0("main.", table_name)
-    }
-  }
-
   # Use DuckLake's AT (VERSION => ...) syntax to query a specific snapshot
   # The version parameter should be the snapshot_id from list_table_snapshots()
   query <- sprintf("SELECT * FROM %s AT (VERSION => %d)",
-                   quote_ident(qualified, conn), as.integer(version))
+                   table_sql(table_name, conn), as.integer(version))
 
   as_ducklake_tbl(
     dplyr::tbl(conn, dplyr::sql(query)), table_name,
@@ -345,7 +325,7 @@ restore_table_version <- function(table_name, version = NULL, timestamp = NULL,
     restore_point <- timestamp_str
   }
 
-  quoted_table <- quote_ident(table_name, conn)
+  quoted_table <- table_sql(table_name, conn)
 
   if (own_txn && is.null(commit_message)) {
     commit_message <- sprintf("Restored %s to %s", table_name, restore_point)
