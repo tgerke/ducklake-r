@@ -43,6 +43,12 @@
 #' so the result is one snapshot with the layout in force from the first
 #' row. Without them, a single `CREATE TABLE ... AS` does the work.
 #'
+#' A column that is `NA` in every row of a query (`mutate(flag = NA)`) has
+#' no type for DuckDB to infer, and the table stores it with the `"NULL"`
+#' type, which holds nothing but `NULL` until [set_column_type()] promotes
+#' it. Give the placeholder a type in the query (`NA_character_`,
+#' `NA_real_`) when the first values are known.
+#'
 #' @returns Invisibly, `NULL`. Called for its side effect of creating the
 #'   table in the lake.
 #' @family table operations

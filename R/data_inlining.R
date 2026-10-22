@@ -239,8 +239,9 @@ get_inlining_row_limit <- function(table_name = NULL,
 #' inlined data tables. Time-travel information is preserved: flushed rows that
 #' had been deleted will produce a partial deletion file with snapshot metadata.
 #'
-#' Tables with `auto_compact` set to `FALSE` are skipped when flushing an
-#' entire lake or schema. Use an explicit `table_name` to flush those tables.
+#' Tables with `auto_compact` set to `FALSE` are skipped, also when
+#' `table_name` names one; set the option back to `TRUE` to flush such a
+#' table.
 #'
 #' If a table has a sort order defined, the flushed Parquet file will be sorted
 #' by those keys.

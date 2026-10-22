@@ -8,7 +8,8 @@ rewrite_data_files(
   ducklake_name = NULL,
   table_name = NULL,
   delete_threshold = NULL,
-  schema_name = NULL
+  schema_name = NULL,
+  max_compacted_files = NULL
 )
 }
 \arguments{
@@ -24,6 +25,10 @@ current database is used.}
 }}
 
 \item{schema_name}{Optional schema containing \code{table_name}.}
+
+\item{max_compacted_files}{Optional cap on the number of rewrite
+operations per table in a single call, for working through a table
+with many deleted rows in batches.}
 }
 \value{
 A data frame with one row per compaction operation (columns
@@ -37,7 +42,10 @@ slow reads down until they are rewritten without the dead rows.
 }
 \details{
 The rewritten originals are scheduled for deletion once no snapshot
-references them; run \code{\link[=cleanup_old_files]{cleanup_old_files()}} to remove them.
+references them; run \code{\link[=cleanup_old_files]{cleanup_old_files()}} to remove them. Inlined
+deletions count toward the threshold without being flushed first, and a
+table whose \code{auto_compact} option is \code{FALSE} is left alone, also when
+\code{table_name} names it.
 }
 \examples{
 \dontshow{if (ducklake_extension_available()) withAutoprint(\{ # examplesIf}

@@ -93,6 +93,34 @@
   has no nested schemas; `create_schema()` says so and points at
   `automatic_migration`.
 
+* New `set_column_default()` sets or drops what later inserts put in a
+  column, including an expression DuckDB evaluates at insert time, such as
+  `DBI::SQL("now()")`, on a committed column. `add_table_column()` writes
+  its `default` as a typed literal now (`TRUE`, `DATE '...'`, `TIMESTAMP
+  '...'`) rather than a quoted string, which DuckLake 1.1 accepts; the
+  value still fills existing rows.
+
+* `set_table_partitioning()` and `create_table(partition_by = )` accept
+  the epoch transforms `epoch_year()`, `epoch_month()`, `epoch_day()`, and
+  `epoch_hour()`, whole units since 1970 that keep January 2020 and
+  January 2021 in different partitions where `month()` does not, and that
+  match what Iceberg writes. They need a lake on catalog format 1.1.
+
+* `merge_adjacent_files()` gains `newer_than` and `older_than`, a window
+  over the files' snapshot times, and `rewrite_data_files()` gains
+  `max_compacted_files`, a cap on rewrites per table per call.
+
+* `create_view()` carries a view's column comments across a replace, as it
+  already did the view's own comment. DuckLake 1.1 stores comments on view
+  columns and drops them with the replaced entry.
+
+* Documentation for DuckLake 1.1: `auto_compact = FALSE` now keeps a table
+  out of every maintenance call, named or not; the table-only
+  `skip_stats_columns` option; `set_column_type()`'s wider promotions and
+  the `"NULL"` type an all-`NA` query column gets; the broader Parquet
+  types `add_data_files()` imports; and the unencrypted Puffin deletion
+  vectors on an encrypted lake.
+
 # ducklake 0.9.0
 
 * New `view_table_changes()` opens a table's change feed in an interactive

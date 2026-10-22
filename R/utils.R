@@ -248,27 +248,29 @@ quote_column <- function(x, conn = get_ducklake_connection(),
 
 #' Render an R value as a SQL literal for a DEFAULT clause
 #'
-#' DuckLake stores column defaults as plain constants and rejects anything
-#' else as "non-literal": `DEFAULT TRUE`, `DATE '...'`, `TIMESTAMP '...'`,
-#' and casts all fail, while a bare number or a quoted string is accepted
-#' and converted to the column type. So logicals, Dates, and POSIXct values
-#' (in UTC) render as quoted strings; `NA` renders as `NULL`.
+#' Typed literals, which DuckLake 1.1 accepts in `ADD COLUMN` and `SET
+#' DEFAULT`: `TRUE`/`FALSE`, `DATE '...'`, `TIMESTAMP '...'` (POSIXct in
+#' UTC), a bare number, a quoted string, and `NULL` for `NA`. A
+#' [DBI::SQL()] value is an expression and goes in verbatim, which is how
+#' `set_column_default()` takes `now()`.
 #'
-#' @param x A length-one vector.
+#' @param x A length-one vector or a `DBI::SQL()` string.
 #' @returns A SQL literal string.
 #' @noRd
 render_sql_literal <- function(x) {
   if (length(x) != 1) {
     cli::cli_abort("SQL literal values must have length 1.")
   }
-  if (is.na(x)) {
+  if (inherits(x, "SQL")) {
+    as.character(x)
+  } else if (is.na(x)) {
     "NULL"
   } else if (inherits(x, "Date")) {
-    quote_sql(format(x, "%Y-%m-%d"))
+    sprintf("DATE %s", quote_sql(format(x, "%Y-%m-%d")))
   } else if (inherits(x, "POSIXct")) {
-    quote_sql(format_timestamp(x))
+    sprintf("TIMESTAMP %s", quote_sql(format_timestamp(x)))
   } else if (is.logical(x)) {
-    if (x) "'true'" else "'false'"
+    if (x) "TRUE" else "FALSE"
   } else if (is.numeric(x)) {
     format(x, scientific = FALSE)
   } else if (is.character(x)) {

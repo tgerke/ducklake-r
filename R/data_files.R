@@ -9,7 +9,12 @@
 #'   `"schema.table"`. Unless `create = TRUE`, it must already exist with a
 #'   schema compatible with the files (see `allow_missing` and
 #'   `ignore_extra_columns` for the permitted mismatches).
-#' @param files Character vector of Parquet file paths or URIs.
+#' @param files Character vector of Parquet file paths or URIs. DuckLake
+#'   1.1 reads files other tools wrote more widely than 1.0 did: `FLOAT16`
+#'   columns into `FLOAT`, nanosecond and time-zone-aware timestamps and
+#'   times, top-level `VARIANT`, and native Parquet `GEOMETRY`; values of
+#'   Hive-partitioned directories count as partition values; and `NOT
+#'   NULL` constraints are checked on import.
 #' @param schema_name Optional schema containing the table (defaults to the
 #'   lake's `main` schema).
 #' @param allow_missing If `TRUE`, files may lack columns that exist in the

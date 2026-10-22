@@ -67,6 +67,8 @@ accordingly. Only applies when the lake is first created; an existing
 lake keeps the setting it was created with. The httpfs extension is
 loaded automatically: on some platforms (notably Windows) DuckDB's
 built-in crypto module is read-only and httpfs provides the writer.
+Parquet data and delete files are encrypted; the Puffin deletion
+vectors of the experimental \code{write_deletion_vectors} option are not.
 Default \code{FALSE}.}
 
 \item{meta_encryption_key}{Optional key that encrypts the catalog

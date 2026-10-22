@@ -27,11 +27,11 @@
 #' which persists the same setting. [create_table()] takes the same options
 #' for a new table, so they govern its first load.
 #'
-#' The options DuckLake 1.0 persists, with their defaults:
+#' The options DuckLake 1.1 persists, with their defaults:
 #'
 #' | Option | Default | What it controls |
 #' |---|---|---|
-#' | `auto_compact` | `true` | Whether maintenance calls made without a table argument include the table |
+#' | `auto_compact` | `true` | Whether the maintenance functions touch the table at all, named or not; orphan cleanup follows the lake-wide value only |
 #' | `data_inlining_row_limit` | `10` | Rows below which an insert or delete is stored in the catalog instead of a file (see [set_inlining_row_limit()]) |
 #' | `delete_older_than` | unset | How long a released file waits before [cleanup_old_files()] and checkpoints delete it |
 #' | `expire_older_than` | unset | How old a snapshot must be before checkpoints expire it |
@@ -45,6 +45,7 @@
 #' | `per_thread_output` | `false` | One output file per thread during a parallel insert |
 #' | `require_commit_message` | `false` | Refuse to commit a snapshot without a commit message |
 #' | `rewrite_delete_threshold` | `0.95` | Deleted fraction of a file above which [rewrite_data_files()] rewrites it |
+#' | `skip_stats_columns` | none | Table scope only: a column whose min/max bounds are not recorded, for a wide payload column no filter ever touches; set it by name, and [reset_ducklake_option()] records bounds again for later writes |
 #' | `sort_on_insert` | `true` | Sort inserted rows by the table's sort keys (see [set_table_sorting()]) |
 #' | `target_file_size` | `512MB` | Target data file size for inserts and compaction |
 #' | `write_deletion_vectors` | `false` | Write Iceberg V3 deletion vectors instead of positional delete files |

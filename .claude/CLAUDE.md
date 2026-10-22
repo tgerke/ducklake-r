@@ -495,8 +495,9 @@
   top-level schema, `schema.sub.table` without the lake for one level of
   nesting (resolved in the current database, which must be the lake), and
   refuses deeper tables; `store_column_labels()` warns and drops labels
-  there instead of failing the load. Worth an upstream issue on
-  duckdb/duckdb. Facts confirmed on DuckDB 2.0.0 with DuckLake 1.1:
+  there instead of failing the load. Reported upstream as
+  duckdb/duckdb#27663 (2026-10-22); revisit the limit when it is
+  answered. Facts confirmed on DuckDB 2.0.0 with DuckLake 1.1:
   `CREATE SCHEMA IF NOT EXISTS a.b` fails when `a` is missing, so
   `create_schema()` creates parents outermost first; `DROP SCHEMA a`
   refuses when children exist ("entries that depend on it"), and `CASCADE`
@@ -520,6 +521,29 @@
   `lake.table_changes('sales.europe.orders', ...)` does not;
   `get_metadata_table()` bypasses `get_ducklake_table()` because the
   metadata database name would otherwise be read as a schema path.
+- **Column defaults, epoch transforms, compaction windows, and view column
+  comments** (2026-10-22, confirmed on DuckDB 2.0.0 with DuckLake 1.1).
+  `ADD COLUMN` takes typed literal defaults (`TRUE`, `DATE '...'`,
+  `TIMESTAMP '...'`, `TIMESTAMPTZ '...'`, `NULL`) and backfills existing
+  rows, so `render_sql_literal()` writes them typed and passes a
+  `DBI::SQL()` value through verbatim; `ALTER ... SET DEFAULT now()` works
+  on a committed column and fills later inserts, `DROP DEFAULT` works, a
+  literal `SET DEFAULT` works even on a column added in the open
+  transaction, but an expression one there is refused with the `ADD
+  COLUMN` "non-literal" message, which is why `set_column_default()` is a
+  separate call and its docs say to commit first. `ducklake_column` keeps
+  an expression default as text (`now()`) in `default_value`, with
+  `initial_default` NULL. `epoch_month(ts)` is stored as transform
+  `epoch_month`, so `partition_expressions()` rebuilds it; a 1.0 catalog
+  refuses the epoch transforms with a migration hint.
+  `ducklake_merge_adjacent_files(newer_than =>, older_than =>)` take naive
+  `TIMESTAMP` literals (read as UTC, the `format_timestamp()` convention),
+  and `ducklake_rewrite_data_files(max_compacted_files =>)` is accepted.
+  `CREATE OR REPLACE VIEW` drops the view's column comments along with
+  the view comment, and `COMMENT ON COLUMN view.col` sets them again, so
+  `create_view(replace = TRUE)` reads them through `get_table_comments()`
+  (whose column union reads `duckdb_columns()`, which lists view columns)
+  and puts back the ones the new view still has.
 - **`restore_table_version()` joins an open transaction** (2026-10-21,
   reversing the 2026-09-17 refusal). It refused because its own
   `with_transaction()` could not nest and the options needed a post-commit

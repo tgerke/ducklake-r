@@ -53,6 +53,7 @@ Other schema evolution:
 \code{\link[=drop_table_column]{drop_table_column()}},
 \code{\link[=rename_ducklake_table]{rename_ducklake_table()}},
 \code{\link[=rename_table_column]{rename_table_column()}},
+\code{\link[=set_column_default]{set_column_default()}},
 \code{\link[=set_column_type]{set_column_type()}}
 }
 \concept{schema evolution}

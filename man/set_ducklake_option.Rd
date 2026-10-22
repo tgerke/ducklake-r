@@ -47,9 +47,9 @@ lake-wide default. Lake and schema scope run \verb{CALL <lake>.set_option(...)};
 which persists the same setting. \code{\link[=create_table]{create_table()}} takes the same options
 for a new table, so they govern its first load.
 
-The options DuckLake 1.0 persists, with their defaults:\tabular{lll}{
+The options DuckLake 1.1 persists, with their defaults:\tabular{lll}{
    Option \tab Default \tab What it controls \cr
-   \code{auto_compact} \tab \code{true} \tab Whether maintenance calls made without a table argument include the table \cr
+   \code{auto_compact} \tab \code{true} \tab Whether the maintenance functions touch the table at all, named or not; orphan cleanup follows the lake-wide value only \cr
    \code{data_inlining_row_limit} \tab \code{10} \tab Rows below which an insert or delete is stored in the catalog instead of a file (see \code{\link[=set_inlining_row_limit]{set_inlining_row_limit()}}) \cr
    \code{delete_older_than} \tab unset \tab How long a released file waits before \code{\link[=cleanup_old_files]{cleanup_old_files()}} and checkpoints delete it \cr
    \code{expire_older_than} \tab unset \tab How old a snapshot must be before checkpoints expire it \cr
@@ -63,6 +63,7 @@ The options DuckLake 1.0 persists, with their defaults:\tabular{lll}{
    \code{per_thread_output} \tab \code{false} \tab One output file per thread during a parallel insert \cr
    \code{require_commit_message} \tab \code{false} \tab Refuse to commit a snapshot without a commit message \cr
    \code{rewrite_delete_threshold} \tab \code{0.95} \tab Deleted fraction of a file above which \code{\link[=rewrite_data_files]{rewrite_data_files()}} rewrites it \cr
+   \code{skip_stats_columns} \tab none \tab Table scope only: a column whose min/max bounds are not recorded, for a wide payload column no filter ever touches; set it by name, and \code{\link[=reset_ducklake_option]{reset_ducklake_option()}} records bounds again for later writes \cr
    \code{sort_on_insert} \tab \code{true} \tab Sort inserted rows by the table's sort keys (see \code{\link[=set_table_sorting]{set_table_sorting()}}) \cr
    \code{target_file_size} \tab \verb{512MB} \tab Target data file size for inserts and compaction \cr
    \code{write_deletion_vectors} \tab \code{false} \tab Write Iceberg V3 deletion vectors instead of positional delete files \cr

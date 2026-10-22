@@ -141,3 +141,34 @@ test_that("create_view rejects non-lazy input", {
 
   cleanup_temp_ducklake(lake)
 })
+
+test_that("create_view carries a view's column comments across a replace", {
+  skip_if_not_installed("duckdb")
+  skip_if_not_installed("dplyr")
+
+  lake <- create_temp_ducklake()
+  on.exit(cleanup_temp_ducklake(lake), add = TRUE)
+
+  create_table(data.frame(id = 1:3, grp = c("a", "b", "a"), v = 1:3), "src_v")
+  suppressMessages({
+    get_ducklake_table("src_v") |> dplyr::filter(grp == "a") |> create_view("a_rows")
+    set_table_comment("a_rows", "rows in group a")
+    set_column_comments("a_rows", id = "row id", v = "value")
+  })
+  before <- get_table_comments("a_rows")
+  expect_equal(before$comment[before$object_type == "column"], c("row id", "value"))
+
+  # DuckLake drops the comments with the replaced entry; the replace puts
+  # back the ones whose columns the new view still has
+  suppressMessages(
+    get_ducklake_table("src_v") |>
+      dplyr::filter(grp == "b") |>
+      dplyr::select(id, grp) |>
+      create_view("a_rows")
+  )
+  after <- get_table_comments("a_rows")
+  expect_equal(after$comment[after$object_type == "view"], "rows in group a")
+  expect_equal(after$column_name[after$object_type == "column"], "id")
+  expect_equal(after$comment[after$object_type == "column"], "row id")
+  expect_equal(nrow(list_table_snapshots()) > 0, TRUE)
+})

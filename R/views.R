@@ -93,6 +93,8 @@ create_view <- function(.data, view_name, replace = TRUE) {
       )
     }
     comment <- find_lake_view(view_name, conn)$comment
+    # Column comments (DuckLake 1.1) go with the replaced entry as well
+    column_comments <- view_column_comments(view_name, conn)
     db_execute(create_sql, conn = conn)
     if (length(comment) == 1 && !is.na(comment)) {
       db_execute(
@@ -102,6 +104,19 @@ create_view <- function(.data, view_name, replace = TRUE) {
         ),
         conn = conn
       )
+    }
+    column_comments <- column_comments[names(column_comments) %in% colnames(.data)]
+    if (length(column_comments) > 0) {
+      target <- comment_target_sql(view_name, conn)
+      for (col in names(column_comments)) {
+        db_execute(
+          sprintf(
+            "COMMENT ON COLUMN %s.%s IS %s;",
+            target, quote_column(col, conn), quote_sql(column_comments[[col]])
+          ),
+          conn = conn
+        )
+      }
     }
     if (own_txn) {
       DBI::dbExecute(conn, "COMMIT;")
@@ -145,6 +160,24 @@ find_lake_view <- function(view_name, conn) {
       parts$table
     )
   )
+}
+
+#' The column comments of a view, as a named character vector
+#'
+#' Read through `get_table_comments()`, so a comment set earlier in the
+#' open transaction counts. Empty on a 1.0 catalog, which has no view
+#' column comments.
+#' @noRd
+view_column_comments <- function(view_name, conn) {
+  found <- tryCatch(
+    get_table_comments(qualify_table_name(view_name)),
+    error = function(e) NULL
+  )
+  if (is.null(found)) {
+    return(character())
+  }
+  found <- found[found$object_type == "column", , drop = FALSE]
+  stats::setNames(found$comment, found$column_name)
 }
 
 #' Drop a DuckLake view

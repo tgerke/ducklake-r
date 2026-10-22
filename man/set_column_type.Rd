@@ -17,12 +17,18 @@ set_column_type(table_name, column_name, type)
 Invisibly returns \code{NULL}.
 }
 \description{
-Changes a column's type in place with \verb{ALTER TABLE ... ALTER COLUMN ... SET TYPE}. DuckLake permits widening promotions only (for example
-\code{INTEGER} to \code{BIGINT}, or \code{FLOAT} to \code{DOUBLE}): every existing value
-must be representable in the new type, so no data can be lost and no
-data files need rewriting.
+Changes a column's type in place with \verb{ALTER TABLE ... ALTER COLUMN ... SET TYPE}. DuckLake permits widening promotions only: integers to a
+wider integer, \code{HUGEINT}, \code{FLOAT}, or \code{DOUBLE} (the floating-point
+promotions are accepted even where precision can be lost), \code{FLOAT} to
+\code{DOUBLE}, \code{TIMESTAMP} to \verb{TIMESTAMP WITH TIME ZONE}, and the \code{"NULL"}
+type to any scalar type. No data files need rewriting.
 }
 \details{
+A column that was all \code{NA} when a table was written from a query gets
+the \code{"NULL"} type, which holds nothing but \code{NULL} until promoted; this
+is the call that gives it its real type once the first values are
+known.
+
 To \emph{narrow} a type, which DuckLake refuses, take the explicit route:
 \code{\link[=add_table_column]{add_table_column()}} with the smaller type, copy the values over (after
 checking they fit), \code{\link[=drop_table_column]{drop_table_column()}} the original, and
@@ -52,6 +58,7 @@ Other schema evolution:
 \code{\link[=drop_table_column]{drop_table_column()}},
 \code{\link[=rename_ducklake_table]{rename_ducklake_table()}},
 \code{\link[=rename_table_column]{rename_table_column()}},
+\code{\link[=set_column_default]{set_column_default()}},
 \code{\link[=set_column_not_null]{set_column_not_null()}}
 }
 \concept{schema evolution}

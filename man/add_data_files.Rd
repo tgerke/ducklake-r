@@ -20,7 +20,11 @@ add_data_files(
 schema compatible with the files (see \code{allow_missing} and
 \code{ignore_extra_columns} for the permitted mismatches).}
 
-\item{files}{Character vector of Parquet file paths or URIs.}
+\item{files}{Character vector of Parquet file paths or URIs. DuckLake
+1.1 reads files other tools wrote more widely than 1.0 did: \code{FLOAT16}
+columns into \code{FLOAT}, nanosecond and time-zone-aware timestamps and
+times, top-level \code{VARIANT}, and native Parquet \code{GEOMETRY}; values of
+Hive-partitioned directories count as partition values; and \verb{NOT NULL} constraints are checked on import.}
 
 \item{schema_name}{Optional schema containing the table (defaults to the
 lake's \code{main} schema).}
