@@ -49,7 +49,22 @@
 #' unlink(lake_dir, recursive = TRUE)
 set_table_partitioning <- function(table_name, partition_by) {
   conn <- get_ducklake_connection()
+  check_partition_by(partition_by)
 
+  apply_table_layout(table_name, partition_by = partition_by, conn = conn)
+  dl_inform(c(
+    "Table {.val {table_name}} is now partitioned by {.val {partition_by}}.",
+    "i" = "Only newly written data is partitioned; existing files keep their layout."
+  ))
+
+  invisible(NULL)
+}
+
+#' Validate partition expressions before they reach SQL
+#'
+#' Shared by [set_table_partitioning()] and [create_table()].
+#' @noRd
+check_partition_by <- function(partition_by) {
   if (!is.character(partition_by) || length(partition_by) == 0 ||
       anyNA(partition_by)) {
     cli::cli_abort(
@@ -74,22 +89,7 @@ set_table_partitioning <- function(table_name, partition_by) {
       "i" = "Supported forms: a column name, {.code year/month/day/hour(col)}, or {.code bucket(n, col)}."
     ))
   }
-
-  db_execute(
-    sprintf(
-      "ALTER TABLE %s SET PARTITIONED BY (%s);",
-      quote_ident(table_name, conn),
-      paste(partition_by, collapse = ", ")
-    ),
-    conn = conn
-  )
-  stash_pending_keys(table_name, "partitions", partition_by, conn)
-  dl_inform(c(
-    "Table {.val {table_name}} is now partitioned by {.val {partition_by}}.",
-    "i" = "Only newly written data is partitioned; existing files keep their layout."
-  ))
-
-  invisible(NULL)
+  invisible(partition_by)
 }
 
 #' Remove partitioning keys from a table

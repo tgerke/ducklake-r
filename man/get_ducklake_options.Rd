@@ -36,6 +36,7 @@ unlink(lake_dir, recursive = TRUE)
 \code{\link[=set_ducklake_option]{set_ducklake_option()}}
 
 Other options:
+\code{\link[=reset_ducklake_option]{reset_ducklake_option()}},
 \code{\link[=set_ducklake_option]{set_ducklake_option()}}
 }
 \concept{options}

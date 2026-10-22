@@ -39,16 +39,13 @@ with other changes.
 DuckLake gives the replacement a new table id, as it does for any
 \code{DROP} + \code{CREATE}, and it stores comments, partition keys, sort order,
 and table-scoped options against that id. \code{replace_table()} carries them
-over: the table comment, column comments (and so variable labels) for
-columns that still exist, partition and sort keys whose columns still
-exist (set before the rows are written, so the rewrite itself lands
-partitioned and sorted), and options set with \code{\link[=set_ducklake_option]{set_ducklake_option()}} at
-table scope. DuckLake cannot set options on a table created in the open
-transaction, so options are re-set right after the rewrite commits, as a
-small follow-up snapshot; inside a transaction you opened yourself they
-cannot be re-set at all, and a warning lists the calls to make after
-your commit. Earlier snapshots keep the earlier id and stay reachable by
-name through time travel.
+over inside the same transaction: the table comment, column comments
+(and so variable labels) for columns that still exist, partition and
+sort keys whose columns still exist, and options set with
+\code{\link[=set_ducklake_option]{set_ducklake_option()}} at table scope, all put on the empty table
+before the rows are written, so the rewrite itself lands partitioned,
+sorted, and governed by the options, as one snapshot. Earlier snapshots
+keep the earlier id and stay reachable by name through time travel.
 
 What the open transaction has done to the table counts. Comments set
 earlier in it are carried over, and so are keys set or reset there with

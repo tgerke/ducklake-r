@@ -164,6 +164,7 @@ reference:
     desc: "Lake, schema, and table configuration"
     contents:
     - set_ducklake_option
+    - reset_ducklake_option
     - get_ducklake_options
 
   - title: "Backup and Maintenance"
